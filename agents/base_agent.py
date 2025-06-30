@@ -22,7 +22,7 @@ class Agent:
 
     def run(self, user_input: str) -> str:
         """Send a message to Grok and return the assistant's response."""
-        url = "https://chat.x.ai/api/chat/completions"
+        url = "https://api.x.ai/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -38,12 +38,12 @@ class Agent:
         print(f"📤 Sending to Grok:\n{json.dumps(payload, indent=2)}")
 
         try:
-            response = requests.post(url, headers=headers, json=payload)
+            response = requests.post(url, headers=headers, json=payload, timeout=20)
             response.raise_for_status()
             data = response.json()
 
             print(f"📥 Response:\n{response.text}")
-            
+
             return data["choices"][0]["message"]["content"].strip()
         except Exception as e:
             print(f"❌ Agent '{self.name}' failed: {e}")

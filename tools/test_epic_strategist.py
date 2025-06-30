@@ -7,5 +7,6 @@ agent = EpicStrategist(config)
 vision = "Build a secure, mobile-first banking app for freelancers to manage invoices, taxes, and savings."
 epics = agent.generate_epics(vision)
 
-print("\n📦 Epics:")
-print(epics)
+print("\n📦 Parsed Epics:")
+for epic in epics:
+    print(f"- {epic['title']}: {epic['description']}")
