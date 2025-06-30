@@ -2,7 +2,7 @@
 **Multi-agent AI system for automating Agile backlog creation with Grok and Azure DevOps**  
 **Owner**: Kevin (Scrum Master)  
 **Version**: 1.0  
-**Last Updated**: June 2025
+**Last Updated**: June 2025 
 
 ---
 
