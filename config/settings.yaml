@@ -1,0 +1,33 @@
+project:
+  name: "Agile Backlog Automation"
+  default_area_path: "Backlog Automation\\Frontend"
+  default_iteration_path: "Backlog Automation\\Sprint 2025-07"
+
+agents:
+  epic_strategist:
+    prompt_file: "prompts/epic_strategist.txt"
+  feature_decomposer:
+    prompt_file: "prompts/feature_decomposer.txt"
+  developer_agent:
+    prompt_file: "prompts/developer_agent.txt"
+    estimation_unit: "hours"
+  qa_tester_agent:
+    prompt_file: "prompts/qa_tester_agent.txt"
+    test_case_format: "gherkin"
+
+workflow:
+  sequence:
+    - epic_strategist
+    - feature_decomposer
+    - developer_agent
+    - qa_tester_agent
+  output_format: "azure_devops"
+
+notifications:
+  enabled: true
+  channels: [teams, email]
+  summary_report:
+    format: markdown
+    send_to:
+      - kevin.tran@c4workx.com
+      - thaogtran@gmail.com

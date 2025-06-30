@@ -98,6 +98,60 @@ Docker on AKS (primary), with local Docker Compose or Azure Functions for dev/te
 
 ---
 
+## 📊 Backlog Creation Workflow
+
+```plaintext
+┌────────────────────────────┐
+│        You (Scrum Master)  │
+└────────────┬───────────────┘
+             │
+             ▼
+  [Input: Vision, Config, Trigger]
+             │
+             ▼
+     ┌────────────────────┐
+     │  Supervisor Agent  │
+     └────────┬───────────┘
+              │
+   ┌──────────┼───────────┐
+   ▼                      ▼
+[Epics]              [Features & Stories]
+   │                      │
+   ▼                      ▼
+[Developer Agent]   [QA Tester Agent]
+   │                      │
+   ▼                      ▼
+[Tasks + Estimates] [Test Cases + Bugs]
+              │
+              ▼
+     ┌────────────────────┐
+     │ Azure DevOps API   │
+     └────────┬───────────┘
+              ▼
+     [Azure DevOps Backlog]
+              │
+              ▼
+     [Notifications + Reports]
+```
+
+---
+
+### 🔄 Manual vs. Automated Interactions
+
+| Stage                                | Interaction Type | Who/What Interacts                     | Description                                                                 |
+|--------------------------------------|------------------|----------------------------------------|-----------------------------------------------------------------------------|
+| Provide product vision/goals         | Manual           | You → UI or YAML config                | Input product vision, domain context, and preferences                       |
+| Trigger backlog generation           | Manual or Auto   | You or Event Trigger → Supervisor      | Click a button or respond to an event (e.g., new Epic)                      |
+| Generate Epics                       | Automated        | Epic Strategist Agent                  | AI generates Epics from the product vision                                  |
+| Decompose Epics into Stories         | Automated        | Feature Decomposer Agent               | AI breaks Epics into Features and User Stories                              |
+| Generate Tasks & Estimates           | Automated        | Developer Agent                        | AI creates Tasks, assigns estimates, and flags dependencies                 |
+| Generate Test Cases & Bugs           | Automated        | QA Tester Agent                        | AI predicts bugs, edge cases, and test scenarios                            |
+| Review generated backlog             | Manual           | You → UI preview                       | Review and optionally edit backlog items before pushing                     |
+| Push to Azure DevOps                 | Manual or Auto   | You or Supervisor → Azure DevOps API   | Confirm and push, or let the system do it automatically                     |
+| Receive notifications/reports        | Automated        | System → Teams/Email                   | System sends real-time alerts or summary reports                            |
+
+---
+
 ## 📂 Next Steps
 
 - Scaffold agent modules and supervisor logic  
