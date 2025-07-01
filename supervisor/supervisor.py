@@ -151,6 +151,8 @@ class WorkflowSupervisor:
                     self._execute_epic_generation()
                 elif stage == 'feature_decomposer':
                     self._execute_feature_decomposition()
+                elif stage == 'user_story_decomposer':
+                    self._execute_user_story_decomposition()
                 elif stage == 'developer_agent':
                     self._execute_task_generation()
                 elif stage == 'qa_tester_agent':
@@ -238,6 +240,27 @@ class WorkflowSupervisor:
             self.logger.error(f"Feature decomposition failed: {e}")
             raise
     
+    def _execute_user_story_decomposition(self):
+        """Execute user story decomposition stage."""
+        self.logger.info("Decomposing features into user stories")
+        
+        try:
+            agent = self.agents['feature_decomposer']
+            context = self.project_context.get_context('feature_decomposer')
+            
+            for epic in self.workflow_data['epics']:
+                for feature in epic.get('features', []):
+                    self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
+                    
+                    user_stories = agent.decompose_feature_to_user_stories(feature, context)
+                    feature['user_stories'] = user_stories
+                    
+                    self.logger.info(f"Generated {len(user_stories)} user stories for feature")
+                    
+        except Exception as e:
+            self.logger.error(f"User story decomposition failed: {e}")
+            raise
+    
     def _execute_task_generation(self):
         """Execute developer task generation stage."""
         self.logger.info("Generating developer tasks")
@@ -248,12 +271,13 @@ class WorkflowSupervisor:
             
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
-                    self.logger.info(f"Generating tasks for feature: {feature.get('title', 'Untitled')}")
-                    
-                    tasks = agent.generate_tasks(feature, context)
-                    feature['tasks'] = tasks
-                    
-                    self.logger.info(f"Generated {len(tasks)} tasks for feature")
+                    for user_story in feature.get('user_stories', []):
+                        self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
+                        
+                        tasks = agent.generate_tasks(user_story, context)
+                        user_story['tasks'] = tasks
+                        
+                        self.logger.info(f"Generated {len(tasks)} tasks for user story")
                     
         except Exception as e:
             self.logger.error(f"Task generation failed: {e}")
@@ -309,8 +333,8 @@ class WorkflowSupervisor:
         
         # Get user approval
         while True:
-            response = input("Approve and continue? [y/n/view]: ").lower().strip()
-            
+            response = input("Approve and continue? [y/n/view]: ")
+
             if response == 'y':
                 self.logger.info(f"Stage {stage} approved by user")
                 break
@@ -449,7 +473,8 @@ class WorkflowSupervisor:
         """Get default workflow stages from configuration."""
         return self.config.settings.get('workflow', {}).get('sequence', [
             'epic_strategist',
-            'feature_decomposer', 
+            'feature_decomposer',
+            'user_story_decomposer',
             'developer_agent',
             'qa_tester_agent'
         ])

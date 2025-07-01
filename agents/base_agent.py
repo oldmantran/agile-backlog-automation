@@ -53,7 +53,7 @@ class Agent:
         print(f"📤 Sending to Grok:\n{json.dumps(payload, indent=2)}")
 
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=20)
+            response = requests.post(url, headers=headers, json=payload, timeout=60)  # Increased timeout to 60 seconds
             response.raise_for_status()
             data = response.json()
 

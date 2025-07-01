@@ -66,7 +66,7 @@ class AzureDevOpsIntegrator:
         Create all work items from backlog data in Azure DevOps.
         
         Args:
-            backlog_data: Complete backlog with epics, features, tasks, and test cases
+            backlog_data: Complete backlog with epics, features, user stories, tasks, and test cases
             
         Returns:
             List of created work item details with IDs and URLs
@@ -89,12 +89,17 @@ class AzureDevOpsIntegrator:
                     feature_item = self._create_feature(feature_data, epic_item['id'])
                     created_items.append(feature_item)
                     
-                    # Create tasks for this feature
-                    for task_data in feature_data.get('tasks', []):
-                        task_item = self._create_task(task_data, feature_item['id'])
-                        created_items.append(task_item)
+                    # Create user stories for this feature
+                    for user_story_data in feature_data.get('user_stories', []):
+                        user_story_item = self._create_user_story(user_story_data, feature_item['id'])
+                        created_items.append(user_story_item)
+                        
+                        # Create tasks for this user story
+                        for task_data in user_story_data.get('tasks', []):
+                            task_item = self._create_task(task_data, user_story_item['id'])
+                            created_items.append(task_item)
                     
-                    # Create test cases for this feature
+                    # Create test cases for this feature (test cases link to features, not user stories)
                     for test_case_data in feature_data.get('test_cases', []):
                         test_item = self._create_test_case(test_case_data, feature_item['id'])
                         created_items.append(test_item)
@@ -179,8 +184,8 @@ class AzureDevOpsIntegrator:
         
         return feature_item
     
-    def _create_task(self, task_data: Dict[str, Any], parent_feature_id: int) -> Dict[str, Any]:
-        """Create a Task work item."""
+    def _create_task(self, task_data: Dict[str, Any], parent_user_story_id: int) -> Dict[str, Any]:
+        """Create a Task work item under a User Story."""
         fields = {
             '/fields/System.Title': task_data.get('title', 'Untitled Task'),
             '/fields/System.Description': self._format_task_description(task_data),
@@ -196,8 +201,8 @@ class AzureDevOpsIntegrator:
         
         task_item = self._create_work_item('Task', fields)
         
-        # Link to parent feature
-        self._create_parent_link(task_item['id'], parent_feature_id)
+        # Link to parent user story
+        self._create_parent_link(task_item['id'], parent_user_story_id)
         
         return task_item
     
@@ -533,3 +538,6 @@ class AzureDevOpsIntegrator:
         pass
     
     def get_available_iteration_paths(self) -> List[Dict[str, Any]]:
+        """Get all available iteration paths in the project."""
+        # TODO: Implement iteration path retrieval
+        pass
