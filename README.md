@@ -19,11 +19,11 @@ A sophisticated multi-agent AI system that transforms product visions into struc
 1. **Epic Strategist** - Transforms product vision into high-level epics
 2. **Feature Decomposer** - Breaks epics into detailed features  
 3. **Developer Agent** - Creates technical tasks with time estimates
-4. **QA Tester Agent** - Generates test cases in Gherkin format
+4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria
 
 ### Workflow
 ```
-Product Vision → Epics → Features → Developer Tasks → QA Test Cases
+Product Vision → Epics → Features → Developer Tasks → QA Test Cases & Validation
 ```
 
 ## 🚀 Quick Start
@@ -90,7 +90,7 @@ python tools/run_pipeline.py [--run STAGE] [--input PATH]
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--run` | Execution stage: `all`, `epic`, `feature`, `developer` | `all` |
+| `--run` | Execution stage: `all`, `epic`, `feature`, `developer`, `qa` | `all` |
 | `--input` | Path to YAML input file with product vision and/or existing data | Interactive prompt |
 
 ### Usage Examples
@@ -102,6 +102,9 @@ python tools/run_pipeline.py
 
 # Epic generation only with interactive input  
 python tools/run_pipeline.py --run epic
+
+# QA testing only with interactive input
+python tools/run_pipeline.py --run qa
 ```
 
 #### File-Based Mode
@@ -117,6 +120,9 @@ python tools/run_pipeline.py --run feature --input samples/epics_with_vision.yam
 
 # Generate developer tasks from existing features
 python tools/run_pipeline.py --run developer --input output/backlog_20250630_171414.yaml
+
+# Generate QA test cases from existing features
+python tools/run_pipeline.py --run qa --input output/backlog_20250630_171414.yaml
 
 # Resume from specific stage
 python tools/run_pipeline.py --run feature --input output/epics_and_features_20250630_165816.yaml
@@ -169,6 +175,22 @@ epics:
             estimated_hours: 8
             type: "Development"
             priority: "High"
+        test_cases:
+          - title: "Test Case Title"
+            type: "functional"
+            priority: "High"
+            gherkin:
+              scenario: "Test scenario description"
+              given: ["Precondition 1"]
+              when: ["Action 1"]
+              then: ["Expected result 1"]
+        edge_cases:
+          - title: "Edge Case Title"
+            category: "boundary_condition"
+            risk_level: "Medium"
+        qa_validation:
+          testability_score: 8
+          recommendations: ["Recommendation 1"]
 ```
 
 ## 📤 Output Structure
@@ -206,6 +228,29 @@ epics:
             estimated_hours: 4
             priority: "High|Medium|Low"
             dependencies: []
+        test_cases:
+          - title: "Test scenario name"
+            type: "functional|security|performance|boundary"
+            priority: "High|Medium|Low"
+            gherkin:
+              feature: "Feature name"
+              scenario: "Specific test scenario"
+              given: ["Precondition 1", "Precondition 2"]
+              when: ["User action 1", "System action 2"]
+              then: ["Expected outcome 1", "Validation 2"]
+            estimated_time_minutes: 10
+        edge_cases:
+          - title: "Edge case name"
+            category: "boundary_condition|security|performance|integration"
+            description: "Detailed edge case description"
+            risk_level: "High|Medium|Low|Critical"
+            test_scenario: "How to reproduce the edge case"
+            expected_behavior: "What should happen"
+        qa_validation:
+          testability_score: 8
+          enhanced_criteria: ["Enhanced criterion 1"]
+          recommendations: ["Improvement recommendation 1"]
+          missing_scenarios: ["Missing test scenario 1"]
 ```
 
 ## ⚙️ Configuration
@@ -268,6 +313,54 @@ Automatically creates work items in Azure DevOps:
 - **Microsoft Teams** - Real-time pipeline status updates
 - **Email** - Detailed summary reports with markdown formatting
 
+## 🔬 QA Testing Capabilities
+
+The QA Tester Agent provides comprehensive testing analysis for each feature:
+
+### Test Case Generation
+- **Functional Testing** - Happy path and alternative flow scenarios in Gherkin format
+- **Security Testing** - SQL injection, XSS, and authentication bypass scenarios
+- **Performance Testing** - Load testing and response time validation scenarios
+- **Boundary Testing** - Edge cases with minimum/maximum values and input validation
+- **Integration Testing** - API endpoint and service connectivity testing
+- **Usability Testing** - Accessibility and user experience validation
+
+### Edge Case Identification
+- **Boundary Conditions** - Maximum/minimum limits and invalid inputs
+- **Error Handling** - System failure scenarios and recovery testing
+- **Security Vulnerabilities** - Malicious input and unauthorized access attempts
+- **Performance Edge Cases** - High load and resource constraint scenarios
+- **Integration Failures** - Service outages and connectivity issues
+
+### Acceptance Criteria Validation
+- **Testability Scoring** - 1-10 scale assessment of how testable criteria are
+- **Enhancement Recommendations** - Specific suggestions for improving testability
+- **Missing Scenarios** - Identification of untested edge cases and workflows
+- **Risk Assessment** - Critical, High, Medium, Low risk categorization
+
+### Example QA Output
+```yaml
+features:
+  - title: "User Authentication"
+    test_cases:
+      - title: "Successful login with valid credentials"
+        type: "functional"
+        priority: "High"
+        gherkin:
+          scenario: "User logs in successfully"
+          given: ["User has valid account", "User is on login page"]
+          when: ["User enters correct email and password", "User clicks login"]
+          then: ["User is redirected to dashboard", "Welcome message appears"]
+    edge_cases:
+      - title: "SQL injection attempt in login field"
+        category: "security"
+        risk_level: "Critical"
+        description: "Test for SQL injection vulnerability in email field"
+    qa_validation:
+      testability_score: 9
+      recommendations: ["Add specific error message validation"]
+```
+
 ## 🧪 Testing & Validation
 
 ### Test Individual Components
@@ -279,10 +372,12 @@ python tools/test_config_loader.py
 python tools/test_epic_strategist.py
 python tools/test_feature_decomposer.py  
 python tools/test_developer_agent.py
+python tools/test_qa_tester_agent.py
 
 # Test agent chains
 python tools/test_epic_to_feature_chain.py
 python tools/test_epic_feature_task_chain.py
+python tools/test_epic_feature_task_qa_chain.py
 
 # Test notifications
 python tools/test_notifications.py
@@ -317,7 +412,13 @@ python tools/run_pipeline.py --run feature --input samples/existing_epics.yaml
 python tools/run_pipeline.py --run developer --input output/features_ready_for_dev.yaml
 ```
 
-### Scenario 4: Iterative Development
+### Scenario 4: QA Testing Focus
+```bash
+# Generate comprehensive test cases for existing features
+python tools/run_pipeline.py --run qa --input output/features_ready_for_testing.yaml
+```
+
+### Scenario 5: Iterative Development
 ```bash
 # 1. Generate epics
 python tools/run_pipeline.py --run epic --input samples/vision.yaml

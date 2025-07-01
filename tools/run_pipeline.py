@@ -8,12 +8,16 @@ from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
 from agents.feature_decomposer import FeatureDecomposer
 from agents.developer_agent import DeveloperAgent
+from agents.qa_tester_agent import QATesterAgent
 
 # Run full pipeline interactively
     #python tools/run_pipeline.py
 
 # Run only the Developer Agent on a YAML file
     #python tools/run_pipeline.py --run developer --input output/backlog_20250701_153000.yaml
+
+# Run only the QA Agent on a YAML file with features
+    #python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
 
 # Regenerate features only
     #python tools/run_pipeline.py --run feature --input my_epics.yaml
@@ -33,6 +37,7 @@ def run_pipeline(data: dict, run_stage: str):
     epic_agent = EpicStrategist(config)
     feature_agent = FeatureDecomposer(config)
     dev_agent = DeveloperAgent(config)
+    qa_agent = QATesterAgent(config)
 
     product_vision = data.get("product_vision", "")
     epics = data.get("epics", [])
@@ -53,6 +58,19 @@ def run_pipeline(data: dict, run_stage: str):
                 tasks = dev_agent.generate_tasks(feature)
             else:
                 tasks = feature.get("tasks", [])
+
+            if run_stage in ["all", "qa"]:
+                test_cases = qa_agent.generate_test_cases(feature)
+                edge_cases = qa_agent.generate_edge_cases(feature)
+                validation = qa_agent.validate_acceptance_criteria(feature)
+                
+                feature["test_cases"] = test_cases
+                feature["edge_cases"] = edge_cases
+                feature["qa_validation"] = validation
+            else:
+                feature["test_cases"] = feature.get("test_cases", [])
+                feature["edge_cases"] = feature.get("edge_cases", [])
+                feature["qa_validation"] = feature.get("qa_validation", {})
 
             feature["tasks"] = tasks
             epic["features"].append(feature)
@@ -79,21 +97,21 @@ def save_output(data: dict):
     print(f"\n💾 JSON saved to: {json_path}")
     print(f"📝 YAML saved to: {yaml_path}")
 
-def load_input_from_yaml(path: str) -> str:
+def load_input_from_yaml(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-        return data.get("product_vision", "")
+        return yaml.safe_load(f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run backlog automation pipeline.")
-    parser.add_argument("--run", choices=["all", "epic", "feature", "developer"], default="all", help="Which stage(s) to run")
+    parser.add_argument("--run", choices=["all", "epic", "feature", "developer", "qa"], default="all", help="Which stage(s) to run")
     parser.add_argument("--input", type=str, help="Path to YAML file with product_vision")
 
     args = parser.parse_args()
 
     if args.input:
-        vision = load_input_from_yaml(args.input)
+        data = load_input_from_yaml(args.input)
     else:
         vision = input("🧠 Enter product vision: ")
+        data = {"product_vision": vision, "epics": []}
 
-    run_pipeline(vision, args.run)
+    run_pipeline(data, args.run)
