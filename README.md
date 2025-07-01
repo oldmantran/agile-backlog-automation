@@ -193,6 +193,46 @@ epics:
           recommendations: ["Recommendation 1"]
 ```
 
+## 🎯 Modular Prompt System
+
+The system features a powerful **modular, template-based prompt system** with dynamic context injection for role-specific, domain-aware outputs.
+
+### Context-Aware Generation
+```bash
+# Run with project type context
+python tools/run_pipeline.py --project-type fintech --project-name "CryptoWallet Pro"
+
+# Custom context variables  
+python tools/run_pipeline.py \
+  --project-name "MyApp" \
+  --domain "e-commerce" \
+  --tech-stack "React, Node.js, PostgreSQL" \
+  --timeline "6 months"
+
+# Healthcare project with compliance focus
+python tools/run_pipeline.py --project-type healthcare --project-name "PatientPortal"
+```
+
+### Supported Project Types
+- **Fintech**: Banking, payments, cryptocurrency (PCI DSS, SOX compliance)
+- **Healthcare**: Medical apps, patient management (HIPAA, FDA compliance)  
+- **E-commerce**: Online retail, marketplaces (PCI DSS, GDPR compliance)
+- **Education**: Learning platforms, student management (FERPA, COPPA compliance)
+- **Mobile App**: iOS/Android applications, cross-platform development
+- **SaaS**: Software as a Service, multi-tenant applications
+
+### Key Benefits
+- **Domain-Specific**: Agents understand industry terminology and requirements
+- **Compliance-Aware**: Automatically includes relevant regulatory considerations
+- **Technology-Focused**: Tailors recommendations to your tech stack
+- **User-Centric**: Adapts to your target user personas
+
+### Example Context Impact
+**Generic Output**: "Create user authentication system"
+**Fintech Context**: "Implement multi-factor authentication with PCI DSS compliance, fraud detection, and regulatory audit trails for financial transactions"
+
+📖 **[Complete Prompt System Guide](docs/PROMPT_SYSTEM_GUIDE.md)**
+
 ## 📤 Output Structure
 
 The system generates timestamped outputs in both JSON and YAML formats:

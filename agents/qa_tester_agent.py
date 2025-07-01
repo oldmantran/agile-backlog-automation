@@ -6,16 +6,26 @@ class QATesterAgent(Agent):
     def __init__(self, config: Config):
         super().__init__("qa_tester_agent", config)
 
-    def generate_test_cases(self, feature: dict) -> list[dict]:
+    def generate_test_cases(self, feature: dict, context: dict = None) -> list[dict]:
         """Generate test cases and potential bugs from a feature description."""
+        
+        # Build context for prompt template
+        prompt_context = {
+            'domain': context.get('domain', 'software development') if context else 'software development',
+            'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+            'platform': context.get('platform', 'web application') if context else 'web application',
+            'test_environment': context.get('test_environment', 'automated testing') if context else 'automated testing',
+            'compliance_requirements': context.get('compliance_requirements', 'standard') if context else 'standard'
+        }
+        
         user_input = f"""
-Feature: {feature['title']}
-Description: {feature['description']}
+Feature: {feature.get('title', 'Unknown Feature')}
+Description: {feature.get('description', 'No description provided')}
 Acceptance Criteria: {feature.get('acceptance_criteria', [])}
 Priority: {feature.get('priority', 'Medium')}
 """
-        print(f"🧪 [QATesterAgent] Generating test cases for: {feature['title']}")
-        response = self.run(user_input)
+        print(f"🧪 [QATesterAgent] Generating test cases for: {feature.get('title', 'Unknown')}")
+        response = self.run(user_input, prompt_context)
 
         try:
             test_cases = json.loads(response)
@@ -32,13 +42,22 @@ Priority: {feature.get('priority', 'Medium')}
             print(response)
             return []
 
-    def generate_edge_cases(self, feature: dict) -> list[dict]:
+    def generate_edge_cases(self, feature: dict, context: dict = None) -> list[dict]:
         """Generate edge cases and potential failure scenarios."""
+        
+        # Build context for prompt template
+        prompt_context = {
+            'domain': context.get('domain', 'software development') if context else 'software development',
+            'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+            'platform': context.get('platform', 'web application') if context else 'web application',
+            'security_requirements': context.get('security_requirements', 'standard') if context else 'standard'
+        }
+        
         user_input = f"""
 Analyze this feature for edge cases and potential failure scenarios:
 
-Feature: {feature['title']}
-Description: {feature['description']}
+Feature: {feature.get('title', 'Unknown Feature')}
+Description: {feature.get('description', 'No description provided')}
 Acceptance Criteria: {feature.get('acceptance_criteria', [])}
 
 Focus on:
@@ -48,8 +67,8 @@ Focus on:
 4. Security vulnerabilities
 5. Integration failure points
 """
-        print(f"⚠️ [QATesterAgent] Generating edge cases for: {feature['title']}")
-        response = self.run(user_input)
+        print(f"⚠️ [QATesterAgent] Generating edge cases for: {feature.get('title', 'Unknown')}")
+        response = self.run(user_input, prompt_context)
 
         try:
             edge_cases = json.loads(response)
@@ -66,13 +85,21 @@ Focus on:
             print(response)
             return []
 
-    def validate_acceptance_criteria(self, feature: dict) -> dict:
+    def validate_acceptance_criteria(self, feature: dict, context: dict = None) -> dict:
         """Validate and enhance acceptance criteria for testability."""
+        
+        # Build context for prompt template
+        prompt_context = {
+            'domain': context.get('domain', 'software development') if context else 'software development',
+            'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+            'quality_standards': context.get('quality_standards', 'industry standard') if context else 'industry standard'
+        }
+        
         user_input = f"""
 Review and enhance these acceptance criteria for testability:
 
-Feature: {feature['title']}
-Description: {feature['description']}
+Feature: {feature.get('title', 'Unknown Feature')}
+Description: {feature.get('description', 'No description provided')}
 Current Acceptance Criteria: {feature.get('acceptance_criteria', [])}
 
 Provide:
@@ -81,8 +108,8 @@ Provide:
 3. Recommendations for improvement
 4. Missing test scenarios
 """
-        print(f"✅ [QATesterAgent] Validating acceptance criteria for: {feature['title']}")
-        response = self.run(user_input)
+        print(f"✅ [QATesterAgent] Validating acceptance criteria for: {feature.get('title', 'Unknown')}")
+        response = self.run(user_input, prompt_context)
 
         try:
             validation = json.loads(response)
