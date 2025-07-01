@@ -340,25 +340,25 @@ class AzureDevOpsIntegrator:
         
         # Add business value
         if epic_data.get('business_value'):
-            description += f"\\n\\n**Business Value:**\\n{epic_data['business_value']}"
+            description += f"\n\n**Business Value:**\n{epic_data['business_value']}"
         
         # Add success criteria
         if epic_data.get('success_criteria'):
-            description += "\\n\\n**Success Criteria:**"
+            description += "\n\n**Success Criteria:**"
             for criterion in epic_data['success_criteria']:
-                description += f"\\n- {criterion}"
+                description += f"\n- {criterion}"
         
         # Add dependencies
         if epic_data.get('dependencies'):
-            description += "\\n\\n**Dependencies:**"
+            description += "\n\n**Dependencies:**"
             for dependency in epic_data['dependencies']:
-                description += f"\\n- {dependency}"
+                description += f"\n- {dependency}"
         
         # Add risks
         if epic_data.get('risks'):
-            description += "\\n\\n**Risks:**"
+            description += "\n\n**Risks:**"
             for risk in epic_data['risks']:
-                description += f"\\n- {risk}"
+                description += f"\n- {risk}"
         
         return description
     
@@ -368,13 +368,13 @@ class AzureDevOpsIntegrator:
         
         # Add user story format if available
         if feature_data.get('user_story'):
-            description = f"**User Story:**\\n{feature_data['user_story']}\\n\\n{description}"
+            description = f"**User Story:**\n{feature_data['user_story']}\n\n{description}"
         
         # Add acceptance criteria
         if feature_data.get('acceptance_criteria'):
-            description += "\\n\\n**Acceptance Criteria:**"
+            description += "\n\n**Acceptance Criteria:**"
             for criterion in feature_data['acceptance_criteria']:
-                description += f"\\n- {criterion}"
+                description += f"\n- {criterion}"
         
         return description
     
@@ -384,15 +384,15 @@ class AzureDevOpsIntegrator:
         
         # Add technical requirements
         if task_data.get('technical_requirements'):
-            description += "\\n\\n**Technical Requirements:**"
+            description += "\n\n**Technical Requirements:**"
             for req in task_data['technical_requirements']:
-                description += f"\\n- {req}"
+                description += f"\n- {req}"
         
         # Add definition of done
         if task_data.get('definition_of_done'):
-            description += "\\n\\n**Definition of Done:**"
+            description += "\n\n**Definition of Done:**"
             for item in task_data['definition_of_done']:
-                description += f"\\n- {item}"
+                description += f"\n- {item}"
         
         return description
     
@@ -402,9 +402,9 @@ class AzureDevOpsIntegrator:
         
         # Add acceptance criteria
         if story_data.get('acceptance_criteria'):
-            description += "\\n\\n**Acceptance Criteria:**"
+            description += "\n\n**Acceptance Criteria:**"
             for criterion in story_data['acceptance_criteria']:
-                description += f"\\n- {criterion}"
+                description += f"\n- {criterion}"
         
         return description
     
