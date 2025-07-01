@@ -271,13 +271,44 @@ class WorkflowSupervisor:
             
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
-                    for user_story in feature.get('user_stories', []):
-                        self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
+                    user_stories = feature.get('user_stories', [])
+                    if user_stories:
+                        # With updated prompt, user_stories are now structured objects
+                        processed_stories = []
+                        for i, story_item in enumerate(user_stories):
+                            if isinstance(story_item, dict):
+                                # New structured format - already has all needed fields
+                                story_dict = {
+                                    'title': story_item.get('title', f"User Story {i+1} for {feature.get('title', 'Feature')}"),
+                                    'user_story': story_item.get('description', ''),
+                                    'description': story_item.get('description', ''),
+                                    'acceptance_criteria': story_item.get('acceptance_criteria', []),
+                                    'priority': story_item.get('priority', 'Medium'),
+                                    'story_points': story_item.get('story_points', 3),
+                                    'tags': story_item.get('tags', [])
+                                }
+                                processed_stories.append(story_dict)
+                            elif isinstance(story_item, str):
+                                # Legacy string format - convert to dict format for task generation
+                                story_dict = {
+                                    'title': f"User Story {i+1} for {feature.get('title', 'Feature')}",
+                                    'user_story': story_item,
+                                    'description': f"From feature: {feature.get('title', 'Unknown Feature')}",
+                                    'acceptance_criteria': feature.get('acceptance_criteria', []),
+                                    'priority': feature.get('priority', 'Medium'),
+                                    'story_points': feature.get('estimated_story_points', 5)
+                                }
+                                processed_stories.append(story_dict)
                         
-                        tasks = agent.generate_tasks(user_story, context)
-                        user_story['tasks'] = tasks
+                        feature['user_stories'] = processed_stories
                         
-                        self.logger.info(f"Generated {len(tasks)} tasks for user story")
+                        for user_story in processed_stories:
+                            self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
+                            
+                            tasks = agent.generate_tasks(user_story, context)
+                            user_story['tasks'] = tasks
+                            
+                            self.logger.info(f"Generated {len(tasks)} tasks for user story")
                     
         except Exception as e:
             self.logger.error(f"Task generation failed: {e}")

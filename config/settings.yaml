@@ -3,6 +3,17 @@ project:
   default_area_path: "Backlog Automation\\Frontend"
   default_iteration_path: "Backlog Automation\\Sprint 2025-07"
 
+domains:
+  supported:
+    - "software_development"
+    - "fintech"
+    - "ecommerce"
+    - "healthcare"
+    - "education"
+    - "shipping_logistics"
+    - "oil_gas"
+  default: "software_development"
+
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"

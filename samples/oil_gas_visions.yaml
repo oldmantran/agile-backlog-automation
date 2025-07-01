@@ -1,0 +1,121 @@
+# Oil & Gas Product Vision Templates
+
+oil_gas_visions:
+  drilling_operations_platform:
+    title: "Digital Drilling Operations Platform"
+    vision: "Transform drilling operations through an integrated digital platform that provides real-time monitoring, predictive maintenance, and automated safety compliance for enhanced operational efficiency and risk reduction."
+    domain: "oil_gas"
+    target_users:
+      - "Drilling engineers"
+      - "Operations managers"
+      - "Safety supervisors"
+      - "Equipment technicians"
+      - "Regulatory compliance officers"
+    key_features:
+      - "Real-time drilling parameter monitoring"
+      - "Predictive equipment maintenance"
+      - "Automated safety alert system"
+      - "Regulatory compliance tracking"
+      - "Performance analytics and reporting"
+      - "Remote drilling oversight"
+    platform: "web_and_mobile"
+    methodology: "Agile"
+
+  production_optimization:
+    title: "Production Optimization System"
+    vision: "Maximize hydrocarbon production through intelligent data analysis, automated well performance monitoring, and predictive optimization algorithms that reduce downtime and increase yield."
+    domain: "oil_gas"
+    target_users:
+      - "Production engineers"
+      - "Reservoir engineers"
+      - "Field operators"
+      - "Asset managers"
+    key_features:
+      - "Well performance monitoring"
+      - "Production forecasting"
+      - "Automated optimization algorithms"
+      - "Equipment health monitoring"
+      - "Cost-benefit analysis"
+      - "Integration with SCADA systems"
+    platform: "web_and_industrial_systems"
+    methodology: "Agile"
+
+  pipeline_integrity_management:
+    title: "Pipeline Integrity Management System"
+    vision: "Ensure pipeline safety and regulatory compliance through continuous monitoring, predictive failure analysis, and automated maintenance scheduling to prevent incidents and optimize asset life."
+    domain: "oil_gas"
+    target_users:
+      - "Pipeline engineers"
+      - "Integrity specialists"
+      - "Maintenance crews"
+      - "Regulatory inspectors"
+      - "Environmental compliance officers"
+    key_features:
+      - "Continuous pipeline monitoring"
+      - "Predictive failure analysis"
+      - "Automated inspection scheduling"
+      - "Regulatory compliance reporting"
+      - "Environmental impact tracking"
+      - "Emergency response coordination"
+    platform: "web_and_industrial_systems"
+    methodology: "Agile"
+
+  supply_chain_logistics:
+    title: "O&G Supply Chain & Logistics Platform"
+    vision: "Streamline oil and gas supply chain operations through intelligent procurement, equipment tracking, and vendor management to reduce costs and improve operational efficiency."
+    domain: "oil_gas"
+    target_users:
+      - "Supply chain managers"
+      - "Procurement specialists"
+      - "Logistics coordinators"
+      - "Vendor managers"
+      - "Finance teams"
+    key_features:
+      - "Intelligent procurement management"
+      - "Real-time equipment tracking"
+      - "Vendor performance monitoring"
+      - "Cost optimization analytics"
+      - "Automated purchase ordering"
+      - "Inventory management"
+    platform: "web_and_mobile"
+    methodology: "Agile"
+
+  environmental_monitoring:
+    title: "Environmental Monitoring & Compliance System"
+    vision: "Ensure environmental compliance and sustainability through continuous monitoring, automated reporting, and predictive environmental impact analysis for responsible operations."
+    domain: "oil_gas"
+    target_users:
+      - "Environmental engineers"
+      - "Compliance officers"
+      - "Operations managers"
+      - "Regulatory inspectors"
+      - "Sustainability teams"
+    key_features:
+      - "Real-time environmental monitoring"
+      - "Automated compliance reporting"
+      - "Emissions tracking and analysis"
+      - "Environmental impact predictions"
+      - "Incident management system"
+      - "Regulatory document management"
+    platform: "web_and_industrial_systems"
+    methodology: "Agile"
+
+  field_service_management:
+    title: "Field Service Management Platform"
+    vision: "Optimize field service operations through intelligent work order management, technician scheduling, and mobile-first tools that improve service delivery and asset uptime."
+    domain: "oil_gas"
+    target_users:
+      - "Field service managers"
+      - "Technicians"
+      - "Dispatchers"
+      - "Equipment operators"
+      - "Maintenance supervisors"
+    key_features:
+      - "Intelligent work order scheduling"
+      - "Mobile field service app"
+      - "Asset maintenance tracking"
+      - "GPS-based technician dispatch"
+      - "Real-time status updates"
+      - "Equipment spare parts management"
+    platform: "web_and_mobile"
+    methodology: "Agile"

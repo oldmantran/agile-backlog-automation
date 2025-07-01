@@ -1,0 +1,73 @@
+# Shipping & Logistics Product Vision Templates
+
+shipping_logistics_visions:
+  port_management_system:
+    title: "Port Management System"
+    vision: "Revolutionize port operations through an integrated digital platform that optimizes vessel scheduling, cargo tracking, and resource allocation for maximum efficiency and transparency."
+    domain: "shipping_logistics"
+    target_users:
+      - "Port operators"
+      - "Shipping lines"
+      - "Cargo handlers"
+      - "Customs officials"
+    key_features:
+      - "Real-time vessel tracking and berth allocation"
+      - "Automated cargo manifest processing"
+      - "Equipment and resource scheduling"
+      - "Compliance and documentation management"
+      - "Performance analytics and reporting"
+    platform: "web_and_mobile"
+    methodology: "Agile"
+
+  last_mile_delivery:
+    title: "Last-Mile Delivery Platform"
+    vision: "Create an intelligent last-mile delivery ecosystem that connects carriers, drivers, and customers through real-time optimization, route planning, and transparent tracking."
+    domain: "shipping_logistics"
+    target_users:
+      - "Delivery companies"
+      - "Drivers"
+      - "Customers"
+      - "Fleet managers"
+    key_features:
+      - "Dynamic route optimization"
+      - "Real-time delivery tracking"
+      - "Customer notification system"
+      - "Driver mobile application"
+      - "Fleet management dashboard"
+    platform: "web_and_mobile"
+    methodology: "Agile"
+
+  supply_chain_visibility:
+    title: "Supply Chain Visibility Platform"
+    vision: "Provide end-to-end supply chain visibility enabling businesses to track shipments, predict delays, and optimize logistics operations across multiple carriers and modes of transport."
+    domain: "shipping_logistics"
+    target_users:
+      - "Supply chain managers"
+      - "Logistics coordinators"
+      - "Procurement teams"
+    key_features:
+      - "Multi-modal shipment tracking"
+      - "Predictive delay analysis"
+      - "Automated exception handling"
+      - "Vendor performance monitoring"
+      - "Cost optimization recommendations"
+    platform: "web_and_mobile"
+    methodology: "Agile"
+
+  freight_marketplace:
+    title: "Freight Marketplace"
+    vision: "Build a digital freight marketplace that connects shippers with carriers, providing transparent pricing, capacity optimization, and streamlined booking processes."
+    domain: "shipping_logistics"
+    target_users:
+      - "Shippers"
+      - "Freight brokers"
+      - "Carriers"
+      - "Logistics providers"
+    key_features:
+      - "Load matching and booking"
+      - "Dynamic pricing engine"
+      - "Carrier vetting and rating"
+      - "Documentation management"
+      - "Payment processing"
+    platform: "web_and_mobile"
+    methodology: "Agile"

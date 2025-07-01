@@ -25,6 +25,18 @@ class EpicStrategist(Agent):
         response = self.run(user_input, prompt_context)
 
         try:
+            if not response:
+                print("⚠️ Empty response from Grok")
+                return []
+            
+            # Check for markdown code blocks
+            if "```json" in response:
+                print("🔍 Extracting JSON from markdown...")
+                start = response.find("```json") + 7
+                end = response.find("```", start)
+                if end > start:
+                    response = response[start:end].strip()
+            
             epics = json.loads(response)
             if isinstance(epics, list):
                 return epics
