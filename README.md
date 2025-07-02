@@ -1,17 +1,101 @@
-# 🧠 Agile Backlog Automation
+# 🧠 Agile Backlog Automatio## 🏗️ Architecture
 
-A sophisticated multi-agent AI system that transforms product visions into structured, actionable backlogs. Built with Grok from xAI, this system generates epics, features, developer tasks, and QA test cases with full Azure DevOps integration.
+### AI Agents
+1. **Epic Strategist** - Transforms product vision into high-level epics
+2. **Feature Decomposer** - Breaks epics into detailed features  
+3. **Developer Agent** - Creates technical tasks with time estimates
+4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria
+
+### Workflow
+```
+Product Vision → Epics → Features → Developer Tasks → QA Test Cases & Validation
+```
+
+### Work Item Management Tools
+- **Work Item Description Fixer** (`fix_work_item_descriptions.py`) - Fixes HTML formatting and section headers in work item descriptions
+- **Test Case Mover** (`move_test_cases.py`) - Organizes test cases into proper area paths
+- **Section Header Checker** (`check_section_headers.py`) - Validates and audits work item formatting
+- **ADO Cleanup Tools** (`tools/cleanup_ado_workitems.py`) - Bulk cleanup and management utilities
+- **Path Updater** (`tools/update_work_item_paths.py`) - Updates area and iteration paths for work items
+
+## 🛠️ Utility Tools
+
+The project includes several standalone utility tools for Azure DevOps work item management:
+
+### Work Item Management
+```bash
+# Fix work item descriptions with proper HTML formatting
+python fix_work_item_descriptions.py [--live] [--confirm]
+
+# Move all test cases to a specific area path
+python move_test_cases.py [--live] [--confirm]
+
+# Check what section headers exist in work items
+python check_section_headers.py
+
+# Update area and iteration paths for work items
+python tools/update_work_item_paths.py
+
+# Clean up all work items in a project
+python tools/cleanup_ado_workitems.py [--confirm]
+```
+
+### Testing and Validation
+```bash
+# Test individual components
+python tools/test_config_loader.py
+python tools/test_epic_strategist.py
+python tools/test_feature_decomposer.py
+python tools/test_developer_agent.py
+python tools/test_qa_tester_agent.py
+
+# Test complete chains
+python tools/test_epic_to_feature_chain.py
+python tools/test_epic_feature_task_chain.py
+python tools/test_epic_feature_task_qa_chain.py
+
+# Test Azure DevOps integration
+python tools/test_azure_devops.py
+python tools/test_notifications.py
+```
+
+### Development and Debugging
+```bash
+# Debug specific components
+python tools/debug_agent_lockup.py
+python tools/debug_epic_output.py
+python tools/debug_feature_decomposer.py
+python tools/debug_work_item_creation.py
+
+# Demo and testing
+python tools/demo_prompt_system.py
+python tools/test_grit_system.py
+python tools/test_end_to_end.py
+```sticated multi-agent AI system that transforms product visions into structured, actionable backlogs. Built with Grok from xAI, this system generates epics, features, developer tasks, and QA test cases with full Azure DevOps integration and advanced work item management capabilities.
 
 ## ✨ Features
 
+### Core AI Automation
 - **🤖 Multi-Agent Architecture**: Four specialized AI agents working in sequence
 - **🔄 Modular Execution**: Run individual stages or the complete pipeline
 - **📝 Flexible Input**: Support for interactive input or YAML configuration files
 - **💾 Multiple Output Formats**: JSON and YAML with timestamped outputs
-- **🔗 Azure DevOps Integration**: Direct work item creation and management
-- **📧 Smart Notifications**: Teams and email alerts with summary reports
 - **🎯 Human-in-the-Loop**: Review and approve at each stage
 - **⚙️ Configurable Workflows**: Customizable agent prompts and settings
+
+### Azure DevOps Integration
+- **🔗 Work Item Creation**: Automatic creation of Epics, Features, User Stories, Tasks, and Test Cases
+- **📋 Work Item Management**: Advanced tools for updating, moving, and organizing work items
+- **🏗️ Area Path Management**: Automated organization of work items into proper area paths
+- **🔧 Description Formatting**: Tools to fix and standardize work item descriptions with proper HTML
+- **📊 Project Analytics**: Tools to analyze and validate work item structures
+
+### Advanced Utilities
+- **📧 Smart Notifications**: Teams and email alerts with summary reports
+- **🧹 Cleanup Tools**: Bulk cleanup and management of Azure DevOps work items
+- **🔍 Validation Tools**: Structure validation and quality assessment
+- **📈 Estimation Tools**: Story point and time estimation capabilities
+- **🧪 Testing Framework**: Comprehensive test suites for all components
 
 ## �️ Architecture
 
@@ -80,22 +164,57 @@ python tools/test_config_loader.py
 
 ## 🧩 CLI Usage
 
+### Main Pipeline
 The main entry point is `tools/run_pipeline.py` with flexible execution options:
 
 ```bash
-python tools/run_pipeline.py [--run STAGE] [--input PATH]
+python tools/run_pipeline.py [--run STAGE] [--input PATH] [--project-type TYPE] [--project-name NAME]
 ```
 
-### Command Options
+#### Command Options
 
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--run` | Execution stage: `all`, `epic`, `feature`, `developer`, `qa` | `all` |
 | `--input` | Path to YAML input file with product vision and/or existing data | Interactive prompt |
+| `--project-type` | Project context: `fintech`, `healthcare`, `ecommerce`, `education`, `mobile`, `saas` | None |
+| `--project-name` | Custom project name for context | None |
+
+### Standalone Utilities
+
+#### Work Item Management
+```bash
+# Fix formatting issues in work item descriptions
+python fix_work_item_descriptions.py              # Dry run mode
+python fix_work_item_descriptions.py --live       # Execute changes
+python fix_work_item_descriptions.py --live --confirm  # Skip confirmation
+
+# Move test cases to proper area path
+python move_test_cases.py                         # Dry run mode
+python move_test_cases.py --live --confirm        # Execute move
+
+# Analyze section headers in work items
+python check_section_headers.py
+
+# Clean up project work items
+python tools/cleanup_ado_workitems.py --confirm
+```
+
+#### Development and Testing
+```bash
+# Run comprehensive test suite
+python tools/test_complete_chain.py
+
+# Test specific components
+python tools/test_[component_name].py
+
+# Debug specific issues
+python tools/debug_[component_name].py
+```
 
 ### Usage Examples
 
-#### Interactive Mode
+#### AI Pipeline Examples
 ```bash
 # Full pipeline with interactive input
 python tools/run_pipeline.py
@@ -105,55 +224,92 @@ python tools/run_pipeline.py --run epic
 
 # QA testing only with interactive input
 python tools/run_pipeline.py --run qa
-```
 
-#### File-Based Mode
-```bash
 # Complete pipeline from vision file
-python tools/run_pipeline.py --run all --input samples/full_vision.yaml
+python tools/run_pipeline.py --run all --input samples/grit_vision.yaml
 
 # Generate epics only from vision
-python tools/run_pipeline.py --run epic --input samples/vision_only.yaml
+python tools/run_pipeline.py --run epic --input samples/taskmaster_vision.yaml
 
 # Generate features from existing epics
-python tools/run_pipeline.py --run feature --input samples/epics_with_vision.yaml
+python tools/run_pipeline.py --run feature --input output/epics_20250701_153000.yaml
 
 # Generate developer tasks from existing features
-python tools/run_pipeline.py --run developer --input output/backlog_20250630_171414.yaml
+python tools/run_pipeline.py --run developer --input output/backlog_20250701_153000.yaml
 
 # Generate QA test cases from existing features
-python tools/run_pipeline.py --run qa --input output/backlog_20250630_171414.yaml
+python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
+```
 
-# Resume from specific stage
-python tools/run_pipeline.py --run feature --input output/epics_and_features_20250630_165816.yaml
+#### Work Item Management Examples
+```bash
+# Fix all work item descriptions (preview changes)
+python fix_work_item_descriptions.py
+
+# Actually fix work item descriptions
+python fix_work_item_descriptions.py --live --confirm
+
+# Move all test cases to "Backlog Automation\Grit" area path
+python move_test_cases.py --live --confirm
+
+# Check what section headers exist in your work items
+python check_section_headers.py
+
+# Update area paths for all work items
+python tools/update_work_item_paths.py
+
+# Clean up all work items in the project
+python tools/cleanup_ado_workitems.py --confirm
+```
+
+#### Project Context Examples
+```bash
+# Run with project type context
+python tools/run_pipeline.py --project-type fintech --project-name "CryptoWallet Pro"
+
+# Custom context variables  
+python tools/run_pipeline.py \
+  --project-name "MyApp" \
+  --project-type ecommerce \
+  --input samples/ecotracker_vision.yaml
+
+# Healthcare project with compliance focus
+python tools/run_pipeline.py --project-type healthcare --project-name "PatientPortal"
 ```
 
 ## 📁 Input File Formats
 
-### 1. Vision Only (`samples/vision_only.yaml`)
+### Sample Vision Files
+The project includes several sample vision files in the `samples/` directory:
+
+- `grit_vision.yaml` - Logistics management system
+- `taskmaster_vision.yaml` - Task management application
+- `ecotracker_vision.yaml` - Environmental tracking app
+- `oil_gas_visions.yaml` - Oil & gas industry applications
+- `shipping_logistics_visions.yaml` - Shipping and logistics solutions
+- `features_with_qa.yaml` - Feature examples with QA validation
+
+### 1. Vision Only (`samples/taskmaster_vision.yaml`)
 ```yaml
 product_vision: >
-  Build a mobile-first budgeting app for college students
-  that tracks spending, sets saving goals, and provides 
-  financial insights to help them manage money effectively.
+  Build a mobile-first task management app for remote teams
+  that enables seamless collaboration, real-time updates, and
+  productivity tracking across distributed workforces.
 ```
 
-### 2. Vision with Epics (`samples/epics_with_vision.yaml`)
+### 2. Complete Vision with Context (`samples/grit_vision.yaml`)
 ```yaml
 product_vision: >
-  Build a mobile-first budgeting app for college students
-  that tracks spending, sets saving goals, and provides insights.
+  Empower enterprise logistics managers to achieve operational excellence
+  through intelligent shipment monitoring that reduces costs by 15-25%,
+  prevents delays through predictive analytics, and provides actionable
+  mid-tier intelligence.
 
-epics:
-  - title: "Expense Tracking System"
-    description: "Enable users to record, categorize, and monitor daily expenses"
-    priority: "High"
-    business_value: "Essential for core app functionality"
-    
-  - title: "Savings Goal Management"
-    description: "Allow users to set, track, and achieve savings targets"
-    priority: "Medium"
-    business_value: "Drives user engagement and retention"
+project_context:
+  industry: "logistics"
+  target_users: ["Logistics Managers", "Supply Chain Directors"]
+  tech_stack: "Python, React, Azure"
+  compliance_requirements: ["SOC2", "ISO27001"]
 ```
 
 ### 3. Complete Backlog Structure
@@ -353,6 +509,39 @@ Automatically creates work items in Azure DevOps:
 - **Microsoft Teams** - Real-time pipeline status updates
 - **Email** - Detailed summary reports with markdown formatting
 
+## 🔧 Work Item Management Features
+
+The system includes powerful utilities for managing Azure DevOps work items:
+
+### Description Formatting (`fix_work_item_descriptions.py`)
+- **HTML Formatting**: Converts plain text descriptions to proper HTML
+- **Section Header Formatting**: Ensures consistent formatting of section headers like **Acceptance Criteria:**, **Business Value:**, etc.
+- **Bullet Point Organization**: Properly formats bullet lists with appropriate line breaks
+- **Bulk Processing**: Can process hundreds of work items in a single operation
+- **Safe Operations**: Dry-run mode to preview changes before applying
+
+### Test Case Organization (`move_test_cases.py`)
+- **Area Path Management**: Moves test cases to proper organizational structure
+- **Bulk Operations**: Handles large numbers of test cases efficiently
+- **Safety Features**: Confirmation prompts and dry-run capabilities
+- **Progress Tracking**: Real-time progress updates during operations
+
+### Work Item Analysis (`check_section_headers.py`)
+- **Section Header Discovery**: Identifies all section headers used in work items
+- **Formatting Audit**: Analyzes formatting consistency across work items
+- **Quality Assessment**: Provides insights into work item structure quality
+
+### Project Maintenance Tools
+- **Path Updates** (`tools/update_work_item_paths.py`): Update area and iteration paths
+- **Bulk Cleanup** (`tools/cleanup_ado_workitems.py`): Remove all work items from a project
+- **Debug Tools**: Various debugging utilities for troubleshooting
+
+### Key Benefits
+- **Consistency**: Ensures all work items follow the same formatting standards
+- **Efficiency**: Bulk operations save hours of manual work
+- **Quality**: Improves readability and professionalism of work items
+- **Maintenance**: Simplifies ongoing project maintenance tasks
+
 ## 🔬 QA Testing Capabilities
 
 The QA Tester Agent provides comprehensive testing analysis for each feature:
@@ -414,60 +603,136 @@ python tools/test_feature_decomposer.py
 python tools/test_developer_agent.py
 python tools/test_qa_tester_agent.py
 
+# Test specialized capabilities
+python tools/test_qa_individual_capabilities.py
+python tools/test_qa_quality_assessment.py
+python tools/test_user_story_decomposition.py
+```
+
+### Test Agent Chains
+```bash
 # Test agent chains
 python tools/test_epic_to_feature_chain.py
 python tools/test_epic_feature_task_chain.py
 python tools/test_epic_feature_task_qa_chain.py
+python tools/test_complete_chain.py
+
+# Test end-to-end workflows
+python tools/test_end_to_end.py
+python tools/test_grit_system.py
+```
+
+### Test Integrations
+```bash
+# Test Azure DevOps integration
+python tools/test_azure_devops.py
 
 # Test notifications
 python tools/test_notifications.py
+
+# Test prompt system
+python tools/test_prompt_system.py
+python tools/demo_prompt_system.py
 ```
 
-### Validation Tools
+### Validation and Debugging Tools
 ```bash
 # Validate output structure
-python tools/validation_tool.py --input output/backlog_20250630_171414.yaml
+python tools/validation_tool.py --input output/backlog_20250701_153000.yaml
 
-# Estimate complexity
-python tools/estimation_tool.py --input output/backlog_20250630_171414.yaml
+# Debug specific issues
+python tools/debug_agent_lockup.py
+python tools/debug_epic_output.py
+python tools/debug_feature_decomposer.py
+python tools/debug_work_item_creation.py
+
+# Test business value formats
+python tools/test_business_value_formats.py
+
+# Test structure validation
+python tools/test_structure_validation.py
 ```
 
 ## 📊 Example Workflows
 
-### Scenario 1: New Product Development
+### Scenario 1: New Product Development (Complete Pipeline)
 ```bash
-# Start with product vision
-python tools/run_pipeline.py --run all --input samples/new_product_vision.yaml
+# Start with product vision - complete AI-driven backlog generation
+python tools/run_pipeline.py --run all --input samples/grit_vision.yaml --project-type saas
+
+# Output: Complete backlog with epics, features, tasks, and test cases
 ```
 
-### Scenario 2: Epic Refinement
+### Scenario 2: Work Item Management & Organization
+```bash
+# Fix formatting issues in existing work items
+python fix_work_item_descriptions.py --live --confirm
+
+# Organize test cases into proper area paths
+python move_test_cases.py --live --confirm
+
+# Update area and iteration paths for all work items
+python tools/update_work_item_paths.py
+
+# Audit and validate work item structure
+python check_section_headers.py
+```
+
+### Scenario 3: Epic Refinement & Feature Planning
 ```bash  
 # Generate features for existing epics
-python tools/run_pipeline.py --run feature --input samples/existing_epics.yaml
+python tools/run_pipeline.py --run feature --input output/epics_20250701_153000.yaml
+
+# Generate comprehensive test cases for features
+python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
 ```
 
-### Scenario 3: Sprint Planning
+### Scenario 4: Sprint Planning & Task Generation
 ```bash
 # Generate developer tasks for upcoming sprint
 python tools/run_pipeline.py --run developer --input output/features_ready_for_dev.yaml
+
+# Validate and estimate task complexity
+python tools/validation_tool.py --input output/backlog_with_tasks.yaml
 ```
 
-### Scenario 4: QA Testing Focus
+### Scenario 5: Quality Assurance Focus
 ```bash
 # Generate comprehensive test cases for existing features
 python tools/run_pipeline.py --run qa --input output/features_ready_for_testing.yaml
+
+# Test QA capabilities individually
+python tools/test_qa_individual_capabilities.py
+python tools/test_qa_quality_assessment.py
 ```
 
-### Scenario 5: Iterative Development
+### Scenario 6: Project Cleanup & Maintenance
 ```bash
-# 1. Generate epics
-python tools/run_pipeline.py --run epic --input samples/vision.yaml
+# Clean up test environment
+python tools/cleanup_ado_workitems.py --confirm
+
+# Debug issues with work item creation
+python tools/debug_work_item_creation.py
+
+# Validate project structure
+python tools/test_structure_validation.py
+```
+
+### Scenario 7: Iterative Development Process
+```bash
+# 1. Generate epics from vision
+python tools/run_pipeline.py --run epic --input samples/taskmaster_vision.yaml
 
 # 2. Review and refine epics, then generate features  
-python tools/run_pipeline.py --run feature --input output/epics_20250630_171414.yaml
+python tools/run_pipeline.py --run feature --input output/epics_20250701_153000.yaml
 
-# 3. Review features, then generate tasks
-python tools/run_pipeline.py --run developer --input output/backlog_20250630_171414.yaml
+# 3. Generate tasks and organize work items
+python tools/run_pipeline.py --run developer --input output/backlog_20250701_153000.yaml
+python tools/update_work_item_paths.py
+
+# 4. Generate test cases and validate
+python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
+python tools/validation_tool.py --input output/final_backlog.yaml
 ```
 
 ## 🛠️ Development
@@ -475,16 +740,44 @@ python tools/run_pipeline.py --run developer --input output/backlog_20250630_171
 ### Project Structure
 ```
 agile-backlog-automation/
-├── agents/               # AI agent implementations
-├── config/              # Configuration management
-├── integrators/         # External service integrations  
-├── output/              # Generated backlog outputs
-├── prompts/             # Agent prompt templates
-├── supervisor/          # Pipeline orchestration
-├── tools/               # CLI tools and tests
-├── utils/               # Shared utilities
-├── requirements.txt     # Python dependencies
-└── README.md           # This file
+├── agents/                    # AI agent implementations
+│   ├── base_agent.py         # Base class for all agents
+│   ├── epic_strategist.py    # Epic generation agent
+│   ├── feature_decomposer.py # Feature breakdown agent
+│   ├── developer_agent.py    # Task creation agent
+│   └── qa_tester_agent.py    # Test case generation agent
+├── config/                   # Configuration management
+│   ├── config_loader.py      # Configuration loading utilities
+│   └── settings.yaml         # Agent and workflow settings
+├── docs/                     # Documentation
+│   ├── PROMPT_SYSTEM_GUIDE.md
+│   ├── QA_TESTER_AGENT_QUALITY_REPORT.md
+│   └── SUPERVISOR_IMPLEMENTATION.md
+├── integrators/              # External service integrations
+│   └── azure_devops_api.py   # Azure DevOps API integration
+├── logs/                     # Application logs
+├── output/                   # Generated backlog outputs
+├── prompts/                  # Agent prompt templates
+├── samples/                  # Sample input files
+│   ├── grit_vision.yaml
+│   ├── taskmaster_vision.yaml
+│   └── ecotracker_vision.yaml
+├── supervisor/               # Pipeline orchestration
+├── tools/                    # CLI tools and utilities
+│   ├── run_pipeline.py       # Main pipeline runner
+│   ├── cleanup_ado_workitems.py # ADO cleanup utility
+│   ├── update_work_item_paths.py # Path management
+│   └── test_*.py             # Test suites
+├── utils/                    # Shared utilities
+│   ├── prompt_manager.py     # Prompt template management
+│   ├── project_context.py    # Project context handling
+│   ├── notifier.py           # Notification system
+│   └── logger.py             # Logging utilities
+├── fix_work_item_descriptions.py # Work item formatter
+├── move_test_cases.py        # Test case organizer
+├── check_section_headers.py  # Work item auditor
+├── requirements.txt          # Python dependencies
+└── README.md                 # This file
 ```
 
 ### Adding Custom Agents
