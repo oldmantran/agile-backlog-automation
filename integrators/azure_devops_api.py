@@ -3,6 +3,7 @@ Azure DevOps API Integration Module
 
 Handles creation and management of work items in Azure DevOps based on
 generated backlog artifacts (epics, features, tasks, test cases).
+Includes comprehensive test plan management following ADO best practices.
 """
 
 import os
@@ -22,10 +23,13 @@ class AzureDevOpsIntegrator:
     
     Supports:
     - Epic creation with business value and acceptance criteria
-    - Feature creation with tasks and test cases
+    - Feature creation with user stories and test plans
     - User Story/Task creation with estimates and assignments
+    - Test Plan creation with organized test suites
+    - Test Suite creation for user story grouping
     - Test Case creation with steps and expected results
-    - Hierarchical work item relationships (Epic -> Feature -> Task)
+    - Hierarchical work item relationships (Epic -> Feature -> User Story -> Task)
+    - Test organization (Test Plan -> Test Suite -> Test Case)
     """
     
     def __init__(self, config: Config):
@@ -48,22 +52,31 @@ class AzureDevOpsIntegrator:
         else:
             self.enabled = True
             
-        # API setup
-        self.org_base_url = f"https://dev.azure.com/{self.organization}/_apis"
+        # Initialize API endpoints
+        self.base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
         self.project_base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
+        self.work_items_url = f"{self.base_url}/wit/workitems"
+        self.test_plans_url = f"{self.base_url}/testplan/plans"
+        self.test_suites_url = f"{self.base_url}/testplan/suites"
+        
+        # Set up authentication
         self.auth = HTTPBasicAuth('', self.pat)
         self.headers = {
             'Content-Type': 'application/json-patch+json',
             'Accept': 'application/json'
         }
         
-        # Work item configuration
-        self.area_path = config.settings.get('project', {}).get('default_area_path', '')
-        self.iteration_path = config.settings.get('project', {}).get('default_iteration_path', '')
+        # Project configuration
+        self.area_path = config.get('project.default_area_path')
+        self.iteration_path = config.get('project.default_iteration_path')
+        
+        # Cache for created test plans and suites
+        self.test_plans_cache = {}
+        self.test_suites_cache = {}
         
     def create_work_items(self, backlog_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        Create all work items from backlog data in Azure DevOps.
+        Create all work items from backlog data in Azure DevOps with proper test plan organization.
         
         Args:
             backlog_data: Complete backlog with epics, features, user stories, tasks, and test cases
@@ -77,7 +90,7 @@ class AzureDevOpsIntegrator:
         created_items = []
         
         try:
-            self.logger.info("Starting Azure DevOps work item creation")
+            self.logger.info("Starting Azure DevOps work item creation with test plan organization")
             
             # Create epics first
             for epic_data in backlog_data.get('epics', []):
@@ -89,6 +102,12 @@ class AzureDevOpsIntegrator:
                     feature_item = self._create_feature(feature_data, epic_item['id'])
                     created_items.append(feature_item)
                     
+                    # Create test plan for this feature (following ADO best practices)
+                    test_plan = None
+                    if feature_data.get('test_cases') or any(story.get('test_cases') for story in feature_data.get('user_stories', [])):
+                        test_plan = self._create_test_plan(feature_data, feature_item['id'])
+                        created_items.append(test_plan)
+                    
                     # Create user stories for this feature
                     for user_story_data in feature_data.get('user_stories', []):
                         user_story_item = self._create_user_story(user_story_data, feature_item['id'])
@@ -98,13 +117,26 @@ class AzureDevOpsIntegrator:
                         for task_data in user_story_data.get('tasks', []):
                             task_item = self._create_task(task_data, user_story_item['id'])
                             created_items.append(task_item)
+                        
+                        # Create test suite and test cases for this user story (improved organization)
+                        if user_story_data.get('test_cases') and test_plan:
+                            test_suite = self._create_test_suite(user_story_data, test_plan['id'], user_story_item['id'])
+                            created_items.append(test_suite)
+                            
+                            for test_case_data in user_story_data.get('test_cases', []):
+                                test_item = self._create_test_case(test_case_data, user_story_item['id'], test_suite['id'])
+                                created_items.append(test_item)
                     
-                    # Create test cases for this feature (test cases link to features, not user stories)
-                    for test_case_data in feature_data.get('test_cases', []):
-                        test_item = self._create_test_case(test_case_data, feature_item['id'])
-                        created_items.append(test_item)
+                    # Handle feature-level test cases (create default suite if needed)
+                    if feature_data.get('test_cases') and test_plan:
+                        default_suite = self._create_default_test_suite(feature_data, test_plan['id'], feature_item['id'])
+                        created_items.append(default_suite)
+                        
+                        for test_case_data in feature_data.get('test_cases', []):
+                            test_item = self._create_test_case(test_case_data, feature_item['id'], default_suite['id'])
+                            created_items.append(test_item)
             
-            self.logger.info(f"Successfully created {len(created_items)} work items")
+            self.logger.info(f"Successfully created {len(created_items)} work items with organized test plans")
             return created_items
             
         except Exception as e:
@@ -206,8 +238,8 @@ class AzureDevOpsIntegrator:
         
         return task_item
     
-    def _create_test_case(self, test_case_data: Dict[str, Any], parent_feature_id: int) -> Dict[str, Any]:
-        """Create a Test Case work item."""
+    def _create_test_case(self, test_case_data: Dict[str, Any], parent_id: int, suite_id: int = None) -> Dict[str, Any]:
+        """Create a Test Case work item and optionally assign to a test suite."""
         fields = {
             '/fields/System.Title': test_case_data.get('title', 'Untitled Test Case'),
             '/fields/System.Description': test_case_data.get('description', ''),
@@ -223,8 +255,17 @@ class AzureDevOpsIntegrator:
         
         test_item = self._create_work_item('Test Case', fields)
         
-        # Link to parent feature
-        self._create_parent_link(test_item['id'], parent_feature_id)
+        # Link to parent (User Story or Feature)
+        self._create_parent_link(test_item['id'], parent_id)
+        
+        # Add to test suite if specified
+        if suite_id:
+            try:
+                self.add_test_cases_to_suite(suite_id, [test_item['id']])
+                test_item['suite_id'] = suite_id
+                self.logger.info(f"Test case {test_item['id']} added to test suite {suite_id}")
+            except Exception as e:
+                self.logger.warning(f"Failed to add test case to suite: {e}")
         
         return test_item
     
@@ -541,3 +582,326 @@ class AzureDevOpsIntegrator:
         """Get all available iteration paths in the project."""
         # TODO: Implement iteration path retrieval
         pass
+    
+    def create_test_plan(self, plan_name: str, description: str = '', area_path: str = '', 
+                        iteration_path: str = '', is_default: bool = False) -> Dict[str, Any]:
+        """Create a new test plan in Azure DevOps."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Check if the test plan already exists
+        existing_plan = self._find_test_plan_by_name(plan_name)
+        if existing_plan:
+            self.logger.info(f"Test plan '{plan_name}' already exists (ID: {existing_plan['id']})")
+            return existing_plan
+        
+        url = f"{self.test_plans_url}?api-version=7.0"
+        
+        # Test plans require a specific JSON structure
+        plan_data = {
+            "name": plan_name,
+            "description": description,
+            "areaPath": area_path or self.area_path,
+            "iterationPath": iteration_path or self.iteration_path,
+            "isDefault": is_default
+        }
+        
+        # Remove empty values
+        plan_data = {k: v for k, v in plan_data.items() if v is not None}
+        
+        try:
+            response = requests.post(
+                url,
+                json=plan_data,
+                auth=self.auth,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            
+            test_plan = response.json()
+            
+            # Cache the created test plan
+            self.test_plans_cache[test_plan['id']] = test_plan
+            
+            self.logger.info(f"Created test plan: {test_plan['name']} (ID: {test_plan['id']})")
+            return test_plan
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create test plan: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
+    
+    def _find_test_plan_by_name(self, plan_name: str) -> Optional[Dict[str, Any]]:
+        """Find an existing test plan by name."""
+        url = f"{self.test_plans_url}?api-version=7.0&$filter=name eq '{plan_name}'"
+        
+        try:
+            response = requests.get(url, auth=self.auth)
+            response.raise_for_status()
+            
+            plans = response.json().get('value', [])
+            if plans:
+                return plans[0]  # Return the first matching plan
+            
+            return None
+        
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to retrieve test plans: {e}")
+            raise
+    
+    def create_test_suite(self, suite_name: str, plan_id: int, 
+                        parent_suite_id: Optional[int] = None) -> Dict[str, Any]:
+        """Create a new test suite under a test plan."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Check if the test suite already exists
+        existing_suite = self._find_test_suite_by_name(suite_name, plan_id)
+        if existing_suite:
+            self.logger.info(f"Test suite '{suite_name}' already exists (ID: {existing_suite['id']})")
+            return existing_suite
+        
+        url = f"{self.test_suites_url}?api-version=7.0"
+        
+        # Test suites require a specific JSON structure
+        suite_data = {
+            "name": suite_name,
+            "planId": plan_id,
+            "parentSuiteId": parent_suite_id
+        }
+        
+        # Remove empty values
+        suite_data = {k: v for k, v in suite_data.items() if v is not None}
+        
+        try:
+            response = requests.post(
+                url,
+                json=suite_data,
+                auth=self.auth,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            
+            test_suite = response.json()
+            
+            # Cache the created test suite
+            self.test_suites_cache[test_suite['id']] = test_suite
+            
+            self.logger.info(f"Created test suite: {test_suite['name']} (ID: {test_suite['id']})")
+            return test_suite
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create test suite: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
+    
+    def _find_test_suite_by_name(self, suite_name: str, plan_id: int) -> Optional[Dict[str, Any]]:
+        """Find an existing test suite by name within a test plan."""
+        url = f"{self.test_suites_url}?api-version=7.0&$filter=name eq '{suite_name}' and planId eq {plan_id}"
+        
+        try:
+            response = requests.get(url, auth=self.auth)
+            response.raise_for_status()
+            
+            suites = response.json().get('value', [])
+            if suites:
+                return suites[0]  # Return the first matching suite
+            
+            return None
+        
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to retrieve test suites: {e}")
+            raise
+    
+    def add_test_cases_to_suite(self, suite_id: int, test_case_ids: List[int]):
+        """Add existing test cases to a test suite."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        url = f"{self.test_suites_url}/{suite_id}?api-version=7.0"
+        
+        # Test suites require a specific JSON structure for adding test cases
+        suite_update_data = {
+            "testCaseIds": test_case_ids
+        }
+        
+        try:
+            response = requests.patch(
+                url,
+                json=suite_update_data,
+                auth=self.auth,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            
+            self.logger.info(f"Added test cases to suite ID: {suite_id}")
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to add test cases to suite: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
+    
+    def _create_test_plan(self, feature_data: Dict[str, Any], feature_id: int) -> Dict[str, Any]:
+        """Create a Test Plan for a feature following ADO best practices."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Check cache first
+        cache_key = f"feature_{feature_id}"
+        if cache_key in self.test_plans_cache:
+            return self.test_plans_cache[cache_key]
+        
+        plan_name = f"Test Plan - {feature_data.get('title', 'Unknown Feature')}"
+        plan_description = f"Test plan for feature: {feature_data.get('title', 'Unknown Feature')}\n\n"
+        
+        if feature_data.get('description'):
+            plan_description += f"Feature Description:\n{feature_data['description']}\n\n"
+        
+        if feature_data.get('acceptance_criteria'):
+            plan_description += "Acceptance Criteria:\n"
+            for criterion in feature_data['acceptance_criteria']:
+                plan_description += f"- {criterion}\n"
+        
+        plan_data = {
+            "name": plan_name,
+            "description": plan_description,
+            "areaPath": self.area_path if self.area_path else f"{self.project}",
+            "iteration": self.iteration_path if self.iteration_path else f"{self.project}",
+            "state": "Active"
+        }
+        
+        url = f"{self.test_plans_url}?api-version=7.0"
+        
+        try:
+            response = requests.post(
+                url,
+                json=plan_data,
+                auth=self.auth,
+                headers={'Content-Type': 'application/json', 'Accept': 'application/json'}
+            )
+            response.raise_for_status()
+            
+            test_plan = response.json()
+            
+            # Cache the test plan
+            self.test_plans_cache[cache_key] = test_plan
+            
+            self.logger.info(f"Created test plan: {plan_name} (ID: {test_plan['id']})")
+            
+            return test_plan
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create test plan: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
+    
+    def _create_test_suite(self, user_story_data: Dict[str, Any], test_plan_id: int, user_story_id: int) -> Dict[str, Any]:
+        """Create a Test Suite for a user story within a test plan."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Check cache first
+        cache_key = f"plan_{test_plan_id}_story_{user_story_id}"
+        if cache_key in self.test_suites_cache:
+            return self.test_suites_cache[cache_key]
+        
+        suite_name = f"User Story: {user_story_data.get('title', 'Unknown User Story')}"
+        suite_description = f"Test suite for user story: {user_story_data.get('title', 'Unknown User Story')}"
+        
+        if user_story_data.get('description'):
+            suite_description += f"\n\nUser Story Description:\n{user_story_data['description']}"
+        
+        if user_story_data.get('acceptance_criteria'):
+            suite_description += "\n\nAcceptance Criteria:\n"
+            for criterion in user_story_data['acceptance_criteria']:
+                suite_description += f"- {criterion}\n"
+        
+        suite_data = {
+            "name": suite_name,
+            "description": suite_description,
+            "suiteType": "StaticTestSuite",  # Static test suite for organized test cases
+            "parentSuite": {
+                "id": 1  # Root suite ID (typically 1 for the plan's root suite)
+            }
+        }
+        
+        url = f"{self.test_plans_url}/{test_plan_id}/suites?api-version=7.0"
+        
+        try:
+            response = requests.post(
+                url,
+                json=suite_data,
+                auth=self.auth,
+                headers={'Content-Type': 'application/json', 'Accept': 'application/json'}
+            )
+            response.raise_for_status()
+            
+            test_suite = response.json()
+            
+            # Cache the test suite
+            self.test_suites_cache[cache_key] = test_suite
+            
+            self.logger.info(f"Created test suite: {suite_name} (ID: {test_suite['id']}) in plan {test_plan_id}")
+            
+            return test_suite
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create test suite: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
+    
+    def _create_default_test_suite(self, feature_data: Dict[str, Any], test_plan_id: int, feature_id: int) -> Dict[str, Any]:
+        """Create a default Test Suite for feature-level test cases."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Check cache first
+        cache_key = f"plan_{test_plan_id}_feature_{feature_id}_default"
+        if cache_key in self.test_suites_cache:
+            return self.test_suites_cache[cache_key]
+        
+        suite_name = f"Feature Tests: {feature_data.get('title', 'Unknown Feature')}"
+        suite_description = f"Default test suite for feature-level test cases: {feature_data.get('title', 'Unknown Feature')}"
+        
+        if feature_data.get('description'):
+            suite_description += f"\n\nFeature Description:\n{feature_data['description']}"
+        
+        suite_data = {
+            "name": suite_name,
+            "description": suite_description,
+            "suiteType": "StaticTestSuite",
+            "parentSuite": {
+                "id": 1  # Root suite ID
+            }
+        }
+        
+        url = f"{self.test_plans_url}/{test_plan_id}/suites?api-version=7.0"
+        
+        try:
+            response = requests.post(
+                url,
+                json=suite_data,
+                auth=self.auth,
+                headers={'Content-Type': 'application/json', 'Accept': 'application/json'}
+            )
+            response.raise_for_status()
+            
+            test_suite = response.json()
+            
+            # Cache the test suite
+            self.test_suites_cache[cache_key] = test_suite
+            
+            self.logger.info(f"Created default test suite: {suite_name} (ID: {test_suite['id']}) in plan {test_plan_id}")
+            
+            return test_suite
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create default test suite: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
