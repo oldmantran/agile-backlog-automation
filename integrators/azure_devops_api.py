@@ -67,8 +67,9 @@ class AzureDevOpsIntegrator:
         }
         
         # Project configuration
-        self.area_path = config.get('project.default_area_path')
-        self.iteration_path = config.get('project.default_iteration_path')
+        paths = config.get_project_paths()
+        self.area_path = paths['area']
+        self.iteration_path = paths['iteration']
         
         # Cache for created test plans and suites
         self.test_plans_cache = {}

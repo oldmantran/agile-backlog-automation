@@ -538,3 +538,9 @@ class WorkflowSupervisor:
             product_vision=input_data.get('product_vision', ''),
             stages=remaining_stages
         )
+
+    def receive_sweeper_report(self, report):
+        print("[SUPERVISOR RECEIVED REPORT]")
+        import json
+        print(json.dumps(report, indent=2))
+        # Here, add logic to route issues to the appropriate agent based on type/description
