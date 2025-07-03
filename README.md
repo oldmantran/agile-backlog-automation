@@ -1,3 +1,21 @@
+# 🧠 Agile Backlog Automation
+
+## 🚨 Recent Updates (2024-07)
+- **Test Case Hierarchy Analysis & Automation:**
+  - Added scripts to analyze and reorganize test cases, ensuring they are parented by User Stories (not Features) for best practice in Azure DevOps.
+  - Created a script to identify test cases directly under Features and (optionally) auto-create User Stories to parent them.
+  - Enhanced logging and dry-run support for all reorganization scripts.
+- **Environment Variable Handling:**
+  - Standardized on `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` for all scripts.
+  - All scripts now robustly load the `.env` file from the project root, regardless of working directory.
+  - Fixed Azure DevOps authentication to always use base64-encoded PATs.
+- **QA Tester Agent & Test Plan Automation:**
+  - Improved prompt and logic for the QA Tester Agent to support test case prioritization and grouping.
+  - Prepared for automated creation of Test Plans and Suites based on a clean Feature → User Story → Test Case hierarchy.
+- **Debugging & Validation:**
+  - Added scripts and debug tools to verify work item relationships and Azure DevOps API responses.
+  - Improved error handling and step-by-step logging for all automation scripts.
+
 # 🧠 Agile Backlog Automatio## 🏗️ Architecture
 
 ### AI Agents
@@ -97,7 +115,7 @@ python tools/test_end_to_end.py
 - **📈 Estimation Tools**: Story point and time estimation capabilities
 - **🧪 Testing Framework**: Comprehensive test suites for all components
 
-## �️ Architecture
+## 🛠️ Architecture
 
 ### AI Agents
 1. **Epic Strategist** - Transforms product vision into high-level epics
@@ -809,7 +827,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## � Support
+## 🤝 Support
 
 For questions, issues, or feature requests:
 - Open an issue on GitHub
