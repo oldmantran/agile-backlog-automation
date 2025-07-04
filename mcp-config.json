@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-filesystem", "x:\\Programs\\agile-backlog-automation"],
-      "env": {}
-    }
-  }
-}
