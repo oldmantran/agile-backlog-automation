@@ -540,7 +540,161 @@ class WorkflowSupervisor:
         )
 
     def receive_sweeper_report(self, report):
-        print("[SUPERVISOR RECEIVED REPORT]")
-        import json
-        print(json.dumps(report, indent=2))
-        # Here, add logic to route issues to the appropriate agent based on type/description
+        """
+        Process backlog sweeper reports and route discrepancies to appropriate agents.
+        
+        Args:
+            report: Structured report from BacklogSweeperAgent containing:
+                - discrepancies_by_priority: High/medium/low priority issues
+                - agent_assignments: Discrepancies grouped by suggested agent
+                - dashboard_requirements: Dashboard and reporting needs
+                - recommended_actions: Actionable recommendations
+        """
+        self.logger.info("Received backlog sweeper report")
+        
+        try:
+            # Log report summary
+            summary = report.get('summary', {})
+            self.logger.info(f"Sweep Summary: {summary.get('total_discrepancies', 0)} discrepancies found")
+            self.logger.info(f"Priority breakdown - High: {summary.get('high_priority_count', 0)}, "
+                           f"Medium: {summary.get('medium_priority_count', 0)}, "
+                           f"Low: {summary.get('low_priority_count', 0)}")
+            
+            # Process agent assignments
+            agent_assignments = report.get('agent_assignments', {})
+            
+            for agent_name, discrepancies in agent_assignments.items():
+                if discrepancies:
+                    self.logger.info(f"Routing {len(discrepancies)} discrepancies to {agent_name}")
+                    self._route_discrepancies_to_agent(agent_name, discrepancies)
+            
+            # Handle dashboard requirements
+            dashboard_requirements = report.get('dashboard_requirements', [])
+            if dashboard_requirements:
+                self.logger.info(f"Processing {len(dashboard_requirements)} dashboard requirements")
+                self._handle_dashboard_requirements(dashboard_requirements)
+            
+            # Process recommendations
+            recommendations = report.get('recommended_actions', [])
+            if recommendations:
+                self.logger.info("Action Recommendations:")
+                for rec in recommendations:
+                    self.logger.info(f"  - {rec}")
+            
+            # Send notifications if critical issues found
+            high_priority_count = summary.get('high_priority_count', 0)
+            if high_priority_count > 0:
+                self._send_critical_issue_notification(report)
+                
+        except Exception as e:
+            self.logger.error(f"Error processing sweeper report: {e}")
+            import json
+            self.logger.debug(f"Report content: {json.dumps(report, indent=2)}")
+    
+    def _route_discrepancies_to_agent(self, agent_name: str, discrepancies: List[Dict[str, Any]]):
+        """Route specific discrepancies to the appropriate agent for remediation."""
+        
+        # Group discrepancies by work item for efficient processing
+        work_item_groups = {}
+        for discrepancy in discrepancies:
+            wi_id = discrepancy.get('work_item_id')
+            if wi_id not in work_item_groups:
+                work_item_groups[wi_id] = []
+            work_item_groups[wi_id].append(discrepancy)
+        
+        self.logger.info(f"Routing to {agent_name}: {len(discrepancies)} discrepancies across {len(work_item_groups)} work items")
+        
+        # Route to appropriate agent
+        if agent_name == 'epic_strategist' and hasattr(self, 'agents'):
+            self._handle_epic_strategist_discrepancies(work_item_groups)
+        elif agent_name == 'decomposition_agent' and hasattr(self, 'agents'):
+            self._handle_decomposition_discrepancies(work_item_groups)
+        elif agent_name == 'developer_agent' and hasattr(self, 'agents'):
+            self._handle_developer_discrepancies(work_item_groups)
+        elif agent_name == 'qa_tester_agent' and hasattr(self, 'agents'):
+            self._handle_qa_tester_discrepancies(work_item_groups)
+        else:
+            self.logger.warning(f"Unknown agent '{agent_name}' or agent not available. Logging discrepancies for manual review.")
+            for wi_id, wi_discrepancies in work_item_groups.items():
+                for disc in wi_discrepancies:
+                    self.logger.warning(f"Manual Review Required - Work Item {wi_id}: {disc.get('description', 'No description')}")
+    
+    def _handle_epic_strategist_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require Epic Strategist intervention."""
+        for wi_id, discrepancies in work_item_groups.items():
+            self.logger.info(f"Epic Strategist: Reviewing work item {wi_id}")
+            for disc in discrepancies:
+                self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
+                # In a full implementation, you would call:
+                # self.agents['epic_strategist'].remediate_discrepancy(disc)
+    
+    def _handle_decomposition_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require Decomposition Agent intervention."""
+        for wi_id, discrepancies in work_item_groups.items():
+            self.logger.info(f"Decomposition Agent: Reviewing work item {wi_id}")
+            for disc in discrepancies:
+                self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
+                # In a full implementation, you would call:
+                # self.agents['decomposition_agent'].remediate_discrepancy(disc)
+    
+    def _handle_developer_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require Developer Agent intervention."""
+        for wi_id, discrepancies in work_item_groups.items():
+            self.logger.info(f"Developer Agent: Reviewing work item {wi_id}")
+            for disc in discrepancies:
+                self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
+                # In a full implementation, you would call:
+                # self.agents['developer_agent'].remediate_discrepancy(disc)
+    
+    def _handle_qa_tester_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require QA Tester Agent intervention."""
+        for wi_id, discrepancies in work_item_groups.items():
+            self.logger.info(f"QA Tester Agent: Reviewing work item {wi_id}")
+            for disc in discrepancies:
+                self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
+                # In a full implementation, you would call:
+                # self.agents['qa_tester_agent'].remediate_discrepancy(disc)
+    
+    def _handle_dashboard_requirements(self, requirements: List[Dict[str, Any]]):
+        """Process dashboard and reporting requirements."""
+        for req in requirements:
+            component = req.get('component', 'unknown')
+            description = req.get('description', 'No description')
+            priority = req.get('priority', 'medium')
+            self.logger.info(f"Dashboard Requirement ({priority}): {component} - {description}")
+            
+            # In a full implementation, you would:
+            # - Check if dashboard component exists
+            # - Update or create dashboard widgets as needed
+            # - Schedule regular updates
+    
+    def _send_critical_issue_notification(self, report: Dict[str, Any]):
+        """Send notification for critical issues found during sweep."""
+        try:
+            high_priority = report.get('discrepancies_by_priority', {}).get('high', [])
+            if not high_priority:
+                return
+                
+            # Create notification message
+            message = f"🚨 Backlog Sweep Alert: {len(high_priority)} high-priority issues found\n\n"
+            
+            # Group by type for summary
+            type_counts = {}
+            for disc in high_priority:
+                disc_type = disc.get('type', 'unknown')
+                type_counts[disc_type] = type_counts.get(disc_type, 0) + 1
+            
+            message += "Issue Summary:\n"
+            for issue_type, count in type_counts.items():
+                message += f"  • {issue_type}: {count} items\n"
+            
+            message += f"\nTotal work items affected: {len(set(d.get('work_item_id') for d in high_priority if d.get('work_item_id')))}"
+            
+            # Send notification using existing notifier
+            if hasattr(self, 'notifier'):
+                self.notifier.send_alert("Backlog Critical Issues", message)
+            else:
+                self.logger.warning(f"Critical issues notification: {message}")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to send critical issue notification: {e}")

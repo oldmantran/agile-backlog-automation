@@ -25,6 +25,17 @@ agents:
   qa_tester_agent:
     prompt_file: "prompts/qa_tester_agent.txt"
     test_case_format: "gherkin"
+  backlog_sweeper_agent:
+    enabled: true
+    schedule: "0 12 * * *"  # Daily at 12:00 UTC (cron format)
+    acceptance_criteria:
+      min_criteria_count: 3
+      max_criteria_count: 8
+      require_bdd_format: true
+      require_functional_and_nonfunctional: true
+    severity_thresholds:
+      critical_notification_count: 5  # Send notifications when this many high-priority issues found
+      max_discrepancies_per_run: 100  # Cap reporting to avoid overwhelming supervisor
 
 workflow:
   sequence:
