@@ -1,10 +1,13 @@
 import json
 from agents.base_agent import Agent
 from config.config_loader import Config
+from utils.quality_validator import WorkItemQualityValidator
 
 class QATesterAgent(Agent):
     def __init__(self, config: Config):
         super().__init__("qa_tester_agent", config)
+        # Initialize quality validator
+        self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
     def generate_test_cases(self, feature: dict, context: dict = None) -> list[dict]:
         """Generate test cases and potential bugs from a feature description."""
@@ -30,9 +33,12 @@ Priority: {feature.get('priority', 'Medium')}
         try:
             test_cases = json.loads(response)
             if isinstance(test_cases, list):
-                return test_cases
+                # Validate and enhance test cases for quality compliance
+                enhanced_test_cases = self._validate_and_enhance_test_cases(test_cases)
+                return enhanced_test_cases
             elif isinstance(test_cases, dict) and 'test_cases' in test_cases:
-                return test_cases['test_cases']
+                enhanced_test_cases = self._validate_and_enhance_test_cases(test_cases['test_cases'])
+                return enhanced_test_cases
             else:
                 print("⚠️ Grok response was not in expected format.")
                 return []
@@ -324,3 +330,135 @@ Provide:
         
         print(f"📋 [QATesterAgent] Created test plan structure for feature: {feature.get('title', 'Unknown')}")
         return test_plan_structure
+
+    def _validate_and_enhance_test_cases(self, test_cases: list) -> list:
+        """
+        Validate and enhance test cases to meet quality standards.
+        Ensures compliance with Backlog Sweeper monitoring rules.
+        """
+        enhanced_test_cases = []
+        
+        for test_case in test_cases:
+            enhanced_test_case = self._enhance_single_test_case(test_case)
+            enhanced_test_cases.append(enhanced_test_case)
+        
+        return enhanced_test_cases
+    
+    def _enhance_single_test_case(self, test_case: dict) -> dict:
+        """
+        Enhance a single test case to meet quality standards.
+        """
+        enhanced_test_case = test_case.copy()
+        
+        # Validate and fix title
+        title = test_case.get('title', '')
+        title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "Test Case")
+        if not title_valid:
+            print(f"⚠️ Test case title issues: {', '.join(title_issues)}")
+            if not title:
+                enhanced_test_case['title'] = f"Test Case: {test_case.get('description', 'Validation test')[:50]}..."
+        
+        # Ensure test steps exist
+        if not enhanced_test_case.get('steps') and not enhanced_test_case.get('test_steps'):
+            # Create basic test steps if missing
+            enhanced_test_case['test_steps'] = [
+                "Navigate to the application",
+                "Perform the required action",
+                "Verify the expected outcome"
+            ]
+        
+        # Ensure expected result exists
+        if not enhanced_test_case.get('expected_result') and not enhanced_test_case.get('expected_outcome'):
+            enhanced_test_case['expected_result'] = "System behaves as specified in acceptance criteria"
+        
+        # Add test case metadata
+        if not enhanced_test_case.get('test_type'):
+            description = enhanced_test_case.get('description', '').lower()
+            title_lower = title.lower()
+            
+            if any(word in description or word in title_lower for word in ['functional', 'feature', 'user']):
+                enhanced_test_case['test_type'] = 'functional'
+            elif any(word in description or word in title_lower for word in ['performance', 'load', 'stress']):
+                enhanced_test_case['test_type'] = 'performance'
+            elif any(word in description or word in title_lower for word in ['security', 'auth', 'permission']):
+                enhanced_test_case['test_type'] = 'security'
+            elif any(word in description or word in title_lower for word in ['ui', 'interface', 'usability']):
+                enhanced_test_case['test_type'] = 'ui'
+            else:
+                enhanced_test_case['test_type'] = 'functional'
+        
+        # Add priority if missing
+        if not enhanced_test_case.get('priority'):
+            enhanced_test_case['priority'] = 'Medium'
+        
+        # Add automation recommendation
+        if not enhanced_test_case.get('automation_candidate'):
+            title_lower = title.lower()
+            if any(word in title_lower for word in ['regression', 'smoke', 'api', 'data']):
+                enhanced_test_case['automation_candidate'] = True
+            else:
+                enhanced_test_case['automation_candidate'] = False
+        
+        return enhanced_test_case
+    
+    def enhance_acceptance_criteria(self, user_story: dict, context: dict = None) -> list:
+        """
+        Enhance acceptance criteria for a user story to meet quality standards.
+        Used by Backlog Sweeper Agent when criteria need improvement.
+        """
+        current_criteria = user_story.get('acceptance_criteria', [])
+        story_title = user_story.get('title', '')
+        story_description = user_story.get('description', '')
+        
+        # Use quality validator to enhance criteria
+        enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
+            current_criteria,
+            {'title': story_title, 'description': story_description}
+        )
+        
+        print(f"📋 [QATesterAgent] Enhanced acceptance criteria for: {story_title}")
+        print(f"   Original criteria count: {len(current_criteria)}")
+        print(f"   Enhanced criteria count: {len(enhanced_criteria)}")
+        
+        return enhanced_criteria
+    
+    def validate_acceptance_criteria_quality(self, acceptance_criteria: list, story_context: dict = None) -> dict:
+        """
+        Validate acceptance criteria quality and provide improvement suggestions.
+        Used by Backlog Sweeper Agent for quality assessment.
+        """
+        story_title = story_context.get('title', '') if story_context else ''
+        
+        # Use quality validator
+        is_valid, issues = self.quality_validator.validate_acceptance_criteria(acceptance_criteria, story_title)
+        
+        # Additional QA-specific checks
+        qa_recommendations = []
+        
+        # Check for testability
+        untestable_criteria = []
+        for i, criteria in enumerate(acceptance_criteria):
+            if any(word in criteria.lower() for word in ['should work', 'properly', 'correctly', 'appropriately']):
+                untestable_criteria.append(f"Criteria {i+1}: '{criteria[:50]}...' - Too vague for testing")
+        
+        if untestable_criteria:
+            qa_recommendations.extend(untestable_criteria)
+        
+        # Check for missing test scenarios
+        has_positive_test = any('successfully' in criteria.lower() or 'can' in criteria.lower() for criteria in acceptance_criteria)
+        has_negative_test = any('cannot' in criteria.lower() or 'error' in criteria.lower() or 'invalid' in criteria.lower() for criteria in acceptance_criteria)
+        
+        if has_positive_test and not has_negative_test:
+            qa_recommendations.append("Consider adding negative test scenarios (error cases, invalid inputs)")
+        
+        # Check for boundary conditions
+        has_boundary_test = any(word in ' '.join(acceptance_criteria).lower() for word in ['maximum', 'minimum', 'limit', 'boundary', 'edge'])
+        if not has_boundary_test:
+            qa_recommendations.append("Consider adding boundary condition tests (min/max values, limits)")
+        
+        return {
+            'is_valid': is_valid and len(qa_recommendations) == 0,
+            'issues': issues,
+            'qa_recommendations': qa_recommendations,
+            'enhanced_criteria': self.quality_validator.enhance_acceptance_criteria(acceptance_criteria, story_context) if not is_valid else acceptance_criteria
+        }

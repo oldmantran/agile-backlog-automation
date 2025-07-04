@@ -699,16 +699,16 @@ class BacklogSweeperAgent:
 
     def get_logger(self):
         """Get or create logger for this agent."""
-        if not hasattr(self, 'logger'):
+        if not hasattr(self, '_logger'):
             import logging
-            self.logger = logging.getLogger('backlog_sweeper')
-            if not self.logger.handlers:
+            self._logger = logging.getLogger('backlog_sweeper')
+            if not self._logger.handlers:
                 handler = logging.StreamHandler()
                 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
                 handler.setFormatter(formatter)
-                self.logger.addHandler(handler)
-                self.logger.setLevel(logging.INFO)
-        return self.logger
+                self._logger.addHandler(handler)
+                self._logger.setLevel(logging.INFO)
+        return self._logger
     
     @property
     def logger(self):
@@ -729,7 +729,7 @@ if __name__ == "__main__":
     agent = BacklogSweeperAgent(
         ado_client=ado_client, 
         supervisor_callback=supervisor.receive_sweeper_report,
-        config=config.config  # Pass the actual config dictionary
+        config=config.settings  # Pass the actual settings dictionary
     )
     
     print("[INFO] Starting scheduled backlog sweeper...")

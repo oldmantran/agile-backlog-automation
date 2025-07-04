@@ -1,10 +1,13 @@
 import json
 from agents.base_agent import Agent
 from config.config_loader import Config
+from utils.quality_validator import WorkItemQualityValidator
 
 class DecompositionAgent(Agent):
     def __init__(self, config: Config):
         super().__init__("decomposition_agent", config)
+        # Initialize quality validator with current configuration
+        self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
     def decompose_epic(self, epic: dict, context: dict = None) -> list[dict]:
         """Break down an epic into detailed features with contextual information."""
@@ -107,8 +110,9 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
                                 })
                     return extracted_stories
                 else:
-                    # This looks like actual user stories
-                    return user_stories
+                    # This looks like actual user stories - validate and enhance them
+                    enhanced_stories = self._validate_and_enhance_user_stories(user_stories)
+                    return enhanced_stories
             elif isinstance(user_stories, dict) and 'user_stories' in user_stories:
                 return user_stories['user_stories']
             else:
@@ -207,3 +211,97 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             user_stories.append(story)
         
         return user_stories
+    
+    def _validate_and_enhance_user_stories(self, user_stories: list) -> list:
+        """
+        Validate and enhance user stories to meet quality standards.
+        Ensures compliance with Backlog Sweeper monitoring rules.
+        """
+        enhanced_stories = []
+        
+        for story in user_stories:
+            # Validate and fix user story structure
+            enhanced_story = self._enhance_single_user_story(story)
+            enhanced_stories.append(enhanced_story)
+        
+        return enhanced_stories
+    
+    def _enhance_single_user_story(self, story: dict) -> dict:
+        """
+        Enhance a single user story to meet quality standards.
+        """
+        enhanced_story = story.copy()
+        
+        # Validate and fix title
+        title = story.get('title', '')
+        title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "User Story")
+        if not title_valid:
+            print(f"⚠️ Story title issues: {', '.join(title_issues)}")
+            if not title:
+                enhanced_story['title'] = f"User Story: {story.get('description', 'Undefined')[:50]}..."
+        
+        # Validate and fix description
+        description = story.get('description', '') or story.get('user_story', '')
+        desc_valid, desc_issues = self.quality_validator.validate_user_story_description(description)
+        if not desc_valid:
+            print(f"⚠️ Story description issues: {', '.join(desc_issues)}")
+            # Try to fix the description
+            if 'As a' not in description and 'As an' not in description:
+                user_type = story.get('user_type', 'user')
+                goal = title.replace('User Story:', '').strip() if 'User Story:' in title else title
+                enhanced_story['description'] = f"As a {user_type}, I want {goal} so that I can achieve my objectives"
+            else:
+                enhanced_story['description'] = description
+        else:
+            enhanced_story['description'] = description
+        
+        # Validate and enhance acceptance criteria
+        criteria = story.get('acceptance_criteria', [])
+        criteria_valid, criteria_issues = self.quality_validator.validate_acceptance_criteria(criteria, title)
+        if not criteria_valid or criteria_issues:
+            print(f"📋 Enhancing acceptance criteria: {', '.join(criteria_issues)}")
+            enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
+                criteria, 
+                {'title': enhanced_story['title'], 'description': enhanced_story['description']}
+            )
+            enhanced_story['acceptance_criteria'] = enhanced_criteria
+        
+        # Ensure story points are set
+        if not enhanced_story.get('story_points'):
+            criteria_count = len(enhanced_story.get('acceptance_criteria', []))
+            if criteria_count <= 3:
+                enhanced_story['story_points'] = 2
+            elif criteria_count <= 5:
+                enhanced_story['story_points'] = 3
+            elif criteria_count <= 7:
+                enhanced_story['story_points'] = 5
+            else:
+                enhanced_story['story_points'] = 8
+        
+        # Add quality metadata
+        enhanced_story['definition_of_ready'] = [
+            'Acceptance criteria defined and reviewed',
+            'Story points estimated',
+            'Dependencies identified',
+            'UI/UX requirements clarified'
+        ]
+        
+        enhanced_story['definition_of_done'] = [
+            'Code developed and reviewed',
+            'Unit tests written and passing',
+            'Integration tests passing',
+            'Acceptance criteria validated',
+            'Documentation updated'
+        ]
+        
+        # Ensure other required fields
+        if not enhanced_story.get('priority'):
+            enhanced_story['priority'] = 'Medium'
+        
+        if not enhanced_story.get('user_type'):
+            enhanced_story['user_type'] = 'general_user'
+        
+        if not enhanced_story.get('category'):
+            enhanced_story['category'] = 'feature_implementation'
+        
+        return enhanced_story

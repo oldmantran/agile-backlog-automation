@@ -906,3 +906,32 @@ class AzureDevOpsIntegrator:
             if hasattr(e, 'response') and e.response:
                 self.logger.error(f"Response: {e.response.text}")
             raise
+    
+    def _update_work_item(self, work_item_id: int, fields: Dict[str, Any]):
+        """Update a work item with the specified fields."""
+        url = f"{self.project_base_url}/wit/workitems/{work_item_id}?api-version=7.0"
+        
+        # Build patch document
+        patch_document = []
+        for field_path, value in fields.items():
+            patch_document.append({
+                'op': 'add',
+                'path': field_path,
+                'value': value
+            })
+        
+        try:
+            response = requests.patch(
+                url,
+                json=patch_document,
+                auth=self.auth,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            
+            self.logger.info(f"Updated work item {work_item_id} with {len(fields)} fields")
+            return response.json()
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to update work item {work_item_id}: {e}")
+            raise

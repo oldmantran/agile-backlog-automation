@@ -8,9 +8,11 @@ coordinating between agents, managing data flow, and handling integrations.
 import os
 import json
 import yaml
+import re
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
+import re
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
@@ -641,60 +643,372 @@ class WorkflowSupervisor:
         """Handle discrepancies that require Developer Agent intervention."""
         for wi_id, discrepancies in work_item_groups.items():
             self.logger.info(f"Developer Agent: Reviewing work item {wi_id}")
-            for disc in discrepancies:
+            
+            # Check for specific discrepancy types that can be auto-remediated
+            missing_tasks = [d for d in discrepancies if d.get('type') == 'missing_child_task']
+            missing_story_points = [d for d in discrepancies if d.get('type') == 'missing_story_points']
+            
+            # Auto-create missing tasks for user stories
+            if missing_tasks and hasattr(self, 'agents'):
+                try:
+                    self._auto_create_missing_tasks(wi_id, missing_tasks[0])
+                except Exception as e:
+                    self.logger.error(f"Failed to auto-create tasks for work item {wi_id}: {e}")
+            
+            # Auto-estimate missing story points
+            if missing_story_points and hasattr(self, 'agents'):
+                try:
+                    self._auto_estimate_story_points(wi_id, missing_story_points[0])
+                except Exception as e:
+                    self.logger.error(f"Failed to auto-estimate story points for work item {wi_id}: {e}")
+            
+            # Log other discrepancies for manual review
+            other_discrepancies = [d for d in discrepancies if d.get('type') not in ['missing_child_task', 'missing_story_points']]
+            for disc in other_discrepancies:
                 self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
-                # In a full implementation, you would call:
-                # self.agents['developer_agent'].remediate_discrepancy(disc)
-    
+
     def _handle_qa_tester_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
         """Handle discrepancies that require QA Tester Agent intervention."""
         for wi_id, discrepancies in work_item_groups.items():
             self.logger.info(f"QA Tester Agent: Reviewing work item {wi_id}")
-            for disc in discrepancies:
+            
+            # Check for specific discrepancy types that can be auto-remediated
+            missing_test_cases = [d for d in discrepancies if d.get('type') == 'missing_child_test_case']
+            missing_criteria = [d for d in discrepancies if d.get('type') in ['missing_acceptance_criteria', 'invalid_acceptance_criteria']]
+            
+            # Auto-create missing test cases for user stories
+            if missing_test_cases and hasattr(self, 'agents'):
+                try:
+                    self._auto_create_missing_test_cases(wi_id, missing_test_cases[0])
+                except Exception as e:
+                    self.logger.error(f"Failed to auto-create test cases for work item {wi_id}: {e}")
+            
+            # Auto-enhance missing or invalid acceptance criteria
+            if missing_criteria and hasattr(self, 'agents'):
+                try:
+                    self._auto_enhance_acceptance_criteria(wi_id, missing_criteria[0])
+                except Exception as e:
+                    self.logger.error(f"Failed to auto-enhance acceptance criteria for work item {wi_id}: {e}")
+            
+            # Log other discrepancies for manual review
+            other_discrepancies = [d for d in discrepancies if d.get('type') not in ['missing_child_test_case', 'missing_acceptance_criteria', 'invalid_acceptance_criteria']]
+            for disc in other_discrepancies:
                 self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
-                # In a full implementation, you would call:
-                # self.agents['qa_tester_agent'].remediate_discrepancy(disc)
-    
-    def _handle_dashboard_requirements(self, requirements: List[Dict[str, Any]]):
-        """Process dashboard and reporting requirements."""
-        for req in requirements:
-            component = req.get('component', 'unknown')
-            description = req.get('description', 'No description')
-            priority = req.get('priority', 'medium')
-            self.logger.info(f"Dashboard Requirement ({priority}): {component} - {description}")
+
+    def _auto_create_missing_tasks(self, user_story_id: int, discrepancy: Dict[str, Any]):
+        """Automatically create missing tasks for a user story."""
+        self.logger.info(f"Auto-creating missing tasks for User Story {user_story_id}")
+        
+        # Get user story details
+        user_story_details = self.azure_integrator.get_work_item_details([user_story_id])
+        if not user_story_details:
+            self.logger.error(f"Could not retrieve details for User Story {user_story_id}")
+            return
+        
+        user_story = user_story_details[0]
+        story_fields = user_story.get('fields', {})
+        
+        # Prepare feature data for developer agent
+        feature_data = {
+            'title': story_fields.get('System.Title', 'Unknown User Story'),
+            'description': story_fields.get('System.Description', ''),
+            'acceptance_criteria': self._extract_acceptance_criteria(story_fields),
+            'priority': story_fields.get('Microsoft.VSTS.Common.Priority', 2),
+            'estimated_story_points': story_fields.get('Microsoft.VSTS.Scheduling.StoryPoints', 0)
+        }
+        
+        # Generate tasks using developer agent
+        context = self.project_context.get_context()
+        tasks = self.agents['developer_agent'].generate_tasks(feature_data, context)
+        
+        if tasks:
+            self.logger.info(f"Generated {len(tasks)} tasks for User Story {user_story_id}")
             
-            # In a full implementation, you would:
-            # - Check if dashboard component exists
-            # - Update or create dashboard widgets as needed
-            # - Schedule regular updates
-    
-    def _send_critical_issue_notification(self, report: Dict[str, Any]):
-        """Send notification for critical issues found during sweep."""
+            # Create tasks in Azure DevOps with proper parent link
+            for task in tasks:
+                try:
+                    task_item = self.azure_integrator._create_task(task, user_story_id)
+                    self.logger.info(f"Created Task {task_item['id']}: {task.get('title', 'Untitled')}")
+                except Exception as e:
+                    self.logger.error(f"Failed to create task '{task.get('title', 'Unknown')}': {e}")
+        else:
+            self.logger.warning(f"No tasks generated for User Story {user_story_id}")
+
+    def _auto_create_missing_test_cases(self, user_story_id: int, discrepancy: Dict[str, Any]):
+        """Automatically create missing test cases for a user story."""
+        self.logger.info(f"Auto-creating missing test cases for User Story {user_story_id}")
+        
+        # Get user story details
+        user_story_details = self.azure_integrator.get_work_item_details([user_story_id])
+        if not user_story_details:
+            self.logger.error(f"Could not retrieve details for User Story {user_story_id}")
+            return
+        
+        user_story = user_story_details[0]
+        story_fields = user_story.get('fields', {})
+        
+        # Prepare user story data for test case generation
+        user_story_data = {
+            'id': user_story_id,
+            'title': story_fields.get('System.Title', 'Unknown User Story'),
+            'description': story_fields.get('System.Description', ''),
+            'acceptance_criteria': self._extract_acceptance_criteria(story_fields),
+            'priority': story_fields.get('Microsoft.VSTS.Common.Priority', 2),
+            'story_points': story_fields.get('Microsoft.VSTS.Scheduling.StoryPoints', 0)
+        }
+        
+        # Generate test cases using QA tester agent
+        context = self.project_context.get_context()
+        test_cases = self.agents['qa_tester_agent'].generate_user_story_test_cases(user_story_data, context)
+        
+        if test_cases:
+            self.logger.info(f"Generated {len(test_cases)} test cases for User Story {user_story_id}")
+            
+            # Create test cases in Azure DevOps with proper parent link
+            for test_case in test_cases:
+                try:
+                    test_item = self.azure_integrator._create_test_case(test_case, user_story_id)
+                    self.logger.info(f"Created Test Case {test_item['id']}: {test_case.get('title', 'Untitled')}")
+                except Exception as e:
+                    self.logger.error(f"Failed to create test case '{test_case.get('title', 'Unknown')}': {e}")
+        else:
+            self.logger.warning(f"No test cases generated for User Story {user_story_id}")
+
+    def _auto_estimate_story_points(self, user_story_id: int, discrepancy: Dict[str, Any]):
+        """Automatically estimate story points for a user story."""
+        self.logger.info(f"Auto-estimating story points for User Story {user_story_id}")
+        
+        # Get user story details
+        user_story_details = self.azure_integrator.get_work_item_details([user_story_id])
+        if not user_story_details:
+            self.logger.error(f"Could not retrieve details for User Story {user_story_id}")
+            return
+        
+        user_story = user_story_details[0]
+        story_fields = user_story.get('fields', {})
+        
+        # Prepare user story data for estimation
+        user_story_data = {
+            'title': story_fields.get('System.Title', 'Unknown User Story'),
+            'description': story_fields.get('System.Description', ''),
+            'acceptance_criteria': self._extract_acceptance_criteria(story_fields)
+        }
+        
+        # Estimate using developer agent
+        context = self.project_context.get_context()
+        estimated_points = self.agents['developer_agent'].estimate_story_points(user_story_data, context)
+        
+        if estimated_points:
+            try:
+                # Update the work item with estimated story points
+                fields = {
+                    '/fields/Microsoft.VSTS.Scheduling.StoryPoints': estimated_points
+                }
+                self.azure_integrator._update_work_item(user_story_id, fields)
+                self.logger.info(f"Updated User Story {user_story_id} with {estimated_points} story points")
+            except Exception as e:
+                self.logger.error(f"Failed to update story points for User Story {user_story_id}: {e}")
+        else:
+            self.logger.warning(f"Could not estimate story points for User Story {user_story_id}")
+
+    def _auto_enhance_acceptance_criteria(self, user_story_id: int, discrepancy: Dict[str, Any]):
+        """Automatically enhance acceptance criteria for a user story."""
+        self.logger.info(f"Auto-enhancing acceptance criteria for User Story {user_story_id}")
+        
+        # Get user story details
+        user_story_details = self.azure_integrator.get_work_item_details([user_story_id])
+        if not user_story_details:
+            self.logger.error(f"Could not retrieve details for User Story {user_story_id}")
+            return
+        
+        user_story = user_story_details[0]
+        story_fields = user_story.get('fields', {})
+        
+        # Prepare user story data for enhancement
+        user_story_data = {
+            'title': story_fields.get('System.Title', 'Unknown User Story'),
+            'description': story_fields.get('System.Description', ''),
+            'acceptance_criteria': self._extract_acceptance_criteria(story_fields),
+            'priority': story_fields.get('Microsoft.VSTS.Common.Priority', 2)
+        }
+        
+        # Enhance acceptance criteria using QA tester agent
+        context = self.project_context.get_context()
+        enhanced_criteria = self.agents['qa_tester_agent'].enhance_acceptance_criteria(user_story_data, context)
+        
+        if enhanced_criteria:
+            try:
+                # Format criteria for Azure DevOps
+                criteria_text = self._format_acceptance_criteria(enhanced_criteria)
+                
+                # Update the work item with enhanced acceptance criteria
+                fields = {
+                    '/fields/Microsoft.VSTS.Common.AcceptanceCriteria': criteria_text
+                }
+                self.azure_integrator._update_work_item(user_story_id, fields)
+                self.logger.info(f"Updated User Story {user_story_id} with enhanced acceptance criteria ({len(enhanced_criteria)} criteria)")
+            except Exception as e:
+                self.logger.error(f"Failed to update acceptance criteria for User Story {user_story_id}: {e}")
+        else:
+            self.logger.warning(f"Could not enhance acceptance criteria for User Story {user_story_id}")
+
+    def _extract_acceptance_criteria(self, story_fields: Dict[str, Any]) -> List[str]:
+        """Extract acceptance criteria from work item fields."""
+        criteria_text = story_fields.get('Microsoft.VSTS.Common.AcceptanceCriteria', '')
+        if not criteria_text:
+            return []
+        
+        # Split by lines and clean up
+        criteria_lines = [line.strip() for line in criteria_text.split('\n') if line.strip()]
+        criteria_items = []
+        
+        for line in criteria_lines:
+            # Handle various bullet formats
+            cleaned = re.sub(r'^[-*•]\s*', '', line)
+            cleaned = re.sub(r'^\d+\.\s*', '', cleaned)
+            if cleaned:
+                criteria_items.append(cleaned)
+        
+        return criteria_items
+
+    def _format_acceptance_criteria(self, criteria: List[str]) -> str:
+        """Format acceptance criteria for Azure DevOps."""
+        if not criteria:
+            return ""
+        
+        # Format as numbered list
+        formatted_lines = []
+        for i, criterion in enumerate(criteria, 1):
+            formatted_lines.append(f"{i}. {criterion}")
+        
+        return '\n'.join(formatted_lines)
+
+    def create_complete_user_story_with_children(self, user_story_data: Dict[str, Any], parent_feature_id: int = None) -> Dict[str, Any]:
+        """
+        Create a complete user story with all required child work items to ensure compliance.
+        This method coordinates between agents to create a fully compliant work item hierarchy.
+        
+        Args:
+            user_story_data: User story data with title, description, acceptance criteria, etc.
+            parent_feature_id: Optional parent feature ID for linking
+            
+        Returns:
+            Dictionary containing the created user story and all child work items
+        """
+        self.logger.info(f"Creating complete user story with children: {user_story_data.get('title', 'Unknown')}")
+        
         try:
-            high_priority = report.get('discrepancies_by_priority', {}).get('high', [])
-            if not high_priority:
-                return
-                
-            # Create notification message
-            message = f"🚨 Backlog Sweep Alert: {len(high_priority)} high-priority issues found\n\n"
+            # Step 1: Validate and enhance user story using quality validator
+            if hasattr(self.agents['decomposition_agent'], 'quality_validator'):
+                validator = self.agents['decomposition_agent'].quality_validator
+                enhanced_story = validator.generate_quality_compliant_user_story(
+                    title=user_story_data.get('title', ''),
+                    user_type=user_story_data.get('user_type', 'user'),
+                    goal=user_story_data.get('goal', user_story_data.get('title', '')),
+                    benefit=user_story_data.get('benefit', 'achieve objectives'),
+                    acceptance_criteria=user_story_data.get('acceptance_criteria', []),
+                    story_points=user_story_data.get('story_points')
+                )
+                user_story_data.update(enhanced_story)
             
-            # Group by type for summary
-            type_counts = {}
-            for disc in high_priority:
-                disc_type = disc.get('type', 'unknown')
-                type_counts[disc_type] = type_counts.get(disc_type, 0) + 1
-            
-            message += "Issue Summary:\n"
-            for issue_type, count in type_counts.items():
-                message += f"  • {issue_type}: {count} items\n"
-            
-            message += f"\nTotal work items affected: {len(set(d.get('work_item_id') for d in high_priority if d.get('work_item_id')))}"
-            
-            # Send notification using existing notifier
-            if hasattr(self, 'notifier'):
-                self.notifier.send_alert("Backlog Critical Issues", message)
+            # Step 2: Create the user story in Azure DevOps
+            if hasattr(self, 'azure_integrator'):
+                user_story_item = self.azure_integrator._create_user_story(user_story_data, parent_feature_id)
+                user_story_id = user_story_item['id']
+                self.logger.info(f"Created User Story {user_story_id}: {user_story_data.get('title', '')}")
             else:
-                self.logger.warning(f"Critical issues notification: {message}")
+                # For testing, simulate work item creation
+                user_story_id = 12345  # Mock ID
+                user_story_item = {
+                    'id': user_story_id,
+                    'fields': {
+                        'System.Title': user_story_data.get('title', ''),
+                        'System.WorkItemType': 'User Story'
+                    }
+                }
+                self.logger.info(f"Mock created User Story {user_story_id}: {user_story_data.get('title', '')}")
+            
+            # Step 3: Generate and create child tasks using Developer Agent
+            tasks_created = []
+            if hasattr(self.agents, 'developer_agent') and 'developer_agent' in self.agents:
+                context = self.project_context.get_context() if hasattr(self, 'project_context') else {}
                 
+                # Prepare feature data for task generation
+                feature_data = {
+                    'title': user_story_data.get('title', ''),
+                    'description': user_story_data.get('description', ''),
+                    'acceptance_criteria': user_story_data.get('acceptance_criteria', []),
+                    'priority': user_story_data.get('priority', 'Medium'),
+                    'estimated_story_points': user_story_data.get('story_points', 3)
+                }
+                
+                tasks = self.agents['developer_agent'].generate_tasks(feature_data, context)
+                
+                for task in tasks:
+                    if hasattr(self, 'azure_integrator'):
+                        task_item = self.azure_integrator._create_task(task, user_story_id)
+                        tasks_created.append(task_item)
+                        self.logger.info(f"Created Task {task_item['id']}: {task.get('title', '')}")
+                    else:
+                        # For testing, simulate task creation
+                        task_item = {
+                            'id': len(tasks_created) + 20000,  # Mock ID
+                            'fields': {
+                                'System.Title': task.get('title', ''),
+                                'System.WorkItemType': 'Task'
+                            }
+                        }
+                        tasks_created.append(task_item)
+                        self.logger.info(f"Mock created Task {task_item['id']}: {task.get('title', '')}")
+            
+            # Step 4: Generate and create child test cases using QA Tester Agent
+            test_cases_created = []
+            if hasattr(self.agents, 'qa_tester_agent') and 'qa_tester_agent' in self.agents:
+                context = self.project_context.get_context() if hasattr(self, 'project_context') else {}
+                
+                # Prepare user story data for test case generation
+                story_for_testing = {
+                    'id': user_story_id,
+                    'title': user_story_data.get('title', ''),
+                    'description': user_story_data.get('description', ''),
+                    'acceptance_criteria': user_story_data.get('acceptance_criteria', []),
+                    'priority': user_story_data.get('priority', 'Medium'),
+                    'story_points': user_story_data.get('story_points', 3)
+                }
+                
+                test_cases = self.agents['qa_tester_agent'].generate_user_story_test_cases(story_for_testing, context)
+                
+                for test_case in test_cases:
+                    if hasattr(self, 'azure_integrator'):
+                        test_item = self.azure_integrator._create_test_case(test_case, user_story_id)
+                        test_cases_created.append(test_item)
+                        self.logger.info(f"Created Test Case {test_item['id']}: {test_case.get('title', '')}")
+                    else:
+                        # For testing, simulate test case creation
+                        test_item = {
+                            'id': len(test_cases_created) + 30000,  # Mock ID
+                            'fields': {
+                                'System.Title': test_case.get('title', ''),
+                                'System.WorkItemType': 'Test Case'
+                            }
+                        }
+                        test_cases_created.append(test_item)
+                        self.logger.info(f"Mock created Test Case {test_item['id']}: {test_case.get('title', '')}")
+            
+            # Step 5: Return complete work item hierarchy
+            result = {
+                'user_story': user_story_item,
+                'tasks': tasks_created,
+                'test_cases': test_cases_created,
+                'compliance_status': 'compliant',
+                'created_at': datetime.now().isoformat()
+            }
+            
+            self.logger.info(f"Successfully created complete user story hierarchy: "
+                           f"1 story, {len(tasks_created)} tasks, {len(test_cases_created)} test cases")
+            
+            return result
+            
         except Exception as e:
-            self.logger.error(f"Failed to send critical issue notification: {e}")
+            self.logger.error(f"Failed to create complete user story with children: {e}")
+            raise

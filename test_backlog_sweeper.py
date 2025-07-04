@@ -120,7 +120,7 @@ def test_acceptance_criteria_validation():
     agent = BacklogSweeperAgent(
         ado_client=mock_ado,
         supervisor_callback=capture_report,
-        config=config.config
+        config=config.settings  # Use .settings not .config
     )
     
     # Run the sweep
