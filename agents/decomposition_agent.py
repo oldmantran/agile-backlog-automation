@@ -2,9 +2,9 @@ import json
 from agents.base_agent import Agent
 from config.config_loader import Config
 
-class FeatureDecomposer(Agent):
+class DecompositionAgent(Agent):
     def __init__(self, config: Config):
-        super().__init__("feature_decomposer", config)
+        super().__init__("decomposition_agent", config)
 
     def decompose_epic(self, epic: dict, context: dict = None) -> list[dict]:
         """Break down an epic into detailed features with contextual information."""
@@ -26,7 +26,7 @@ Priority: {epic.get('priority', 'Medium')}
 Business Value: {epic.get('business_value', 'Not specified')}
 """
         
-        print(f"🔧 [FeatureDecomposer] Decomposing epic: {epic.get('title', 'Unknown')}")
+        print(f"🔧 [DecompositionAgent] Decomposing epic: {epic.get('title', 'Unknown')}")
         response = self.run(user_input, prompt_context)
 
         try:
@@ -77,7 +77,7 @@ Priority: {feature.get('priority', 'Medium')}
 Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
 """
         
-        print(f"📱 [FeatureDecomposer] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
+        print(f"📱 [DecompositionAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
         
         # Use a new prompt template for user story decomposition
         response = self.run_with_template(user_input, prompt_context, template_name="user_story_decomposer")

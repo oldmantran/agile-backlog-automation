@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.feature_decomposer import FeatureDecomposer
+from agents.decomposition_agent import DecompositionAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
 
@@ -17,7 +17,7 @@ def test_epic_feature_task_qa_chain():
     # Initialize agents
     config = Config()
     epic_agent = EpicStrategist(config)
-    feature_agent = FeatureDecomposer(config)
+    feature_agent = DecompositionAgent(config)
     dev_agent = DeveloperAgent(config)
     qa_agent = QATesterAgent(config)
     

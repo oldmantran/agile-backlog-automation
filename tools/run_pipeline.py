@@ -6,7 +6,7 @@ from datetime import datetime
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.feature_decomposer import FeatureDecomposer
+from agents.decomposition_agent import DecompositionAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
 from utils.project_context import ProjectContext
@@ -55,7 +55,7 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
     
     # Initialize agents
     epic_agent = EpicStrategist(config)
-    feature_agent = FeatureDecomposer(config)
+    feature_agent = DecompositionAgent(config)
     dev_agent = DeveloperAgent(config)
     qa_agent = QATesterAgent(config)
 
@@ -70,7 +70,7 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
     for epic in epics:
         if run_stage in ["all", "feature"]:
             print(f"🔍 Decomposing epic: {epic.get('title', 'Untitled Epic')}")
-            context = project_context.get_context('feature_decomposer')
+            context = project_context.get_context('decomposition_agent')
             features = feature_agent.decompose_epic(epic, context)
         else:
             features = epic.get("features", [])

@@ -45,7 +45,7 @@ def test_prompt_system():
         project_context.update_context(custom_context)
         
         # Test each agent prompt
-        for agent_name in ['epic_strategist', 'feature_decomposer', 'developer_agent', 'qa_tester_agent']:
+        for agent_name in ['epic_strategist', 'decomposition_agent', 'developer_agent', 'qa_tester_agent']:
             try:
                 context = project_context.get_context(agent_name)
                 prompt = prompt_manager.get_prompt(agent_name, context)

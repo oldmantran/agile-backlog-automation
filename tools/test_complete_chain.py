@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.feature_decomposer import FeatureDecomposer
+from agents.decomposition_agent import DecompositionAgent
 from agents.developer_agent import DeveloperAgent
 
 def test_complete_chain():
@@ -22,7 +22,7 @@ def test_complete_chain():
         # Initialize agents
         config = Config()
         epic_agent = EpicStrategist(config)
-        feature_agent = FeatureDecomposer(config)
+        feature_agent = DecompositionAgent(config)
         dev_agent = DeveloperAgent(config)
         print("✅ All agents initialized")
         

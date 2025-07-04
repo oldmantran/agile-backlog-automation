@@ -58,7 +58,7 @@ class ProjectContext:
                 'focus': 'business value and strategic alignment',
                 'scope': 'high-level product roadmap'
             })
-        elif agent_type == 'feature_decomposer':
+        elif agent_type == 'decomposition_agent':
             base_context.update({
                 'focus': 'user experience and feature completeness',
                 'scope': 'detailed feature specifications'

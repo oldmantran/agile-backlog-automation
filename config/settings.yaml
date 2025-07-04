@@ -17,8 +17,8 @@ domains:
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"
-  feature_decomposer:
-    prompt_file: "prompts/feature_decomposer.txt"
+  decomposition_agent:
+    prompt_file: "prompts/decomposition_agent.txt"
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
@@ -29,7 +29,7 @@ agents:
 workflow:
   sequence:
     - epic_strategist
-    - feature_decomposer
+    - decomposition_agent
     - developer_agent
     - qa_tester_agent
   output_format: "azure_devops"

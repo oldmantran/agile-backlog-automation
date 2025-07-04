@@ -4,12 +4,12 @@ import yaml
 from datetime import datetime
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.feature_decomposer import FeatureDecomposer
+from agents.decomposition_agent import DecompositionAgent
 
 def main():
     config = Config()
     epic_agent = EpicStrategist(config)
-    feature_agent = FeatureDecomposer(config)
+    feature_agent = DecompositionAgent(config)
 
     product_vision = (
         "Create a smart home energy dashboard that helps users monitor, optimize, "

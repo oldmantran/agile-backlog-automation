@@ -52,7 +52,7 @@ This should be a simple, focused MVP for individual productivity.
         # Run with shorter stages for faster testing
         test_stages = [
             'epic_strategist',
-            'feature_decomposer', 
+            'decomposition_agent', 
             'user_story_decomposer'
         ]
         

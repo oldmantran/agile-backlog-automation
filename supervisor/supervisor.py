@@ -14,7 +14,7 @@ import logging
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.feature_decomposer import FeatureDecomposer
+from agents.decomposition_agent import DecompositionAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
 from utils.project_context import ProjectContext
@@ -72,7 +72,7 @@ class WorkflowSupervisor:
         
         try:
             agents['epic_strategist'] = EpicStrategist(self.config)
-            agents['feature_decomposer'] = FeatureDecomposer(self.config)
+            agents['decomposition_agent'] = DecompositionAgent(self.config)
             agents['developer_agent'] = DeveloperAgent(self.config)
             agents['qa_tester_agent'] = QATesterAgent(self.config)
             
@@ -149,7 +149,7 @@ class WorkflowSupervisor:
                 
                 if stage == 'epic_strategist':
                     self._execute_epic_generation()
-                elif stage == 'feature_decomposer':
+                elif stage == 'decomposition_agent':
                     self._execute_feature_decomposition()
                 elif stage == 'user_story_decomposer':
                     self._execute_user_story_decomposition()
@@ -225,8 +225,8 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing epics into features")
         
         try:
-            agent = self.agents['feature_decomposer']
-            context = self.project_context.get_context('feature_decomposer')
+            agent = self.agents['decomposition_agent']
+            context = self.project_context.get_context('decomposition_agent')
             
             for epic in self.workflow_data['epics']:
                 self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
@@ -245,8 +245,8 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing features into user stories")
         
         try:
-            agent = self.agents['feature_decomposer']
-            context = self.project_context.get_context('feature_decomposer')
+            agent = self.agents['decomposition_agent']
+            context = self.project_context.get_context('decomposition_agent')
             
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
@@ -504,7 +504,7 @@ class WorkflowSupervisor:
         """Get default workflow stages from configuration."""
         return self.config.settings.get('workflow', {}).get('sequence', [
             'epic_strategist',
-            'feature_decomposer',
+            'decomposition_agent',
             'user_story_decomposer',
             'developer_agent',
             'qa_tester_agent'
