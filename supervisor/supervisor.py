@@ -645,7 +645,7 @@ class WorkflowSupervisor:
             self.logger.info(f"Developer Agent: Reviewing work item {wi_id}")
             
             # Check for specific discrepancy types that can be auto-remediated
-            missing_tasks = [d for d in discrepancies if d.get('type') == 'missing_child_task']
+            missing_tasks = [d for d in discrepancies if d.get('type') in ['missing_child_task', 'user_story_missing_tasks']]
             missing_story_points = [d for d in discrepancies if d.get('type') == 'missing_story_points']
             
             # Auto-create missing tasks for user stories
@@ -663,7 +663,7 @@ class WorkflowSupervisor:
                     self.logger.error(f"Failed to auto-estimate story points for work item {wi_id}: {e}")
             
             # Log other discrepancies for manual review
-            other_discrepancies = [d for d in discrepancies if d.get('type') not in ['missing_child_task', 'missing_story_points']]
+            other_discrepancies = [d for d in discrepancies if d.get('type') not in ['missing_child_task', 'user_story_missing_tasks', 'missing_story_points']]
             for disc in other_discrepancies:
                 self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
 
@@ -1012,3 +1012,52 @@ class WorkflowSupervisor:
         except Exception as e:
             self.logger.error(f"Failed to create complete user story with children: {e}")
             raise
+
+    def _handle_dashboard_requirements(self, dashboard_requirements: List[Dict[str, Any]]):
+        """Handle dashboard and reporting requirements identified by the sweeper."""
+        self.logger.info(f"Processing {len(dashboard_requirements)} dashboard requirements")
+        
+        for req in dashboard_requirements:
+            req_type = req.get('type', 'unknown')
+            priority = req.get('priority', 'medium')
+            description = req.get('description', 'No description')
+            
+            self.logger.info(f"Dashboard requirement ({priority}): {req_type} - {description}")
+            
+            # Log specific dashboard requirements
+            if req_type == 'velocity_tracking':
+                self.logger.info("  Recommendation: Set up velocity tracking charts for team performance monitoring")
+            elif req_type == 'burndown_chart':
+                self.logger.info("  Recommendation: Configure sprint burndown charts for iteration tracking")
+            elif req_type == 'quality_metrics':
+                self.logger.info("  Recommendation: Establish quality metrics dashboard with defect rates and test coverage")
+            elif req_type == 'backlog_health':
+                self.logger.info("  Recommendation: Create backlog health dashboard showing completeness and compliance")
+            else:
+                self.logger.info(f"  Recommendation: Review and implement {req_type} dashboard requirements")
+
+    def _send_critical_issue_notification(self, report: Dict[str, Any]):
+        """Send notifications for critical issues found in the sweep."""
+        try:
+            summary = report.get('summary', {})
+            high_priority_count = summary.get('high_priority_count', 0)
+            
+            self.logger.warning(f"Critical issues detected: {high_priority_count} high-priority discrepancies")
+            
+            if hasattr(self, 'notifier'):
+                # Send critical issue notification
+                notification_data = {
+                    'type': 'critical_backlog_issues',
+                    'high_priority_count': high_priority_count,
+                    'total_discrepancies': summary.get('total_discrepancies', 0),
+                    'timestamp': datetime.now().isoformat(),
+                    'report_summary': summary
+                }
+                
+                self.notifier.send_critical_notification(notification_data)
+                self.logger.info("Critical issue notification sent")
+            else:
+                self.logger.warning("No notifier configured - critical issues logged only")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to send critical issue notification: {e}")

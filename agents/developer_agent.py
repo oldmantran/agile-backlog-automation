@@ -36,7 +36,9 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         response = self.run(user_input, prompt_context)
 
         try:
-            tasks = json.loads(response)
+            # Extract JSON from response if it's wrapped in text/code blocks
+            json_content = self._extract_json_from_response(response)
+            tasks = json.loads(json_content)
             if isinstance(tasks, list):
                 # Validate and enhance tasks for quality compliance
                 enhanced_tasks = self._validate_and_enhance_tasks(tasks)
@@ -50,6 +52,36 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             print(response)
             return []
     
+    def _extract_json_from_response(self, response: str) -> str:
+        """
+        Extract JSON content from a response that might be wrapped in text or code blocks.
+        """
+        import re
+        
+        # Try to find JSON in code blocks first
+        json_block_pattern = r'```json\s*(.*?)\s*```'
+        match = re.search(json_block_pattern, response, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        
+        # Try to find JSON in generic code blocks
+        code_block_pattern = r'```\s*(.*?)\s*```'
+        match = re.search(code_block_pattern, response, re.DOTALL)
+        if match:
+            content = match.group(1).strip()
+            # Check if it looks like JSON (starts with [ or {)
+            if content.strip().startswith(('[', '{')):
+                return content
+        
+        # If no code blocks, try to find JSON by looking for array/object patterns
+        json_pattern = r'(\[.*?\]|\{.*?\})'
+        match = re.search(json_pattern, response, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        
+        # If all else fails, return the original response
+        return response.strip()
+
     def _validate_and_enhance_tasks(self, tasks: list) -> list:
         """
         Validate and enhance tasks to meet quality standards.

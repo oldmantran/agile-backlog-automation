@@ -1,0 +1,2559 @@
+{
+  "timestamp": "20250706_122745",
+  "area_path": "Backlog Automation\\Data Visualization",
+  "configuration": {
+    "project_name": "Backlog Automation",
+    "area_path": "Backlog Automation\\Data Visualization",
+    "work_item_types": [
+      "Epic",
+      "Feature",
+      "User Story",
+      "Task",
+      "Test Case"
+    ],
+    "include_completed": false,
+    "max_items": 50,
+    "deep_validation": true,
+    "auto_remediation_preview": true
+  },
+  "captured_report": {
+    "timestamp": "2025-07-06T12:27:10.950634",
+    "sweep_type": "comprehensive_backlog_monitoring",
+    "summary": {
+      "total_discrepancies": 125,
+      "high_priority_count": 9,
+      "medium_priority_count": 63,
+      "low_priority_count": 0,
+      "agents_with_assignments": 3,
+      "dashboard_requirements": 3
+    },
+    "discrepancies_by_priority": {
+      "high": [
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 93,
+          "work_item_type": "Feature",
+          "title": "GRIT User Account - Private",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 103,
+          "work_item_type": "Feature",
+          "title": "Portal Aesthetics",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 138,
+          "work_item_type": "Feature",
+          "title": "Route and Plan Repository",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 194,
+          "work_item_type": "Feature",
+          "title": "Terraform",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 205,
+          "work_item_type": "Feature",
+          "title": "Grit Microsite - Public",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 237,
+          "work_item_type": "Feature",
+          "title": "GRIT Placeholder",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 522,
+          "work_item_type": "Feature",
+          "title": "Administrative Functions",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 1699,
+          "work_item_type": "Test Case",
+          "title": "Implement hover and display tooltip",
+          "description": "Test Case has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        }
+      ],
+      "medium": [
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1697,
+          "work_item_type": "User Story",
+          "title": "Handle Notification Failures and Warnings",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1696,
+          "work_item_type": "User Story",
+          "title": "Build Data Architecture with Compliance to SLA",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1695,
+          "work_item_type": "User Story",
+          "title": "Retain Error Logs for at least 30 days",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 691,
+          "work_item_type": "User Story",
+          "title": "For vessels, use historical actual points to draw the Green Line on Map",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1683,
+          "work_item_type": "User Story",
+          "title": "Admin Sets Cost Limits",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1627,
+          "work_item_type": "User Story",
+          "title": "Admin Manages Storage Scaling",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1626,
+          "work_item_type": "User Story",
+          "title": "End User Stores Data Securely",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1615,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Load Balancing Policies",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1595,
+          "work_item_type": "User Story",
+          "title": "Admin Monitors Resource Allocation",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1594,
+          "work_item_type": "User Story",
+          "title": "Admin Provisions Cloud Resources Automatically",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1583,
+          "work_item_type": "User Story",
+          "title": "View Trends from Historical Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1582,
+          "work_item_type": "User Story",
+          "title": "Access Historical Job Data for Reference",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1558,
+          "work_item_type": "User Story",
+          "title": "Schedule Operational Plan Timeline",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1546,
+          "work_item_type": "User Story",
+          "title": "Incorporate Real-Time Data into Simulations",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1522,
+          "work_item_type": "User Story",
+          "title": "Customize Job Design Parameters",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1521,
+          "work_item_type": "User Story",
+          "title": "Create New Job Design from Template",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1509,
+          "work_item_type": "User Story",
+          "title": "End User Views Integration Status",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1508,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Alerts for Integration Issues",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1496,
+          "work_item_type": "User Story",
+          "title": "Admin Views Supported System Catalog",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1495,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Compatibility Feedback",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1486,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Data Ingestion Frequency",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1485,
+          "work_item_type": "User Story",
+          "title": "End User Views Real-Time Field Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1474,
+          "work_item_type": "User Story",
+          "title": "Admin Views and Edits Existing Connections",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1473,
+          "work_item_type": "User Story",
+          "title": "Admin Configures New Field System Connection",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1460,
+          "work_item_type": "User Story",
+          "title": "Manage Role Permissions",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1459,
+          "work_item_type": "User Story",
+          "title": "Access Dashboard Based on Role",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1448,
+          "work_item_type": "User Story",
+          "title": "Export Historical Data Reports",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1425,
+          "work_item_type": "User Story",
+          "title": "Configure Alert Thresholds",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1424,
+          "work_item_type": "User Story",
+          "title": "Receive Visual Alerts for Critical Events",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1413,
+          "work_item_type": "User Story",
+          "title": "Customizable Dashboard Widgets",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1412,
+          "work_item_type": "User Story",
+          "title": "View Real-Time Operational Metrics",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1399,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Efficiency Issues",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1398,
+          "work_item_type": "User Story",
+          "title": "View Operational Efficiency Metrics",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1387,
+          "work_item_type": "User Story",
+          "title": "Compare Job Design Options",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1386,
+          "work_item_type": "User Story",
+          "title": "Generate Optimized Job Designs",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1374,
+          "work_item_type": "User Story",
+          "title": "View Maintenance History and Recommendations",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1373,
+          "work_item_type": "User Story",
+          "title": "Receive Maintenance Alerts",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1363,
+          "work_item_type": "User Story",
+          "title": "Visualize Prediction Trends",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1362,
+          "work_item_type": "User Story",
+          "title": "Predict Well Performance Metrics",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1341,
+          "work_item_type": "User Story",
+          "title": "Store Processed Data Securely",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1331,
+          "work_item_type": "User Story",
+          "title": "Detect Anomalies in Real-Time",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1330,
+          "work_item_type": "User Story",
+          "title": "Process Data for Immediate Insights",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1308,
+          "work_item_type": "User Story",
+          "title": "Validate Incoming Sensor Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1297,
+          "work_item_type": "User Story",
+          "title": "Handle Multiple Sensor Data Formats",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1273,
+          "work_item_type": "User Story",
+          "title": "Create Custom Scorecard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1264,
+          "work_item_type": "User Story",
+          "title": "Export Benchmarking Reports",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1253,
+          "work_item_type": "User Story",
+          "title": "Receive SLA Violation Alerts",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1252,
+          "work_item_type": "User Story",
+          "title": "Monitor SLA Compliance",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1206,
+          "work_item_type": "User Story",
+          "title": "Escalate Issues via Mobile Dashboard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1187,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Metric Details",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1152,
+          "work_item_type": "User Story",
+          "title": "Receive Push Notifications for Shipment Issues",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1142,
+          "work_item_type": "User Story",
+          "title": "Filter Shipments by Status or Location",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1141,
+          "work_item_type": "User Story",
+          "title": "View Active Shipments on Mobile",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1129,
+          "work_item_type": "User Story",
+          "title": "Generate Exception Handling Reports",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1128,
+          "work_item_type": "User Story",
+          "title": "Track Exception Resolution Status",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1106,
+          "work_item_type": "User Story",
+          "title": "Escalate Critical Exceptions to Managers",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1097,
+          "work_item_type": "User Story",
+          "title": "Prioritize Exceptions for Action",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1096,
+          "work_item_type": "User Story",
+          "title": "Categorize Exceptions by Severity",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1071,
+          "work_item_type": "User Story",
+          "title": "Detect Shipment Delays Automatically",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1047,
+          "work_item_type": "User Story",
+          "title": "Configure Integration Credentials",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1037,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Integration Failures",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        }
+      ],
+      "low": []
+    },
+    "agent_assignments": {
+      "qa_tester_agent": [
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1309,
+          "work_item_type": "User Story",
+          "title": "Notify Operators of Data Errors",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1330,
+          "work_item_type": "User Story",
+          "title": "Process Data for Immediate Insights",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1331,
+          "work_item_type": "User Story",
+          "title": "Detect Anomalies in Real-Time",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1341,
+          "work_item_type": "User Story",
+          "title": "Store Processed Data Securely",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1342,
+          "work_item_type": "User Story",
+          "title": "Enforce Data Retention Policies",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1362,
+          "work_item_type": "User Story",
+          "title": "Predict Well Performance Metrics",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1363,
+          "work_item_type": "User Story",
+          "title": "Visualize Prediction Trends",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1373,
+          "work_item_type": "User Story",
+          "title": "Receive Maintenance Alerts",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1374,
+          "work_item_type": "User Story",
+          "title": "View Maintenance History and Recommendations",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1386,
+          "work_item_type": "User Story",
+          "title": "Generate Optimized Job Designs",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1387,
+          "work_item_type": "User Story",
+          "title": "Compare Job Design Options",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1398,
+          "work_item_type": "User Story",
+          "title": "View Operational Efficiency Metrics",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1399,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Efficiency Issues",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1412,
+          "work_item_type": "User Story",
+          "title": "View Real-Time Operational Metrics",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1413,
+          "work_item_type": "User Story",
+          "title": "Customizable Dashboard Widgets",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1424,
+          "work_item_type": "User Story",
+          "title": "Receive Visual Alerts for Critical Events",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1425,
+          "work_item_type": "User Story",
+          "title": "Configure Alert Thresholds",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1436,
+          "work_item_type": "User Story",
+          "title": "View Historical Data Trends",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1448,
+          "work_item_type": "User Story",
+          "title": "Export Historical Data Reports",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1459,
+          "work_item_type": "User Story",
+          "title": "Access Dashboard Based on Role",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1460,
+          "work_item_type": "User Story",
+          "title": "Manage Role Permissions",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1473,
+          "work_item_type": "User Story",
+          "title": "Admin Configures New Field System Connection",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1474,
+          "work_item_type": "User Story",
+          "title": "Admin Views and Edits Existing Connections",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1485,
+          "work_item_type": "User Story",
+          "title": "End User Views Real-Time Field Data",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1486,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Data Ingestion Frequency",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1495,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Compatibility Feedback",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1496,
+          "work_item_type": "User Story",
+          "title": "Admin Views Supported System Catalog",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1508,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Alerts for Integration Issues",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1509,
+          "work_item_type": "User Story",
+          "title": "End User Views Integration Status",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1521,
+          "work_item_type": "User Story",
+          "title": "Create New Job Design from Template",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1522,
+          "work_item_type": "User Story",
+          "title": "Customize Job Design Parameters",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1534,
+          "work_item_type": "User Story",
+          "title": "Simulate Job Design Scenarios",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1546,
+          "work_item_type": "User Story",
+          "title": "Incorporate Real-Time Data into Simulations",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1558,
+          "work_item_type": "User Story",
+          "title": "Schedule Operational Plan Timeline",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1559,
+          "work_item_type": "User Story",
+          "title": "Visualize Operational Plan on Calendar",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1582,
+          "work_item_type": "User Story",
+          "title": "Access Historical Job Data for Reference",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1583,
+          "work_item_type": "User Story",
+          "title": "View Trends from Historical Data",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1594,
+          "work_item_type": "User Story",
+          "title": "Admin Provisions Cloud Resources Automatically",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1595,
+          "work_item_type": "User Story",
+          "title": "Admin Monitors Resource Allocation",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1605,
+          "work_item_type": "User Story",
+          "title": "End User Experiences Consistent Performance",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1615,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Load Balancing Policies",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1626,
+          "work_item_type": "User Story",
+          "title": "End User Stores Data Securely",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1627,
+          "work_item_type": "User Story",
+          "title": "Admin Manages Storage Scaling",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1638,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Performance Alerts",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1649,
+          "work_item_type": "User Story",
+          "title": "Admin Views Performance Metrics",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1672,
+          "work_item_type": "User Story",
+          "title": "Admin Tracks Cloud Costs",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1683,
+          "work_item_type": "User Story",
+          "title": "Admin Sets Cost Limits",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1695,
+          "work_item_type": "User Story",
+          "title": "Retain Error Logs for at least 30 days",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1696,
+          "work_item_type": "User Story",
+          "title": "Build Data Architecture with Compliance to SLA",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1697,
+          "work_item_type": "User Story",
+          "title": "Handle Notification Failures and Warnings",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "priority": "high",
+          "suggested_agent": "qa_tester_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        }
+      ],
+      "developer_agent": [
+        {
+          "type": "missing_story_points",
+          "work_item_id": 1695,
+          "work_item_type": "User Story",
+          "title": "Retain Error Logs for at least 30 days",
+          "description": "User Story missing story points estimation.",
+          "priority": "medium",
+          "suggested_agent": "developer_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 1696,
+          "work_item_type": "User Story",
+          "title": "Build Data Architecture with Compliance to SLA",
+          "description": "User Story missing story points estimation.",
+          "priority": "medium",
+          "suggested_agent": "developer_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 1697,
+          "work_item_type": "User Story",
+          "title": "Handle Notification Failures and Warnings",
+          "description": "User Story missing story points estimation.",
+          "priority": "medium",
+          "suggested_agent": "developer_agent",
+          "area_path": "Backlog Automation\\Data Visualization"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1697,
+          "work_item_type": "User Story",
+          "title": "Handle Notification Failures and Warnings",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1696,
+          "work_item_type": "User Story",
+          "title": "Build Data Architecture with Compliance to SLA",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1695,
+          "work_item_type": "User Story",
+          "title": "Retain Error Logs for at least 30 days",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 691,
+          "work_item_type": "User Story",
+          "title": "For vessels, use historical actual points to draw the Green Line on Map",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1683,
+          "work_item_type": "User Story",
+          "title": "Admin Sets Cost Limits",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1627,
+          "work_item_type": "User Story",
+          "title": "Admin Manages Storage Scaling",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1626,
+          "work_item_type": "User Story",
+          "title": "End User Stores Data Securely",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1615,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Load Balancing Policies",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1595,
+          "work_item_type": "User Story",
+          "title": "Admin Monitors Resource Allocation",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1594,
+          "work_item_type": "User Story",
+          "title": "Admin Provisions Cloud Resources Automatically",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1583,
+          "work_item_type": "User Story",
+          "title": "View Trends from Historical Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1582,
+          "work_item_type": "User Story",
+          "title": "Access Historical Job Data for Reference",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1558,
+          "work_item_type": "User Story",
+          "title": "Schedule Operational Plan Timeline",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1546,
+          "work_item_type": "User Story",
+          "title": "Incorporate Real-Time Data into Simulations",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1522,
+          "work_item_type": "User Story",
+          "title": "Customize Job Design Parameters",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1521,
+          "work_item_type": "User Story",
+          "title": "Create New Job Design from Template",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1509,
+          "work_item_type": "User Story",
+          "title": "End User Views Integration Status",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1508,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Alerts for Integration Issues",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1496,
+          "work_item_type": "User Story",
+          "title": "Admin Views Supported System Catalog",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1495,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Compatibility Feedback",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1486,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Data Ingestion Frequency",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1485,
+          "work_item_type": "User Story",
+          "title": "End User Views Real-Time Field Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1474,
+          "work_item_type": "User Story",
+          "title": "Admin Views and Edits Existing Connections",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1473,
+          "work_item_type": "User Story",
+          "title": "Admin Configures New Field System Connection",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1460,
+          "work_item_type": "User Story",
+          "title": "Manage Role Permissions",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1459,
+          "work_item_type": "User Story",
+          "title": "Access Dashboard Based on Role",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1448,
+          "work_item_type": "User Story",
+          "title": "Export Historical Data Reports",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1425,
+          "work_item_type": "User Story",
+          "title": "Configure Alert Thresholds",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1424,
+          "work_item_type": "User Story",
+          "title": "Receive Visual Alerts for Critical Events",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1413,
+          "work_item_type": "User Story",
+          "title": "Customizable Dashboard Widgets",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1412,
+          "work_item_type": "User Story",
+          "title": "View Real-Time Operational Metrics",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1399,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Efficiency Issues",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1398,
+          "work_item_type": "User Story",
+          "title": "View Operational Efficiency Metrics",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1387,
+          "work_item_type": "User Story",
+          "title": "Compare Job Design Options",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1386,
+          "work_item_type": "User Story",
+          "title": "Generate Optimized Job Designs",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1374,
+          "work_item_type": "User Story",
+          "title": "View Maintenance History and Recommendations",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1373,
+          "work_item_type": "User Story",
+          "title": "Receive Maintenance Alerts",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1363,
+          "work_item_type": "User Story",
+          "title": "Visualize Prediction Trends",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1362,
+          "work_item_type": "User Story",
+          "title": "Predict Well Performance Metrics",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1341,
+          "work_item_type": "User Story",
+          "title": "Store Processed Data Securely",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1331,
+          "work_item_type": "User Story",
+          "title": "Detect Anomalies in Real-Time",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1330,
+          "work_item_type": "User Story",
+          "title": "Process Data for Immediate Insights",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1308,
+          "work_item_type": "User Story",
+          "title": "Validate Incoming Sensor Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1297,
+          "work_item_type": "User Story",
+          "title": "Handle Multiple Sensor Data Formats",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1273,
+          "work_item_type": "User Story",
+          "title": "Create Custom Scorecard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1264,
+          "work_item_type": "User Story",
+          "title": "Export Benchmarking Reports",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1253,
+          "work_item_type": "User Story",
+          "title": "Receive SLA Violation Alerts",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1252,
+          "work_item_type": "User Story",
+          "title": "Monitor SLA Compliance",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1206,
+          "work_item_type": "User Story",
+          "title": "Escalate Issues via Mobile Dashboard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1187,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Metric Details",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1152,
+          "work_item_type": "User Story",
+          "title": "Receive Push Notifications for Shipment Issues",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1142,
+          "work_item_type": "User Story",
+          "title": "Filter Shipments by Status or Location",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1141,
+          "work_item_type": "User Story",
+          "title": "View Active Shipments on Mobile",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1129,
+          "work_item_type": "User Story",
+          "title": "Generate Exception Handling Reports",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1128,
+          "work_item_type": "User Story",
+          "title": "Track Exception Resolution Status",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1106,
+          "work_item_type": "User Story",
+          "title": "Escalate Critical Exceptions to Managers",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1097,
+          "work_item_type": "User Story",
+          "title": "Prioritize Exceptions for Action",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1096,
+          "work_item_type": "User Story",
+          "title": "Categorize Exceptions by Severity",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1071,
+          "work_item_type": "User Story",
+          "title": "Detect Shipment Delays Automatically",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1047,
+          "work_item_type": "User Story",
+          "title": "Configure Integration Credentials",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1037,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Integration Failures",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        }
+      ],
+      "decomposition_agent": [
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 93,
+          "work_item_type": "Feature",
+          "title": "GRIT User Account - Private",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 103,
+          "work_item_type": "Feature",
+          "title": "Portal Aesthetics",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 138,
+          "work_item_type": "Feature",
+          "title": "Route and Plan Repository",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 194,
+          "work_item_type": "Feature",
+          "title": "Terraform",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 205,
+          "work_item_type": "Feature",
+          "title": "Grit Microsite - Public",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 237,
+          "work_item_type": "Feature",
+          "title": "GRIT Placeholder",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 522,
+          "work_item_type": "Feature",
+          "title": "Administrative Functions",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 1699,
+          "work_item_type": "Test Case",
+          "title": "Implement hover and display tooltip",
+          "description": "Test Case has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        }
+      ]
+    },
+    "dashboard_requirements": [
+      {
+        "type": "dashboard_requirement",
+        "component": "burndown_chart",
+        "description": "Verify burndown chart configuration and data freshness",
+        "priority": "medium",
+        "suggested_agent": "developer_agent"
+      },
+      {
+        "type": "dashboard_requirement",
+        "component": "cumulative_flow_diagram",
+        "description": "Verify cumulative flow diagram for sprint tracking",
+        "priority": "medium",
+        "suggested_agent": "developer_agent"
+      },
+      {
+        "type": "dashboard_requirement",
+        "component": "team_velocity",
+        "description": "Verify team velocity calculations and trending",
+        "priority": "low",
+        "suggested_agent": "developer_agent"
+      }
+    ],
+    "recommended_actions": [
+      "Priority: Review 50 user stories missing acceptance criteria with QA Tester Agent",
+      "Estimation: Have Developer Agent estimate 3 user stories missing story points",
+      "Decomposition: Have Developer Agent break down 63 user stories into tasks",
+      "Hierarchy: Have Decomposition Agent link 9 orphaned work items to appropriate parents",
+      "Monitoring: Review 3 dashboard/reporting requirements"
+    ]
+  },
+  "discrepancies": [
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 93,
+      "work_item_type": "Feature",
+      "title": "GRIT User Account - Private",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 103,
+      "work_item_type": "Feature",
+      "title": "Portal Aesthetics",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 138,
+      "work_item_type": "Feature",
+      "title": "Route and Plan Repository",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 194,
+      "work_item_type": "Feature",
+      "title": "Terraform",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 205,
+      "work_item_type": "Feature",
+      "title": "Grit Microsite - Public",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 237,
+      "work_item_type": "Feature",
+      "title": "GRIT Placeholder",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 522,
+      "work_item_type": "Feature",
+      "title": "Administrative Functions",
+      "description": "Feature has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 694,
+      "work_item_type": "User Story",
+      "title": "Review of Design approach",
+      "description": "User Story has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "orphaned_work_item",
+      "work_item_id": 1699,
+      "work_item_type": "Test Case",
+      "title": "Implement hover and display tooltip",
+      "description": "Test Case has no parent work item.",
+      "severity": "high",
+      "suggested_agent": "decomposition_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1697,
+      "work_item_type": "User Story",
+      "title": "Handle Notification Failures and Warnings",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1696,
+      "work_item_type": "User Story",
+      "title": "Build Data Architecture with Compliance to SLA",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1695,
+      "work_item_type": "User Story",
+      "title": "Retain Error Logs for at least 30 days",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 691,
+      "work_item_type": "User Story",
+      "title": "For vessels, use historical actual points to draw the Green Line on Map",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1683,
+      "work_item_type": "User Story",
+      "title": "Admin Sets Cost Limits",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1627,
+      "work_item_type": "User Story",
+      "title": "Admin Manages Storage Scaling",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1626,
+      "work_item_type": "User Story",
+      "title": "End User Stores Data Securely",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1615,
+      "work_item_type": "User Story",
+      "title": "Admin Configures Load Balancing Policies",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1595,
+      "work_item_type": "User Story",
+      "title": "Admin Monitors Resource Allocation",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1594,
+      "work_item_type": "User Story",
+      "title": "Admin Provisions Cloud Resources Automatically",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1583,
+      "work_item_type": "User Story",
+      "title": "View Trends from Historical Data",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1582,
+      "work_item_type": "User Story",
+      "title": "Access Historical Job Data for Reference",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1558,
+      "work_item_type": "User Story",
+      "title": "Schedule Operational Plan Timeline",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1546,
+      "work_item_type": "User Story",
+      "title": "Incorporate Real-Time Data into Simulations",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1522,
+      "work_item_type": "User Story",
+      "title": "Customize Job Design Parameters",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1521,
+      "work_item_type": "User Story",
+      "title": "Create New Job Design from Template",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1509,
+      "work_item_type": "User Story",
+      "title": "End User Views Integration Status",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1508,
+      "work_item_type": "User Story",
+      "title": "Admin Receives Alerts for Integration Issues",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1496,
+      "work_item_type": "User Story",
+      "title": "Admin Views Supported System Catalog",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1495,
+      "work_item_type": "User Story",
+      "title": "Admin Receives Compatibility Feedback",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1486,
+      "work_item_type": "User Story",
+      "title": "Admin Configures Data Ingestion Frequency",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1485,
+      "work_item_type": "User Story",
+      "title": "End User Views Real-Time Field Data",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1474,
+      "work_item_type": "User Story",
+      "title": "Admin Views and Edits Existing Connections",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1473,
+      "work_item_type": "User Story",
+      "title": "Admin Configures New Field System Connection",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1460,
+      "work_item_type": "User Story",
+      "title": "Manage Role Permissions",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1459,
+      "work_item_type": "User Story",
+      "title": "Access Dashboard Based on Role",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1448,
+      "work_item_type": "User Story",
+      "title": "Export Historical Data Reports",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1425,
+      "work_item_type": "User Story",
+      "title": "Configure Alert Thresholds",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1424,
+      "work_item_type": "User Story",
+      "title": "Receive Visual Alerts for Critical Events",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1413,
+      "work_item_type": "User Story",
+      "title": "Customizable Dashboard Widgets",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1412,
+      "work_item_type": "User Story",
+      "title": "View Real-Time Operational Metrics",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1399,
+      "work_item_type": "User Story",
+      "title": "Drill Down into Efficiency Issues",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1398,
+      "work_item_type": "User Story",
+      "title": "View Operational Efficiency Metrics",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1387,
+      "work_item_type": "User Story",
+      "title": "Compare Job Design Options",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1386,
+      "work_item_type": "User Story",
+      "title": "Generate Optimized Job Designs",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1374,
+      "work_item_type": "User Story",
+      "title": "View Maintenance History and Recommendations",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1373,
+      "work_item_type": "User Story",
+      "title": "Receive Maintenance Alerts",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1363,
+      "work_item_type": "User Story",
+      "title": "Visualize Prediction Trends",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1362,
+      "work_item_type": "User Story",
+      "title": "Predict Well Performance Metrics",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1341,
+      "work_item_type": "User Story",
+      "title": "Store Processed Data Securely",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1331,
+      "work_item_type": "User Story",
+      "title": "Detect Anomalies in Real-Time",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1330,
+      "work_item_type": "User Story",
+      "title": "Process Data for Immediate Insights",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1308,
+      "work_item_type": "User Story",
+      "title": "Validate Incoming Sensor Data",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1297,
+      "work_item_type": "User Story",
+      "title": "Handle Multiple Sensor Data Formats",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1274,
+      "work_item_type": "User Story",
+      "title": "Evaluate Carriers with Scorecard",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1273,
+      "work_item_type": "User Story",
+      "title": "Create Custom Scorecard",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1264,
+      "work_item_type": "User Story",
+      "title": "Export Benchmarking Reports",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1263,
+      "work_item_type": "User Story",
+      "title": "Access Industry Benchmark Data",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1253,
+      "work_item_type": "User Story",
+      "title": "Receive SLA Violation Alerts",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1252,
+      "work_item_type": "User Story",
+      "title": "Monitor SLA Compliance",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1206,
+      "work_item_type": "User Story",
+      "title": "Escalate Issues via Mobile Dashboard",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1187,
+      "work_item_type": "User Story",
+      "title": "Drill Down into Metric Details",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1152,
+      "work_item_type": "User Story",
+      "title": "Receive Push Notifications for Shipment Issues",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1142,
+      "work_item_type": "User Story",
+      "title": "Filter Shipments by Status or Location",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1141,
+      "work_item_type": "User Story",
+      "title": "View Active Shipments on Mobile",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1129,
+      "work_item_type": "User Story",
+      "title": "Generate Exception Handling Reports",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1128,
+      "work_item_type": "User Story",
+      "title": "Track Exception Resolution Status",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1106,
+      "work_item_type": "User Story",
+      "title": "Escalate Critical Exceptions to Managers",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1097,
+      "work_item_type": "User Story",
+      "title": "Prioritize Exceptions for Action",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1096,
+      "work_item_type": "User Story",
+      "title": "Categorize Exceptions by Severity",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1071,
+      "work_item_type": "User Story",
+      "title": "Detect Shipment Delays Automatically",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1047,
+      "work_item_type": "User Story",
+      "title": "Configure Integration Credentials",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    },
+    {
+      "type": "user_story_missing_tasks",
+      "work_item_id": 1037,
+      "work_item_type": "User Story",
+      "title": "Receive Alerts for Integration Failures",
+      "description": "User Story has no child tasks.",
+      "severity": "medium",
+      "suggested_agent": "developer_agent"
+    }
+  ],
+  "summary": {
+    "total_discrepancies": 72,
+    "report_captured": true,
+    "high_priority_count": 0,
+    "medium_priority_count": 0,
+    "low_priority_count": 0
+  }
+}

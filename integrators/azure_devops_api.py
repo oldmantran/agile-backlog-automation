@@ -53,6 +53,7 @@ class AzureDevOpsIntegrator:
             self.enabled = True
             
         # Initialize API endpoints
+        self.org_base_url = f"https://dev.azure.com/{self.organization}/_apis"
         self.base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
         self.project_base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
         self.work_items_url = f"{self.base_url}/wit/workitems"
@@ -907,31 +908,177 @@ class AzureDevOpsIntegrator:
                 self.logger.error(f"Response: {e.response.text}")
             raise
     
-    def _update_work_item(self, work_item_id: int, fields: Dict[str, Any]):
-        """Update a work item with the specified fields."""
-        url = f"{self.project_base_url}/wit/workitems/{work_item_id}?api-version=7.0"
+    def query_work_items(self, work_item_type: str, area_path: str = None, max_items: int = 100) -> List[int]:
+        """
+        Query work items by type and optionally filter by area path.
         
-        # Build patch document
-        patch_document = []
-        for field_path, value in fields.items():
-            patch_document.append({
-                'op': 'add',
-                'path': field_path,
-                'value': value
-            })
+        Args:
+            work_item_type: Type of work items to query (Epic, Feature, User Story, Task, Test Case)
+            area_path: Optional area path to filter by
+            max_items: Maximum number of items to return
+            
+        Returns:
+            List of work item IDs
+        """
+        try:
+            # Build WIQL query
+            wiql_query = f"SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = '{work_item_type}'"
+            
+            if area_path:
+                wiql_query += f" AND [System.AreaPath] UNDER '{area_path}'"
+            
+            # Add order and limit
+            wiql_query += f" ORDER BY [System.ChangedDate] DESC"
+            
+            # Execute query
+            url = f"{self.base_url}/wit/wiql"
+            
+            query_data = {
+                "query": wiql_query
+            }
+            
+            response = requests.post(
+                url,
+                json=query_data,
+                auth=self.auth,
+                params={'api-version': '7.0'}
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                work_items = result.get('workItems', [])
+                
+                # Extract IDs and limit results
+                work_item_ids = [wi['id'] for wi in work_items[:max_items]]
+                
+                self.logger.info(f"Queried {len(work_item_ids)} {work_item_type} work items")
+                return work_item_ids
+            else:
+                self.logger.error(f"Failed to query work items: {response.status_code} - {response.text}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error querying work items: {e}")
+            return []
+    
+    def get_work_item_details(self, work_item_ids: List[int]) -> List[Dict[str, Any]]:
+        """
+        Get detailed information for multiple work items.
+        
+        Args:
+            work_item_ids: List of work item IDs to retrieve
+            
+        Returns:
+            List of work item details with fields and relations
+        """
+        if not work_item_ids:
+            return []
         
         try:
+            # Batch request for multiple work items
+            # Azure DevOps API supports up to 200 items per request
+            batch_size = 200
+            all_work_items = []
+            
+            for i in range(0, len(work_item_ids), batch_size):
+                batch_ids = work_item_ids[i:i + batch_size]
+                ids_string = ','.join(map(str, batch_ids))
+                
+                url = f"{self.base_url}/wit/workitems"
+                
+                params = {
+                    'ids': ids_string,
+                    'fields': 'System.Id,System.WorkItemType,System.Title,System.Description,System.State,System.AreaPath,System.IterationPath,Microsoft.VSTS.Common.AcceptanceCriteria,Microsoft.VSTS.Scheduling.StoryPoints,Microsoft.VSTS.Common.Priority,System.AssignedTo',
+                    'api-version': '7.0'
+                }
+                
+                response = requests.get(url, auth=self.auth, params=params)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    batch_items = result.get('value', [])
+                    all_work_items.extend(batch_items)
+                else:
+                    self.logger.error(f"Failed to get work item details for batch: {response.status_code} - {response.text}")
+            
+            self.logger.info(f"Retrieved details for {len(all_work_items)} work items")
+            return all_work_items
+            
+        except Exception as e:
+            self.logger.error(f"Error getting work item details: {e}")
+            return []
+    
+    def get_work_item_relations(self, work_item_id: int) -> List[Dict[str, Any]]:
+        """
+        Get relations for a specific work item.
+        
+        Args:
+            work_item_id: ID of the work item
+            
+        Returns:
+            List of relation objects
+        """
+        try:
+            url = f"{self.project_base_url}/wit/workitems/{work_item_id}"
+            
+            params = {
+                'api-version': '7.0',
+                '$expand': 'Relations'
+            }
+            
+            response = requests.get(url, auth=self.auth, params=params)
+            
+            if response.status_code == 200:
+                result = response.json()
+                relations = result.get('relations', [])
+                return relations
+            else:
+                self.logger.error(f"Failed to get relations for work item {work_item_id}: {response.status_code}")
+                return []
+                
+        except Exception as e:
+            self.logger.error(f"Error getting work item relations: {e}")
+            return []
+    
+    def _update_work_item(self, work_item_id: int, fields: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update fields of an existing work item.
+        
+        Args:
+            work_item_id: ID of the work item to update
+            fields: Dictionary of fields to update
+            
+        Returns:
+            Updated work item data
+        """
+        try:
+            url = f"{self.project_base_url}/wit/workitems/{work_item_id}"
+            
+            # Prepare update operations
+            update_ops = []
+            for field_path, value in fields.items():
+                update_ops.append({
+                    "op": "add",
+                    "path": field_path,
+                    "value": value
+                })
+            
             response = requests.patch(
                 url,
-                json=patch_document,
+                json=update_ops,
                 auth=self.auth,
-                headers=self.headers
+                params={'api-version': '7.0'},
+                headers={'Content-Type': 'application/json-patch+json'}
             )
-            response.raise_for_status()
             
-            self.logger.info(f"Updated work item {work_item_id} with {len(fields)} fields")
-            return response.json()
-            
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to update work item {work_item_id}: {e}")
-            raise
+            if response.status_code == 200:
+                result = response.json()
+                self.logger.info(f"Successfully updated work item {work_item_id}")
+                return result
+            else:
+                self.logger.error(f"Failed to update work item {work_item_id}: {response.status_code} - {response.text}")
+                return {}
+                
+        except Exception as e:
+            self.logger.error(f"Error updating work item {work_item_id}: {e}")
+            return {}
