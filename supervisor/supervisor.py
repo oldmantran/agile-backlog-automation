@@ -1012,7 +1012,3 @@ class WorkflowSupervisor:
         except Exception as e:
             self.logger.error(f"Failed to create complete user story with children: {e}")
             raise
-            
-        except Exception as e:
-            self.logger.error(f"Failed to create complete user story with children: {e}")
-            raise
