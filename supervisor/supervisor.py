@@ -1,4 +1,4 @@
-"""
+﻿"""
 Supervisor Module - Orchestrates the multi-agent backlog automation workflow.
 
 The Supervisor manages the complete pipeline from product vision to Azure DevOps work items,
@@ -864,7 +864,7 @@ class WorkflowSupervisor:
         
         for line in criteria_lines:
             # Handle various bullet formats
-            cleaned = re.sub(r'^[-*•]\s*', '', line)
+            cleaned = re.sub(r'^[-*â€¢]\s*', '', line)
             cleaned = re.sub(r'^\d+\.\s*', '', cleaned)
             if cleaned:
                 criteria_items.append(cleaned)
