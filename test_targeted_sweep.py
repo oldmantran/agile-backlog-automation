@@ -242,10 +242,10 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
         return discrepancies
 
 
-def test_targeted_sweep_for_missing_tasks():
+def test_targeted_sweep_for_work_item_1508():
     """
-    Test targeted sweep specifically for user stories missing tasks.
-    This will help us see if work item 1308 gets properly processed on a second run.
+    Test targeted sweep specifically for work item 1508 that had JSON parsing issues.
+    This will help us see if the JSON parsing issue can be reproduced and fixed.
     """
     
     # Setup logging
@@ -279,26 +279,26 @@ def test_targeted_sweep_for_missing_tasks():
         )
         
         print("\n" + "="*80)
-        print("TARGETED SWEEP: MISSING USER STORY TASKS")
+        print("TARGETED SWEEP: TESTING WORK ITEM 1508 JSON PARSING ISSUE")
         print("="*80)
         
-        # Test 1: Check specific work item 1308
-        print(f"\n🎯 Test 1: Checking specific work item 1308")
+        # Test 1: Check specific work item 1508 (the one that failed)
+        print(f"\n🎯 Test 1: Checking specific work item 1508 (JSON parsing issue)")
         report1 = sweeper.run_targeted_sweep(
             sweep_type="missing_user_story_tasks",
-            work_item_ids=[1308]
+            work_item_ids=[1508]
         )
         
-        print(f"   Found {report1['summary']['total_discrepancies']} discrepancies for work item 1308")
+        print(f"   Found {report1['summary']['total_discrepancies']} discrepancies for work item 1508")
         
         if report1['summary']['total_discrepancies'] > 0:
-            print(f"   ✅ Work item 1308 was flagged for missing tasks!")
+            print(f"   ✅ Work item 1508 was flagged for missing tasks!")
             discrepancy = report1['discrepancies_by_priority']['medium'][0] if report1['discrepancies_by_priority']['medium'] else None
             if discrepancy:
                 print(f"   📋 Details: {discrepancy['description']}")
                 print(f"   🤖 Suggested Agent: {discrepancy['suggested_agent']}")
         else:
-            print(f"   ❌ Work item 1308 was NOT flagged - it may already have tasks or not exist")
+            print(f"   ❌ Work item 1508 was NOT flagged - it may already have tasks or not exist")
         
         # Test 2: Check all user stories in Data Visualization area
         print(f"\n🎯 Test 2: Checking all user stories in Data Visualization area")
@@ -323,8 +323,8 @@ def test_targeted_sweep_for_missing_tasks():
         else:
             print(f"   ✅ All user stories in the Data Visualization area have tasks!")
         
-        # Test 3: Run a second sweep to see if auto-remediation worked
-        print(f"\n🎯 Test 3: Running second sweep to check auto-remediation results")
+        # Test 3: Run a second sweep to see if auto-remediation worked for 1508
+        print(f"\n🎯 Test 3: Running second sweep to check auto-remediation results for 1508")
         
         # Wait a moment for any auto-remediation to complete
         import time
@@ -332,41 +332,40 @@ def test_targeted_sweep_for_missing_tasks():
         
         report3 = sweeper.run_targeted_sweep(
             sweep_type="missing_user_story_tasks", 
-            work_item_ids=[1308]
+            work_item_ids=[1508]
         )
         
-        print(f"   Second sweep found {report3['summary']['total_discrepancies']} discrepancies for work item 1308")
+        print(f"   Second sweep found {report3['summary']['total_discrepancies']} discrepancies for work item 1508")
         
         if report3['summary']['total_discrepancies'] == 0:
-            print(f"   ✅ Success! Work item 1308 now has child tasks (auto-remediation worked)")
+            print(f"   ✅ Success! Work item 1508 now has child tasks (auto-remediation worked)")
         elif report3['summary']['total_discrepancies'] < report1['summary']['total_discrepancies']:
             print(f"   🔄 Partial success! Some issues were resolved by auto-remediation")
         else:
-            print(f"   ❓ Same issues found - this may indicate:")
-            print(f"      - Auto-remediation failed (check logs)")
-            print(f"      - JSON parsing issues in developer agent")
-            print(f"      - Work item 1308 may not exist or be in different area")
+            print(f"   ❓ Same issues found - this indicates JSON parsing issues in developer agent")
+            print(f"      Check logs for 'Failed to parse JSON' or 'WARNING - No tasks generated'")
         
         # Save detailed results
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        results_file = f"output/targeted_sweep_missing_tasks_{timestamp}.json"
+        results_file = f"output/targeted_sweep_1508_issue_{timestamp}.json"
         
         os.makedirs("output", exist_ok=True)
         
         # Prepare results data
         results_data = {
             'timestamp': timestamp,
-            'sweep_type': 'targeted_missing_user_story_tasks',
+            'sweep_type': 'targeted_missing_user_story_tasks_1508',
             'test_results': {
-                'test1_specific_work_item_1308': report1,
+                'test1_specific_work_item_1508': report1,
                 'test2_data_visualization_area': report2,
-                'test3_second_sweep_1308': report3
+                'test3_second_sweep_1508': report3
             },
             'analysis': {
-                'work_item_1308_flagged_first_time': report1['summary']['total_discrepancies'] > 0,
-                'work_item_1308_resolved_second_time': report3['summary']['total_discrepancies'] == 0,
+                'work_item_1508_flagged_first_time': report1['summary']['total_discrepancies'] > 0,
+                'work_item_1508_resolved_second_time': report3['summary']['total_discrepancies'] == 0,
                 'auto_remediation_successful': report3['summary']['total_discrepancies'] < report1['summary']['total_discrepancies'],
-                'total_area_issues': report2['summary']['total_discrepancies']
+                'total_area_issues': report2['summary']['total_discrepancies'],
+                'json_parsing_issue_suspected': report1['summary']['total_discrepancies'] > 0 and report3['summary']['total_discrepancies'] >= report1['summary']['total_discrepancies']
             }
         }
         
@@ -377,7 +376,7 @@ def test_targeted_sweep_for_missing_tasks():
         print(f"\n📄 Detailed results saved to: {results_file}")
         
         print(f"\n" + "="*80)
-        print("TARGETED SWEEP TEST COMPLETED")
+        print("TARGETED SWEEP TEST FOR WORK ITEM 1508 COMPLETED")
         print("="*80)
         
         return results_data
@@ -388,5 +387,46 @@ def test_targeted_sweep_for_missing_tasks():
         raise
 
 
+def test_work_item_1508():
+    """
+    Simple test to check work item 1508 that failed JSON parsing.
+    """
+    print("\n" + "="*80)
+    print("TESTING WORK ITEM 1508 - JSON PARSING ISSUE")
+    print("="*80)
+    
+    try:
+        # Load configuration
+        config = Config()
+        ado_client = AzureDevOpsIntegrator(config)
+        supervisor = WorkflowSupervisor()
+        
+        # Initialize targeted sweeper
+        sweeper = TargetedSweeperAgent(
+            ado_client=ado_client,
+            supervisor_callback=supervisor.receive_sweeper_report,
+            config=config.settings
+        )
+        
+        # Test work item 1508 specifically
+        print(f"\n🎯 Testing work item 1508...")
+        report = sweeper.run_targeted_sweep(
+            sweep_type="missing_user_story_tasks",
+            work_item_ids=[1508]
+        )
+        
+        print(f"   Found {report['summary']['total_discrepancies']} discrepancies")
+        if report['summary']['total_discrepancies'] > 0:
+            print(f"   ✅ Work item 1508 flagged - auto-remediation should trigger")
+        else:
+            print(f"   ❌ Work item 1508 NOT flagged - may already have tasks")
+        
+        return report
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+        return None
+
+
 if __name__ == "__main__":
-    test_targeted_sweep_for_missing_tasks()
+    test_work_item_1508()
