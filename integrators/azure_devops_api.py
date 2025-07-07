@@ -1082,3 +1082,161 @@ class AzureDevOpsIntegrator:
         except Exception as e:
             self.logger.error(f"Error updating work item {work_item_id}: {e}")
             return {}
+    
+    def delete_work_item(self, work_item_id: int) -> bool:
+        """
+        Delete a work item (moves it to the Recycle Bin).
+        Handles Test Cases specially using Test Management API.
+        
+        Args:
+            work_item_id: The ID of the work item to delete
+            
+        Returns:
+            True if deletion was successful, False otherwise
+        """
+        try:
+            # First, get the work item details to check its type
+            work_item_details = self.get_work_item_details([work_item_id])
+            if not work_item_details:
+                self.logger.error(f"Could not retrieve work item {work_item_id} for deletion")
+                return False
+            
+            work_item_type = work_item_details[0].get('fields', {}).get('System.WorkItemType', '')
+            
+            # Test Cases require special handling with Test Management API
+            if work_item_type == 'Test Case':
+                return self._delete_test_case(work_item_id)
+            else:
+                # Use regular Work Item API for other types
+                url = f"{self.project_base_url}/wit/workitems/{work_item_id}"
+                
+                response = requests.delete(
+                    url,
+                    auth=self.auth,
+                    params={'api-version': '7.0'}
+                )
+                
+                if response.status_code == 200:
+                    self.logger.info(f"Successfully deleted work item {work_item_id}")
+                    return True
+                else:
+                    self.logger.error(f"Failed to delete work item {work_item_id}: {response.status_code} - {response.text}")
+                    return False
+                
+        except Exception as e:
+            self.logger.error(f"Error deleting work item {work_item_id}: {e}")
+            return False
+
+    def _delete_test_case(self, test_case_id: int) -> bool:
+        """
+        Delete a Test Case using the Test Management API.
+        
+        Args:
+            test_case_id: The ID of the test case to delete
+            
+        Returns:
+            True if deletion was successful, False otherwise
+        """
+        try:
+            # For Test Cases, we need to use the Test Management API
+            # URL format: https://dev.azure.com/{organization}/{project}/_apis/test/testcases/{testCaseId}
+            url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/test/testcases/{test_case_id}"
+            
+            response = requests.delete(
+                url,
+                auth=self.auth,
+                params={'api-version': '7.0'}
+            )
+            
+            if response.status_code in [200, 204]:
+                self.logger.info(f"Successfully deleted test case {test_case_id}")
+                return True
+            else:
+                self.logger.error(f"Failed to delete test case {test_case_id}: {response.status_code} - {response.text}")
+                # Fall back to trying to set state to "Closed" if deletion fails
+                return self._close_test_case(test_case_id)
+                
+        except Exception as e:
+            self.logger.error(f"Error deleting test case {test_case_id}: {e}")
+            # Fall back to trying to set state to "Closed" if deletion fails
+            return self._close_test_case(test_case_id)
+
+    def _close_test_case(self, test_case_id: int) -> bool:
+        """
+        Close a Test Case by setting its state to 'Closed' if deletion fails.
+        
+        Args:
+            test_case_id: The ID of the test case to close
+            
+        Returns:
+            True if closing was successful, False otherwise
+        """
+        try:
+            self.logger.info(f"Attempting to close test case {test_case_id} as fallback")
+            
+            # Try to set the test case state to "Closed"
+            url = f"{self.project_base_url}/wit/workitems/{test_case_id}"
+            
+            patch_document = [{
+                'op': 'replace',
+                'path': '/fields/System.State',
+                'value': 'Closed'
+            }]
+            
+            response = requests.patch(
+                url,
+                json=patch_document,
+                auth=self.auth,
+                headers={'Content-Type': 'application/json-patch+json'},
+                params={'api-version': '7.0'}
+            )
+            
+            if response.status_code == 200:
+                self.logger.info(f"Successfully closed test case {test_case_id}")
+                return True
+            else:
+                self.logger.error(f"Failed to close test case {test_case_id}: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error closing test case {test_case_id}: {e}")
+            return False
+
+    def restore_work_item(self, work_item_id: int) -> bool:
+        """
+        Restore a work item from the Recycle Bin.
+        
+        Args:
+            work_item_id: The ID of the work item to restore
+            
+        Returns:
+            True if restoration was successful, False otherwise
+        """
+        try:
+            url = f"{self.project_base_url}/wit/recyclebin/{work_item_id}"
+            
+            # Prepare restore operation
+            update_ops = [{
+                "op": "add",
+                "path": "/fields/System.State",
+                "value": "New"
+            }]
+            
+            response = requests.patch(
+                url,
+                json=update_ops,
+                auth=self.auth,
+                params={'api-version': '7.0'},
+                headers={'Content-Type': 'application/json-patch+json'}
+            )
+            
+            if response.status_code == 200:
+                self.logger.info(f"Successfully restored work item {work_item_id}")
+                return True
+            else:
+                self.logger.error(f"Failed to restore work item {work_item_id}: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error restoring work item {work_item_id}: {e}")
+            return False

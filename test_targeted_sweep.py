@@ -10,6 +10,7 @@ This script demonstrates how to run specific sweep tasks like:
 import os
 import sys
 import json
+import time
 from datetime import datetime
 
 # Add the project root to the path
@@ -18,6 +19,8 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from config.config_loader import Config
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
+from supervisor.supervisor import WorkflowSupervisor
+from utils.logger import setup_logger
 from supervisor.supervisor import WorkflowSupervisor
 from utils.logger import setup_logger
 
@@ -707,5 +710,235 @@ def test_all_sweep_types():
         return None
 
 
+def delete_data_visualization_test_cases():
+    """
+    Delete all existing test cases in the Data Visualization area path.
+    This will clean up test cases that were incorrectly created as children of Features
+    so we can start fresh with properly structured test cases under User Stories.
+    """
+    print("\n" + "="*80)
+    print("DELETING ALL TEST CASES IN DATA VISUALIZATION AREA")
+    print("="*80)
+    
+    # Setup logging
+    logger = setup_logger("delete_test_cases", "logs/delete_test_cases.log")
+    logger.info("Starting deletion of Data Visualization test cases")
+    
+    try:
+        # Load configuration
+        config = Config()
+        ado_client = AzureDevOpsIntegrator(config)
+        
+        # Query all test cases in the Data Visualization area
+        area_path = "Backlog Automation\\Data Visualization"
+        print(f"\n🔍 Searching for test cases in area: {area_path}")
+        
+        test_case_ids = ado_client.query_work_items("Test Case", area_path=area_path)
+        print(f"   Found {len(test_case_ids)} test cases to evaluate")
+        
+        if not test_case_ids:
+            print("   ✅ No test cases found in the Data Visualization area!")
+            return []
+        
+        # Get details for all test cases
+        test_cases = ado_client.get_work_item_details(test_case_ids)
+        
+        deleted_cases = []
+        skipped_cases = []
+        
+        print(f"\n🗑️  Processing {len(test_cases)} test cases for deletion...")
+        
+        for i, test_case in enumerate(test_cases, 1):
+            test_id = test_case['id']
+            title = test_case.get('fields', {}).get('System.Title', 'Unknown Title')
+            state = test_case.get('fields', {}).get('System.State', 'Unknown')
+            
+            print(f"\n   {i}. Test Case {test_id}: {title}")
+            print(f"      State: {state}")
+            
+            # Check if this test case has any important relationships we should preserve
+            relations = ado_client.get_work_item_relations(test_id)
+            parents = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Reverse']
+            
+            if parents:
+                parent_details = []
+                for parent in parents:
+                    parent_id = int(parent['url'].split('/')[-1])
+                    parent_info = ado_client.get_work_item_details([parent_id])
+                    if parent_info:
+                        parent_type = parent_info[0].get('fields', {}).get('System.WorkItemType', '')
+                        parent_title = parent_info[0].get('fields', {}).get('System.Title', '')
+                        parent_details.append(f"{parent_type} {parent_id}: {parent_title}")
+                
+                print(f"      Parent(s): {', '.join(parent_details)}")
+            
+            # Skip if test case is in a critical state or has important data
+            if state in ['Active', 'Design']:
+                print(f"      ⚠️  SKIPPING - Test case is in '{state}' state")
+                skipped_cases.append({
+                    'id': test_id,
+                    'title': title,
+                    'state': state,
+                    'reason': f"Active state: {state}"
+                })
+                continue
+            
+            # Confirm deletion
+            try:
+                print(f"      🗑️  DELETING test case {test_id}...")
+                
+                # Use the Azure DevOps API to delete the work item
+                # Note: This will move it to the Recycle Bin, not permanently delete
+                success = ado_client.delete_work_item(test_id)
+                
+                if success:
+                    print(f"      ✅ Successfully deleted test case {test_id}")
+                    deleted_cases.append({
+                        'id': test_id,
+                        'title': title,
+                        'state': state
+                    })
+                    logger.info(f"Deleted test case {test_id}: {title}")
+                else:
+                    print(f"      ❌ Failed to delete test case {test_id}")
+                    skipped_cases.append({
+                        'id': test_id,
+                        'title': title,
+                        'state': state,
+                        'reason': 'Deletion failed'
+                    })
+                
+            except Exception as e:
+                print(f"      ❌ Error deleting test case {test_id}: {e}")
+                logger.error(f"Error deleting test case {test_id}: {e}")
+                skipped_cases.append({
+                    'id': test_id,
+                    'title': title,
+                    'state': state,
+                    'reason': f'Exception: {str(e)}'
+                })
+        
+        # Summary
+        print(f"\n" + "="*60)
+        print("DELETION SUMMARY")
+        print("="*60)
+        print(f"✅ Successfully deleted: {len(deleted_cases)} test cases")
+        print(f"⚠️  Skipped: {len(skipped_cases)} test cases")
+        
+        if deleted_cases:
+            print(f"\n🗑️  Deleted test cases:")
+            for case in deleted_cases:
+                print(f"   - {case['id']}: {case['title']}")
+        
+        if skipped_cases:
+            print(f"\n⚠️  Skipped test cases:")
+            for case in skipped_cases:
+                print(f"   - {case['id']}: {case['title']} ({case['reason']})")
+        
+        # Save results
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        results_file = f"output/deleted_test_cases_{timestamp}.json"
+        
+        os.makedirs("output", exist_ok=True)
+        
+        results_data = {
+            'timestamp': timestamp,
+            'area_path': area_path,
+            'total_found': len(test_cases),
+            'deleted_count': len(deleted_cases),
+            'skipped_count': len(skipped_cases),
+            'deleted_cases': deleted_cases,
+            'skipped_cases': skipped_cases
+        }
+        
+        with open(results_file, 'w', encoding='utf-8') as f:
+            json.dump(results_data, f, indent=2, default=str)
+        
+        print(f"\n📄 Detailed results saved to: {results_file}")
+        logger.info(f"Deletion completed. Results saved to: {results_file}")
+        
+        return deleted_cases
+        
+    except Exception as e:
+        logger.error(f"Test case deletion failed: {e}")
+        print(f"\n❌ Deletion failed: {e}")
+        raise
+
+
 if __name__ == "__main__":
-    test_all_sweep_types()
+    """
+    Main execution for targeted sweep tests and utilities.
+    Run specific functions based on command line arguments or interactive menu.
+    """
+    import sys
+    
+    print("\n" + "="*80)
+    print("TARGETED SWEEP UTILITIES")
+    print("="*80)
+    
+    if len(sys.argv) > 1:
+        # Command line argument provided
+        command = sys.argv[1].lower()
+        
+        if command == "delete-test-cases":
+            print("🗑️  Running: Delete Data Visualization Test Cases")
+            delete_data_visualization_test_cases()
+            
+        elif command == "test-1508":
+            print("🔍 Running: Test Work Item 1508 JSON Issue")
+            test_work_item_1508()
+            
+        elif command == "test-missing-test-cases":
+            print("📝 Running: Test Missing Test Cases")
+            test_missing_test_cases()
+            
+        elif command == "test-all":
+            print("🎯 Running: All Targeted Sweep Tests")
+            test_all_sweep_types()
+            
+        else:
+            print(f"❌ Unknown command: {command}")
+            print("Available commands:")
+            print("  - delete-test-cases: Delete all test cases in Data Visualization area")
+            print("  - test-1508: Test specific work item 1508 JSON parsing issue")
+            print("  - test-missing-test-cases: Test missing test cases sweep")
+            print("  - test-all: Run comprehensive targeted sweep tests")
+    
+    else:
+        # Interactive menu
+        print("\nAvailable operations:")
+        print("1. 🗑️  Delete Data Visualization Test Cases")
+        print("2. 🔍 Test Work Item 1508 JSON Issue")
+        print("3. 📝 Test Missing Test Cases Sweep")
+        print("4. 🎯 Run All Targeted Sweep Tests")
+        print("5. ❌ Exit")
+        
+        try:
+            choice = input("\nEnter your choice (1-5): ").strip()
+            
+            if choice == "1":
+                print("\n🗑️  Starting deletion of Data Visualization test cases...")
+                delete_data_visualization_test_cases()
+                
+            elif choice == "2":
+                print("\n🔍 Testing work item 1508 JSON parsing issue...")
+                test_work_item_1508()
+                
+            elif choice == "3":
+                print("\n📝 Testing missing test cases sweep...")
+                test_missing_test_cases()
+                
+            elif choice == "4":
+                print("\n🎯 Running comprehensive targeted sweep tests...")
+                test_all_sweep_types()
+                
+            elif choice == "5":
+                print("\n👋 Exiting...")
+                
+            else:
+                print(f"\n❌ Invalid choice: {choice}")
+                
+        except KeyboardInterrupt:
+            print("\n\n👋 Operation cancelled by user.")
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
