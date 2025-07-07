@@ -33,9 +33,12 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
         Args:
             sweep_type: Type of sweep to run:
                 - "missing_user_story_tasks": Find user stories without child tasks
+                - "missing_test_cases": Find user stories without test cases
                 - "orphaned_work_items": Find work items without proper parents
                 - "missing_acceptance_criteria": Find user stories without acceptance criteria
                 - "missing_story_points": Find user stories without story points
+                - "incomplete_work_items": Find work items that are incomplete or stale
+                - "inconsistent_estimates": Find work items with inconsistent estimates
             **kwargs: Additional parameters for the sweep
         """
         self.logger.info(f"Starting targeted sweep: {sweep_type}")
@@ -52,6 +55,12 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
                 discrepancies = self._sweep_missing_acceptance_criteria(**kwargs)
             elif sweep_type == "missing_story_points":
                 discrepancies = self._sweep_missing_story_points(**kwargs)
+            elif sweep_type == "missing_test_cases":
+                discrepancies = self._sweep_missing_test_cases(**kwargs)
+            elif sweep_type == "incomplete_work_items":
+                discrepancies = self._sweep_incomplete_work_items(**kwargs)
+            elif sweep_type == "inconsistent_estimates":
+                discrepancies = self._sweep_inconsistent_estimates(**kwargs)
             else:
                 raise ValueError(f"Unknown sweep type: {sweep_type}")
                 
@@ -235,6 +244,164 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
                     'work_item_type': 'User Story',
                     'title': title,
                     'description': 'User Story missing story points estimation.',
+                    'severity': 'medium',
+                    'suggested_agent': 'developer_agent'
+                })
+        
+        return discrepancies
+
+    def _sweep_missing_test_cases(self, **kwargs):
+        """Targeted sweep for user stories missing test cases."""
+        discrepancies = []
+        
+        # Get specific work item IDs if provided, otherwise scan all user stories
+        target_ids = kwargs.get('work_item_ids', None)
+        area_path = kwargs.get('area_path', None)
+        
+        if target_ids:
+            user_story_ids = [wi_id for wi_id in target_ids]
+            self.logger.info(f"Checking specific work items for test cases: {target_ids}")
+        else:
+            user_story_ids = self.ado_client.query_work_items("User Story", area_path=area_path)
+            self.logger.info(f"Found {len(user_story_ids)} user stories to check for test cases")
+        
+        for story_id in user_story_ids:
+            try:
+                relations = self.ado_client.get_work_item_relations(story_id)
+                children = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
+                
+                # Check if this story has any Test Case children
+                has_test_cases = False
+                for child in children:
+                    child_id = int(child['url'].split('/')[-1])
+                    child_details = self.ado_client.get_work_item_details([child_id])
+                    if child_details:
+                        child_type = child_details[0].get('fields', {}).get('System.WorkItemType', '')
+                        if child_type == 'Test Case':
+                            has_test_cases = True
+                            break
+                
+                if not has_test_cases:
+                    story_details = self.ado_client.get_work_item_details([story_id])
+                    story_title = story_details[0].get('fields', {}).get('System.Title', '') if story_details else ''
+                    
+                    discrepancies.append({
+                        'type': 'user_story_missing_test_cases',
+                        'work_item_id': story_id,
+                        'work_item_type': 'User Story',
+                        'title': story_title,
+                        'description': 'User Story has no child test cases.',
+                        'severity': 'high',
+                        'suggested_agent': self.agent_assignments.get('user_story_missing_test_cases', 'qa_tester_agent')
+                    })
+                    
+            except Exception as e:
+                self.logger.error(f"Error checking user story {story_id} for test cases: {e}")
+        
+        return discrepancies
+
+    def _sweep_incomplete_work_items(self, **kwargs):
+        """Targeted sweep for work items with incomplete information."""
+        discrepancies = []
+        
+        # Query work items by state - look for items that should be "Done" but aren't
+        types = kwargs.get('work_item_types', ["User Story", "Task", "Feature"])
+        target_states = kwargs.get('target_states', ["Active", "New", "Committed"])
+        
+        for wi_type in types:
+            work_item_ids = self.ado_client.query_work_items(wi_type)
+            work_items = self.ado_client.get_work_item_details(work_item_ids)
+            
+            for wi in work_items:
+                wi_id = wi['id']
+                title = wi.get('fields', {}).get('System.Title', '')
+                state = wi.get('fields', {}).get('System.State', '')
+                assigned_to = wi.get('fields', {}).get('System.AssignedTo', {})
+                
+                # Check for various incomplete scenarios
+                issues = []
+                
+                # No assignee for active work
+                if state in ["Active", "Committed"] and not assigned_to:
+                    issues.append("No assignee for active work item")
+                
+                # Old active items (created more than 30 days ago and still active)
+                created_date = wi.get('fields', {}).get('System.CreatedDate', '')
+                if created_date and state in target_states:
+                    from datetime import datetime, timedelta
+                    try:
+                        created = datetime.fromisoformat(created_date.replace('Z', '+00:00'))
+                        if datetime.now().replace(tzinfo=created.tzinfo) - created > timedelta(days=30):
+                            issues.append("Work item active for more than 30 days")
+                    except:
+                        pass
+                
+                if issues:
+                    discrepancies.append({
+                        'type': 'incomplete_work_item',
+                        'work_item_id': wi_id,
+                        'work_item_type': wi_type,
+                        'title': title,
+                        'description': f'{wi_type} incomplete: {"; ".join(issues)}',
+                        'severity': 'medium',
+                        'suggested_agent': 'developer_agent'
+                    })
+        
+        return discrepancies
+
+    def _sweep_inconsistent_estimates(self, **kwargs):
+        """Targeted sweep for work items with inconsistent or missing estimates."""
+        discrepancies = []
+        
+        user_story_ids = self.ado_client.query_work_items("User Story")
+        work_items = self.ado_client.get_work_item_details(user_story_ids)
+        
+        for wi in work_items:
+            wi_id = wi['id']
+            title = wi.get('fields', {}).get('System.Title', '')
+            story_points = wi.get('fields', {}).get('Microsoft.VSTS.Scheduling.StoryPoints', '')
+            
+            # Get child tasks and their estimates
+            relations = self.ado_client.get_work_item_relations(wi_id)
+            children = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
+            
+            total_task_hours = 0
+            task_count = 0
+            
+            for child in children:
+                child_id = int(child['url'].split('/')[-1])
+                child_details = self.ado_client.get_work_item_details([child_id])
+                if child_details:
+                    child_type = child_details[0].get('fields', {}).get('System.WorkItemType', '')
+                    if child_type == 'Task':
+                        task_count += 1
+                        # Get task estimate (Original Estimate or Remaining Work)
+                        original_estimate = child_details[0].get('fields', {}).get('Microsoft.VSTS.Scheduling.OriginalEstimate', 0)
+                        if original_estimate:
+                            total_task_hours += float(original_estimate)
+            
+            # Check for inconsistencies
+            issues = []
+            
+            # Story points vs task hours inconsistency (rough rule: 1 story point = 4-8 hours)
+            if story_points and task_count > 0:
+                expected_hours_min = float(story_points) * 4
+                expected_hours_max = float(story_points) * 8
+                
+                if total_task_hours < expected_hours_min * 0.5 or total_task_hours > expected_hours_max * 1.5:
+                    issues.append(f"Story points ({story_points}) inconsistent with task hours ({total_task_hours})")
+            
+            # Tasks without estimates
+            if task_count > 0 and total_task_hours == 0:
+                issues.append(f"Has {task_count} tasks but no time estimates")
+            
+            if issues:
+                discrepancies.append({
+                    'type': 'inconsistent_estimates',
+                    'work_item_id': wi_id,
+                    'work_item_type': 'User Story',
+                    'title': title,
+                    'description': f'Estimation issues: {"; ".join(issues)}',
                     'severity': 'medium',
                     'suggested_agent': 'developer_agent'
                 })
@@ -428,5 +595,117 @@ def test_work_item_1508():
         return None
 
 
+def test_missing_test_cases():
+    """
+    Test to check which user stories are missing test cases.
+    """
+    print("\n" + "="*80)
+    print("TESTING USER STORIES MISSING TEST CASES")
+    print("="*80)
+    
+    try:
+        # Load configuration
+        config = Config()
+        ado_client = AzureDevOpsIntegrator(config)
+        supervisor = WorkflowSupervisor()
+        
+        # Initialize targeted sweeper
+        sweeper = TargetedSweeperAgent(
+            ado_client=ado_client,
+            supervisor_callback=supervisor.receive_sweeper_report,
+            config=config.settings
+        )
+        
+        # Test for missing test cases
+        print(f"\n🎯 Checking for user stories missing test cases...")
+        report = sweeper.run_targeted_sweep(
+            sweep_type="missing_test_cases"
+        )
+        
+        print(f"   Found {report['summary']['total_discrepancies']} user stories missing test cases")
+        
+        if report['summary']['total_discrepancies'] > 0:
+            print(f"   📋 User stories needing test cases:")
+            high_priority = report['discrepancies_by_priority']['high']
+            for i, disc in enumerate(high_priority[:10], 1):  # Show first 10
+                print(f"     {i}. Work Item {disc['work_item_id']}: {disc['title']}")
+        else:
+            print(f"   ✅ All user stories have test cases!")
+        
+        return report
+        
+    except Exception as e:
+        print(f"❌ Test failed: {e}")
+        return None
+
+
+def test_all_sweep_types():
+    """
+    Test all available targeted sweep types to see current backlog state.
+    """
+    print("\n" + "="*80)
+    print("COMPREHENSIVE TARGETED SWEEP - ALL TYPES")
+    print("="*80)
+    
+    try:
+        # Load configuration
+        config = Config()
+        ado_client = AzureDevOpsIntegrator(config)
+        supervisor = WorkflowSupervisor()
+        
+        # Initialize targeted sweeper
+        sweeper = TargetedSweeperAgent(
+            ado_client=ado_client,
+            supervisor_callback=supervisor.receive_sweeper_report,
+            config=config.settings
+        )
+        
+        sweep_types = [
+            "missing_user_story_tasks",
+            "missing_test_cases", 
+            "orphaned_work_items",
+            "missing_acceptance_criteria",
+            "missing_story_points"
+        ]
+        
+        results = {}
+        
+        for sweep_type in sweep_types:
+            print(f"\n🎯 Running sweep: {sweep_type}")
+            try:
+                report = sweeper.run_targeted_sweep(sweep_type=sweep_type)
+                results[sweep_type] = report
+                
+                total = report['summary']['total_discrepancies']
+                print(f"   Found {total} discrepancies")
+                
+                if total > 0:
+                    for priority in ['high', 'medium', 'low']:
+                        count = report['summary'][f'{priority}_priority_count']
+                        if count > 0:
+                            print(f"     - {priority.title()}: {count}")
+                            
+            except Exception as e:
+                print(f"   ❌ Failed: {e}")
+                results[sweep_type] = {'error': str(e)}
+        
+        # Save comprehensive results
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        results_file = f"output/comprehensive_targeted_sweep_{timestamp}.json"
+        
+        os.makedirs("output", exist_ok=True)
+        
+        with open(results_file, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, default=str)
+        
+        print(f"\n📄 Comprehensive results saved to: {results_file}")
+        
+        return results
+        
+    except Exception as e:
+        print(f"❌ Comprehensive test failed: {e}")
+        return None
+
+
 if __name__ == "__main__":
-    test_work_item_1508()
+    test_all_sweep_types()

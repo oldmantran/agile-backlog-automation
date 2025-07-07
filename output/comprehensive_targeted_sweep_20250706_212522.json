@@ -1,0 +1,2794 @@
+{
+  "missing_user_story_tasks": {
+    "timestamp": "2025-07-06T21:11:13.122979",
+    "sweep_type": "targeted_missing_user_story_tasks",
+    "summary": {
+      "total_discrepancies": 10,
+      "high_priority_count": 0,
+      "medium_priority_count": 10,
+      "low_priority_count": 0,
+      "agents_with_assignments": 1,
+      "dashboard_requirements": 0
+    },
+    "discrepancies_by_priority": {
+      "high": [],
+      "medium": [
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 698,
+          "work_item_type": "User Story",
+          "title": "AIS Override-1-Create Manual Plan",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 2296,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhanced Route Simulator",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 778,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Shipment Delays",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 801,
+          "work_item_type": "User Story",
+          "title": "View Shipment Location on a Map",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 826,
+          "work_item_type": "User Story",
+          "title": "Fetch Shipment Data from Carrier APIs",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 827,
+          "work_item_type": "User Story",
+          "title": "Handle Carrier API Failures Gracefully",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 839,
+          "work_item_type": "User Story",
+          "title": "View Predicted Delays on Dashboard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        }
+      ],
+      "low": []
+    },
+    "agent_assignments": {
+      "developer_agent": [
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 698,
+          "work_item_type": "User Story",
+          "title": "AIS Override-1-Create Manual Plan",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 2296,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhanced Route Simulator",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 778,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Shipment Delays",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 801,
+          "work_item_type": "User Story",
+          "title": "View Shipment Location on a Map",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 826,
+          "work_item_type": "User Story",
+          "title": "Fetch Shipment Data from Carrier APIs",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 827,
+          "work_item_type": "User Story",
+          "title": "Handle Carrier API Failures Gracefully",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "user_story_missing_tasks",
+          "work_item_id": 839,
+          "work_item_type": "User Story",
+          "title": "View Predicted Delays on Dashboard",
+          "description": "User Story has no child tasks.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        }
+      ]
+    },
+    "dashboard_requirements": [],
+    "recommended_actions": [
+      "Decomposition: Have Developer Agent break down 10 user stories into tasks"
+    ]
+  },
+  "missing_test_cases": {
+    "timestamp": "2025-07-06T21:22:25.699438",
+    "sweep_type": "targeted_missing_test_cases",
+    "summary": {
+      "total_discrepancies": 85,
+      "high_priority_count": 85,
+      "medium_priority_count": 0,
+      "low_priority_count": 0,
+      "agents_with_assignments": 1,
+      "dashboard_requirements": 0
+    },
+    "discrepancies_by_priority": {
+      "high": [
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 582,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhance ETA update logic",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 698,
+          "work_item_type": "User Story",
+          "title": "AIS Override-1-Create Manual Plan",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 726,
+          "work_item_type": "User Story",
+          "title": "AIS Override-5-Create plan from pinned vessel",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 724,
+          "work_item_type": "User Story",
+          "title": "AIS Override-2-3-Planned Stop",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 725,
+          "work_item_type": "User Story",
+          "title": "AIS Override-2-4-Unplanned Stop",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 657,
+          "work_item_type": "User Story",
+          "title": "Improve vessel routing of scgraph",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 691,
+          "work_item_type": "User Story",
+          "title": "For vessels, use historical actual points to draw the Green Line on Map",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 2296,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhanced Route Simulator",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 714,
+          "work_item_type": "User Story",
+          "title": "Design - Manually Add a New To Do",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 381,
+          "work_item_type": "User Story",
+          "title": "**** Grit non-AI Improvements and Bugs ****",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 727,
+          "work_item_type": "User Story",
+          "title": "Implement - Manually Add a New To Do",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 373,
+          "work_item_type": "User Story",
+          "title": "MVP - Scan BOL with phone, auto plan created, instant Grit alerts with MMS",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 728,
+          "work_item_type": "User Story",
+          "title": "Correct UI Inconsistencies with Designs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 669,
+          "work_item_type": "User Story",
+          "title": "Enhance InfoPortCongestionManual function for single plan",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 599,
+          "work_item_type": "User Story",
+          "title": "Implement - Grit Tutorial",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 119,
+          "work_item_type": "User Story",
+          "title": "Define the Alert and Warnings RULES",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 651,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v2 with detailed information",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1683,
+          "work_item_type": "User Story",
+          "title": "Admin Sets Cost Limits",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1672,
+          "work_item_type": "User Story",
+          "title": "Admin Tracks Cloud Costs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1649,
+          "work_item_type": "User Story",
+          "title": "Admin Views Performance Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1638,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Performance Alerts",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1627,
+          "work_item_type": "User Story",
+          "title": "Admin Manages Storage Scaling",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1626,
+          "work_item_type": "User Story",
+          "title": "End User Stores Data Securely",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1615,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Load Balancing Policies",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1605,
+          "work_item_type": "User Story",
+          "title": "End User Experiences Consistent Performance",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1595,
+          "work_item_type": "User Story",
+          "title": "Admin Monitors Resource Allocation",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1594,
+          "work_item_type": "User Story",
+          "title": "Admin Provisions Cloud Resources Automatically",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1583,
+          "work_item_type": "User Story",
+          "title": "View Trends from Historical Data",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1582,
+          "work_item_type": "User Story",
+          "title": "Access Historical Job Data for Reference",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1559,
+          "work_item_type": "User Story",
+          "title": "Visualize Operational Plan on Calendar",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1558,
+          "work_item_type": "User Story",
+          "title": "Schedule Operational Plan Timeline",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1546,
+          "work_item_type": "User Story",
+          "title": "Incorporate Real-Time Data into Simulations",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1534,
+          "work_item_type": "User Story",
+          "title": "Simulate Job Design Scenarios",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1522,
+          "work_item_type": "User Story",
+          "title": "Customize Job Design Parameters",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1521,
+          "work_item_type": "User Story",
+          "title": "Create New Job Design from Template",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1509,
+          "work_item_type": "User Story",
+          "title": "End User Views Integration Status",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1508,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Alerts for Integration Issues",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1496,
+          "work_item_type": "User Story",
+          "title": "Admin Views Supported System Catalog",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1495,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Compatibility Feedback",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1486,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Data Ingestion Frequency",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1485,
+          "work_item_type": "User Story",
+          "title": "End User Views Real-Time Field Data",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1474,
+          "work_item_type": "User Story",
+          "title": "Admin Views and Edits Existing Connections",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1473,
+          "work_item_type": "User Story",
+          "title": "Admin Configures New Field System Connection",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1460,
+          "work_item_type": "User Story",
+          "title": "Manage Role Permissions",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1459,
+          "work_item_type": "User Story",
+          "title": "Access Dashboard Based on Role",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1448,
+          "work_item_type": "User Story",
+          "title": "Export Historical Data Reports",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1436,
+          "work_item_type": "User Story",
+          "title": "View Historical Data Trends",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1425,
+          "work_item_type": "User Story",
+          "title": "Configure Alert Thresholds",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1424,
+          "work_item_type": "User Story",
+          "title": "Receive Visual Alerts for Critical Events",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1413,
+          "work_item_type": "User Story",
+          "title": "Customizable Dashboard Widgets",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1412,
+          "work_item_type": "User Story",
+          "title": "View Real-Time Operational Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1399,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Efficiency Issues",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1398,
+          "work_item_type": "User Story",
+          "title": "View Operational Efficiency Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1387,
+          "work_item_type": "User Story",
+          "title": "Compare Job Design Options",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1386,
+          "work_item_type": "User Story",
+          "title": "Generate Optimized Job Designs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 596,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v1 info window on Plan Map",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 700,
+          "work_item_type": "User Story",
+          "title": "To Do for Completed Plans",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 702,
+          "work_item_type": "User Story",
+          "title": "Tooltips for Cargo types when setting up a plan",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 701,
+          "work_item_type": "User Story",
+          "title": "Enhancements to Alerts & To Do",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 656,
+          "work_item_type": "User Story",
+          "title": "Update code to use gritPorts container",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 673,
+          "work_item_type": "User Story",
+          "title": "Implement - Updates to the All Plans screen - Filters, Sorting, Column width adjustments",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 703,
+          "work_item_type": "User Story",
+          "title": "Clear all Alerts",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 646,
+          "work_item_type": "User Story",
+          "title": "Implement - Grit Assistant Real-time Weather Delay Monitoring",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 607,
+          "work_item_type": "User Story",
+          "title": "Implement - Route Simulator",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1187,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Metric Details",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1195,
+          "work_item_type": "User Story",
+          "title": "Re-Route Shipments from Mobile",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1206,
+          "work_item_type": "User Story",
+          "title": "Escalate Issues via Mobile Dashboard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1219,
+          "work_item_type": "User Story",
+          "title": "View Carrier Performance Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1230,
+          "work_item_type": "User Story",
+          "title": "Compare Carriers Side-by-Side",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1252,
+          "work_item_type": "User Story",
+          "title": "Monitor SLA Compliance",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1253,
+          "work_item_type": "User Story",
+          "title": "Receive SLA Violation Alerts",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1264,
+          "work_item_type": "User Story",
+          "title": "Export Benchmarking Reports",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1273,
+          "work_item_type": "User Story",
+          "title": "Create Custom Scorecard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 778,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Shipment Delays",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 779,
+          "work_item_type": "User Story",
+          "title": "Customize Notification Preferences",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 801,
+          "work_item_type": "User Story",
+          "title": "View Shipment Location on a Map",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 802,
+          "work_item_type": "User Story",
+          "title": "Display Route History and Estimated Path",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 826,
+          "work_item_type": "User Story",
+          "title": "Fetch Shipment Data from Carrier APIs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 827,
+          "work_item_type": "User Story",
+          "title": "Handle Carrier API Failures Gracefully",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 839,
+          "work_item_type": "User Story",
+          "title": "View Predicted Delays on Dashboard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 840,
+          "work_item_type": "User Story",
+          "title": "Receive Delay Risk Details",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        }
+      ],
+      "medium": [],
+      "low": []
+    },
+    "agent_assignments": {
+      "qa_tester_agent": [
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 582,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhance ETA update logic",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 698,
+          "work_item_type": "User Story",
+          "title": "AIS Override-1-Create Manual Plan",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 726,
+          "work_item_type": "User Story",
+          "title": "AIS Override-5-Create plan from pinned vessel",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 724,
+          "work_item_type": "User Story",
+          "title": "AIS Override-2-3-Planned Stop",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 725,
+          "work_item_type": "User Story",
+          "title": "AIS Override-2-4-Unplanned Stop",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 657,
+          "work_item_type": "User Story",
+          "title": "Improve vessel routing of scgraph",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 691,
+          "work_item_type": "User Story",
+          "title": "For vessels, use historical actual points to draw the Green Line on Map",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 2296,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhanced Route Simulator",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 714,
+          "work_item_type": "User Story",
+          "title": "Design - Manually Add a New To Do",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 381,
+          "work_item_type": "User Story",
+          "title": "**** Grit non-AI Improvements and Bugs ****",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 727,
+          "work_item_type": "User Story",
+          "title": "Implement - Manually Add a New To Do",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 373,
+          "work_item_type": "User Story",
+          "title": "MVP - Scan BOL with phone, auto plan created, instant Grit alerts with MMS",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 728,
+          "work_item_type": "User Story",
+          "title": "Correct UI Inconsistencies with Designs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 669,
+          "work_item_type": "User Story",
+          "title": "Enhance InfoPortCongestionManual function for single plan",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 599,
+          "work_item_type": "User Story",
+          "title": "Implement - Grit Tutorial",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 119,
+          "work_item_type": "User Story",
+          "title": "Define the Alert and Warnings RULES",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 651,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v2 with detailed information",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1683,
+          "work_item_type": "User Story",
+          "title": "Admin Sets Cost Limits",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1672,
+          "work_item_type": "User Story",
+          "title": "Admin Tracks Cloud Costs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1649,
+          "work_item_type": "User Story",
+          "title": "Admin Views Performance Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1638,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Performance Alerts",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1627,
+          "work_item_type": "User Story",
+          "title": "Admin Manages Storage Scaling",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1626,
+          "work_item_type": "User Story",
+          "title": "End User Stores Data Securely",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1615,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Load Balancing Policies",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1605,
+          "work_item_type": "User Story",
+          "title": "End User Experiences Consistent Performance",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1595,
+          "work_item_type": "User Story",
+          "title": "Admin Monitors Resource Allocation",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1594,
+          "work_item_type": "User Story",
+          "title": "Admin Provisions Cloud Resources Automatically",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1583,
+          "work_item_type": "User Story",
+          "title": "View Trends from Historical Data",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1582,
+          "work_item_type": "User Story",
+          "title": "Access Historical Job Data for Reference",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1559,
+          "work_item_type": "User Story",
+          "title": "Visualize Operational Plan on Calendar",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1558,
+          "work_item_type": "User Story",
+          "title": "Schedule Operational Plan Timeline",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1546,
+          "work_item_type": "User Story",
+          "title": "Incorporate Real-Time Data into Simulations",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1534,
+          "work_item_type": "User Story",
+          "title": "Simulate Job Design Scenarios",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1522,
+          "work_item_type": "User Story",
+          "title": "Customize Job Design Parameters",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1521,
+          "work_item_type": "User Story",
+          "title": "Create New Job Design from Template",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1509,
+          "work_item_type": "User Story",
+          "title": "End User Views Integration Status",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1508,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Alerts for Integration Issues",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1496,
+          "work_item_type": "User Story",
+          "title": "Admin Views Supported System Catalog",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1495,
+          "work_item_type": "User Story",
+          "title": "Admin Receives Compatibility Feedback",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1486,
+          "work_item_type": "User Story",
+          "title": "Admin Configures Data Ingestion Frequency",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1485,
+          "work_item_type": "User Story",
+          "title": "End User Views Real-Time Field Data",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1474,
+          "work_item_type": "User Story",
+          "title": "Admin Views and Edits Existing Connections",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1473,
+          "work_item_type": "User Story",
+          "title": "Admin Configures New Field System Connection",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1460,
+          "work_item_type": "User Story",
+          "title": "Manage Role Permissions",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1459,
+          "work_item_type": "User Story",
+          "title": "Access Dashboard Based on Role",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1448,
+          "work_item_type": "User Story",
+          "title": "Export Historical Data Reports",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1436,
+          "work_item_type": "User Story",
+          "title": "View Historical Data Trends",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1425,
+          "work_item_type": "User Story",
+          "title": "Configure Alert Thresholds",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1424,
+          "work_item_type": "User Story",
+          "title": "Receive Visual Alerts for Critical Events",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1413,
+          "work_item_type": "User Story",
+          "title": "Customizable Dashboard Widgets",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1412,
+          "work_item_type": "User Story",
+          "title": "View Real-Time Operational Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1399,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Efficiency Issues",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1398,
+          "work_item_type": "User Story",
+          "title": "View Operational Efficiency Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1387,
+          "work_item_type": "User Story",
+          "title": "Compare Job Design Options",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1386,
+          "work_item_type": "User Story",
+          "title": "Generate Optimized Job Designs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 596,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v1 info window on Plan Map",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 700,
+          "work_item_type": "User Story",
+          "title": "To Do for Completed Plans",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 702,
+          "work_item_type": "User Story",
+          "title": "Tooltips for Cargo types when setting up a plan",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 701,
+          "work_item_type": "User Story",
+          "title": "Enhancements to Alerts & To Do",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 656,
+          "work_item_type": "User Story",
+          "title": "Update code to use gritPorts container",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 673,
+          "work_item_type": "User Story",
+          "title": "Implement - Updates to the All Plans screen - Filters, Sorting, Column width adjustments",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 703,
+          "work_item_type": "User Story",
+          "title": "Clear all Alerts",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 646,
+          "work_item_type": "User Story",
+          "title": "Implement - Grit Assistant Real-time Weather Delay Monitoring",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 607,
+          "work_item_type": "User Story",
+          "title": "Implement - Route Simulator",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1187,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Metric Details",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1195,
+          "work_item_type": "User Story",
+          "title": "Re-Route Shipments from Mobile",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1206,
+          "work_item_type": "User Story",
+          "title": "Escalate Issues via Mobile Dashboard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1219,
+          "work_item_type": "User Story",
+          "title": "View Carrier Performance Metrics",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1230,
+          "work_item_type": "User Story",
+          "title": "Compare Carriers Side-by-Side",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1252,
+          "work_item_type": "User Story",
+          "title": "Monitor SLA Compliance",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1253,
+          "work_item_type": "User Story",
+          "title": "Receive SLA Violation Alerts",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1264,
+          "work_item_type": "User Story",
+          "title": "Export Benchmarking Reports",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1273,
+          "work_item_type": "User Story",
+          "title": "Create Custom Scorecard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 778,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Shipment Delays",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 779,
+          "work_item_type": "User Story",
+          "title": "Customize Notification Preferences",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 801,
+          "work_item_type": "User Story",
+          "title": "View Shipment Location on a Map",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 802,
+          "work_item_type": "User Story",
+          "title": "Display Route History and Estimated Path",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 826,
+          "work_item_type": "User Story",
+          "title": "Fetch Shipment Data from Carrier APIs",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 827,
+          "work_item_type": "User Story",
+          "title": "Handle Carrier API Failures Gracefully",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 839,
+          "work_item_type": "User Story",
+          "title": "View Predicted Delays on Dashboard",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "user_story_missing_test_cases",
+          "work_item_id": 840,
+          "work_item_type": "User Story",
+          "title": "Receive Delay Risk Details",
+          "description": "User Story has no child test cases.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        }
+      ]
+    },
+    "dashboard_requirements": [],
+    "recommended_actions": []
+  },
+  "orphaned_work_items": {
+    "timestamp": "2025-07-06T21:24:47.040780",
+    "sweep_type": "targeted_orphaned_work_items",
+    "summary": {
+      "total_discrepancies": 10,
+      "high_priority_count": 10,
+      "medium_priority_count": 0,
+      "low_priority_count": 0,
+      "agents_with_assignments": 1,
+      "dashboard_requirements": 0
+    },
+    "discrepancies_by_priority": {
+      "high": [
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 93,
+          "work_item_type": "Feature",
+          "title": "GRIT User Account - Private",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 103,
+          "work_item_type": "Feature",
+          "title": "Portal Aesthetics",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 138,
+          "work_item_type": "Feature",
+          "title": "Route and Plan Repository",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 194,
+          "work_item_type": "Feature",
+          "title": "Terraform",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 205,
+          "work_item_type": "Feature",
+          "title": "Grit Microsite - Public",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 237,
+          "work_item_type": "Feature",
+          "title": "GRIT Placeholder",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 522,
+          "work_item_type": "Feature",
+          "title": "Administrative Functions",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 657,
+          "work_item_type": "User Story",
+          "title": "Improve vessel routing of scgraph",
+          "description": "User Story has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 1699,
+          "work_item_type": "Test Case",
+          "title": "Implement hover and display tooltip",
+          "description": "Test Case has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        }
+      ],
+      "medium": [],
+      "low": []
+    },
+    "agent_assignments": {
+      "decomposition_agent": [
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 93,
+          "work_item_type": "Feature",
+          "title": "GRIT User Account - Private",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 103,
+          "work_item_type": "Feature",
+          "title": "Portal Aesthetics",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 138,
+          "work_item_type": "Feature",
+          "title": "Route and Plan Repository",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 194,
+          "work_item_type": "Feature",
+          "title": "Terraform",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 205,
+          "work_item_type": "Feature",
+          "title": "Grit Microsite - Public",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 237,
+          "work_item_type": "Feature",
+          "title": "GRIT Placeholder",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 522,
+          "work_item_type": "Feature",
+          "title": "Administrative Functions",
+          "description": "Feature has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 657,
+          "work_item_type": "User Story",
+          "title": "Improve vessel routing of scgraph",
+          "description": "User Story has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        },
+        {
+          "type": "orphaned_work_item",
+          "work_item_id": 1699,
+          "work_item_type": "Test Case",
+          "title": "Implement hover and display tooltip",
+          "description": "Test Case has no parent work item.",
+          "severity": "high",
+          "suggested_agent": "decomposition_agent"
+        }
+      ]
+    },
+    "dashboard_requirements": [],
+    "recommended_actions": [
+      "Hierarchy: Have Decomposition Agent link 10 orphaned work items to appropriate parents"
+    ]
+  },
+  "missing_acceptance_criteria": {
+    "timestamp": "2025-07-06T21:24:48.037889",
+    "sweep_type": "targeted_missing_acceptance_criteria",
+    "summary": {
+      "total_discrepancies": 31,
+      "high_priority_count": 31,
+      "medium_priority_count": 0,
+      "low_priority_count": 0,
+      "agents_with_assignments": 1,
+      "dashboard_requirements": 0
+    },
+    "discrepancies_by_priority": {
+      "high": [
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 119,
+          "work_item_type": "User Story",
+          "title": "Define the Alert and Warnings RULES",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 381,
+          "work_item_type": "User Story",
+          "title": "**** Grit non-AI Improvements and Bugs ****",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 582,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhance ETA update logic",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 596,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v1 info window on Plan Map",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 607,
+          "work_item_type": "User Story",
+          "title": "Implement - Route Simulator",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 651,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v2 with detailed information",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 656,
+          "work_item_type": "User Story",
+          "title": "Update code to use gritPorts container",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 778,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Shipment Delays",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 779,
+          "work_item_type": "User Story",
+          "title": "Customize Notification Preferences",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 801,
+          "work_item_type": "User Story",
+          "title": "View Shipment Location on a Map",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 802,
+          "work_item_type": "User Story",
+          "title": "Display Route History and Estimated Path",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 826,
+          "work_item_type": "User Story",
+          "title": "Fetch Shipment Data from Carrier APIs",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 827,
+          "work_item_type": "User Story",
+          "title": "Handle Carrier API Failures Gracefully",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 839,
+          "work_item_type": "User Story",
+          "title": "View Predicted Delays on Dashboard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 840,
+          "work_item_type": "User Story",
+          "title": "Receive Delay Risk Details",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1187,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Metric Details",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1195,
+          "work_item_type": "User Story",
+          "title": "Re-Route Shipments from Mobile",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1206,
+          "work_item_type": "User Story",
+          "title": "Escalate Issues via Mobile Dashboard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1219,
+          "work_item_type": "User Story",
+          "title": "View Carrier Performance Metrics",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1230,
+          "work_item_type": "User Story",
+          "title": "Compare Carriers Side-by-Side",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1252,
+          "work_item_type": "User Story",
+          "title": "Monitor SLA Compliance",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1253,
+          "work_item_type": "User Story",
+          "title": "Receive SLA Violation Alerts",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1264,
+          "work_item_type": "User Story",
+          "title": "Export Benchmarking Reports",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1273,
+          "work_item_type": "User Story",
+          "title": "Create Custom Scorecard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1285,
+          "work_item_type": "User Story",
+          "title": "Collect Data from IoT Sensors in Real-Time",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1297,
+          "work_item_type": "User Story",
+          "title": "Handle Multiple Sensor Data Formats",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1308,
+          "work_item_type": "User Story",
+          "title": "Validate Incoming Sensor Data",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        }
+      ],
+      "medium": [],
+      "low": []
+    },
+    "agent_assignments": {
+      "qa_tester_agent": [
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 119,
+          "work_item_type": "User Story",
+          "title": "Define the Alert and Warnings RULES",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 381,
+          "work_item_type": "User Story",
+          "title": "**** Grit non-AI Improvements and Bugs ****",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 582,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhance ETA update logic",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 596,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v1 info window on Plan Map",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 607,
+          "work_item_type": "User Story",
+          "title": "Implement - Route Simulator",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 651,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v2 with detailed information",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 656,
+          "work_item_type": "User Story",
+          "title": "Update code to use gritPorts container",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 778,
+          "work_item_type": "User Story",
+          "title": "Receive Alerts for Shipment Delays",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 779,
+          "work_item_type": "User Story",
+          "title": "Customize Notification Preferences",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 801,
+          "work_item_type": "User Story",
+          "title": "View Shipment Location on a Map",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 802,
+          "work_item_type": "User Story",
+          "title": "Display Route History and Estimated Path",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 826,
+          "work_item_type": "User Story",
+          "title": "Fetch Shipment Data from Carrier APIs",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 827,
+          "work_item_type": "User Story",
+          "title": "Handle Carrier API Failures Gracefully",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 839,
+          "work_item_type": "User Story",
+          "title": "View Predicted Delays on Dashboard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 840,
+          "work_item_type": "User Story",
+          "title": "Receive Delay Risk Details",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1187,
+          "work_item_type": "User Story",
+          "title": "Drill Down into Metric Details",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1195,
+          "work_item_type": "User Story",
+          "title": "Re-Route Shipments from Mobile",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1206,
+          "work_item_type": "User Story",
+          "title": "Escalate Issues via Mobile Dashboard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1219,
+          "work_item_type": "User Story",
+          "title": "View Carrier Performance Metrics",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1230,
+          "work_item_type": "User Story",
+          "title": "Compare Carriers Side-by-Side",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1252,
+          "work_item_type": "User Story",
+          "title": "Monitor SLA Compliance",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1253,
+          "work_item_type": "User Story",
+          "title": "Receive SLA Violation Alerts",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1263,
+          "work_item_type": "User Story",
+          "title": "Access Industry Benchmark Data",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1264,
+          "work_item_type": "User Story",
+          "title": "Export Benchmarking Reports",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1273,
+          "work_item_type": "User Story",
+          "title": "Create Custom Scorecard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1274,
+          "work_item_type": "User Story",
+          "title": "Evaluate Carriers with Scorecard",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1285,
+          "work_item_type": "User Story",
+          "title": "Collect Data from IoT Sensors in Real-Time",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1297,
+          "work_item_type": "User Story",
+          "title": "Handle Multiple Sensor Data Formats",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        },
+        {
+          "type": "missing_acceptance_criteria",
+          "work_item_id": 1308,
+          "work_item_type": "User Story",
+          "title": "Validate Incoming Sensor Data",
+          "description": "User Story missing or insufficient acceptance criteria.",
+          "severity": "high",
+          "suggested_agent": "qa_tester_agent"
+        }
+      ]
+    },
+    "dashboard_requirements": [],
+    "recommended_actions": [
+      "Priority: Review 31 user stories missing acceptance criteria with QA Tester Agent"
+    ]
+  },
+  "missing_story_points": {
+    "timestamp": "2025-07-06T21:25:13.234188",
+    "sweep_type": "targeted_missing_story_points",
+    "summary": {
+      "total_discrepancies": 12,
+      "high_priority_count": 0,
+      "medium_priority_count": 12,
+      "low_priority_count": 0,
+      "agents_with_assignments": 1,
+      "dashboard_requirements": 0
+    },
+    "discrepancies_by_priority": {
+      "high": [],
+      "medium": [
+        {
+          "type": "missing_story_points",
+          "work_item_id": 381,
+          "work_item_type": "User Story",
+          "title": "**** Grit non-AI Improvements and Bugs ****",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 582,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhance ETA update logic",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 596,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v1 info window on Plan Map",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 607,
+          "work_item_type": "User Story",
+          "title": "Implement - Route Simulator",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 657,
+          "work_item_type": "User Story",
+          "title": "Improve vessel routing of scgraph",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 673,
+          "work_item_type": "User Story",
+          "title": "Implement - Updates to the All Plans screen - Filters, Sorting, Column width adjustments",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 691,
+          "work_item_type": "User Story",
+          "title": "For vessels, use historical actual points to draw the Green Line on Map",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 698,
+          "work_item_type": "User Story",
+          "title": "AIS Override-1-Create Manual Plan",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 714,
+          "work_item_type": "User Story",
+          "title": "Design - Manually Add a New To Do",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 2296,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhanced Route Simulator",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        }
+      ],
+      "low": []
+    },
+    "agent_assignments": {
+      "developer_agent": [
+        {
+          "type": "missing_story_points",
+          "work_item_id": 381,
+          "work_item_type": "User Story",
+          "title": "**** Grit non-AI Improvements and Bugs ****",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 567,
+          "work_item_type": "User Story",
+          "title": "**** Grit AI Assistant Improvements and Bugs ****",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 582,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhance ETA update logic",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 596,
+          "work_item_type": "User Story",
+          "title": "Implement - Journey Status v1 info window on Plan Map",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 607,
+          "work_item_type": "User Story",
+          "title": "Implement - Route Simulator",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 657,
+          "work_item_type": "User Story",
+          "title": "Improve vessel routing of scgraph",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 673,
+          "work_item_type": "User Story",
+          "title": "Implement - Updates to the All Plans screen - Filters, Sorting, Column width adjustments",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 691,
+          "work_item_type": "User Story",
+          "title": "For vessels, use historical actual points to draw the Green Line on Map",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 694,
+          "work_item_type": "User Story",
+          "title": "Review of Design approach",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 698,
+          "work_item_type": "User Story",
+          "title": "AIS Override-1-Create Manual Plan",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 714,
+          "work_item_type": "User Story",
+          "title": "Design - Manually Add a New To Do",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        },
+        {
+          "type": "missing_story_points",
+          "work_item_id": 2296,
+          "work_item_type": "User Story",
+          "title": "Implement - Enhanced Route Simulator",
+          "description": "User Story missing story points estimation.",
+          "severity": "medium",
+          "suggested_agent": "developer_agent"
+        }
+      ]
+    },
+    "dashboard_requirements": [],
+    "recommended_actions": [
+      "Estimation: Have Developer Agent estimate 12 user stories missing story points"
+    ]
+  }
+}
