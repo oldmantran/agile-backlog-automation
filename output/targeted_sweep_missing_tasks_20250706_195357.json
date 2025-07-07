@@ -1,0 +1,282 @@
+{
+  "timestamp": "20250706_195357",
+  "sweep_type": "targeted_missing_user_story_tasks",
+  "test_results": {
+    "test1_specific_work_item_1308": {
+      "timestamp": "2025-07-06T19:46:24.927476",
+      "sweep_type": "targeted_missing_user_story_tasks",
+      "summary": {
+        "total_discrepancies": 1,
+        "high_priority_count": 0,
+        "medium_priority_count": 1,
+        "low_priority_count": 0,
+        "agents_with_assignments": 1,
+        "dashboard_requirements": 0
+      },
+      "discrepancies_by_priority": {
+        "high": [],
+        "medium": [
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1308,
+            "work_item_type": "User Story",
+            "title": "Validate Incoming Sensor Data",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          }
+        ],
+        "low": []
+      },
+      "agent_assignments": {
+        "developer_agent": [
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1308,
+            "work_item_type": "User Story",
+            "title": "Validate Incoming Sensor Data",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          }
+        ]
+      },
+      "dashboard_requirements": [],
+      "recommended_actions": [
+        "Decomposition: Have Developer Agent break down 1 user stories into tasks"
+      ]
+    },
+    "test2_data_visualization_area": {
+      "timestamp": "2025-07-06T19:47:38.776314",
+      "sweep_type": "targeted_missing_user_story_tasks",
+      "summary": {
+        "total_discrepancies": 10,
+        "high_priority_count": 0,
+        "medium_priority_count": 10,
+        "low_priority_count": 0,
+        "agents_with_assignments": 1,
+        "dashboard_requirements": 0
+      },
+      "discrepancies_by_priority": {
+        "high": [],
+        "medium": [
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1594,
+            "work_item_type": "User Story",
+            "title": "Admin Provisions Cloud Resources Automatically",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1583,
+            "work_item_type": "User Story",
+            "title": "View Trends from Historical Data",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1582,
+            "work_item_type": "User Story",
+            "title": "Access Historical Job Data for Reference",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1508,
+            "work_item_type": "User Story",
+            "title": "Admin Receives Alerts for Integration Issues",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1474,
+            "work_item_type": "User Story",
+            "title": "Admin Views and Edits Existing Connections",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1448,
+            "work_item_type": "User Story",
+            "title": "Export Historical Data Reports",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1424,
+            "work_item_type": "User Story",
+            "title": "Receive Visual Alerts for Critical Events",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1412,
+            "work_item_type": "User Story",
+            "title": "View Real-Time Operational Metrics",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1398,
+            "work_item_type": "User Story",
+            "title": "View Operational Efficiency Metrics",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1362,
+            "work_item_type": "User Story",
+            "title": "Predict Well Performance Metrics",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          }
+        ],
+        "low": []
+      },
+      "agent_assignments": {
+        "developer_agent": [
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1594,
+            "work_item_type": "User Story",
+            "title": "Admin Provisions Cloud Resources Automatically",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1583,
+            "work_item_type": "User Story",
+            "title": "View Trends from Historical Data",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1582,
+            "work_item_type": "User Story",
+            "title": "Access Historical Job Data for Reference",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1508,
+            "work_item_type": "User Story",
+            "title": "Admin Receives Alerts for Integration Issues",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1474,
+            "work_item_type": "User Story",
+            "title": "Admin Views and Edits Existing Connections",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1448,
+            "work_item_type": "User Story",
+            "title": "Export Historical Data Reports",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1424,
+            "work_item_type": "User Story",
+            "title": "Receive Visual Alerts for Critical Events",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1412,
+            "work_item_type": "User Story",
+            "title": "View Real-Time Operational Metrics",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1398,
+            "work_item_type": "User Story",
+            "title": "View Operational Efficiency Metrics",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          },
+          {
+            "type": "user_story_missing_tasks",
+            "work_item_id": 1362,
+            "work_item_type": "User Story",
+            "title": "Predict Well Performance Metrics",
+            "description": "User Story has no child tasks.",
+            "severity": "medium",
+            "suggested_agent": "developer_agent"
+          }
+        ]
+      },
+      "dashboard_requirements": [],
+      "recommended_actions": [
+        "Decomposition: Have Developer Agent break down 10 user stories into tasks"
+      ]
+    },
+    "test3_second_sweep_1308": {
+      "timestamp": "2025-07-06T19:53:57.061310",
+      "sweep_type": "targeted_missing_user_story_tasks",
+      "summary": {
+        "total_discrepancies": 0,
+        "high_priority_count": 0,
+        "medium_priority_count": 0,
+        "low_priority_count": 0,
+        "agents_with_assignments": 0,
+        "dashboard_requirements": 0
+      },
+      "discrepancies_by_priority": {
+        "high": [],
+        "medium": [],
+        "low": []
+      },
+      "agent_assignments": {},
+      "dashboard_requirements": [],
+      "recommended_actions": []
+    }
+  },
+  "analysis": {
+    "work_item_1308_flagged_first_time": true,
+    "work_item_1308_resolved_second_time": true,
+    "auto_remediation_successful": true,
+    "total_area_issues": 10
+  }
+}
