@@ -30,7 +30,7 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
   onNext,
   initialData = {},
 }) => {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
       name: initialData.name || '',
       description: initialData.description || '',
@@ -42,6 +42,18 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
   
   const teamSize = watch('teamSize');
   const bgColor = useColorModeValue('white', 'gray.700');
+  
+  // Handle slider change since it can't use register directly
+  const handleSliderChange = (value: number) => {
+    setValue('teamSize', value);
+  };
+  
+  const onSubmit = (data: any) => {
+    onNext(data);
+  }; can't use register directly
+  const handleSliderChange = (value: number) => {
+    setValue('teamSize', value);
+  };
   
   const onSubmit = (data: any) => {
     onNext(data);
@@ -107,11 +119,11 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
           <FormControl>
             <FormLabel>Team Size: {teamSize} people</FormLabel>
             <Slider
-              defaultValue={teamSize}
+              value={teamSize}
               min={1}
               max={20}
               step={1}
-              {...register('teamSize')}
+              onChange={handleSliderChange}
               colorScheme="brand"
             >
               <SliderMark value={1} mt='3' ml='-1' fontSize='sm'>
