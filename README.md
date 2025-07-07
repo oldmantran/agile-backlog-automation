@@ -1,10 +1,17 @@
 # 🧠 Agile Backlog Automation
 
-## 🚨 Recent Updates (2024-07)
+## 🚨 Recent Updates (2025-07)
+
+- **New Mobile-First Frontend:**
+  - Added React-based frontend with Chakra UI for a modern, responsive user interface
+  - Implemented project creation wizard for intuitive backlog setup
+  - Created dashboard for monitoring backlog generation progress
+
 - **Test Case Hierarchy Analysis & Automation:**
   - Added scripts to analyze and reorganize test cases, ensuring they are parented by User Stories (not Features) for best practice in Azure DevOps.
   - Created a script to identify test cases directly under Features and (optionally) auto-create User Stories to parent them.
   - Enhanced logging and dry-run support for all reorganization scripts.
+  
 - **Environment Variable Handling:**
   - Standardized on `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` for all scripts.
   - All scripts now robustly load the `.env` file from the project root, regardless of working directory.
