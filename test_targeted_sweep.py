@@ -411,6 +411,203 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
         
         return discrepancies
 
+    def generate_test_case_coverage_report(self):
+        """
+        Generate a comprehensive report showing user story IDs and their test case counts,
+        ordered ascending by number of test cases.
+        """
+        print("\n" + "="*80)
+        print("TEST CASE COVERAGE REPORT BY USER STORY")
+        print("="*80)
+        
+        try:
+            # Load configuration
+            config = Config()
+            ado_client = AzureDevOpsIntegrator(config)
+            
+            print(f"\n🔍 Querying all user stories in the project...")
+            
+            # Query all user stories in the project
+            user_story_ids = ado_client.query_work_items("User Story")
+            print(f"   Found {len(user_story_ids)} user stories total")
+            
+            if not user_story_ids:
+                print("   ❌ No user stories found in the project!")
+                return []
+            
+            # Get details for all user stories
+            print(f"\n📊 Analyzing test case coverage for {len(user_story_ids)} user stories...")
+            user_stories = self.ado_client.get_work_item_details(user_story_ids)
+            
+            coverage_report = []
+            
+            # Process each user story to count test cases
+            for i, story in enumerate(user_stories, 1):
+                if i % 10 == 0:  # Progress indicator
+                    print(f"   Processing... {i}/{len(user_stories)}")
+                
+                story_id = story['id']
+                title = story.get('fields', {}).get('System.Title', 'Unknown Title')
+                state = story.get('fields', {}).get('System.State', 'Unknown')
+                area_path = story.get('fields', {}).get('System.AreaPath', 'Unknown')
+                story_points = story.get('fields', {}).get('Microsoft.VSTS.Scheduling.StoryPoints', None)
+                
+                # Get child work items
+                try:
+                    relations = self.ado_client.get_work_item_relations(story_id)
+                    children = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
+                    
+                    # Count test cases and other children
+                    test_case_count = 0
+                    task_count = 0
+                    other_count = 0
+                    
+                    for child in children:
+                        child_id = int(child['url'].split('/')[-1])
+                        child_info = self.ado_client.get_work_item_details([child_id])
+                        if child_info:
+                            child_type = child_info[0].get('fields', {}).get('System.WorkItemType', 'Unknown')
+                            if child_type == 'Test Case':
+                                test_case_count += 1
+                            elif child_type == 'Task':
+                                task_count += 1
+                            else:
+                                other_count += 1
+                    
+                    coverage_report.append({
+                        'story_id': story_id,
+                        'title': title,
+                        'state': state,
+                        'area_path': area_path,
+                        'story_points': story_points,
+                        'test_case_count': test_case_count,
+                        'task_count': task_count,
+                        'other_children_count': other_count,
+                        'total_children': test_case_count + task_count + other_count
+                    })
+                    
+                except Exception as e:
+                    print(f"   ⚠️  Error processing User Story {story_id}: {e}")
+                    coverage_report.append({
+                        'story_id': story_id,
+                        'title': title,
+                        'state': state,
+                        'area_path': area_path,
+                        'story_points': story_points,
+                        'test_case_count': 0,
+                        'task_count': 0,
+                        'other_children_count': 0,
+                        'total_children': 0,
+                        'error': str(e)
+                    })
+            
+            # Sort by test case count (ascending) then by story ID
+            coverage_report.sort(key=lambda x: (x['test_case_count'], x['story_id']))
+            
+            # Generate summary statistics
+            total_stories = len(coverage_report)
+            stories_with_no_tests = len([s for s in coverage_report if s['test_case_count'] == 0])
+            stories_with_tests = total_stories - stories_with_no_tests
+            total_test_cases = sum(s['test_case_count'] for s in coverage_report)
+            avg_test_cases = total_test_cases / total_stories if total_stories > 0 else 0
+            
+            print(f"\n📈 SUMMARY STATISTICS:")
+            print(f"   Total User Stories: {total_stories}")
+            print(f"   Stories with Test Cases: {stories_with_tests}")
+            print(f"   Stories without Test Cases: {stories_with_no_tests}")
+            print(f"   Total Test Cases: {total_test_cases}")
+            print(f"   Average Test Cases per Story: {avg_test_cases:.1f}")
+            print(f"   Test Coverage Rate: {(stories_with_tests/total_stories)*100:.1f}%")
+            
+            # Display detailed report
+            print(f"\n📋 DETAILED REPORT (Ordered by Test Case Count):")
+            print(f"{'Story ID':<10} {'Test Cases':<12} {'Tasks':<8} {'Total':<8} {'Points':<8} {'State':<12} {'Title':<50}")
+            print("-" * 120)
+            
+            for story in coverage_report:
+                story_id = story['story_id']
+                test_cases = story['test_case_count']
+                tasks = story['task_count']
+                total = story['total_children']
+                points = story['story_points'] if story['story_points'] is not None else 'N/A'
+                state = story['state']
+                title = story['title'][:47] + "..." if len(story['title']) > 50 else story['title']
+                
+                # Color coding for test case count
+                if test_cases == 0:
+                    status_icon = "❌"
+                elif test_cases < 5:
+                    status_icon = "⚠️ "
+                else:
+                    status_icon = "✅"
+                
+                print(f"{story_id:<10} {status_icon}{test_cases:<10} {tasks:<8} {total:<8} {points:<8} {state:<12} {title:<50}")
+            
+            # Show stories with most test cases
+            print(f"\n🏆 TOP 10 STORIES WITH MOST TEST CASES:")
+            top_stories = sorted(coverage_report, key=lambda x: x['test_case_count'], reverse=True)[:10]
+            for i, story in enumerate(top_stories, 1):
+                if story['test_case_count'] > 0:
+                    print(f"   {i}. Story {story['story_id']}: {story['test_case_count']} test cases - {story['title'][:60]}")
+            
+            # Show stories without test cases (first 20)
+            print(f"\n❌ STORIES WITHOUT TEST CASES (First 20):")
+            no_test_stories = [s for s in coverage_report if s['test_case_count'] == 0][:20]
+            for i, story in enumerate(no_test_stories, 1):
+                area = story['area_path'].split('\\')[-1] if '\\' in story['area_path'] else story['area_path']
+                print(f"   {i}. Story {story['story_id']} ({area}): {story['title'][:60]}")
+            
+            if len(no_test_stories) > 20:
+                print(f"   ... and {len(no_test_stories) - 20} more stories without test cases")
+            
+            # Save detailed report to file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            report_file = f"output/test_case_coverage_report_{timestamp}.json"
+            
+            os.makedirs("output", exist_ok=True)
+            
+            report_data = {
+                'timestamp': timestamp,
+                'summary': {
+                    'total_stories': total_stories,
+                    'stories_with_tests': stories_with_tests,
+                    'stories_without_tests': stories_with_no_tests,
+                    'total_test_cases': total_test_cases,
+                    'average_test_cases_per_story': avg_test_cases,
+                    'test_coverage_rate_percent': (stories_with_tests/total_stories)*100 if total_stories > 0 else 0
+                },
+                'detailed_report': coverage_report
+            }
+            
+            with open(report_file, 'w', encoding='utf-8') as f:
+                json.dump(report_data, f, indent=2, default=str)
+            
+            print(f"\n📄 Detailed report saved to: {report_file}")
+            
+            # Also save a CSV version for easy analysis
+            csv_file = f"output/test_case_coverage_report_{timestamp}.csv"
+            
+            import csv
+            with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+                fieldnames = ['story_id', 'title', 'state', 'area_path', 'story_points', 
+                             'test_case_count', 'task_count', 'other_children_count', 'total_children']
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                
+                for story in coverage_report:
+                    row = {k: v for k, v in story.items() if k in fieldnames}
+                    writer.writerow(row)
+            
+            print(f"📊 CSV report saved to: {csv_file}")
+            
+            return coverage_report
+            
+        except Exception as e:
+            print(f"❌ Report generation failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+
 
 def test_targeted_sweep_for_work_item_1508():
     """
@@ -897,80 +1094,353 @@ def delete_data_visualization_test_cases():
         raise
 
 
-if __name__ == "__main__":
+def validate_test_case_creation():
     """
-    Main execution for targeted sweep tests and utilities.
-    Run specific functions based on command line arguments or interactive menu.
+    Validate if test cases were actually created in Azure DevOps.
+    Check specific user stories that should have gotten test cases.
     """
-    import sys
-    
     print("\n" + "="*80)
-    print("TARGETED SWEEP UTILITIES")
+    print("VALIDATING TEST CASE CREATION IN AZURE DEVOPS")
     print("="*80)
     
+    try:
+        # Load configuration
+        config = Config()
+        ado_client = AzureDevOpsIntegrator(config)
+        
+        # Test specific user stories that should have gotten test cases
+        test_user_stories = [
+            1285,  # User specifically mentioned this one
+            1386,  # From the log - should have 9 test cases
+            1374,  # From the log - should have 8 test cases
+            1330,  # From the log - should have 10 test cases
+        ]
+        
+        print(f"\n🔍 Checking {len(test_user_stories)} user stories for test cases...")
+        
+        for story_id in test_user_stories:
+            print(f"\n📋 Checking User Story {story_id}:")
+            
+            try:
+                # Get the user story details
+                story_details = ado_client.get_work_item_details([story_id])
+                if not story_details:
+                    print(f"   ❌ User Story {story_id} not found!")
+                    continue
+                    
+                story = story_details[0]
+                title = story.get('fields', {}).get('System.Title', 'Unknown Title')
+                state = story.get('fields', {}).get('System.State', 'Unknown')
+                
+                print(f"   Title: {title}")
+                print(f"   State: {state}")
+                
+                # Get child work items (should include test cases)
+                relations = ado_client.get_work_item_relations(story_id)
+                children = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
+                
+                print(f"   Total child items: {len(children)}")
+                
+                # Categorize children by type
+                child_details = []
+                test_cases = []
+                tasks = []
+                other_children = []
+                
+                for child in children:
+                    child_id = int(child['url'].split('/')[-1])
+                    child_info = ado_client.get_work_item_details([child_id])
+                    if child_info:
+                        child_detail = child_info[0]
+                        child_type = child_detail.get('fields', {}).get('System.WorkItemType', 'Unknown')
+                        child_title = child_detail.get('fields', {}).get('System.Title', 'Unknown Title')
+                        
+                        child_details.append({
+                            'id': child_id,
+                            'type': child_type,
+                            'title': child_title
+                        })
+                        
+                        if child_type == 'Test Case':
+                            test_cases.append(child_detail)
+                        elif child_type == 'Task':
+                            tasks.append(child_detail)
+                        else:
+                            other_children.append(child_detail)
+                
+                # Report findings
+                print(f"   📝 Tasks: {len(tasks)}")
+                print(f"   🧪 Test Cases: {len(test_cases)}")
+                print(f"   🔄 Other children: {len(other_children)}")
+                
+                if test_cases:
+                    print(f"   ✅ Test cases found!")
+                    for i, tc in enumerate(test_cases[:5], 1):  # Show first 5
+                        tc_title = tc.get('fields', {}).get('System.Title', 'Unknown')
+                        tc_state = tc.get('fields', {}).get('System.State', 'Unknown')
+                        print(f"      {i}. {tc['id']}: {tc_title} ({tc_state})")
+                    if len(test_cases) > 5:
+                        print(f"      ... and {len(test_cases) - 5} more test cases")
+                else:
+                    print(f"   ❌ NO TEST CASES FOUND!")
+                    
+                if tasks:
+                    print(f"   📝 Tasks found:")
+                    for i, task in enumerate(tasks[:3], 1):  # Show first 3
+                        task_title = task.get('fields', {}).get('System.Title', 'Unknown')
+                        task_state = task.get('fields', {}).get('System.State', 'Unknown')
+                        print(f"      {i}. {task['id']}: {task_title} ({task_state})")
+                    if len(tasks) > 3:
+                        print(f"      ... and {len(tasks) - 3} more tasks")
+                
+            except Exception as e:
+                print(f"   ❌ Error checking User Story {story_id}: {e}")
+        
+        # Also check if there are any recent test cases created in the project
+        print(f"\n🔍 Checking for recently created test cases in the project...")
+        
+        # Query all test cases and see if any were created recently
+        all_test_case_ids = ado_client.query_work_items("Test Case")
+        print(f"   Total test cases in project: {len(all_test_case_ids)}")
+        
+        if all_test_case_ids:
+            # Get details for the most recent test cases
+            recent_test_cases = ado_client.get_work_item_details(all_test_case_ids[-20:])  # Last 20
+            
+            print(f"   🕒 Recent test cases (last 20):")
+            for tc in recent_test_cases[-10:]:  # Show last 10
+                tc_id = tc['id']
+                tc_title = tc.get('fields', {}).get('System.Title', 'Unknown')
+                tc_created = tc.get('fields', {}).get('System.CreatedDate', 'Unknown')
+                tc_created_by = tc.get('fields', {}).get('System.CreatedBy', {}).get('displayName', 'Unknown')
+                
+                print(f"      {tc_id}: {tc_title}")
+                print(f"         Created: {tc_created} by {tc_created_by}")
+        
+        # Check test plans and test suites
+        print(f"\n🔍 Checking for test plans and test suites...")
+        
+        try:
+            # Note: Azure DevOps REST API requires specific endpoints for test plans
+            # This might not work with the basic work item API
+            test_plan_ids = ado_client.query_work_items("Test Plan")
+            test_suite_ids = ado_client.query_work_items("Test Suite")
+            
+            print(f"   Test Plans: {len(test_plan_ids)}")
+            print(f"   Test Suites: {len(test_suite_ids)}")
+            
+        except Exception as e:
+            print(f"   ⚠️  Could not query test plans/suites: {e}")
+            print(f"      (This may require different API endpoints)")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Validation failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def debug_missing_test_cases():
+    """
+    Debug why test cases aren't being created by running the targeted sweep
+    and checking the actual Azure DevOps API responses.
+    """
+    print("\n" + "="*80)
+    print("DEBUGGING MISSING TEST CASES ISSUE")
+    print("="*80)
+    
+    # Setup logging with debug level
+    logger = setup_logger("debug_missing_test_cases", "logs/debug_missing_test_cases.log")
+    logger.info("Starting debug session for missing test cases")
+    
+    try:
+        # Load configuration
+        config = Config()
+        ado_client = AzureDevOpsIntegrator(config)
+        supervisor = WorkflowSupervisor()
+        
+        # Initialize targeted sweeper
+        sweeper = TargetedSweeperAgent(
+            ado_client=ado_client,
+            supervisor_callback=supervisor.receive_sweeper_report,
+            config=config.settings
+        )
+        
+        # Test User Story 1285 specifically (the one user mentioned)
+        target_story = 1285
+        print(f"\n🎯 Testing User Story {target_story} specifically...")
+        
+        # First, verify the user story exists and get its current state
+        print(f"\n1️⃣  Verifying User Story {target_story} exists...")
+        story_details = ado_client.get_work_item_details([target_story])
+        
+        if not story_details:
+            print(f"   ❌ User Story {target_story} not found!")
+            return False
+            
+        story = story_details[0]
+        title = story.get('fields', {}).get('System.Title', 'Unknown')
+        state = story.get('fields', {}).get('System.State', 'Unknown')
+        area_path = story.get('fields', {}).get('System.AreaPath', 'Unknown')
+        
+        print(f"   ✅ Found: {title}")
+        print(f"   📍 Area Path: {area_path}")
+        print(f"   📊 State: {state}")
+        
+        # Check current children
+        relations = ado_client.get_work_item_relations(target_story)
+        children = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
+        test_cases_before = []
+        
+        for child in children:
+            child_id = int(child['url'].split('/')[-1])
+            child_info = ado_client.get_work_item_details([child_id])
+            if child_info:
+                child_detail = child_info[0]
+                child_type = child_detail.get('fields', {}).get('System.WorkItemType', 'Unknown')
+                if child_type == 'Test Case':
+                    test_cases_before.append(child_detail)
+        
+        print(f"   🧪 Current test cases: {len(test_cases_before)}")
+        
+        # Now run the targeted sweep to see if it detects this as missing test cases
+        print(f"\n2️⃣  Running targeted sweep for missing test cases...")
+        
+        report = sweeper.run_targeted_sweep(
+            sweep_type="missing_test_cases",
+            work_item_ids=[target_story]
+        )
+        
+        print(f"   📋 Sweep found {report['summary']['total_discrepancies']} discrepancies")
+        
+        if report['summary']['total_discrepancies'] > 0:
+            discrepancy = report['discrepancies_by_priority']['high'][0] if report['discrepancies_by_priority']['high'] else None
+            if discrepancy:
+                print(f"   ✅ User Story {target_story} was flagged for missing test cases")
+                print(f"   📝 Description: {discrepancy['description']}")
+                print(f"   🤖 Suggested agent: {discrepancy['suggested_agent']}")
+                
+                # Check if supervisor received and is processing this
+                print(f"\n3️⃣  Checking if supervisor is processing the discrepancy...")
+                
+                # Wait a moment for processing
+                import time
+                time.sleep(5)
+                
+                # Check if test cases were created
+                print(f"\n4️⃣  Checking if test cases were created after sweep...")
+                updated_relations = ado_client.get_work_item_relations(target_story)
+                updated_children = [r for r in updated_relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
+                test_cases_after = []
+                
+                for child in updated_children:
+                    child_id = int(child['url'].split('/')[-1])
+                    child_info = ado_client.get_work_item_details([child_id])
+                    if child_info:
+                        child_detail = child_info[0]
+                        child_type = child_detail.get('fields', {}).get('System.WorkItemType', 'Unknown')
+                        if child_type == 'Test Case':
+                            test_cases_after.append(child_detail)
+                
+                print(f"   🧪 Test cases after sweep: {len(test_cases_after)}")
+                
+                if len(test_cases_after) > len(test_cases_before):
+                    print(f"   ✅ SUCCESS! {len(test_cases_after) - len(test_cases_before)} new test cases created!")
+                    
+                    # Show the new test cases
+                    for tc in test_cases_after[len(test_cases_before):]:
+                        tc_title = tc.get('fields', {}).get('System.Title', 'Unknown')
+                        print(f"      📝 New: {tc['id']}: {tc_title}")
+                        
+                else:
+                    print(f"   ❌ NO NEW TEST CASES CREATED!")
+                    print(f"      This indicates the QA Tester Agent is not working properly")
+                    print(f"      Check logs for QA Tester Agent errors or JSON parsing issues")
+            else:
+                print(f"   ⚠️  Discrepancy found but no details available")
+        else:
+            print(f"   ❌ User Story {target_story} was NOT flagged as missing test cases")
+            if len(test_cases_before) > 0:
+                print(f"      This might be correct if it already has {len(test_cases_before)} test cases")
+            else:
+                print(f"      This is unexpected - it has no test cases but wasn't flagged")
+        
+        # Save debug results
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        debug_file = f"output/debug_missing_test_cases_{timestamp}.json"
+        
+        os.makedirs("output", exist_ok=True)
+        
+        debug_data = {
+            'timestamp': timestamp,
+            'target_user_story': target_story,
+            'user_story_details': {
+                'title': title,
+                'state': state,
+                'area_path': area_path
+            },
+            'test_cases_before_sweep': len(test_cases_before),
+            'test_cases_after_sweep': len(test_cases_after) if 'test_cases_after' in locals() else 'Not checked',
+            'sweep_report': report,
+            'flagged_for_missing_test_cases': report['summary']['total_discrepancies'] > 0,
+            'auto_remediation_successful': len(test_cases_after) > len(test_cases_before) if 'test_cases_after' in locals() else False
+        }
+        
+        with open(debug_file, 'w', encoding='utf-8') as f:
+            json.dump(debug_data, f, indent=2, default=str)
+        
+        print(f"\n📄 Debug results saved to: {debug_file}")
+        logger.info(f"Debug session completed. Results saved to: {debug_file}")
+        
+        return debug_data
+        
+    except Exception as e:
+        logger.error(f"Debug session failed: {e}")
+        print(f"❌ Debug failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+if __name__ == "__main__":
+    import sys
+    
     if len(sys.argv) > 1:
-        # Command line argument provided
         command = sys.argv[1].lower()
         
-        if command == "delete-test-cases":
-            print("🗑️  Running: Delete Data Visualization Test Cases")
-            delete_data_visualization_test_cases()
-            
-        elif command == "test-1508":
-            print("🔍 Running: Test Work Item 1508 JSON Issue")
-            test_work_item_1508()
-            
-        elif command == "test-missing-test-cases":
-            print("📝 Running: Test Missing Test Cases")
+        if command == "test-missing-test-cases":
             test_missing_test_cases()
-            
-        elif command == "test-all":
-            print("🎯 Running: All Targeted Sweep Tests")
+        elif command == "test-1508":
+            test_work_item_1508()
+        elif command == "test-all-sweeps":
             test_all_sweep_types()
-            
+        elif command == "validate-test-cases":
+            validate_test_case_creation()
+        elif command == "generate-coverage-report":
+            generate_test_case_coverage_report()
+        elif command == "debug-missing":
+            debug_missing_test_cases()
+        elif command == "delete-test-cases":
+            delete_data_visualization_test_cases()
         else:
             print(f"❌ Unknown command: {command}")
             print("Available commands:")
-            print("  - delete-test-cases: Delete all test cases in Data Visualization area")
-            print("  - test-1508: Test specific work item 1508 JSON parsing issue")
-            print("  - test-missing-test-cases: Test missing test cases sweep")
-            print("  - test-all: Run comprehensive targeted sweep tests")
-    
+            print("  test-missing-test-cases")
+            print("  test-1508") 
+            print("  test-all-sweeps")
+            print("  validate-test-cases")
+            print("  generate-coverage-report")
+            print("  debug-missing")
+            print("  delete-test-cases")
     else:
-        # Interactive menu
-        print("\nAvailable operations:")
-        print("1. 🗑️  Delete Data Visualization Test Cases")
-        print("2. 🔍 Test Work Item 1508 JSON Issue")
-        print("3. 📝 Test Missing Test Cases Sweep")
-        print("4. 🎯 Run All Targeted Sweep Tests")
-        print("5. ❌ Exit")
-        
-        try:
-            choice = input("\nEnter your choice (1-5): ").strip()
-            
-            if choice == "1":
-                print("\n🗑️  Starting deletion of Data Visualization test cases...")
-                delete_data_visualization_test_cases()
-                
-            elif choice == "2":
-                print("\n🔍 Testing work item 1508 JSON parsing issue...")
-                test_work_item_1508()
-                
-            elif choice == "3":
-                print("\n📝 Testing missing test cases sweep...")
-                test_missing_test_cases()
-                
-            elif choice == "4":
-                print("\n🎯 Running comprehensive targeted sweep tests...")
-                test_all_sweep_types()
-                
-            elif choice == "5":
-                print("\n👋 Exiting...")
-                
-            else:
-                print(f"\n❌ Invalid choice: {choice}")
-                
-        except KeyboardInterrupt:
-            print("\n\n👋 Operation cancelled by user.")
-        except Exception as e:
-            print(f"\n❌ Error: {e}")
+        print("Usage: python test_targeted_sweep.py <command>")
+        print("Available commands:")
+        print("  test-missing-test-cases")
+        print("  test-1508")
+        print("  test-all-sweeps") 
+        print("  validate-test-cases")
+        print("  generate-coverage-report")
+        print("  debug-missing")
+        print("  delete-test-cases")
