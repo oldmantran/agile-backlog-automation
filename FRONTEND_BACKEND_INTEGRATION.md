@@ -134,10 +134,45 @@ The frontend communicates with the backend through REST API endpoints:
 - Check browser console for CORS errors
 - Verify API URLs in frontend configuration
 
+**npm/Node.js not found error:**
+- Install Node.js from https://nodejs.org/
+- Restart your command prompt after installation
+- Try the manual frontend startup script: `start_frontend_manual.bat`
+- Alternatively, start backend only with: `start_backend_only.bat`
+
 **Generation fails:**
 - Check backend logs for error details
 - Verify Azure DevOps configuration
 - Ensure OpenAI API key is valid
+
+**FastAPI deprecation warnings:**
+- These are informational and don't affect functionality
+- The code uses modern lifespan event handlers
+
+### Alternative Startup Methods:
+
+If the main startup script fails, try these alternatives:
+
+1. **Manual Frontend Start:**
+   ```bash
+   start_frontend_manual.bat
+   ```
+
+2. **Backend Only:**
+   ```bash
+   start_backend_only.bat
+   ```
+
+3. **Separate Terminals:**
+   ```bash
+   # Terminal 1 - Backend
+   python api_server.py
+   
+   # Terminal 2 - Frontend  
+   cd frontend
+   npm install
+   npm start
+   ```
 
 ### Log Files:
 - Backend logs: Console output from `api_server.py`

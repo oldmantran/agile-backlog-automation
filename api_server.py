@@ -13,6 +13,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -30,11 +31,33 @@ from utils.logger import setup_logger
 # Initialize logging
 logger = setup_logger(__name__)
 
-# Initialize FastAPI app
+# Global storage for active jobs (in production, use Redis or database)
+active_jobs: Dict[str, Dict[str, Any]] = {}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application lifespan events."""
+    # Startup
+    logger.info("Starting Agile Backlog Automation API Server")
+    
+    # Ensure output directory exists
+    Path("output").mkdir(exist_ok=True)
+    
+    logger.info("API Server started successfully")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down API Server")
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Agile Backlog Automation API",
     description="REST API for managing agile backlog generation workflows",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add CORS middleware for frontend integration
@@ -323,17 +346,6 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["status"] = "failed"
         active_jobs[job_id]["error"] = str(e)
         active_jobs[job_id]["endTime"] = datetime.now()
-
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Initialize the API server."""
-    logger.info("Starting Agile Backlog Automation API Server")
-    
-    # Ensure output directory exists
-    Path("output").mkdir(exist_ok=True)
-    
-    logger.info("API Server started successfully")
 
 if __name__ == "__main__":
     uvicorn.run(

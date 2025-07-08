@@ -19,20 +19,63 @@ def start_backend():
     ], cwd=Path(__file__).parent)
     return backend_process
 
+def find_npm_command():
+    """Find the npm command, trying different possible locations."""
+    possible_commands = ["npm", "npm.cmd"]
+    
+    # Try standard npm command first
+    for cmd in possible_commands:
+        try:
+            subprocess.run([cmd, "--version"], capture_output=True, check=True)
+            return cmd
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            continue
+    
+    # Try common Node.js installation paths on Windows
+    if os.name == 'nt':  # Windows
+        possible_paths = [
+            os.path.expanduser("~\\AppData\\Roaming\\npm\\npm.cmd"),
+            "C:\\Program Files\\nodejs\\npm.cmd",
+            "C:\\Program Files (x86)\\nodejs\\npm.cmd",
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+    
+    return None
+
 def start_frontend():
     """Start the React frontend development server."""
     print("🚀 Starting React frontend server...")
     frontend_dir = Path(__file__).parent / "frontend"
     
+    # Find npm command
+    npm_cmd = find_npm_command()
+    if not npm_cmd:
+        print("❌ Error: npm not found. Please install Node.js and npm.")
+        print("   Download from: https://nodejs.org/")
+        return None
+    
+    print(f"✅ Found npm at: {npm_cmd}")
+    
     # Check if node_modules exists
     if not (frontend_dir / "node_modules").exists():
         print("📦 Installing frontend dependencies...")
-        subprocess.run(["npm", "install"], cwd=frontend_dir, check=True)
+        try:
+            subprocess.run([npm_cmd, "install"], cwd=frontend_dir, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Error installing dependencies: {e}")
+            return None
     
-    frontend_process = subprocess.Popen([
-        "npm", "start"
-    ], cwd=frontend_dir)
-    return frontend_process
+    try:
+        frontend_process = subprocess.Popen([
+            npm_cmd, "start"
+        ], cwd=frontend_dir)
+        return frontend_process
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Error starting frontend: {e}")
+        return None
 
 def main():
     """Main function to start both servers."""
@@ -49,6 +92,12 @@ def main():
         
         # Start frontend
         frontend_process = start_frontend()
+        
+        if not frontend_process:
+            print("❌ Failed to start frontend server")
+            if backend_process:
+                backend_process.terminate()
+            return 1
         
         print("\n✅ Both servers started successfully!")
         print("📡 Backend API: http://localhost:8000")
