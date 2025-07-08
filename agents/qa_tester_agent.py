@@ -462,3 +462,109 @@ Provide:
             'qa_recommendations': qa_recommendations,
             'enhanced_criteria': self.quality_validator.enhance_acceptance_criteria(acceptance_criteria, story_context) if not is_valid else acceptance_criteria
         }
+
+    def ensure_test_organization(self, user_story: dict) -> dict:
+        """Ensure proper test organization exists for a user story."""
+        
+        # Get the feature this user story belongs to
+        relations = self.ado_client.get_work_item_relations(user_story['id'])
+        feature_rel = next((r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Reverse'), None)
+        
+        if not feature_rel:
+            self.logger.warning(f"No parent feature found for user story {user_story['id']}")
+            return None
+            
+        feature_id = int(feature_rel['url'].split('/')[-1])
+        feature = self.ado_client.get_work_item_details([feature_id])[0]
+        
+        # Ensure test plan exists for the feature
+        test_plan = self.ado_client.ensure_test_plan_exists(
+            feature_id=feature_id,
+            feature_name=feature['fields'].get('System.Title', 'Unknown Feature')
+        )
+        
+        # Ensure test suite exists for the user story
+        test_suite = self.ado_client.ensure_test_suite_exists(
+            test_plan_id=test_plan['id'],
+            user_story_id=user_story['id'],
+            user_story_name=user_story['fields'].get('System.Title', 'Unknown User Story')
+        )
+        
+        return {
+            'test_plan': test_plan,
+            'test_suite': test_suite
+        }
+
+    def create_test_cases(self, user_story: dict, test_cases: list) -> list:
+        """Create test cases and organize them in proper test suite."""
+        created_test_cases = []
+        
+        # First ensure we have proper test organization
+        test_org = self.ensure_test_organization(user_story)
+        if not test_org:
+            self.logger.error(f"Failed to create test organization for user story {user_story['id']}")
+            return []
+            
+        test_plan = test_org['test_plan']
+        test_suite = test_org['test_suite']
+        
+        # Create each test case and add to suite
+        for test_case in test_cases:
+            try:
+                # Create the test case work item
+                test_case_wi = self.ado_client.create_test_case(
+                    title=test_case['title'],
+                    description=json.dumps(test_case, indent=2),
+                    steps=self._format_test_steps(test_case)
+                )
+                
+                if test_case_wi:
+                    # Add test case to test suite
+                    self.ado_client.add_test_case_to_suite(
+                        test_plan_id=test_plan['id'],
+                        test_suite_id=test_suite['id'],
+                        test_case_id=test_case_wi['id']
+                    )
+                    
+                    # Link test case to user story
+                    self.ado_client.create_work_item_relation(
+                        test_case_wi['id'],
+                        user_story['id'],
+                        "Microsoft.VSTS.TestCase.SharedSteps-Forward"
+                    )
+                    
+                    created_test_cases.append(test_case_wi)
+                    
+            except Exception as e:
+                self.logger.error(f"Failed to create test case: {e}")
+                continue
+                
+        return created_test_cases
+
+    def _format_test_steps(self, test_case: dict) -> list:
+        """Format test case into steps for Azure DevOps."""
+        steps = []
+        
+        if 'gherkin' in test_case:
+            # Add Given conditions
+            for given in test_case['gherkin'].get('given', []):
+                steps.append({
+                    'action': f"GIVEN {given}",
+                    'expectedResult': "Precondition is satisfied"
+                })
+                
+            # Add When actions
+            for when in test_case['gherkin'].get('when', []):
+                steps.append({
+                    'action': f"WHEN {when}",
+                    'expectedResult': "Action is performed successfully"
+                })
+                
+            # Add Then verifications
+            for then in test_case['gherkin'].get('then', []):
+                steps.append({
+                    'action': f"THEN {then}",
+                    'expectedResult': then
+                })
+                
+        return steps

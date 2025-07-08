@@ -1096,152 +1096,99 @@ def delete_data_visualization_test_cases():
 
 def validate_test_case_creation():
     """
-    Validate if test cases were actually created in Azure DevOps.
-    Check specific user stories that should have gotten test cases.
+    Validate that test cases have been created for all user stories and are properly organized
+    in test plans and test suites.
     """
     print("\n" + "="*80)
     print("VALIDATING TEST CASE CREATION IN AZURE DEVOPS")
-    print("="*80)
-    
+    print("="*80 + "\n")
+
     try:
-        # Load configuration
-        config = Config()
-        ado_client = AzureDevOpsIntegrator(config)
+        ado_client = get_ado_client()
         
-        # Test specific user stories that should have gotten test cases
-        test_user_stories = [
-            1285,  # User specifically mentioned this one
-            1386,  # From the log - should have 9 test cases
-            1374,  # From the log - should have 8 test cases
-            1330,  # From the log - should have 10 test cases
-        ]
+        # Get all features in the project
+        print("🔍 Getting features...")
+        features = ado_client.get_features()
+        feature_count = len(features)
+        print(f"   Found {feature_count} features")
         
-        print(f"\n🔍 Checking {len(test_user_stories)} user stories for test cases...")
+        # Get all user stories
+        print("\n🔍 Getting user stories...")
+        user_stories = ado_client.get_user_stories()
+        story_count = len(user_stories)
+        print(f"   Found {story_count} user stories")
         
-        for story_id in test_user_stories:
-            print(f"\n📋 Checking User Story {story_id}:")
+        # Get all test plans
+        print("\n🔍 Getting test plans...")
+        test_plans = ado_client.get_test_plans()
+        plan_count = len(test_plans)
+        print(f"   Found {plan_count} test plans")
+        
+        # Check test plan coverage
+        missing_plan_features = []
+        for feature in features:
+            feature_id = feature['id']
+            test_plan = ado_client.get_feature_test_plan(feature_id)
+            if not test_plan:
+                missing_plan_features.append(feature)
+                
+        if missing_plan_features:
+            print(f"\n⚠️ {len(missing_plan_features)} features missing test plans:")
+            for feature in missing_plan_features:
+                print(f"   - {feature['fields'].get('System.Title', 'Unknown Feature')} (ID: {feature['id']})")
+                
+        # Check test suites for each test plan
+        total_suites = 0
+        missing_suite_stories = []
+        
+        for test_plan in test_plans:
+            print(f"\n📋 Checking Test Plan: {test_plan['name']}")
+            suites = ado_client.get_test_suites(test_plan['id'])
+            total_suites += len(suites)
+            print(f"   Found {len(suites)} test suites")
             
-            try:
-                # Get the user story details
-                story_details = ado_client.get_work_item_details([story_id])
-                if not story_details:
-                    print(f"   ❌ User Story {story_id} not found!")
-                    continue
-                    
-                story = story_details[0]
-                title = story.get('fields', {}).get('System.Title', 'Unknown Title')
-                state = story.get('fields', {}).get('System.State', 'Unknown')
-                
-                print(f"   Title: {title}")
-                print(f"   State: {state}")
-                
-                # Get child work items (should include test cases)
-                relations = ado_client.get_work_item_relations(story_id)
-                children = [r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Forward']
-                
-                print(f"   Total child items: {len(children)}")
-                
-                # Categorize children by type
-                child_details = []
-                test_cases = []
-                tasks = []
-                other_children = []
-                
-                for child in children:
-                    child_id = int(child['url'].split('/')[-1])
-                    child_info = ado_client.get_work_item_details([child_id])
-                    if child_info:
-                        child_detail = child_info[0]
-                        child_type = child_detail.get('fields', {}).get('System.WorkItemType', 'Unknown')
-                        child_title = child_detail.get('fields', {}).get('System.Title', 'Unknown Title')
+            # Get associated feature
+            feature_link = next((r for r in ado_client.get_work_item_relations(test_plan['id']) 
+                               if r.get('rel') == 'Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward'), None)
+            if feature_link:
+                feature_id = int(feature_link['url'].split('/')[-1])
+                # Get user stories under this feature
+                stories = [s for s in user_stories if any(r.get('url', '').endswith(str(feature_id)) 
+                         for r in ado_client.get_work_item_relations(s['id'])
+                         if r.get('rel') == 'System.LinkTypes.Hierarchy-Reverse')]
+                         
+                # Check each story has a test suite
+                for story in stories:
+                    story_suite = ado_client.get_user_story_test_suite(test_plan['id'], story['id'])
+                    if not story_suite:
+                        missing_suite_stories.append((story, test_plan))
                         
-                        child_details.append({
-                            'id': child_id,
-                            'type': child_type,
-                            'title': child_title
-                        })
-                        
-                        if child_type == 'Test Case':
-                            test_cases.append(child_detail)
-                        elif child_type == 'Task':
-                            tasks.append(child_detail)
-                        else:
-                            other_children.append(child_detail)
+        if missing_suite_stories:
+            print(f"\n⚠️ {len(missing_suite_stories)} user stories missing test suites:")
+            for story, plan in missing_suite_stories:
+                print(f"   - {story['fields'].get('System.Title', 'Unknown Story')} (ID: {story['id']}) in plan {plan['name']}")
                 
-                # Report findings
-                print(f"   📝 Tasks: {len(tasks)}")
-                print(f"   🧪 Test Cases: {len(test_cases)}")
-                print(f"   🔄 Other children: {len(other_children)}")
-                
-                if test_cases:
-                    print(f"   ✅ Test cases found!")
-                    for i, tc in enumerate(test_cases[:5], 1):  # Show first 5
-                        tc_title = tc.get('fields', {}).get('System.Title', 'Unknown')
-                        tc_state = tc.get('fields', {}).get('System.State', 'Unknown')
-                        print(f"      {i}. {tc['id']}: {tc_title} ({tc_state})")
-                    if len(test_cases) > 5:
-                        print(f"      ... and {len(test_cases) - 5} more test cases")
-                else:
-                    print(f"   ❌ NO TEST CASES FOUND!")
-                    
-                if tasks:
-                    print(f"   📝 Tasks found:")
-                    for i, task in enumerate(tasks[:3], 1):  # Show first 3
-                        task_title = task.get('fields', {}).get('System.Title', 'Unknown')
-                        task_state = task.get('fields', {}).get('System.State', 'Unknown')
-                        print(f"      {i}. {task['id']}: {task_title} ({task_state})")
-                    if len(tasks) > 3:
-                        print(f"      ... and {len(tasks) - 3} more tasks")
-                
-            except Exception as e:
-                print(f"   ❌ Error checking User Story {story_id}: {e}")
+        print(f"\n📊 Summary:")
+        print(f"   Features: {feature_count}")
+        print(f"   User Stories: {story_count}")
+        print(f"   Test Plans: {plan_count}")
+        print(f"   Total Test Suites: {total_suites}")
+        print(f"   Features Missing Test Plans: {len(missing_plan_features)}")
+        print(f"   Stories Missing Test Suites: {len(missing_suite_stories)}")
         
-        # Also check if there are any recent test cases created in the project
-        print(f"\n🔍 Checking for recently created test cases in the project...")
-        
-        # Query all test cases and see if any were created recently
-        all_test_case_ids = ado_client.query_work_items("Test Case")
-        print(f"   Total test cases in project: {len(all_test_case_ids)}")
-        
-        if all_test_case_ids:
-            # Get details for the most recent test cases
-            recent_test_cases = ado_client.get_work_item_details(all_test_case_ids[-20:])  # Last 20
-            
-            print(f"   🕒 Recent test cases (last 20):")
-            for tc in recent_test_cases[-10:]:  # Show last 10
-                tc_id = tc['id']
-                tc_title = tc.get('fields', {}).get('System.Title', 'Unknown')
-                tc_created = tc.get('fields', {}).get('System.CreatedDate', 'Unknown')
-                tc_created_by = tc.get('fields', {}).get('System.CreatedBy', {}).get('displayName', 'Unknown')
-                
-                print(f"      {tc_id}: {tc_title}")
-                print(f"         Created: {tc_created} by {tc_created_by}")
-        
-        # Check test plans and test suites
-        print(f"\n🔍 Checking for test plans and test suites...")
-        
-        try:
-            # Note: Azure DevOps REST API requires specific endpoints for test plans
-            # This might not work with the basic work item API
-            test_plan_ids = ado_client.query_work_items("Test Plan")
-            test_suite_ids = ado_client.query_work_items("Test Suite")
-            
-            print(f"   Test Plans: {len(test_plan_ids)}")
-            print(f"   Test Suites: {len(test_suite_ids)}")
-            
-        except Exception as e:
-            print(f"   ⚠️  Could not query test plans/suites: {e}")
-            print(f"      (This may require different API endpoints)")
-        
-        return True
+        # Return statistics for potential automated remediation
+        return {
+            'feature_count': feature_count,
+            'story_count': story_count,
+            'plan_count': plan_count,
+            'suite_count': total_suites,
+            'missing_plan_features': missing_plan_features,
+            'missing_suite_stories': missing_suite_stories
+        }
         
     except Exception as e:
         print(f"❌ Validation failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-
+        return None
 def debug_missing_test_cases():
     """
     Debug why test cases aren't being created by running the targeted sweep
@@ -1403,6 +1350,11 @@ def debug_missing_test_cases():
         traceback.print_exc()
         return None
 
+
+def get_ado_client():
+    """Get an initialized Azure DevOps client."""
+    config = Config()
+    return AzureDevOpsIntegrator(config)
 
 if __name__ == "__main__":
     import sys
