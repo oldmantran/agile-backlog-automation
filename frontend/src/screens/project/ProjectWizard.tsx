@@ -13,10 +13,13 @@ import AzureSetupForm from '../../components/forms/AzureSetupForm';
 import VisionForm from '../../components/forms/VisionForm';
 import ReviewForm from '../../components/forms/ReviewForm';
 import { Project, ProjectBasics, AzureConfig } from '../../types/project';
+import { projectApi } from '../../services/api/projectApi';
+import { backlogApi } from '../../services/api/backlogApi';
 
 const ProjectWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [projectData, setProjectData] = useState<Partial<Project>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
 
   const totalSteps = 4;
@@ -68,28 +71,57 @@ const ProjectWizard: React.FC = () => {
 
   const handleSubmit = async (finalData: Partial<Project>) => {
     try {
-      // TODO: Implement API call to create project
-      console.log('Submitting project data:', finalData);
+      setIsSubmitting(true);
       
       toast({
-        title: 'Project Created',
-        description: 'Your project has been successfully created!',
-        status: 'success',
+        title: 'Creating Project',
+        description: 'Setting up your project and generating backlog...',
+        status: 'info',
         duration: 3000,
         isClosable: true,
       });
 
-      // Navigate to dashboard or project view
-      // TODO: Implement navigation
+      // Step 1: Create the project
+      console.log('Creating project with data:', finalData);
+      const createResponse = await projectApi.createProject(finalData);
+      console.log('Project created:', createResponse);
+
+      // Step 2: Generate the backlog
+      console.log('Starting backlog generation for project:', createResponse.projectId);
+      const generateResponse = await backlogApi.generateBacklog(createResponse.projectId);
+      console.log('Backlog generation started:', generateResponse);
       
-    } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to create project. Please try again.',
-        status: 'error',
+        title: 'Project Created Successfully!',
+        description: `Backlog generation has started. Job ID: ${generateResponse.jobId}`,
+        status: 'success',
         duration: 5000,
         isClosable: true,
       });
+
+      // TODO: Navigate to a status page to monitor the generation progress
+      // or redirect to the project dashboard
+      console.log('Project setup complete. You can monitor progress with job ID:', generateResponse.jobId);
+      
+    } catch (error: any) {
+      console.error('Error creating project or generating backlog:', error);
+      
+      let errorMessage = 'Failed to create project. Please try again.';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        status: 'error',
+        duration: 8000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -135,6 +167,7 @@ const ProjectWizard: React.FC = () => {
             initialData={projectData}
             onSubmit={handleNext}
             onPrevious={handleBack}
+            isLoading={isSubmitting}
           />
         );
       default:

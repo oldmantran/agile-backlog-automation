@@ -76,12 +76,12 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   };
 
   const isConfigurationValid = () => {
-    return basics.name && 
-           basics.description && 
-           basics.domain && 
-           vision.visionStatement && 
-           azure.organizationUrl && 
-           azure.project;
+    const hasBasics = basics.name && basics.description && basics.domain;
+    const hasVision = vision.visionStatement;
+    // Azure config is valid if either manual config is provided OR useExistingConfig is true
+    const hasAzureConfig = (azure.organizationUrl && azure.project) || azure.useExistingConfig;
+    
+    return hasBasics && hasVision && hasAzureConfig;
   };
 
   return (
@@ -193,8 +193,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
               <Box flex="1" textAlign="left">
                 <HStack>
                   <Text fontWeight="bold">Azure DevOps Setup</Text>
-                  <Badge colorScheme={azure.organizationUrl ? "green" : "red"}>
-                    {azure.organizationUrl ? "Complete" : "Incomplete"}
+                  <Badge colorScheme={(azure.organizationUrl || azure.useExistingConfig) ? "green" : "red"}>
+                    {(azure.organizationUrl || azure.useExistingConfig) ? "Complete" : "Incomplete"}
                   </Badge>
                 </HStack>
               </Box>
@@ -203,16 +203,28 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
             <AccordionPanel pb={4}>
               <Card bg={cardBg}>
                 <CardBody>
-                  <VStack align="stretch" spacing={3}>
-                    <Box>
-                      <Text fontWeight="semibold">Organization:</Text>
-                      <Text>{azureOrg}</Text>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="semibold">Project:</Text>
-                      <Text>{azureProject}</Text>
-                    </Box>
-                  </VStack>
+                  {azure.useExistingConfig ? (
+                    <Alert status="info">
+                      <AlertIcon />
+                      <Box>
+                        <Text fontWeight="bold">Using Environment Configuration</Text>
+                        <Text fontSize="sm">
+                          Azure DevOps settings will be loaded from your environment configuration.
+                        </Text>
+                      </Box>
+                    </Alert>
+                  ) : (
+                    <VStack align="stretch" spacing={3}>
+                      <Box>
+                        <Text fontWeight="semibold">Organization:</Text>
+                        <Text>{azureOrg}</Text>
+                      </Box>
+                      <Box>
+                        <Text fontWeight="semibold">Project:</Text>
+                        <Text>{azureProject}</Text>
+                      </Box>
+                    </VStack>
+                  )}
                 </CardBody>
               </Card>
             </AccordionPanel>

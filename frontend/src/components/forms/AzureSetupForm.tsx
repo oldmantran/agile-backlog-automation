@@ -104,7 +104,20 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
   };
   
   const onSubmit = (data: any) => {
-    onNext(data);
+    // If using existing config, populate with environment data
+    if (data.useExistingConfig) {
+      const envConfig = {
+        organizationUrl: 'https://dev.azure.com/c4workx', // From .env AZURE_DEVOPS_ORG
+        personalAccessToken: 'ENVIRONMENT_CONFIG', // Indicate it's from environment
+        project: 'Backlog Automation', // From .env AZURE_DEVOPS_PROJECT
+        areaPath: '', // Use default
+        iterationPath: '', // Use default
+        useExistingConfig: true
+      };
+      onNext(envConfig);
+    } else {
+      onNext(data);
+    }
   };
   
   return (
