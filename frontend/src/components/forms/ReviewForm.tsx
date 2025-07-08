@@ -46,26 +46,18 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const domain = initialData.domain || 'Not specified';
   const teamSize = initialData.teamSize || 0;
   const timeline = initialData.timeline || 'Not specified';
-  
-  const visionStatement = initialData.visionStatement || 'No vision statement provided';
+  const visionStatement = initialData.visionStatement || 'Not provided';
   const businessObjectives = initialData.businessObjectives || [];
-  const successMetrics = initialData.successMetrics || [];
-  const targetAudience = initialData.targetAudience || 'Not specified';
-  
-  const hasAzureConfig = initialData.organizationUrl && initialData.project;
-  
-  const handleSubmit = async () => {
+  const azureConfig = initialData.azureConfig || {};
+
+  const handleGenerateBacklog = () => {
     setIsGenerating(true);
     
-    // Simulate API call for creating backlog
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      onNext(initialData);
-    } catch (error) {
-      console.error('Error generating backlog:', error);
-    } finally {
+    // Simulate API call with a timeout
+    setTimeout(() => {
       setIsGenerating(false);
-    }
+      onNext(initialData);
+    }, 2000);
   };
   
   return (
@@ -77,206 +69,132 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       width="full"
     >
       <VStack spacing={6} align="stretch">
-        <Heading size="md" color={accentColor}>Review Project Information</Heading>
+        <Heading size="md" color={accentColor}>Review Project Details</Heading>
         
-        <Box>
-          <Heading size="sm" mb={2}>Project Basics</Heading>
-          <List spacing={2}>
-            <ListItem>
-              <HStack>
-                <ListIcon as={FiCheck} color="green.500" />
-                <Text fontWeight="bold">Name:</Text>
-                <Text>{projectName}</Text>
-              </HStack>
-            </ListItem>
-            <ListItem>
-              <HStack alignItems="flex-start">
-                <ListIcon as={FiCheck} color="green.500" mt={1} />
-                <Text fontWeight="bold">Description:</Text>
-                <Text flex="1">{projectDescription}</Text>
-              </HStack>
-            </ListItem>
-            <ListItem>
-              <HStack>
-                <ListIcon as={FiCheck} color="green.500" />
-                <Text fontWeight="bold">Domain:</Text>
-                <Badge colorScheme="blue">{domain}</Badge>
-              </HStack>
-            </ListItem>
-            <ListItem>
-              <HStack>
-                <ListIcon as={FiCheck} color="green.500" />
-                <Text fontWeight="bold">Team Size:</Text>
-                <Text>{teamSize} people</Text>
-              </HStack>
-            </ListItem>
-            <ListItem>
-              <HStack>
-                <ListIcon as={FiCheck} color="green.500" />
-                <Text fontWeight="bold">Timeline:</Text>
-                <Text>{timeline}</Text>
-              </HStack>
-            </ListItem>
-          </List>
-        </Box>
+        <Alert status="info">
+          <AlertIcon />
+          Please review your project configuration before generating the backlog
+        </Alert>
         
-        <Divider />
-        
-        <Box>
-          <Heading size="sm" mb={2}>Project Vision</Heading>
-          <List spacing={2}>
-            <ListItem>
-              <HStack alignItems="flex-start">
-                <ListIcon as={FiCheck} color="green.500" mt={1} />
-                <Text fontWeight="bold">Vision:</Text>
-                <Text flex="1">{visionStatement}</Text>
-              </HStack>
-            </ListItem>
-            
-            <ListItem>
-              <VStack align="stretch">
-                <HStack>
-                  <ListIcon as={FiCheck} color="green.500" />
-                  <Text fontWeight="bold">Business Objectives:</Text>
-                </HStack>
-                <Box pl={8}>
-                  {businessObjectives.length > 0 ? (
-                    <List>
-                      {businessObjectives.map((objective: string, index: number) => (
-                        <ListItem key={index}>• {objective}</ListItem>
-                      ))}
-                    </List>
-                  ) : (
-                    <Text color="gray.500">No business objectives specified</Text>
-                  )}
+        <Accordion defaultIndex={[0]} allowMultiple>
+          <AccordionItem>
+            <h2>
+              <AccordionButton>
+                <Box flex="1" textAlign="left" fontWeight="semibold">
+                  Project Basics
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel pb={4}>
+              <VStack align="start" spacing={2}>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Project Name:</Text>
+                  <Text>{projectName}</Text>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Description:</Text>
+                  <Text>{projectDescription}</Text>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Domain:</Text>
+                  <Badge>{domain}</Badge>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Team Size:</Text>
+                  <Text>{teamSize} people</Text>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Timeline:</Text>
+                  <Text>{timeline}</Text>
+                </Flex>
+              </VStack>
+            </AccordionPanel>
+          </AccordionItem>
+          
+          <AccordionItem>
+            <h2>
+              <AccordionButton>
+                <Box flex="1" textAlign="left" fontWeight="semibold">
+                  Vision & Objectives
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel pb={4}>
+              <VStack align="start" spacing={4}>
+                <Box width="full">
+                  <Text fontWeight="semibold" mb={1}>Vision Statement:</Text>
+                  <Text>{visionStatement}</Text>
+                </Box>
+                
+                <Box width="full">
+                  <Text fontWeight="semibold" mb={1}>Business Objectives:</Text>
+                  <List spacing={1}>
+                    {businessObjectives.length > 0 ? 
+                      businessObjectives.map((obj: string, index: number) => (
+                        <ListItem key={index}>
+                          <ListIcon as={FiCheck} color="green.500" />
+                          {obj}
+                        </ListItem>
+                      )) : 
+                      <Text color="gray.500">No objectives specified</Text>
+                    }
+                  </List>
                 </Box>
               </VStack>
-            </ListItem>
-            
-            <ListItem>
-              <VStack align="stretch">
-                <HStack>
-                  <ListIcon as={FiCheck} color="green.500" />
-                  <Text fontWeight="bold">Success Metrics:</Text>
-                </HStack>
-                <Box pl={8}>
-                  {successMetrics.length > 0 ? (
-                    <List>
-                      {successMetrics.map((metric: string, index: number) => (
-                        <ListItem key={index}>• {metric}</ListItem>
-                      ))}
-                    </List>
-                  ) : (
-                    <Text color="gray.500">No success metrics specified</Text>
-                  )}
+            </AccordionPanel>
+          </AccordionItem>
+          
+          <AccordionItem>
+            <h2>
+              <AccordionButton>
+                <Box flex="1" textAlign="left" fontWeight="semibold">
+                  Azure DevOps Configuration
                 </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel pb={4}>
+              <VStack align="start" spacing={2}>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Organization URL:</Text>
+                  <Text>{azureConfig.organizationUrl || 'Not configured'}</Text>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Project:</Text>
+                  <Text>{azureConfig.project || 'Not configured'}</Text>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Area Path:</Text>
+                  <Text>{azureConfig.areaPath || 'Not configured'}</Text>
+                </Flex>
+                <Flex justify="space-between" width="full">
+                  <Text fontWeight="semibold">Iteration Path:</Text>
+                  <Text>{azureConfig.iterationPath || 'Not configured'}</Text>
+                </Flex>
               </VStack>
-            </ListItem>
-          </List>
-        </Box>
-        
-        <Divider />
-        
-        <Box>
-          <Heading size="sm" mb={2}>Azure DevOps Configuration</Heading>
-          {hasAzureConfig ? (
-            <List spacing={2}>
-              <ListItem>
-                <HStack>
-                  <ListIcon as={FiCheck} color="green.500" />
-                  <Text fontWeight="bold">Organization:</Text>
-                  <Text>{initialData.organizationUrl}</Text>
-                </HStack>
-              </ListItem>
-              <ListItem>
-                <HStack>
-                  <ListIcon as={FiCheck} color="green.500" />
-                  <Text fontWeight="bold">Project:</Text>
-                  <Text>{initialData.project}</Text>
-                </HStack>
-              </ListItem>
-              {initialData.areaPath && (
-                <ListItem>
-                  <HStack>
-                    <ListIcon as={FiCheck} color="green.500" />
-                    <Text fontWeight="bold">Area Path:</Text>
-                    <Text>{initialData.areaPath}</Text>
-                  </HStack>
-                </ListItem>
-              )}
-              {initialData.iterationPath && (
-                <ListItem>
-                  <HStack>
-                    <ListIcon as={FiCheck} color="green.500" />
-                    <Text fontWeight="bold">Iteration Path:</Text>
-                    <Text>{initialData.iterationPath}</Text>
-                  </HStack>
-                </ListItem>
-              )}
-            </List>
-          ) : (
-            <Alert status="warning">
-              <AlertIcon />
-              <Text>Azure DevOps configuration is incomplete. Backlog will be generated but not pushed to Azure DevOps.</Text>
-            </Alert>
-          )}
-        </Box>
-        
-        <Accordion allowToggle>
-          <AccordionItem border="none">
-            <AccordionButton px={0}>
-              <Heading size="sm" flex="1" textAlign="left">AI Configuration</Heading>
-              <AccordionIcon />
-            </AccordionButton>
-            <AccordionPanel pb={4} pl={4}>
-              <List spacing={2}>
-                <ListItem>
-                  <HStack>
-                    <Text fontWeight="bold">Model:</Text>
-                    <Text>{initialData.modelType || 'gpt4o'}</Text>
-                  </HStack>
-                </ListItem>
-                <ListItem>
-                  <Text fontWeight="bold" mb={1}>Features:</Text>
-                  <Flex wrap="wrap" gap={2}>
-                    {initialData.generateAcceptanceCriteria && (
-                      <Badge colorScheme="green">Acceptance Criteria</Badge>
-                    )}
-                    {initialData.generateTestCases && (
-                      <Badge colorScheme="green">Test Cases</Badge>
-                    )}
-                    {initialData.estimateComplexity && (
-                      <Badge colorScheme="green">Story Points</Badge>
-                    )}
-                    {initialData.enableWorkItemLinking && (
-                      <Badge colorScheme="green">Work Item Linking</Badge>
-                    )}
-                  </Flex>
-                </ListItem>
-              </List>
             </AccordionPanel>
           </AccordionItem>
         </Accordion>
         
-        <HStack justify="space-between" pt={4}>
-          {onPrevious && (
-            <Button 
-              onClick={onPrevious}
-              size="lg"
-              isDisabled={isGenerating}
-            >
-              Previous
-            </Button>
-          )}
+        <Divider />
+        
+        <HStack justify="space-between">
+          <Button 
+            variant="outline" 
+            onClick={onPrevious}
+            isDisabled={isGenerating}
+          >
+            Previous
+          </Button>
+          
           <Button 
             colorScheme="brand" 
-            size="lg" 
-            onClick={handleSubmit}
-            ml="auto"
-            minW="200px"
+            onClick={handleGenerateBacklog}
             isLoading={isGenerating}
-            loadingText="Generating Backlog"
-            leftIcon={isGenerating ? undefined : <FiCheck />}
+            loadingText="Generating"
+            rightIcon={isGenerating ? undefined : <FiCheck />}
           >
             Generate Backlog
           </Button>
