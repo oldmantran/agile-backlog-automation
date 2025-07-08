@@ -10,7 +10,7 @@ import {
 import WizardLayout from '../../components/layout/WizardLayout';
 import ProjectBasicsForm from '../../components/forms/ProjectBasicsForm';
 import AzureSetupForm from '../../components/forms/AzureSetupForm';
-import AiConfigForm from '../../components/forms/AiConfigForm';
+import VisionForm from '../../components/forms/VisionForm';
 import ReviewForm from '../../components/forms/ReviewForm';
 import { Project, ProjectBasics, AzureConfig } from '../../types/project';
 
@@ -23,13 +23,40 @@ const ProjectWizard: React.FC = () => {
   const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = (stepData: any) => {
-    setProjectData((prev: Partial<Project>) => ({ ...prev, ...stepData }));
+    // Structure the data based on the current step
+    let structuredData: Partial<Project> = {};
+    
+    switch (currentStep) {
+      case 1: // Project Basics
+        structuredData = {
+          basics: stepData
+        };
+        break;
+      case 2: // Azure Setup
+        structuredData = {
+          azureConfig: stepData
+        };
+        break;
+      case 3: // AI Config / Vision
+        structuredData = {
+          vision: stepData
+        };
+        break;
+      case 4: // Review
+        structuredData = stepData;
+        break;
+    }
+    
+    setProjectData((prev: Partial<Project>) => ({ 
+      ...prev, 
+      ...structuredData 
+    }));
     
     if (currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
     } else {
       // Final submission
-      handleSubmit({ ...projectData, ...stepData });
+      handleSubmit({ ...projectData, ...structuredData });
     }
   };
 
@@ -70,7 +97,7 @@ const ProjectWizard: React.FC = () => {
     switch (currentStep) {
       case 1: return 'Project Basics';
       case 2: return 'Azure DevOps Setup';
-      case 3: return 'AI Configuration';
+      case 3: return 'Vision & Goals';
       case 4: return 'Review & Create';
       default: return 'Project Setup';
     }
@@ -81,7 +108,7 @@ const ProjectWizard: React.FC = () => {
       case 1:
         return (
           <ProjectBasicsForm
-            initialData={projectData}
+            initialData={projectData.basics || {}}
             onNext={handleNext}
             onPrevious={currentStep > 1 ? handleBack : undefined}
           />
@@ -89,15 +116,15 @@ const ProjectWizard: React.FC = () => {
       case 2:
         return (
           <AzureSetupForm
-            initialData={projectData}
+            initialData={projectData.azureConfig || {}}
             onNext={handleNext}
             onPrevious={handleBack}
           />
         );
       case 3:
         return (
-          <AiConfigForm
-            initialData={projectData}
+          <VisionForm
+            initialData={projectData.vision || {}}
             onNext={handleNext}
             onPrevious={handleBack}
           />
