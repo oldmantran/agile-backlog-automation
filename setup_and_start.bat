@@ -62,6 +62,7 @@ echo Step 2: Checking Node.js installation...
 node --version >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Node.js found
+    echo Checking npm...
     goto :check_npm
 ) else (
     echo [ERROR] Node.js not found
@@ -69,15 +70,11 @@ if %errorlevel% equ 0 (
 )
 
 :check_npm
-:: Check if npm is available
-npm --version >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [OK] npm found
-    goto :setup_frontend
-) else (
-    echo [ERROR] npm not found, but Node.js is installed
-    goto :install_nodejs
-)
+echo Reached check_npm section
+:: Skip npm version check since it's causing issues in batch files
+:: We'll test npm when we actually try to use it
+echo [OK] Skipping npm version check, will test during frontend setup
+goto :setup_frontend
 
 :install_nodejs
 echo.
