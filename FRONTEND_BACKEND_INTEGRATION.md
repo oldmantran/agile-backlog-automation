@@ -130,12 +130,41 @@ The frontend communicates with the backend through REST API endpoints:
 
 ## 8. Testing the Integration
 
-1. Start both servers using `start_dev.bat` or `python start_dev_servers.py`
-2. Navigate to http://localhost:3000
-3. Click "Get Started" to begin the project wizard
-4. Fill out the project forms with your details
-5. Complete the wizard and watch the real-time generation progress
-6. View the results on the dashboard
+1. **Use the automated setup (Recommended):**
+   ```bash
+   setup_and_start.bat
+   ```
+
+2. **Or start backend only for API testing:**
+   ```bash
+   start_backend_only.bat
+   ```
+
+3. **Manual approach (if automated scripts fail):**
+   ```bash
+   # Create virtual environment (first time only)
+   python -m venv .venv
+   
+   # Install backend dependencies
+   .venv\Scripts\pip.exe install -r requirements.txt
+   
+   # Start backend
+   .venv\Scripts\python.exe api_server.py
+   ```
+
+4. **Then for frontend (in a separate terminal):**
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+5. **Access the application:**
+   - Navigate to http://localhost:3000
+   - Click "Get Started" to begin the project wizard
+   - Fill out the project forms with your details
+   - Complete the wizard and watch the real-time generation progress
+   - View the results on the dashboard
 
 ## 9. Troubleshooting
 

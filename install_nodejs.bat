@@ -11,16 +11,16 @@ echo.
 node --version >nul 2>&1
 if %errorlevel% equ 0 (
     for /f "tokens=*" %%i in ('node --version') do set NODE_VERSION=%%i
-    echo ✅ Node.js is already installed: !NODE_VERSION!
+    echo [OK] Node.js is already installed: !NODE_VERSION!
     
     npm --version >nul 2>&1
     if %errorlevel% equ 0 (
         for /f "tokens=*" %%i in ('npm --version') do set NPM_VERSION=%%i
-        echo ✅ npm is available: !NPM_VERSION!
+        echo [OK] npm is available: !NPM_VERSION!
         echo.
         echo You're all set! Run setup_and_start.bat to start the application.
     ) else (
-        echo ❌ npm not found, but Node.js is installed
+        echo [ERROR] npm not found, but Node.js is installed
         echo There might be an issue with your Node.js installation.
     )
     pause
