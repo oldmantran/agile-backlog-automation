@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Project } from '../../types/project';
 import { ApiResponse } from '../../types/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,8 +12,8 @@ const api = axios.create({
 });
 
 export const projectApi = {
-  createProject: async (projectData: Partial<Project>): Promise<Project> => {
-    const response = await api.post<ApiResponse<Project>>('/projects', projectData);
+  createProject: async (projectData: any): Promise<{ projectId: string; status: string }> => {
+    const response = await api.post<ApiResponse<{ projectId: string; status: string }>>('/projects', projectData);
     return response.data.data;
   },
 

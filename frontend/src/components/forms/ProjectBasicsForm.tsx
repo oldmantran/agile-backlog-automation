@@ -50,13 +50,6 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
   
   const onSubmit = (data: any) => {
     onNext(data);
-  }; can't use register directly
-  const handleSliderChange = (value: number) => {
-    setValue('teamSize', value);
-  };
-  
-  const onSubmit = (data: any) => {
-    onNext(data);
   };
   
   return (

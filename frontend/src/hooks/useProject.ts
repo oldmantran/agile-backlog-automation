@@ -1,29 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project } from '../types/project';
+import { projectApi } from '../services/api/projectApi';
 
 export const useProject = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const createProject = async (projectData: Partial<Project>): Promise<void> => {
+  const createProject = async (projectData: any): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Simulate API call for now
       console.log('Creating project:', projectData);
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Normally we'd call an API here
-      // const response = await api.post('/api/projects', projectData);
-      // const newProject = response.data;
-      
-      const mockProjectId = `proj-${Date.now()}`;
+      // Call the real API
+      const response = await projectApi.createProject(projectData);
       
       setIsLoading(false);
-      navigate(`/project/${mockProjectId}`);
+      navigate(`/project/${response.projectId}`);
     } catch (err) {
       setIsLoading(false);
       setError(err instanceof Error ? err.message : 'Failed to create project');

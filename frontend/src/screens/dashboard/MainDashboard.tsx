@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -19,18 +19,56 @@ import {
   VStack,
   Badge,
   useColorModeValue,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
-import { FiPlus, FiFileText, FiSettings } from 'react-icons/fi';
+import { FiPlus, FiFileText, FiSettings, FiActivity } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { backlogApi } from '../../services/api/backlogApi';
 
 const MainDashboard: React.FC = () => {
   const navigate = useNavigate();
   const bgColor = useColorModeValue('gray.50', 'gray.800');
   const cardBg = useColorModeValue('white', 'gray.700');
   
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeJobs, setActiveJobs] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Check for any active generation jobs in localStorage
+    const storedJobs = localStorage.getItem('activeJobs');
+    if (storedJobs) {
+      setActiveJobs(JSON.parse(storedJobs));
+    }
+  }, []);
+
+  const handleNewProject = () => {
+    navigate('/project/new');
+  };
+
+  const handleViewTemplates = async () => {
+    try {
+      setIsLoading(true);
+      const templates = await backlogApi.getTemplates();
+      console.log('Available templates:', templates);
+      setIsLoading(false);
+    } catch (err) {
+      setError('Failed to load templates');
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Box bg={bgColor} minH="100vh" p={{ base: 4, md: 8 }}>
       <Heading mb={6} size="xl">Dashboard</Heading>
+      
+      {error && (
+        <Alert status="error" mb={4}>
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
       
       {/* Quick Actions */}
       <Flex 
@@ -42,7 +80,7 @@ const MainDashboard: React.FC = () => {
           leftIcon={<Icon as={FiPlus} />}
           colorScheme="brand"
           size="lg"
-          onClick={() => navigate('/project/new')}
+          onClick={handleNewProject}
         >
           New Project
         </Button>
@@ -50,119 +88,126 @@ const MainDashboard: React.FC = () => {
           leftIcon={<Icon as={FiFileText} />}
           variant="outline"
           size="lg"
+          onClick={handleViewTemplates}
+          isLoading={isLoading}
         >
           View Templates
         </Button>
         <Button
           leftIcon={<Icon as={FiSettings} />}
-          variant="ghost"
+          variant="outline"
           size="lg"
-          onClick={() => navigate('/settings')}
         >
           Settings
         </Button>
       </Flex>
-      
-      {/* Stats Overview */}
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
+
+      {/* Stats Grid */}
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
         <Card bg={cardBg}>
           <CardBody>
             <Stat>
               <StatLabel>Total Projects</StatLabel>
-              <StatNumber>5</StatNumber>
-              <StatHelpText>3 Active, 2 Completed</StatHelpText>
+              <StatNumber>0</StatNumber>
+              <StatHelpText>No projects yet</StatHelpText>
             </Stat>
           </CardBody>
         </Card>
-        
+
         <Card bg={cardBg}>
           <CardBody>
             <Stat>
-              <StatLabel>Generated Work Items</StatLabel>
-              <StatNumber>253</StatNumber>
-              <StatHelpText>Last 30 days</StatHelpText>
+              <StatLabel>Active Generations</StatLabel>
+              <StatNumber>{activeJobs.length}</StatNumber>
+              <StatHelpText>
+                <Icon as={FiActivity} mr={1} />
+                Running jobs
+              </StatHelpText>
             </Stat>
           </CardBody>
         </Card>
-        
+
         <Card bg={cardBg}>
           <CardBody>
             <Stat>
-              <StatLabel>System Status</StatLabel>
-              <HStack mt={2}>
-                <Badge colorScheme="green">Azure Connected</Badge>
-                <Badge colorScheme="green">Agents Active</Badge>
-              </HStack>
-              <StatHelpText>All systems operational</StatHelpText>
+              <StatLabel>Generated Items</StatLabel>
+              <StatNumber>0</StatNumber>
+              <StatHelpText>Backlog items created</StatHelpText>
+            </Stat>
+          </CardBody>
+        </Card>
+
+        <Card bg={cardBg}>
+          <CardBody>
+            <Stat>
+              <StatLabel>Success Rate</StatLabel>
+              <StatNumber>--</StatNumber>
+              <StatHelpText>Generation success</StatHelpText>
             </Stat>
           </CardBody>
         </Card>
       </SimpleGrid>
-      
+
+      {/* Active Jobs */}
+      {activeJobs.length > 0 && (
+        <Box mb={8}>
+          <Heading size="lg" mb={4}>Active Generation Jobs</Heading>
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+            {activeJobs.map((job) => (
+              <Card key={job.jobId} bg={cardBg}>
+                <CardHeader>
+                  <HStack justify="space-between">
+                    <Text fontWeight="bold">Job {job.jobId}</Text>
+                    <Badge 
+                      colorScheme={
+                        job.status === 'completed' ? 'green' :
+                        job.status === 'failed' ? 'red' :
+                        job.status === 'running' ? 'blue' : 'gray'
+                      }
+                    >
+                      {job.status}
+                    </Badge>
+                  </HStack>
+                </CardHeader>
+                <CardBody pt={0}>
+                  <VStack align="stretch" spacing={3}>
+                    <Text fontSize="sm" color="gray.600">
+                      {job.currentAction || 'Processing...'}
+                    </Text>
+                    <Progress 
+                      value={job.progress || 0} 
+                      colorScheme="brand" 
+                      size="sm"
+                    />
+                    <Text fontSize="xs" color="gray.500">
+                      {job.progress || 0}% complete
+                    </Text>
+                  </VStack>
+                </CardBody>
+              </Card>
+            ))}
+          </SimpleGrid>
+        </Box>
+      )}
+
       {/* Recent Projects */}
-      <Box mb={8}>
-        <Heading size="md" mb={4}>Recent Projects</Heading>
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-          {/* Project Card 1 */}
-          <Card bg={cardBg}>
-            <CardHeader>
-              <Heading size="md">Data Visualization System</Heading>
-            </CardHeader>
-            <CardBody>
-              <VStack align="start" spacing={3}>
-                <Text>Created: 2 days ago</Text>
-                <Progress value={75} colorScheme="brand" w="full" />
-                <HStack justify="space-between" w="full">
-                  <Text color="gray.500">75% Complete</Text>
-                  <Badge colorScheme="orange">In Progress</Badge>
-                </HStack>
-                <Button size="sm" variant="outline" colorScheme="brand" w="full">
-                  View Details
-                </Button>
-              </VStack>
-            </CardBody>
-          </Card>
-          
-          {/* Project Card 2 */}
-          <Card bg={cardBg}>
-            <CardHeader>
-              <Heading size="md">Mobile Customer Portal</Heading>
-            </CardHeader>
-            <CardBody>
-              <VStack align="start" spacing={3}>
-                <Text>Created: 1 week ago</Text>
-                <Progress value={100} colorScheme="green" w="full" />
-                <HStack justify="space-between" w="full">
-                  <Text color="gray.500">100% Complete</Text>
-                  <Badge colorScheme="green">Completed</Badge>
-                </HStack>
-                <Button size="sm" variant="outline" colorScheme="brand" w="full">
-                  View Details
-                </Button>
-              </VStack>
-            </CardBody>
-          </Card>
-          
-          {/* Project Card 3 */}
-          <Card bg={cardBg}>
-            <CardHeader>
-              <Heading size="md">API Integration Service</Heading>
-            </CardHeader>
-            <CardBody>
-              <VStack align="start" spacing={3}>
-                <Text>Created: 3 days ago</Text>
-                <Progress value={40} colorScheme="brand" w="full" />
-                <HStack justify="space-between" w="full">
-                  <Text color="gray.500">40% Complete</Text>
-                  <Badge colorScheme="orange">In Progress</Badge>
-                </HStack>
-                <Button size="sm" variant="outline" colorScheme="brand" w="full">
-                  View Details
-                </Button>
-              </VStack>
-            </CardBody>
-          </Card>
-        </SimpleGrid>
+      <Box>
+        <Heading size="lg" mb={4}>Recent Projects</Heading>
+        <Card bg={cardBg}>
+          <CardBody>
+            <VStack spacing={4} align="center" py={8}>
+              <Icon as={FiPlus} size="48px" color="gray.400" />
+              <Text color="gray.500">No projects yet</Text>
+              <Button 
+                colorScheme="brand" 
+                variant="outline"
+                onClick={handleNewProject}
+              >
+                Create Your First Project
+              </Button>
+            </VStack>
+          </CardBody>
+        </Card>
       </Box>
     </Box>
   );
