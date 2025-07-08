@@ -51,16 +51,33 @@ The frontend will run on http://localhost:3000 by default.
 
 ## 4. Quick Start (Both Servers)
 
-Use the provided startup scripts to run both servers simultaneously:
-
-**Windows:**
+### Automated Setup (Recommended):
 ```bash
-start_dev.bat
+setup_and_start.bat
 ```
 
-**Cross-platform:**
+This script will:
+- Install Python dependencies
+- Check for Node.js installation
+- Guide you through Node.js installation if needed
+- Start both servers in separate windows
+
+### Alternative Methods:
 ```bash
+# Original method (if Node.js is installed)
+start_dev.bat
+
+# Cross-platform
 python start_dev_servers.py
+```
+
+### If Node.js is not installed:
+```bash
+# Get installation help
+install_nodejs.bat
+
+# Or start backend only
+start_backend_only.bat
 ```
 
 ## 5. API Integration
@@ -135,10 +152,16 @@ The frontend communicates with the backend through REST API endpoints:
 - Verify API URLs in frontend configuration
 
 **npm/Node.js not found error:**
-- Install Node.js from https://nodejs.org/
+- Install Node.js from https://nodejs.org/ (use the LTS version)
+- Run `install_nodejs.bat` for installation guidance
 - Restart your command prompt after installation
-- Try the manual frontend startup script: `start_frontend_manual.bat`
+- Use `setup_and_start.bat` for automated setup and startup
 - Alternatively, start backend only with: `start_backend_only.bat`
+
+**Backend multiprocessing errors:**
+- Use `setup_and_start.bat` which starts servers in separate windows
+- Or disable reload in api_server.py (already done)
+- Or start backend manually: `python api_server.py`
 
 **Generation fails:**
 - Check backend logs for error details
@@ -153,22 +176,32 @@ The frontend communicates with the backend through REST API endpoints:
 
 If the main startup script fails, try these alternatives:
 
-1. **Manual Frontend Start:**
+1. **Automated Setup (Recommended):**
+   ```bash
+   setup_and_start.bat
+   ```
+
+2. **Install Node.js Helper:**
+   ```bash
+   install_nodejs.bat
+   ```
+
+3. **Manual Frontend Start:**
    ```bash
    start_frontend_manual.bat
    ```
 
-2. **Backend Only:**
+4. **Backend Only:**
    ```bash
    start_backend_only.bat
    ```
 
-3. **Separate Terminals:**
+5. **Separate Terminals:**
    ```bash
    # Terminal 1 - Backend
    python api_server.py
    
-   # Terminal 2 - Frontend  
+   # Terminal 2 - Frontend (if Node.js is installed)
    cd frontend
    npm install
    npm start
