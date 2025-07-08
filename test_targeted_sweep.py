@@ -610,6 +610,13 @@ def test_missing_test_cases():
         # Load configuration
         config = Config()
         ado_client = AzureDevOpsIntegrator(config)
+        
+        # Verify project and organization settings
+        print(f"\n🔍 Configuration verification:")
+        print(f"   Organization: {config.get_env('AZURE_DEVOPS_ORG')}")
+        print(f"   Project: {config.get_env('AZURE_DEVOPS_PROJECT')}")
+        print(f"   Default Area Path: {config.settings.get('project', {}).get('default_area_path', 'Not set')}")
+        
         supervisor = WorkflowSupervisor()
         
         # Initialize targeted sweeper
@@ -619,12 +626,32 @@ def test_missing_test_cases():
             config=config.settings
         )
         
-        # Test for missing test cases
-        print(f"\n🎯 Checking for user stories missing test cases...")
+        # Test for missing test cases with specific area path
+        area_path = "Backlog Automation\\Data Visualization"
+        print(f"\n🎯 Checking for user stories missing test cases in area: {area_path}")
+        
+        # First, let's directly query to see how many user stories we get
+        print(f"   📊 Querying user stories directly...")
+        user_story_ids = ado_client.query_work_items("User Story", area_path=area_path)
+        print(f"   Found {len(user_story_ids)} user stories in {area_path}")
+        
+        if len(user_story_ids) > 0:
+            print(f"   First 10 user story IDs: {user_story_ids[:10]}")
+            
+            # Get some details to verify we're in the right project
+            sample_details = ado_client.get_work_item_details(user_story_ids[:3])
+            for detail in sample_details:
+                area = detail.get('fields', {}).get('System.AreaPath', '')
+                title = detail.get('fields', {}).get('System.Title', '')
+                print(f"   Sample: {detail['id']} - {title} (Area: {area})")
+        
+        # Now run the targeted sweep
         report = sweeper.run_targeted_sweep(
-            sweep_type="missing_test_cases"
+            sweep_type="missing_test_cases",
+            area_path=area_path
         )
         
+        print(f"\n📋 Sweep Results:")
         print(f"   Found {report['summary']['total_discrepancies']} user stories missing test cases")
         
         if report['summary']['total_discrepancies'] > 0:
@@ -632,6 +659,9 @@ def test_missing_test_cases():
             high_priority = report['discrepancies_by_priority']['high']
             for i, disc in enumerate(high_priority[:10], 1):  # Show first 10
                 print(f"     {i}. Work Item {disc['work_item_id']}: {disc['title']}")
+                
+            if len(high_priority) > 10:
+                print(f"     ... and {len(high_priority) - 10} more")
         else:
             print(f"   ✅ All user stories have test cases!")
         
@@ -639,6 +669,8 @@ def test_missing_test_cases():
         
     except Exception as e:
         print(f"❌ Test failed: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
