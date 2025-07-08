@@ -673,7 +673,7 @@ class WorkflowSupervisor:
             self.logger.info(f"QA Tester Agent: Reviewing work item {wi_id}")
             
             # Check for specific discrepancy types that can be auto-remediated
-            missing_test_cases = [d for d in discrepancies if d.get('type') == 'missing_child_test_case']
+            missing_test_cases = [d for d in discrepancies if d.get('type') in ['missing_child_test_case', 'user_story_missing_test_cases']]
             missing_criteria = [d for d in discrepancies if d.get('type') in ['missing_acceptance_criteria', 'invalid_acceptance_criteria']]
             
             # Auto-create missing test cases for user stories

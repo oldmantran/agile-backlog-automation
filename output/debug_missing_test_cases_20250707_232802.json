@@ -1,0 +1,383 @@
+{
+  "timestamp": "2025-07-07T23:28:02.813614",
+  "total_user_stories": 53,
+  "missing_test_cases_count": 38,
+  "has_test_cases_count": 15,
+  "processing_errors_count": 0,
+  "missing_test_cases": [
+    {
+      "id": 1683,
+      "title": "Admin Sets Cost Limits",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1672,
+      "title": "Admin Tracks Cloud Costs",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1649,
+      "title": "Admin Views Performance Metrics",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1638,
+      "title": "Admin Receives Performance Alerts",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1627,
+      "title": "Admin Manages Storage Scaling",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1626,
+      "title": "End User Stores Data Securely",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1615,
+      "title": "Admin Configures Load Balancing Policies",
+      "state": "New",
+      "total_children": 9,
+      "other_children": 9
+    },
+    {
+      "id": 1605,
+      "title": "End User Experiences Consistent Performance",
+      "state": "New",
+      "total_children": 9,
+      "other_children": 9
+    },
+    {
+      "id": 1595,
+      "title": "Admin Monitors Resource Allocation",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1594,
+      "title": "Admin Provisions Cloud Resources Automatically",
+      "state": "New",
+      "total_children": 12,
+      "other_children": 12
+    },
+    {
+      "id": 1583,
+      "title": "View Trends from Historical Data",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1582,
+      "title": "Access Historical Job Data for Reference",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1559,
+      "title": "Visualize Operational Plan on Calendar",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1558,
+      "title": "Schedule Operational Plan Timeline",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1546,
+      "title": "Incorporate Real-Time Data into Simulations",
+      "state": "New",
+      "total_children": 12,
+      "other_children": 12
+    },
+    {
+      "id": 1534,
+      "title": "Simulate Job Design Scenarios",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1522,
+      "title": "Customize Job Design Parameters",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1521,
+      "title": "Create New Job Design from Template",
+      "state": "New",
+      "total_children": 12,
+      "other_children": 12
+    },
+    {
+      "id": 1509,
+      "title": "End User Views Integration Status",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1508,
+      "title": "Admin Receives Alerts for Integration Issues",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1496,
+      "title": "Admin Views Supported System Catalog",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1495,
+      "title": "Admin Receives Compatibility Feedback",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1486,
+      "title": "Admin Configures Data Ingestion Frequency",
+      "state": "New",
+      "total_children": 9,
+      "other_children": 9
+    },
+    {
+      "id": 1485,
+      "title": "End User Views Real-Time Field Data",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1474,
+      "title": "Admin Views and Edits Existing Connections",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1473,
+      "title": "Admin Configures New Field System Connection",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1460,
+      "title": "Manage Role Permissions",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1459,
+      "title": "Access Dashboard Based on Role",
+      "state": "New",
+      "total_children": 9,
+      "other_children": 9
+    },
+    {
+      "id": 1448,
+      "title": "Export Historical Data Reports",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1436,
+      "title": "View Historical Data Trends",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1425,
+      "title": "Configure Alert Thresholds",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1424,
+      "title": "Receive Visual Alerts for Critical Events",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1413,
+      "title": "Customizable Dashboard Widgets",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1412,
+      "title": "View Real-Time Operational Metrics",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1399,
+      "title": "Drill Down into Efficiency Issues",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    },
+    {
+      "id": 1398,
+      "title": "View Operational Efficiency Metrics",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1387,
+      "title": "Compare Job Design Options",
+      "state": "New",
+      "total_children": 11,
+      "other_children": 11
+    },
+    {
+      "id": 1386,
+      "title": "Generate Optimized Job Designs",
+      "state": "New",
+      "total_children": 10,
+      "other_children": 10
+    }
+  ],
+  "has_test_cases": [
+    {
+      "id": 1308,
+      "title": "Validate Incoming Sensor Data",
+      "state": "New",
+      "test_cases": 5,
+      "total_children": 15
+    },
+    {
+      "id": 1297,
+      "title": "Handle Multiple Sensor Data Formats",
+      "state": "New",
+      "test_cases": 7,
+      "total_children": 16
+    },
+    {
+      "id": 1285,
+      "title": "Collect Data from IoT Sensors in Real-Time",
+      "state": "New",
+      "test_cases": 2,
+      "total_children": 13
+    },
+    {
+      "id": 1697,
+      "title": "Handle Notification Failures and Warnings",
+      "state": "New",
+      "test_cases": 4,
+      "total_children": 14
+    },
+    {
+      "id": 1696,
+      "title": "Build Data Architecture with Compliance to SLA",
+      "state": "New",
+      "test_cases": 4,
+      "total_children": 14
+    },
+    {
+      "id": 1695,
+      "title": "Retain Error Logs for at least 30 days",
+      "state": "New",
+      "test_cases": 1,
+      "total_children": 10
+    },
+    {
+      "id": 1374,
+      "title": "View Maintenance History and Recommendations",
+      "state": "New",
+      "test_cases": 1,
+      "total_children": 11
+    },
+    {
+      "id": 1373,
+      "title": "Receive Maintenance Alerts",
+      "state": "New",
+      "test_cases": 5,
+      "total_children": 16
+    },
+    {
+      "id": 1363,
+      "title": "Visualize Prediction Trends",
+      "state": "New",
+      "test_cases": 1,
+      "total_children": 11
+    },
+    {
+      "id": 1362,
+      "title": "Predict Well Performance Metrics",
+      "state": "New",
+      "test_cases": 7,
+      "total_children": 17
+    },
+    {
+      "id": 1342,
+      "title": "Enforce Data Retention Policies",
+      "state": "New",
+      "test_cases": 1,
+      "total_children": 11
+    },
+    {
+      "id": 1341,
+      "title": "Store Processed Data Securely",
+      "state": "New",
+      "test_cases": 2,
+      "total_children": 13
+    },
+    {
+      "id": 1331,
+      "title": "Detect Anomalies in Real-Time",
+      "state": "New",
+      "test_cases": 5,
+      "total_children": 17
+    },
+    {
+      "id": 1330,
+      "title": "Process Data for Immediate Insights",
+      "state": "New",
+      "test_cases": 3,
+      "total_children": 13
+    },
+    {
+      "id": 1309,
+      "title": "Notify Operators of Data Errors",
+      "state": "New",
+      "test_cases": 3,
+      "total_children": 13
+    }
+  ],
+  "processing_errors": []
+}
