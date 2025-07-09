@@ -249,7 +249,7 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                   <FormControl isRequired isInvalid={!!errors.areaPath}>
                     <FormLabel>Area Path</FormLabel>
                     <Input 
-                      {...register('areaPath')} 
+                      {...register('areaPath', { required: 'Area Path is required', validate: v => !!v || 'Area Path is required' })} 
                       list="areaPaths"
                       placeholder="Select or enter area path"
                       size="lg"
@@ -260,20 +260,20 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                         <option key={idx} value={path} />
                       ))}
                     </datalist>
-                    <FormHelperText>
-                      Leave empty to use the root area
-                    </FormHelperText>
                     {errors.areaPath && (
                       <FormHelperText color="red.500">
                         {errors.areaPath.message as string}
                       </FormHelperText>
                     )}
+                    <FormHelperText>
+                      Leave empty to use the root area
+                    </FormHelperText>
                   </FormControl>
                   
                   <FormControl isRequired isInvalid={!!errors.iterationPath}>
                     <FormLabel>Iteration Path</FormLabel>
                     <Input 
-                      {...register('iterationPath')} 
+                      {...register('iterationPath', { required: 'Iteration Path is required', validate: v => !!v || 'Iteration Path is required' })} 
                       list="iterations"
                       placeholder="Select or enter iteration path"
                       size="lg"
@@ -284,14 +284,14 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                         <option key={idx} value={iteration} />
                       ))}
                     </datalist>
-                    <FormHelperText>
-                      Leave empty to use the current iteration
-                    </FormHelperText>
                     {errors.iterationPath && (
                       <FormHelperText color="red.500">
                         {errors.iterationPath.message as string}
                       </FormHelperText>
                     )}
+                    <FormHelperText>
+                      Leave empty to use the current iteration
+                    </FormHelperText>
                   </FormControl>
                 </>
               )}
