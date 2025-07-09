@@ -34,8 +34,8 @@ class AzureDevOpsIntegrator:
     - Test organization (Test Plan -> Test Suite -> Test Case)
     """
     
-    def __init__(self, config: Config):
-        """Initialize Azure DevOps integration with configuration."""
+    def __init__(self, config: Config, area_path: str = None, iteration_path: str = None):
+        """Initialize Azure DevOps integration with configuration and explicit area/iteration paths."""
         self.config = config
         self.logger = logging.getLogger("azure_devops_integrator")
         
@@ -53,7 +53,7 @@ class AzureDevOpsIntegrator:
             self.enabled = False
         else:
             self.enabled = True
-            
+        
         # Initialize API endpoints
         self.org_base_url = f"https://dev.azure.com/{self.organization}/_apis"
         self.base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
@@ -61,7 +61,7 @@ class AzureDevOpsIntegrator:
         self.work_items_url = f"{self.base_url}/wit/workitems"
         self.test_plans_url = f"{self.base_url}/testplan/plans"
         self.test_suites_url = f"{self.base_url}/testplan/suites"
-
+        
         # Initialize test management client
         if self.enabled:
             self.test_client = AzureDevOpsTestClient(
@@ -79,15 +79,33 @@ class AzureDevOpsIntegrator:
             'Accept': 'application/json'
         }
         
-        # Project configuration
-        paths = config.get_project_paths()
-        self.area_path = paths['area']
-        self.iteration_path = paths['iteration']
+        # Area/iteration path must be provided by API payload
+        if not area_path or not iteration_path:
+            raise ValueError("Area path and iteration path must be provided by the frontend/API payload.")
+        self.area_path = area_path
+        self.iteration_path = iteration_path
+        
+        # Ensure area/iteration path exists in ADO, create if missing
+        self._ensure_area_and_iteration_paths()
         
         # Cache for created test plans and suites
         self.test_plans_cache = {}
         self.test_suites_cache = {}
-        
+
+    def _ensure_area_and_iteration_paths(self):
+        """Ensure area and iteration paths exist in Azure DevOps, create if missing."""
+        # Area Path
+        area_paths = self.get_available_area_paths()
+        if self.area_path not in area_paths:
+            self.logger.info(f"Area path '{self.area_path}' not found. Creating...")
+            self.create_area_path(self.area_path)
+        # Iteration Path
+        iteration_paths = [it['path'] for it in self.get_available_iteration_paths()]
+        if self.iteration_path not in iteration_paths:
+            self.logger.info(f"Iteration path '{self.iteration_path}' not found. Creating...")
+            # For now, create with no dates (could be extended to accept dates from API)
+            self.create_iteration_path(self.iteration_path, start_date=None, end_date=None)
+
     def create_work_items(self, backlog_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Create all work items from backlog data in Azure DevOps with proper test plan organization.

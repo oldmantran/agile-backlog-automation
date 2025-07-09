@@ -1,8 +1,3 @@
-project:
-  name: "Agile Backlog Automation"
-  default_area_path: "Backlog Automation\\Data Visualization"
-  default_iteration_path: "Backlog Automation\\Sprint 2025-07"
-
 domains:
   supported:
     - "software_development"

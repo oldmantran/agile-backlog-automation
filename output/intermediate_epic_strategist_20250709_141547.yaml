@@ -1,0 +1,250 @@
+product_vision: "\n        Project: Ride Sharing\n        Domain: software\n     \
+  \   Description: test ride sharing application\n        Vision Statement: Product\
+  \ Vision Statement for RideSharing App\n\nVision: To revolutionize urban mobility\
+  \ by providing a seamless, safe, and sustainable ride-sharing experience powered\
+  \ by autonomous vehicles, ensuring accessibility, efficiency, and environmental\
+  \ responsibility for all.\n\nCore Offering: Our app delivers an intuitive platform\
+  \ for users to book, track, and manage rides in a fleet of fully autonomous, electric\
+  \ vehicles. With real-time navigation, dynamic pricing, and personalized ride preferences,\
+  \ we aim to redefine convenience while reducing carbon footprints and urban congestion.\n\
+  \nKey Features:\n\n\n\n\n\nAutonomous Rides: Safe, driverless vehicles equipped\
+  \ with advanced AI for reliable navigation and passenger safety.\n\n\n\nSeamless\
+  \ Experience: User-friendly app interface for booking, real-time tracking, and in-ride\
+  \ customization (e.g., temperature, music).\n\n\n\nSustainability: 100% electric\
+  \ fleet to minimize environmental impact.\n\n\n\nAccessibility: Affordable pricing,\
+  \ inclusive design for diverse needs, and coverage in urban and suburban areas.\n\
+  \n\n\nScalability: Data-driven optimization for route efficiency, demand prediction,\
+  \ and fleet management.\n\nTarget Audience: Urban dwellers, commuters, and environmentally\
+  \ conscious individuals seeking convenient, cost-effective, and eco-friendly transportation.\n\
+  \nValue Proposition: Empowering communities with a future-forward, autonomous ride-sharing\
+  \ solution that prioritizes safety, sustainability, and simplicity, transforming\
+  \ the way people move.\n        Business Objectives: Increase Market Penetration,\
+  \ Enhance Operational Efficiency, Drive Sustainability Goals\n        Target Audience:\
+  \ The target audience includes:\n\nUrban Dwellers: Residents of cities and densely\
+  \ populated areas who need convenient, on-demand transportation for daily commutes,\
+  \ errands, or social activities.\nCommuters: Professionals, students, and others\
+  \ who regularly travel within urban and suburban areas and seek reliable, efficient\
+  \ alternatives to personal vehicles or public transit.\nEnvironmentally Conscious\
+  \ Individuals: Users who prioritize sustainability and prefer eco-friendly transportation\
+  \ options, such as electric autonomous vehicles, to reduce their carbon footprint.\n\
+  \        Success Metrics: Achieve a 20% share of the urban ride-sharing market within\
+  \ the first two years by expanding autonomous vehicle coverage and offering competitive\
+  \ pricing to attract new users., Optimize fleet utilization and reduce operational\
+  \ costs by 15% annually through AI-driven route planning, predictive maintenance,\
+  \ and dynamic demand forecasting., Transition to a 100% electric autonomous fleet\
+  \ by 2027, reducing carbon emissions by 30% compared to traditional ride-sharing\
+  \ services, and promote eco-friendly transportation to environmentally conscious\
+  \ consumers.\n        Team Size: 5\n        Timeline: 1 month\n        "
+epics:
+- title: Autonomous Ride Booking System
+  description: Develop a core platform enabling users to book rides with autonomous,
+    electric vehicles through an intuitive app interface. This epic focuses on seamless
+    ride scheduling, real-time availability, and user confirmation to ensure a reliable
+    and convenient experience.
+  business_value: Drives market penetration by attracting urban dwellers and commuters
+    with a unique autonomous ride option, targeting a 10% user adoption rate in the
+    first phase.
+  priority: High
+  estimated_complexity: L
+  dependencies:
+  - Basic app infrastructure and autonomous vehicle API integration
+  success_criteria:
+  - Achieve 95% successful booking rate
+  - Reduce average booking time to under 2 minutes
+  target_personas:
+  - Urban Dwellers
+  - Commuters
+  risks:
+  - Delays in autonomous vehicle API integration
+  - User trust in driverless technology
+- title: Real-Time Ride Tracking and Customization
+  description: Enable users to track their autonomous rides in real-time and customize
+    in-ride preferences such as temperature and music via the app. This epic enhances
+    user experience by providing transparency and personalization during the journey.
+  business_value: Increases user satisfaction and retention by 15% through a transparent
+    and tailored ride experience.
+  priority: High
+  estimated_complexity: M
+  dependencies:
+  - Autonomous Ride Booking System
+  - Vehicle-to-app communication protocols
+  success_criteria:
+  - 90% of users can track rides with real-time accuracy
+  - 80% of users utilize customization features during rides
+  target_personas:
+  - Urban Dwellers
+  - Commuters
+  risks:
+  - Latency in real-time tracking data
+  - Compatibility issues with vehicle systems
+- title: Sustainable Fleet Integration
+  description: Integrate a 100% electric autonomous vehicle fleet into the platform
+    with monitoring systems for battery life and eco-impact metrics. This epic supports
+    the vision of sustainability by ensuring all rides contribute to reduced carbon
+    emissions.
+  business_value: Aligns with sustainability goals, targeting a 10% reduction in carbon
+    emissions per ride compared to traditional services, appealing to eco-conscious
+    users.
+  priority: Medium
+  estimated_complexity: L
+  dependencies:
+  - Autonomous Ride Booking System
+  - Partnerships with electric vehicle providers
+  success_criteria:
+  - 100% of integrated fleet is electric
+  - Track and report carbon savings for 90% of rides
+  target_personas:
+  - Environmentally Conscious Individuals
+  risks:
+  - Limited availability of electric autonomous vehicles
+  - High initial integration costs
+- title: Dynamic Pricing and Accessibility Features
+  description: Implement dynamic pricing algorithms to ensure affordability and design
+    inclusive app features for diverse user needs, such as voice commands and multi-language
+    support. This epic aims to make the service accessible and competitive in urban
+    markets.
+  business_value: Boosts market share by 5% through competitive pricing and broadens
+    user base by catering to diverse accessibility needs.
+  priority: Medium
+  estimated_complexity: M
+  dependencies:
+  - Autonomous Ride Booking System
+  success_criteria:
+  - Pricing model adjusts to demand with 95% accuracy
+  - Accessibility features used by at least 10% of users
+  target_personas:
+  - Urban Dwellers
+  - Commuters
+  risks:
+  - Complex pricing algorithms may confuse users
+  - Underestimation of accessibility feature scope
+- title: AI-Driven Fleet Optimization
+  description: Build AI tools for route optimization, demand forecasting, and predictive
+    maintenance to enhance fleet efficiency. This epic focuses on reducing operational
+    costs and improving service reliability through data-driven decisions.
+  business_value: Reduces operational costs by 10% annually and improves ride availability
+    by optimizing fleet distribution.
+  priority: Medium
+  estimated_complexity: XL
+  dependencies:
+  - Sustainable Fleet Integration
+  - Data infrastructure for AI models
+  success_criteria:
+  - Achieve 15% improvement in route efficiency
+  - Predict demand with 85% accuracy
+  target_personas:
+  - Administrators
+  risks:
+  - Insufficient data for accurate AI predictions
+  - High complexity in AI model development
+metadata:
+  project_context:
+    project_name: Ride Sharing
+    domain: software development
+    methodology: Agile/Scrum
+    tech_stack: Modern Web Stack (React, Node.js, Python)
+    architecture_pattern: Microservices
+    database_type: PostgreSQL/MongoDB
+    cloud_platform: AWS/Azure
+    platform: Web Application with Mobile Support
+    team_size: 5
+    sprint_duration: 2 weeks
+    experience_level: Senior
+    target_users: End users and administrators
+    timeline: 1 month
+    budget_constraints: Standard enterprise budget
+    compliance_requirements: GDPR, SOC2
+    test_environment: Automated CI/CD pipeline
+    quality_standards: Industry best practices
+    security_requirements: Enterprise security standards
+    integrations: REST APIs, third-party services
+    external_systems: CRM, Analytics, Payment systems
+    project_type: software
+    project_description: test ride sharing application
+    vision_statement: 'Product Vision Statement for RideSharing App
+
+
+      Vision: To revolutionize urban mobility by providing a seamless, safe, and sustainable
+      ride-sharing experience powered by autonomous vehicles, ensuring accessibility,
+      efficiency, and environmental responsibility for all.
+
+
+      Core Offering: Our app delivers an intuitive platform for users to book, track,
+      and manage rides in a fleet of fully autonomous, electric vehicles. With real-time
+      navigation, dynamic pricing, and personalized ride preferences, we aim to redefine
+      convenience while reducing carbon footprints and urban congestion.
+
+
+      Key Features:
+
+
+
+
+
+
+      Autonomous Rides: Safe, driverless vehicles equipped with advanced AI for reliable
+      navigation and passenger safety.
+
+
+
+
+      Seamless Experience: User-friendly app interface for booking, real-time tracking,
+      and in-ride customization (e.g., temperature, music).
+
+
+
+
+      Sustainability: 100% electric fleet to minimize environmental impact.
+
+
+
+
+      Accessibility: Affordable pricing, inclusive design for diverse needs, and coverage
+      in urban and suburban areas.
+
+
+
+
+      Scalability: Data-driven optimization for route efficiency, demand prediction,
+      and fleet management.
+
+
+      Target Audience: Urban dwellers, commuters, and environmentally conscious individuals
+      seeking convenient, cost-effective, and eco-friendly transportation.
+
+
+      Value Proposition: Empowering communities with a future-forward, autonomous
+      ride-sharing solution that prioritizes safety, sustainability, and simplicity,
+      transforming the way people move.'
+    business_objectives:
+    - Increase Market Penetration
+    - Enhance Operational Efficiency
+    - Drive Sustainability Goals
+    target_audience: 'The target audience includes:
+
+
+      Urban Dwellers: Residents of cities and densely populated areas who need convenient,
+      on-demand transportation for daily commutes, errands, or social activities.
+
+      Commuters: Professionals, students, and others who regularly travel within urban
+      and suburban areas and seek reliable, efficient alternatives to personal vehicles
+      or public transit.
+
+      Environmentally Conscious Individuals: Users who prioritize sustainability and
+      prefer eco-friendly transportation options, such as electric autonomous vehicles,
+      to reduce their carbon footprint.'
+    azure_config:
+      organizationUrl: https://dev.azure.com/c4workx
+      personalAccessToken: 1MQIffkGxb6az6Y6lA8hIG1eNQPVoIsMiK4aSwgU00jFyh3zUo2fJQQJ99BFACAAAAAlpST6AAASAZDOPaeG
+      project: Backlog Automation
+      areaPath: Ride Sharing
+      iterationPath: Sprint 2025-07
+  execution_config:
+    stages:
+    - epic_strategist
+    - decomposition_agent
+    - developer_agent
+    - qa_tester_agent
+    human_review: false
+    save_outputs: true
+    integrate_azure: true

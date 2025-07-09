@@ -299,13 +299,18 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["currentAction"] = "Initializing supervisor"
         active_jobs[job_id]["progress"] = 10
         
-        # Initialize the workflow supervisor
-        supervisor = WorkflowSupervisor()
-        
         # Extract project data
         project_data = project_info["data"]
         project_name = project_data["basics"]["name"]
         project_domain = project_data["basics"]["domain"]
+        
+        # Extract area/iteration path from Azure config
+        azure_config = project_data.get("azureConfig", {})
+        area_path = azure_config.get("areaPath")
+        iteration_path = azure_config.get("iterationPath")
+        
+        # Initialize the workflow supervisor with area/iteration path
+        supervisor = WorkflowSupervisor(area_path=area_path, iteration_path=iteration_path)
         
         # Update progress
         active_jobs[job_id]["currentAgent"] = "supervisor"
