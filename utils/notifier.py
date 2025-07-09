@@ -37,6 +37,16 @@ class Notifier:
         
         # Generate summary message
         project_name = workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project')
+        exec_time = stats.get('execution_time_seconds')
+        exec_time_str = f"{exec_time:.1f} seconds" if exec_time is not None else "N/A"
+        
+        # Add warning if any artifacts are missing
+        warning = ""
+        azure_integration = workflow_data.get('azure_integration', {})
+        if azure_integration.get('missing_artifacts'):
+            warning = f"\n\n⚠️ *Warning*: The following artifact types were NOT created: {', '.join(azure_integration['missing_artifacts'])}. Please review the logs and agent outputs."
+        elif azure_integration.get('warning'):
+            warning = f"\n\n⚠️ {azure_integration['warning']}"
         
         message = f"""
 🎉 **Agile Backlog Automation Complete**
@@ -45,9 +55,9 @@ class Notifier:
 **Epics Generated:** {stats.get('epics_generated', 0)}
 **Features Generated:** {stats.get('features_generated', 0)}
 **Tasks Generated:** {stats.get('tasks_generated', 0)}
-**Execution Time:** {stats.get('execution_time_seconds', 0):.1f} seconds
+**Execution Time:** {exec_time_str}{warning}
 
-✅ All stages completed successfully!
+✅ All stages completed. Review above for any warnings.
         """.strip()
         
         if 'teams' in self.channels:

@@ -123,6 +123,58 @@ class WorkflowSupervisor:
             self.logger.error(f"Failed to configure project context: {e}")
             raise
     
+    def _validate_epics(self):
+        """Validate that epics have been generated and meet minimum requirements."""
+        epics = self.workflow_data.get('epics', [])
+        if not epics or not all('title' in e and e['title'] for e in epics):
+            raise ValueError("Epic Strategist did not generate valid epics. Workflow halted.")
+        self.logger.info(f"Validation passed: {len(epics)} epics generated.")
+
+    def _validate_features(self):
+        """Validate that every epic has at least one feature."""
+        epics = self.workflow_data.get('epics', [])
+        for epic in epics:
+            features = epic.get('features', [])
+            if not features or not all('title' in f and f['title'] for f in features):
+                raise ValueError(f"Decomposition Agent did not generate valid features for epic '{epic.get('title', 'Untitled')}'. Workflow halted.")
+        self.logger.info("Validation passed: All epics have features.")
+
+    def _validate_user_stories(self):
+        """Validate that every feature has at least one user story."""
+        epics = self.workflow_data.get('epics', [])
+        for epic in epics:
+            for feature in epic.get('features', []):
+                user_stories = feature.get('user_stories', [])
+                if not user_stories or not all('title' in us and us['title'] for us in user_stories):
+                    raise ValueError(f"Decomposition Agent did not generate valid user stories for feature '{feature.get('title', 'Untitled')}'. Workflow halted.")
+        self.logger.info("Validation passed: All features have user stories.")
+
+    def _validate_tasks_and_estimates(self):
+        """Validate that every user story has tasks and an estimate (story points)."""
+        epics = self.workflow_data.get('epics', [])
+        for epic in epics:
+            for feature in epic.get('features', []):
+                for user_story in feature.get('user_stories', []):
+                    tasks = user_story.get('tasks', [])
+                    if not tasks or not all('title' in t and t['title'] for t in tasks):
+                        raise ValueError(f"Developer Agent did not generate valid tasks for user story '{user_story.get('title', 'Untitled')}'. Workflow halted.")
+                    if 'story_points' not in user_story or user_story['story_points'] is None:
+                        raise ValueError(f"Developer Agent did not estimate story points for user story '{user_story.get('title', 'Untitled')}'. Workflow halted.")
+        self.logger.info("Validation passed: All user stories have tasks and estimates.")
+
+    def _validate_test_cases_and_plans(self):
+        """Validate that every user story has test cases and every feature has a test plan structure."""
+        epics = self.workflow_data.get('epics', [])
+        for epic in epics:
+            for feature in epic.get('features', []):
+                if 'test_plan_structure' not in feature or not feature['test_plan_structure']:
+                    raise ValueError(f"QA Tester Agent did not generate a test plan for feature '{feature.get('title', 'Untitled')}'. Workflow halted.")
+                for user_story in feature.get('user_stories', []):
+                    test_cases = user_story.get('test_cases', [])
+                    if not test_cases or not all('title' in tc and tc['title'] for tc in test_cases):
+                        raise ValueError(f"QA Tester Agent did not generate valid test cases for user story '{user_story.get('title', 'Untitled')}'. Workflow halted.")
+        self.logger.info("Validation passed: All user stories have test cases and all features have test plans.")
+
     def execute_workflow(self, 
                         product_vision: str,
                         stages: List[str] = None,
@@ -161,52 +213,61 @@ class WorkflowSupervisor:
                     }
                 }
             }
-            
             # Execute stages in sequence
             stages_to_run = stages or self._get_default_stages()
-            
             for stage in stages_to_run:
                 self.logger.info(f"Executing stage: {stage}")
-                
-                if stage == 'epic_strategist':
-                    self._execute_epic_generation()
-                elif stage == 'decomposition_agent':
-                    self._execute_feature_decomposition()
-                elif stage == 'user_story_decomposer':
-                    self._execute_user_story_decomposition()
-                elif stage == 'developer_agent':
-                    self._execute_task_generation()
-                elif stage == 'qa_tester_agent':
-                    self._execute_qa_generation()
-                else:
-                    self.logger.warning(f"Unknown stage: {stage}")
-                    continue
-                
+                retry_count = 0
+                max_retries = 5
+                while retry_count < max_retries:
+                    try:
+                        if stage == 'epic_strategist':
+                            self._execute_epic_generation()
+                            self._validate_epics()
+                        elif stage == 'decomposition_agent':
+                            self._execute_feature_decomposition()
+                            self._validate_features()
+                        elif stage == 'user_story_decomposer':
+                            self._execute_user_story_decomposition()
+                            self._validate_user_stories()
+                        elif stage == 'developer_agent':
+                            self._execute_task_generation()
+                            self._validate_tasks_and_estimates()
+                        elif stage == 'qa_tester_agent':
+                            self._execute_qa_generation()
+                            self._validate_test_cases_and_plans()
+                        else:
+                            self.logger.warning(f"Unknown stage: {stage}")
+                            break
+                        # If validation passes, break retry loop
+                        break
+                    except Exception as e:
+                        retry_count += 1
+                        self.logger.error(f"{stage} failed validation (attempt {retry_count}/{max_retries}): {e}")
+                        if retry_count >= max_retries:
+                            self.logger.error(f"{stage} failed after {max_retries} attempts. Proceeding to next stage.")
+                            self.execution_metadata['errors'].append(f"{stage} failed after {max_retries} attempts: {e}")
+                            self._send_error_notifications(e)
+                        else:
+                            self.logger.info(f"Retrying {stage} (attempt {retry_count+1}/{max_retries})...")
                 # Mark stage as completed
                 self.execution_metadata['stages_completed'].append(stage)
-                
                 # Human review checkpoint
                 if human_review:
                     self._human_review_checkpoint(stage)
-                
                 # Save intermediate outputs
                 if save_outputs:
                     self._save_intermediate_output(stage)
-            
             # Final processing
             self._finalize_workflow_data()
-            
             # Azure DevOps integration
             if integrate_azure:
                 self._integrate_with_azure_devops()
-            
             # Send notifications
             self._send_completion_notifications()
-            
             # Save final output
             if save_outputs:
                 self._save_final_output()
-            
             self.execution_metadata['end_time'] = datetime.now()
             self.logger.info("Workflow execution completed successfully")
             
@@ -428,8 +489,33 @@ class WorkflowSupervisor:
                 'work_items_created': results,
                 'timestamp': datetime.now().isoformat()
             }
-            
             self.logger.info(f"Successfully created {len(results)} work items in Azure DevOps")
+
+            # --- BEGIN WORKFLOW CHECKS ---
+            # Check for missing artifacts
+            missing = []
+            epic_count = len(self.workflow_data.get('epics', []))
+            feature_count = sum(len(e.get('features', [])) for e in self.workflow_data.get('epics', []))
+            user_story_count = sum(len(f.get('user_stories', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []))
+            task_count = sum(len(s.get('tasks', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []) for s in f.get('user_stories', []))
+            test_case_count = sum(len(s.get('test_cases', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []) for s in f.get('user_stories', []))
+            test_plan_count = sum(1 for e in self.workflow_data.get('epics', []) for f in e.get('features', []) if f.get('test_cases') or any(s.get('test_cases') for s in f.get('user_stories', [])))
+
+            if user_story_count == 0:
+                missing.append('user stories')
+            if task_count == 0:
+                missing.append('tasks')
+            if test_case_count == 0:
+                missing.append('test cases')
+            if test_plan_count == 0:
+                missing.append('test plans')
+
+            if missing:
+                msg = f"WARNING: The following artifact types were not created in this run: {', '.join(missing)}. Please check agent outputs and integration logic."
+                self.logger.warning(msg)
+                self.workflow_data['azure_integration']['missing_artifacts'] = missing
+                self.workflow_data['azure_integration']['warning'] = msg
+            # --- END WORKFLOW CHECKS ---
             
         except Exception as e:
             self.logger.error(f"Azure DevOps integration failed: {e}")
