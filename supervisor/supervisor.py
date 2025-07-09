@@ -39,7 +39,7 @@ class WorkflowSupervisor:
     - Provide human-in-the-loop capabilities
     """
     
-    def __init__(self, config_path: str = None, area_path: str = None, iteration_path: str = None):
+    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None):
         """Initialize the supervisor with configuration and agents."""
         # Load configuration
         self.config = Config(config_path) if config_path else Config()
@@ -59,8 +59,17 @@ class WorkflowSupervisor:
         self.iteration_path = iteration_path
         
         # Initialize integrators and notifiers
-        if self.area_path and self.iteration_path:
-            self.azure_integrator = AzureDevOpsIntegrator(self.config, area_path=self.area_path, iteration_path=self.iteration_path)
+        self.organization_url = organization_url
+        self.project = project
+        self.personal_access_token = personal_access_token
+        if all([self.organization_url, self.project, self.personal_access_token, self.area_path, self.iteration_path]):
+            self.azure_integrator = AzureDevOpsIntegrator(
+                organization_url=self.organization_url,
+                project=self.project,
+                personal_access_token=self.personal_access_token,
+                area_path=self.area_path,
+                iteration_path=self.iteration_path
+            )
         else:
             self.azure_integrator = None
         self.notifier = Notifier(self.config)

@@ -294,7 +294,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         
         # Update job status
         active_jobs[job_id]["status"] = "running"
-        active_jobs[job_id]["currentAction"] = "Initializing supervisor"
+        active_jobs[job_id]["currentAction"] = "Initializing workflow"
         active_jobs[job_id]["progress"] = 10
         
         # Extract project data
@@ -302,20 +302,29 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         project_name = project_data["basics"]["name"]
         project_domain = project_data["basics"]["domain"]
         
-        # Extract area/iteration path from Azure config
+        # Extract area/iteration path and Azure DevOps credentials from Azure config
         azure_config = project_data.get("azureConfig", {})
+        organization_url = azure_config.get("organizationUrl")
+        personal_access_token = azure_config.get("personalAccessToken")
+        project_name_ado = azure_config.get("project")
         area_path = azure_config.get("areaPath")
         iteration_path = azure_config.get("iterationPath")
-        if not area_path or not iteration_path:
-            error_msg = "Both areaPath and iterationPath must be provided in the Azure DevOps configuration."
+        if not all([organization_url, personal_access_token, project_name_ado, area_path, iteration_path]):
+            error_msg = "organizationUrl, personalAccessToken, project, areaPath, and iterationPath must all be provided in the Azure DevOps configuration."
             logger.error(error_msg)
             active_jobs[job_id]["status"] = "failed"
             active_jobs[job_id]["error"] = error_msg
             active_jobs[job_id]["endTime"] = datetime.now()
             return
-        
-        # Initialize the workflow supervisor with area/iteration path
-        supervisor = WorkflowSupervisor(area_path=area_path, iteration_path=iteration_path)
+
+        # Initialize the workflow supervisor with all Azure DevOps config
+        supervisor = WorkflowSupervisor(
+            organization_url=organization_url,
+            project=project_name_ado,
+            personal_access_token=personal_access_token,
+            area_path=area_path,
+            iteration_path=iteration_path
+        )
         
         # Update progress
         active_jobs[job_id]["currentAgent"] = "supervisor"

@@ -34,26 +34,23 @@ class AzureDevOpsIntegrator:
     - Test organization (Test Plan -> Test Suite -> Test Case)
     """
     
-    def __init__(self, config: Config, area_path: str = None, iteration_path: str = None):
+    def __init__(self, organization_url: str, project: str, personal_access_token: str, area_path: str = None, iteration_path: str = None):
         """Initialize Azure DevOps integration with configuration and explicit area/iteration paths."""
-        self.config = config
+        # Parse organization from URL
+        if organization_url.startswith("https://dev.azure.com/"):
+            self.organization = organization_url.replace("https://dev.azure.com/", "")
+        else:
+            self.organization = organization_url
+        self.project = project
+        self.pat = personal_access_token
         self.logger = logging.getLogger("azure_devops_integrator")
-        
-        # Azure DevOps connection settings
-        self.organization = config.get_env("AZURE_DEVOPS_ORG")
-        self.project = config.get_env("AZURE_DEVOPS_PROJECT")
-        self.pat = config.get_env("AZURE_DEVOPS_PAT")
-        
-        # Handle both full URL and organization name formats
-        if self.organization and self.organization.startswith("https://dev.azure.com/"):
-            self.organization = self.organization.replace("https://dev.azure.com/", "")
-        
+
         if not all([self.organization, self.project, self.pat]):
             self.logger.warning("Azure DevOps credentials not configured. Integration will be disabled.")
             self.enabled = False
         else:
             self.enabled = True
-        
+
         # Initialize API endpoints
         self.org_base_url = f"https://dev.azure.com/{self.organization}/_apis"
         self.base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
@@ -91,6 +88,14 @@ class AzureDevOpsIntegrator:
         # Cache for created test plans and suites
         self.test_plans_cache = {}
         self.test_suites_cache = {}
+
+    def get_available_area_paths(self) -> list:
+        """Get all available area paths in the project. Stub returns empty list if not implemented."""
+        return []
+
+    def get_available_iteration_paths(self) -> list:
+        """Get all available iteration paths in the project. Stub returns empty list if not implemented."""
+        return []
 
     def _ensure_area_and_iteration_paths(self):
         """Ensure area and iteration paths exist in Azure DevOps, create if missing."""
@@ -899,16 +904,6 @@ class AzureDevOpsIntegrator:
                             parent_path: Optional[str] = None) -> Dict[str, Any]:
         """Create a new iteration path (sprint) in the project."""
         # TODO: Implement iteration path creation with date ranges
-        pass
-    
-    def get_available_area_paths(self) -> List[str]:
-        """Get all available area paths in the project."""
-        # TODO: Implement area path retrieval
-        pass
-    
-    def get_available_iteration_paths(self) -> List[Dict[str, Any]]:
-        """Get all available iteration paths in the project."""
-        # TODO: Implement iteration path retrieval
         pass
     
     # Legacy test management methods - use delegation methods above instead
