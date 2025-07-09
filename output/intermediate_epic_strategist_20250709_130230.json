@@ -1,0 +1,166 @@
+{
+  "product_vision": "\n        Project: Final Test Project\n        Domain: healthcare\n        Description: Testing User Story-focused acceptance criteria architecture\n        Vision Statement: Streamline patient care through digital health solutions\n        Business Objectives: Improve patient outcomes, Reduce wait times, Enhance data accuracy\n        Target Audience: Healthcare providers and patients\n        Success Metrics: Patient satisfaction >90%, Wait time reduction 40%, Data accuracy 99%\n        Team Size: 3\n        Timeline: 8 weeks\n        ",
+  "epics": [
+    {
+      "title": "Digital Patient Intake Automation",
+      "description": "Develop a digital solution to automate patient intake processes, replacing manual forms with a user-friendly interface for patients to input their information before appointments. This reduces administrative burden for healthcare providers and speeds up the check-in process.",
+      "business_value": "Reduces patient wait times by an estimated 40% through faster intake processing",
+      "priority": "High",
+      "estimated_complexity": "M",
+      "dependencies": [
+        "Integration with existing Electronic Health Record (EHR) systems"
+      ],
+      "success_criteria": [
+        "Patient intake completion time reduced by 40%",
+        "80% of patients complete intake digitally before arrival"
+      ],
+      "target_personas": [
+        "Patients",
+        "Healthcare Administrative Staff"
+      ],
+      "risks": [
+        "Patient adoption challenges due to tech literacy",
+        "Integration issues with legacy EHR systems"
+      ]
+    },
+    {
+      "title": "Real-Time Appointment Scheduling Portal",
+      "description": "Create a portal for patients to schedule, reschedule, or cancel appointments in real-time with visibility into provider availability. This empowers patients and reduces scheduling conflicts for healthcare providers.",
+      "business_value": "Improves patient satisfaction by providing scheduling autonomy, targeting >90% satisfaction rate",
+      "priority": "High",
+      "estimated_complexity": "M",
+      "dependencies": [
+        "Digital Patient Intake Automation for patient data linkage"
+      ],
+      "success_criteria": [
+        "90% of patients report satisfaction with scheduling process",
+        "50% reduction in scheduling-related calls to staff"
+      ],
+      "target_personas": [
+        "Patients",
+        "Healthcare Providers"
+      ],
+      "risks": [
+        "Overbooking risks due to real-time updates",
+        "Data security concerns with patient information"
+      ]
+    },
+    {
+      "title": "Patient Data Validation Engine",
+      "description": "Implement a system to validate and cross-check patient data entered during intake to ensure accuracy and completeness before it is integrated into EHRs. This minimizes errors in medical records and enhances trust in digital systems.",
+      "business_value": "Achieves 99% data accuracy in patient records by reducing manual entry errors",
+      "priority": "Medium",
+      "estimated_complexity": "S",
+      "dependencies": [
+        "Digital Patient Intake Automation for data input"
+      ],
+      "success_criteria": [
+        "99% of patient data entries pass validation checks",
+        "Error correction time reduced by 60%"
+      ],
+      "target_personas": [
+        "Healthcare Providers",
+        "Administrative Staff"
+      ],
+      "risks": [
+        "False positives in validation flagging correct data",
+        "Requires ongoing updates to validation rules"
+      ]
+    },
+    {
+      "title": "Provider-Patient Communication Hub",
+      "description": "Build a secure messaging platform for direct communication between patients and healthcare providers for follow-ups, reminders, and basic inquiries. This reduces unnecessary visits and enhances patient engagement.",
+      "business_value": "Improves patient outcomes by enabling timely follow-ups, contributing to >90% patient satisfaction",
+      "priority": "Medium",
+      "estimated_complexity": "L",
+      "dependencies": [
+        "Digital Patient Intake Automation for user authentication"
+      ],
+      "success_criteria": [
+        "70% of patients use the hub for follow-up inquiries",
+        "30% reduction in non-urgent in-person visits"
+      ],
+      "target_personas": [
+        "Patients",
+        "Healthcare Providers"
+      ],
+      "risks": [
+        "HIPAA compliance challenges",
+        "Potential for miscommunication without in-person context"
+      ]
+    },
+    {
+      "title": "Patient Feedback and Satisfaction Tool",
+      "description": "Develop a digital tool to collect post-appointment feedback from patients regarding their experience with the digital solutions and care received. This helps identify areas for improvement and measure satisfaction.",
+      "business_value": "Directly measures patient satisfaction to ensure >90% positive feedback on digital tools",
+      "priority": "Low",
+      "estimated_complexity": "S",
+      "dependencies": [
+        "Digital Patient Intake Automation for patient identification"
+      ],
+      "success_criteria": [
+        "90% patient satisfaction rating achieved",
+        "Feedback collected from 75% of patients post-appointment"
+      ],
+      "target_personas": [
+        "Patients",
+        "Healthcare Administrators"
+      ],
+      "risks": [
+        "Low response rates from patients",
+        "Bias in feedback from tech-averse users"
+      ]
+    }
+  ],
+  "metadata": {
+    "project_context": {
+      "project_name": "Final Test Project",
+      "domain": "healthcare technology",
+      "methodology": "Agile/Scrum",
+      "tech_stack": "Modern Web Stack (React, Node.js, Python)",
+      "architecture_pattern": "Microservices",
+      "database_type": "PostgreSQL/MongoDB",
+      "cloud_platform": "AWS/Azure",
+      "platform": "Web Application with Mobile Support",
+      "team_size": 3,
+      "sprint_duration": "2 weeks",
+      "experience_level": "Senior",
+      "target_users": "Healthcare providers and patients",
+      "timeline": "8 weeks",
+      "budget_constraints": "Standard enterprise budget",
+      "compliance_requirements": "HIPAA, FDA, GDPR",
+      "test_environment": "Automated CI/CD pipeline",
+      "quality_standards": "Industry best practices",
+      "security_requirements": "HIPAA-compliant security",
+      "integrations": "EHR systems, Medical devices",
+      "external_systems": "CRM, Analytics, Payment systems",
+      "project_type": "healthcare",
+      "project_description": "Testing User Story-focused acceptance criteria architecture",
+      "vision_statement": "Streamline patient care through digital health solutions",
+      "business_objectives": [
+        "Improve patient outcomes",
+        "Reduce wait times",
+        "Enhance data accuracy"
+      ],
+      "target_audience": "Healthcare providers and patients",
+      "azure_config": {
+        "organizationUrl": "https://dev.azure.com/healthcare-org",
+        "personalAccessToken": "sample-token",
+        "project": "DigitalHealth",
+        "areaPath": "DigitalHealth\\PatientCare",
+        "iterationPath": "DigitalHealth\\Sprint1"
+      }
+    },
+    "execution_config": {
+      "stages": [
+        "epic_strategist",
+        "decomposition_agent",
+        "developer_agent",
+        "qa_tester_agent"
+      ],
+      "human_review": false,
+      "save_outputs": true,
+      "integrate_azure": false
+    }
+  }
+}

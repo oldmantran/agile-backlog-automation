@@ -1,0 +1,34 @@
+{
+  "id": "proj_20250709_124948",
+  "data": {
+    "basics": {
+      "name": "E2E Test Project",
+      "description": "Test project to validate User Story-focused acceptance criteria architecture",
+      "domain": "healthcare",
+      "teamSize": 5,
+      "timeline": "12 weeks"
+    },
+    "vision": {
+      "visionStatement": "To provide efficient patient data management system",
+      "businessObjectives": [
+        "Improve patient care",
+        "Reduce administrative overhead"
+      ],
+      "successMetrics": [
+        "User satisfaction 95%",
+        "Performance improvement 50%"
+      ],
+      "targetAudience": "Healthcare professionals"
+    },
+    "azureConfig": {
+      "organizationUrl": "https://dev.azure.com/test-org",
+      "personalAccessToken": "test-token",
+      "project": "test-project",
+      "areaPath": "\\",
+      "iterationPath": "\\"
+    }
+  },
+  "status": "created",
+  "createdAt": "2025-07-09T12:49:48.483894",
+  "updatedAt": "2025-07-09T12:49:48.483898"
+}

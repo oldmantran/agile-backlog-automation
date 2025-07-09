@@ -300,8 +300,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["progress"] = 10
         
         # Initialize the workflow supervisor
-        config = Config()
-        supervisor = WorkflowSupervisor(config)
+        supervisor = WorkflowSupervisor()
         
         # Extract project data
         project_data = project_info["data"]
@@ -330,8 +329,24 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["currentAction"] = "Generating backlog items"
         active_jobs[job_id]["progress"] = 60
         
+        # Set up the project context for the supervisor
+        supervisor.configure_project_context(project_domain, context)
+        
+        # Create the product vision string
+        product_vision = f"""
+        Project: {project_name}
+        Domain: {project_domain}
+        Description: {project_data["basics"]["description"]}
+        Vision Statement: {project_data["vision"]["visionStatement"]}
+        Business Objectives: {', '.join(project_data["vision"]["businessObjectives"])}
+        Target Audience: {project_data["vision"]["targetAudience"]}
+        Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
+        Team Size: {project_data["basics"]["teamSize"]}
+        Timeline: {project_data["basics"]["timeline"]}
+        """
+        
         # Run the supervisor workflow
-        results = await asyncio.to_thread(supervisor.run_workflow, context)
+        results = await asyncio.to_thread(supervisor.execute_workflow, product_vision, save_outputs=True)
         
         # Update final progress
         active_jobs[job_id]["status"] = "completed"

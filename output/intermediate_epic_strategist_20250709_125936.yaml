@@ -1,0 +1,140 @@
+product_vision: "\n        Project: Test E-commerce Platform v2\n        Domain: ecommerce\n\
+  \        Description: Modern e-commerce platform with user story-focused architecture\n\
+  \        Vision Statement: Create a seamless online shopping experience\n      \
+  \  Business Objectives: Increase sales, Improve user experience\n        Target\
+  \ Audience: Online shoppers\n        Success Metrics: Conversion rate improvement,\
+  \ User satisfaction scores\n        Team Size: 5\n        Timeline: 3 months\n \
+  \       "
+epics:
+- title: Enhanced Product Discovery for Shoppers
+  description: Enable online shoppers to easily find and explore products through
+    intuitive search, filtering, and personalized recommendations. This epic focuses
+    on reducing friction in the discovery process to drive engagement and sales.
+  business_value: Increases conversion rate by 10% through improved product visibility
+    and relevance
+  priority: High
+  estimated_complexity: M
+  dependencies:
+  - Basic platform infrastructure setup
+  success_criteria:
+  - Search result relevance improved by 20% based on click-through rates
+  - Personalized recommendations adopted by 30% of users within first month
+  target_personas:
+  - Online Shoppers
+  risks:
+  - Potential delays in integrating third-party recommendation engines
+  - User data privacy concerns with personalization
+- title: Streamlined Checkout Process
+  description: Simplify the checkout experience with a one-page flow, multiple payment
+    options, and guest checkout functionality. This epic aims to reduce cart abandonment
+    and improve user satisfaction by minimizing steps to purchase.
+  business_value: Reduces cart abandonment rate by 15%, boosting sales
+  priority: High
+  estimated_complexity: M
+  dependencies:
+  - Payment gateway integration
+  success_criteria:
+  - Checkout completion time reduced by 25%
+  - Cart abandonment rate drops below 50%
+  target_personas:
+  - Online Shoppers
+  risks:
+  - Integration challenges with multiple payment providers
+  - Security vulnerabilities in payment processing
+- title: User Account Management Portal
+  description: Provide shoppers with a self-service portal to manage their profiles,
+    track orders, and save preferences. This epic enhances user experience by offering
+    convenience and transparency in account interactions.
+  business_value: Improves user satisfaction scores by 20% through better account
+    control
+  priority: Medium
+  estimated_complexity: S
+  dependencies:
+  - Core authentication system
+  success_criteria:
+  - 80% of returning users utilize the portal for order tracking
+  - User satisfaction score for account features exceeds 4/5
+  target_personas:
+  - Online Shoppers
+  risks:
+  - Potential data security risks with stored user information
+  - Low adoption if UI is not intuitive
+- title: Mobile-First Responsive Design
+  description: Develop a mobile-optimized interface to ensure a seamless shopping
+    experience across devices. This epic addresses the growing number of mobile shoppers
+    by prioritizing accessibility and usability on smaller screens.
+  business_value: Increases mobile user conversion rate by 12% and captures 40% mobile
+    traffic
+  priority: High
+  estimated_complexity: L
+  dependencies:
+  - Core UI framework setup
+  success_criteria:
+  - Mobile bounce rate reduced by 15%
+  - Mobile transactions account for 30% of total sales
+  target_personas:
+  - Online Shoppers
+  risks:
+  - Performance issues on low-end devices
+  - Higher development time for cross-device testing
+- title: Product Review and Rating System
+  description: Implement a feature for users to leave reviews and ratings on products
+    to build trust and inform purchasing decisions. This epic enhances credibility
+    and engagement by incorporating user-generated content.
+  business_value: Increases user trust, driving a 5% uplift in conversion rates
+  priority: Medium
+  estimated_complexity: S
+  dependencies:
+  - Product catalog setup
+  success_criteria:
+  - At least 20% of purchased products receive reviews within 3 months
+  - Average product rating visible on 90% of listings
+  target_personas:
+  - Online Shoppers
+  risks:
+  - Moderation challenges with inappropriate content
+  - Low user participation in leaving reviews
+metadata:
+  project_context:
+    project_name: Test E-commerce Platform v2
+    domain: e-commerce
+    methodology: Agile/Scrum
+    tech_stack: Modern Web Stack (React, Node.js, Python)
+    architecture_pattern: Microservices
+    database_type: PostgreSQL/MongoDB
+    cloud_platform: AWS/Azure
+    platform: Web Application with Mobile Support
+    team_size: 5
+    sprint_duration: 2 weeks
+    experience_level: Senior
+    target_users: Online shoppers and merchants
+    timeline: 3 months
+    budget_constraints: Standard enterprise budget
+    compliance_requirements: PCI DSS, GDPR, CCPA
+    test_environment: Automated CI/CD pipeline
+    quality_standards: Industry best practices
+    security_requirements: E-commerce security standards
+    integrations: Payment gateways, Inventory systems
+    external_systems: CRM, Analytics, Payment systems
+    project_type: ecommerce
+    project_description: Modern e-commerce platform with user story-focused architecture
+    vision_statement: Create a seamless online shopping experience
+    business_objectives:
+    - Increase sales
+    - Improve user experience
+    target_audience: Online shoppers
+    azure_config:
+      organizationUrl: https://dev.azure.com/testorg
+      personalAccessToken: test-token
+      project: TestProject
+      areaPath: TestProject\Area1
+      iterationPath: TestProject\Sprint1
+  execution_config:
+    stages:
+    - epic_strategist
+    - decomposition_agent
+    - developer_agent
+    - qa_tester_agent
+    human_review: false
+    save_outputs: true
+    integrate_azure: false
