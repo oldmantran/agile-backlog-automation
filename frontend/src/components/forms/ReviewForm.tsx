@@ -58,6 +58,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const businessObjectives = vision.businessObjectives || [];
   const azureOrg = azure.organizationUrl || 'Not configured';
   const azureProject = azure.project || 'Not configured';
+  const azureAreaPath = azure.areaPath || 'Not configured';
+  const azureIterationPath = azure.iterationPath || 'Not configured';
 
   const handleGenerate = () => {
     if (onSubmit) {
@@ -76,8 +78,13 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const isConfigurationValid = () => {
     const hasBasics = basics.name && basics.description && basics.domain;
     const hasVision = vision.visionStatement;
-    // Azure config is valid if either manual config is provided OR useExistingConfig is true
-    const hasAzureConfig = (azure.organizationUrl && azure.project) || azure.useExistingConfig;
+    // Azure config is valid if all required fields are present
+    const hasAzureConfig = (
+      azure.organizationUrl &&
+      azure.project &&
+      azure.areaPath &&
+      azure.iterationPath
+    ) || azure.useExistingConfig;
     
     return hasBasics && hasVision && hasAzureConfig;
   };
@@ -210,6 +217,14 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                       <Box>
                         <Text fontWeight="semibold">Project:</Text>
                         <Text>{azureProject}</Text>
+                      </Box>
+                      <Box>
+                        <Text fontWeight="semibold">Area Path:</Text>
+                        <Text>{azureAreaPath}</Text>
+                      </Box>
+                      <Box>
+                        <Text fontWeight="semibold">Iteration Path:</Text>
+                        <Text>{azureIterationPath}</Text>
                       </Box>
                     </VStack>
                   )}
