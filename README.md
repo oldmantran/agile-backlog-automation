@@ -1,6 +1,15 @@
 # 🧠 Agile Backlog Automation
 
+A sophisticated multi-agent AI system that transforms product visions into structured, actionable backlogs. Built with Grok from xAI, this system generates epics, features, user stories, developer tasks, and QA test cases with full Azure DevOps integration and advanced work item management capabilities.
+
 ## 🚨 Recent Updates (2025-07)
+
+- **Acceptance Criteria Architecture Refactoring (NEW):**
+  - **Azure DevOps Best Practices Alignment:** Acceptance criteria are now exclusively created and managed at the User Story level, following Azure DevOps best practices
+  - **Feature-Level Simplification:** Features no longer include acceptance criteria, focusing on high-level business value and requirements
+  - **Enhanced User Story Focus:** All QA testing, validation, and test case generation now operates at the User Story level for better traceability
+  - **Improved ADO Field Mapping:** User Stories now properly map acceptance criteria to the dedicated `Microsoft.VSTS.Common.AcceptanceCriteria` field
+  - **Cleaner Work Item Hierarchy:** Epic → Feature → User Story → Task/Test Case hierarchy now aligns with industry standards
 
 - **New Mobile-First Frontend:**
   - Added React-based frontend with Chakra UI for a modern, responsive user interface
@@ -8,33 +17,55 @@
   - Created dashboard for monitoring backlog generation progress
 
 - **Test Case Hierarchy Analysis & Automation:**
-  - Added scripts to analyze and reorganize test cases, ensuring they are parented by User Stories (not Features) for best practice in Azure DevOps.
-  - Created a script to identify test cases directly under Features and (optionally) auto-create User Stories to parent them.
-  - Enhanced logging and dry-run support for all reorganization scripts.
+  - Added scripts to analyze and reorganize test cases, ensuring they are parented by User Stories (not Features) for best practice in Azure DevOps
+  - Created a script to identify test cases directly under Features and (optionally) auto-create User Stories to parent them
+  - Enhanced logging and dry-run support for all reorganization scripts
   
 - **Environment Variable Handling:**
-  - Standardized on `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` for all scripts.
-  - All scripts now robustly load the `.env` file from the project root, regardless of working directory.
-  - Fixed Azure DevOps authentication to always use base64-encoded PATs.
-- **QA Tester Agent & Test Plan Automation:**
-  - Improved prompt and logic for the QA Tester Agent to support test case prioritization and grouping.
-  - Prepared for automated creation of Test Plans and Suites based on a clean Feature → User Story → Test Case hierarchy.
-- **Debugging & Validation:**
-  - Added scripts and debug tools to verify work item relationships and Azure DevOps API responses.
-  - Improved error handling and step-by-step logging for all automation scripts.
+  - Standardized on `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` for all scripts
+  - All scripts now robustly load the `.env` file from the project root, regardless of working directory
+  - Fixed Azure DevOps authentication to always use base64-encoded PATs
 
-# 🧠 Agile Backlog Automatio## 🏗️ Architecture
+- **QA Tester Agent & Test Plan Automation:**
+  - Improved prompt and logic for the QA Tester Agent to support test case prioritization and grouping
+  - Prepared for automated creation of Test Plans and Suites based on a clean Feature → User Story → Test Case hierarchy
+
+- **Debugging & Validation:**
+  - Added scripts and debug tools to verify work item relationships and Azure DevOps API responses
+  - Improved error handling and step-by-step logging for all automation scripts
+
+## 🏗️ Architecture
 
 ### AI Agents
 1. **Epic Strategist** - Transforms product vision into high-level epics
-2. **Feature Decomposer** - Breaks epics into detailed features  
-3. **Developer Agent** - Creates technical tasks with time estimates
-4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria
+2. **Decomposition Agent** - Breaks epics into features and user stories with acceptance criteria
+3. **Developer Agent** - Creates technical tasks with time estimates  
+4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria (User Story level only)
 
 ### Workflow
 ```
-Product Vision → Epics → Features → Developer Tasks → QA Test Cases & Validation
+Product Vision → Epics → Features → User Stories (with Acceptance Criteria) → Developer Tasks → QA Test Cases & Validation
 ```
+
+### Azure DevOps Work Item Hierarchy
+```
+Epic
+├── Feature (Business Value Focus)
+│   ├── User Story (with Acceptance Criteria)
+│   │   ├── Task (Development Work)
+│   │   └── Test Case (QA Validation)
+│   └── User Story (with Acceptance Criteria)
+│       ├── Task (Development Work)
+│       └── Test Case (QA Validation)
+└── Feature (Business Value Focus)
+    └── ...
+```
+
+**Key Architecture Principles:**
+- **Features** focus on business value and high-level requirements without acceptance criteria
+- **User Stories** contain detailed acceptance criteria and are the primary unit for QA testing
+- **Test Cases** are always parented by User Stories for proper traceability
+- **Tasks** represent technical implementation work for User Stories
 
 ### Work Item Management Tools
 - **Work Item Description Fixer** (`fix_work_item_descriptions.py`) - Fixes HTML formatting and section headers in work item descriptions
@@ -110,8 +141,9 @@ python tools/test_end_to_end.py
 
 ### Azure DevOps Integration
 - **🔗 Work Item Creation**: Automatic creation of Epics, Features, User Stories, Tasks, and Test Cases
-- **📋 Work Item Management**: Advanced tools for updating, moving, and organizing work items
-- **🏗️ Area Path Management**: Automated organization of work items into proper area paths
+- **📋 Acceptance Criteria Management**: User Stories include dedicated acceptance criteria fields following ADO best practices
+- **🏗️ Proper Work Item Hierarchy**: Epic → Feature → User Story → Task/Test Case structure aligned with industry standards
+- **📊 Field Mapping**: Acceptance criteria properly mapped to `Microsoft.VSTS.Common.AcceptanceCriteria` field for User Stories
 - **🔧 Description Formatting**: Tools to fix and standardize work item descriptions with proper HTML
 - **📊 Project Analytics**: Tools to analyze and validate work item structures
 
@@ -126,9 +158,9 @@ python tools/test_end_to_end.py
 
 ### AI Agents
 1. **Epic Strategist** - Transforms product vision into high-level epics
-2. **Feature Decomposer** - Breaks epics into detailed features  
+2. **Decomposition Agent** - Breaks epics into features and user stories with acceptance criteria
 3. **Developer Agent** - Creates technical tasks with time estimates
-4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria
+4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria at User Story level
 
 ### Workflow
 ```
@@ -436,42 +468,47 @@ epics:
     business_value: "Value statement"
     features:
       - title: "Feature Name"
-        description: "Feature description"
-        acceptance_criteria:
-          - "User can perform action X"
-          - "System validates input Y"
+        description: "Feature description (business value focus)"
         priority: "High|Medium|Low"
         estimated_story_points: 8
-        tasks:
-          - title: "Task Name"
-            description: "Technical implementation details"
-            type: "Development|Testing|Design|Documentation"
-            estimated_hours: 4
+        user_stories:
+          - title: "User Story Name"
+            description: "User story description"
+            acceptance_criteria:
+              - "User can perform action X"
+              - "System validates input Y"
             priority: "High|Medium|Low"
-            dependencies: []
-        test_cases:
-          - title: "Test scenario name"
-            type: "functional|security|performance|boundary"
-            priority: "High|Medium|Low"
-            gherkin:
-              feature: "Feature name"
-              scenario: "Specific test scenario"
-              given: ["Precondition 1", "Precondition 2"]
-              when: ["User action 1", "System action 2"]
-              then: ["Expected outcome 1", "Validation 2"]
-            estimated_time_minutes: 10
-        edge_cases:
-          - title: "Edge case name"
-            category: "boundary_condition|security|performance|integration"
-            description: "Detailed edge case description"
-            risk_level: "High|Medium|Low|Critical"
-            test_scenario: "How to reproduce the edge case"
-            expected_behavior: "What should happen"
-        qa_validation:
-          testability_score: 8
-          enhanced_criteria: ["Enhanced criterion 1"]
-          recommendations: ["Improvement recommendation 1"]
-          missing_scenarios: ["Missing test scenario 1"]
+            estimated_story_points: 5
+            tasks:
+              - title: "Task Name"
+                description: "Technical implementation details"
+                type: "Development|Testing|Design|Documentation"
+                estimated_hours: 4
+                priority: "High|Medium|Low"
+                dependencies: []
+            test_cases:
+              - title: "Test scenario name"
+                type: "functional|security|performance|boundary"
+                priority: "High|Medium|Low"
+                gherkin:
+                  feature: "User story name"
+                  scenario: "Specific test scenario"
+                  given: ["Precondition 1", "Precondition 2"]
+                  when: ["User action 1", "System action 2"]
+                  then: ["Expected outcome 1", "Validation 2"]
+                estimated_time_minutes: 10
+            edge_cases:
+              - title: "Edge case name"
+                category: "boundary_condition|security|performance|integration"
+                description: "Detailed edge case description"
+                risk_level: "High|Medium|Low|Critical"
+                test_scenario: "How to reproduce the edge case"
+                expected_behavior: "What should happen"
+            qa_validation:
+              testability_score: 8
+              enhanced_criteria: ["Enhanced criterion 1"]
+              recommendations: ["Improvement recommendation 1"]
+              missing_scenarios: ["Missing test scenario 1"]
 ```
 
 ## ⚙️ Configuration
@@ -486,8 +523,8 @@ project:
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"
-  feature_decomposer:
-    prompt_file: "prompts/feature_decomposer.txt"
+  decomposition_agent:
+    prompt_file: "prompts/decomposition_agent.txt"
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
@@ -498,7 +535,7 @@ agents:
 workflow:
   sequence:
     - epic_strategist
-    - feature_decomposer  
+    - decomposition_agent
     - developer_agent
     - qa_tester_agent
   output_format: "azure_devops"
@@ -517,18 +554,19 @@ notifications:
 Customize agent behavior by editing prompt files in the `prompts/` directory:
 
 - `epic_strategist.txt` - Controls epic generation strategy
-- `feature_decomposer.txt` - Defines feature breakdown approach  
+- `decomposition_agent.txt` - Defines feature breakdown and user story creation approach
 - `developer_agent.txt` - Shapes technical task creation
-- `qa_tester_agent.txt` - Guides test case generation
+- `qa_tester_agent.txt` - Guides test case generation (User Story level only)
 
 ## 🔗 Integrations
 
 ### Azure DevOps
 Automatically creates work items in Azure DevOps:
 - **Epics** → Azure DevOps Epics
-- **Features** → Azure DevOps Features  
-- **Tasks** → Azure DevOps User Stories/Tasks
-- **Test Cases** → Azure DevOps Test Cases
+- **Features** → Azure DevOps Features (business value focus, no acceptance criteria)
+- **User Stories** → Azure DevOps User Stories (with acceptance criteria in dedicated field)
+- **Tasks** → Azure DevOps Tasks (parented by User Stories)
+- **Test Cases** → Azure DevOps Test Cases (parented by User Stories)
 
 ### Notifications
 - **Microsoft Teams** - Real-time pipeline status updates
@@ -569,9 +607,9 @@ The system includes powerful utilities for managing Azure DevOps work items:
 
 ## 🔬 QA Testing Capabilities
 
-The QA Tester Agent provides comprehensive testing analysis for each feature:
+The QA Tester Agent provides comprehensive testing analysis for each User Story (following Azure DevOps best practices):
 
-### Test Case Generation
+### Test Case Generation (User Story Level Only)
 - **Functional Testing** - Happy path and alternative flow scenarios in Gherkin format
 - **Security Testing** - SQL injection, XSS, and authentication bypass scenarios
 - **Performance Testing** - Load testing and response time validation scenarios
@@ -586,7 +624,7 @@ The QA Tester Agent provides comprehensive testing analysis for each feature:
 - **Performance Edge Cases** - High load and resource constraint scenarios
 - **Integration Failures** - Service outages and connectivity issues
 
-### Acceptance Criteria Validation
+### Acceptance Criteria Validation (User Story Level)
 - **Testability Scoring** - 1-10 scale assessment of how testable criteria are
 - **Enhancement Recommendations** - Specific suggestions for improving testability
 - **Missing Scenarios** - Identification of untested edge cases and workflows
@@ -595,24 +633,31 @@ The QA Tester Agent provides comprehensive testing analysis for each feature:
 ### Example QA Output
 ```yaml
 features:
-  - title: "User Authentication"
-    test_cases:
-      - title: "Successful login with valid credentials"
-        type: "functional"
-        priority: "High"
-        gherkin:
-          scenario: "User logs in successfully"
-          given: ["User has valid account", "User is on login page"]
-          when: ["User enters correct email and password", "User clicks login"]
-          then: ["User is redirected to dashboard", "Welcome message appears"]
-    edge_cases:
-      - title: "SQL injection attempt in login field"
-        category: "security"
-        risk_level: "Critical"
-        description: "Test for SQL injection vulnerability in email field"
-    qa_validation:
-      testability_score: 9
-      recommendations: ["Add specific error message validation"]
+  - title: "User Management"
+    description: "Manage user accounts and permissions"
+    user_stories:
+      - title: "User Authentication"
+        acceptance_criteria:
+          - "User can log in with valid credentials"
+          - "System displays error for invalid credentials"
+          - "User session expires after 30 minutes of inactivity"
+        test_cases:
+          - title: "Successful login with valid credentials"
+            type: "functional"
+            priority: "High"
+            gherkin:
+              scenario: "User logs in successfully"
+              given: ["User has valid account", "User is on login page"]
+              when: ["User enters correct email and password", "User clicks login"]
+              then: ["User is redirected to dashboard", "Welcome message appears"]
+        edge_cases:
+          - title: "SQL injection attempt in login field"
+            category: "security"
+            risk_level: "Critical"
+            description: "Test for SQL injection vulnerability in email field"
+        qa_validation:
+          testability_score: 9
+          recommendations: ["Add specific error message validation"]
 ```
 
 ## 🧪 Testing & Validation
@@ -768,9 +813,9 @@ agile-backlog-automation/
 ├── agents/                    # AI agent implementations
 │   ├── base_agent.py         # Base class for all agents
 │   ├── epic_strategist.py    # Epic generation agent
-│   ├── feature_decomposer.py # Feature breakdown agent
+│   ├── decomposition_agent.py # Feature breakdown and user story creation agent
 │   ├── developer_agent.py    # Task creation agent
-│   └── qa_tester_agent.py    # Test case generation agent
+│   └── qa_tester_agent.py    # Test case generation agent (User Story level)
 ├── config/                   # Configuration management
 │   ├── config_loader.py      # Configuration loading utilities
 │   └── settings.yaml         # Agent and workflow settings
