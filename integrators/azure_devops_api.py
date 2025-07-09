@@ -34,7 +34,7 @@ class AzureDevOpsIntegrator:
     - Test organization (Test Plan -> Test Suite -> Test Case)
     """
     
-    def __init__(self, organization_url: str, project: str, personal_access_token: str, area_path: str = None, iteration_path: str = None):
+    def __init__(self, organization_url: str, project: str, personal_access_token: str = None, area_path: str = None, iteration_path: str = None):
         """Initialize Azure DevOps integration with configuration and explicit area/iteration paths."""
         # Parse organization from URL
         if organization_url.startswith("https://dev.azure.com/"):
@@ -42,7 +42,13 @@ class AzureDevOpsIntegrator:
         else:
             self.organization = organization_url
         self.project = project
-        self.pat = personal_access_token
+        
+        # Use the provided PAT, or fallback to .env if not provided
+        if not personal_access_token:
+            import os
+            self.pat = os.getenv("AZURE_DEVOPS_PAT")
+        else:
+            self.pat = personal_access_token
         self.logger = logging.getLogger("azure_devops_integrator")
 
         if not all([self.organization, self.project, self.pat]):
@@ -51,10 +57,12 @@ class AzureDevOpsIntegrator:
         else:
             self.enabled = True
 
-        # Initialize API endpoints
+        # URL-encode the project name for all API URLs
+        import urllib.parse
+        self.project_encoded = urllib.parse.quote(self.project)
         self.org_base_url = f"https://dev.azure.com/{self.organization}/_apis"
-        self.base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
-        self.project_base_url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis"
+        self.base_url = f"https://dev.azure.com/{self.organization}/{self.project_encoded}/_apis"
+        self.project_base_url = f"https://dev.azure.com/{self.organization}/{self.project_encoded}/_apis"
         self.work_items_url = f"{self.base_url}/wit/workitems"
         self.test_plans_url = f"{self.base_url}/testplan/plans"
         self.test_suites_url = f"{self.base_url}/testplan/suites"
