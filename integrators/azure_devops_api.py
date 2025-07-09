@@ -98,8 +98,25 @@ class AzureDevOpsIntegrator:
         self.test_suites_cache = {}
 
     def get_available_area_paths(self) -> list:
-        """Get all available area paths in the project. Stub returns empty list if not implemented."""
-        return []
+        """Get all available area paths in the project."""
+        url = f"{self.project_base_url}/wit/classificationnodes/areas?$depth=10&api-version=7.0"
+        try:
+            response = requests.get(url, auth=self.auth, headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+            # Recursively collect all area paths
+            def collect_paths(node, prefix=None):
+                paths = []
+                name = node['name']
+                path = f"{prefix}\\{name}" if prefix else name
+                paths.append(path)
+                for child in node.get('children', []):
+                    paths.extend(collect_paths(child, path))
+                return paths
+            return collect_paths(data)
+        except Exception as e:
+            self.logger.error(f"Failed to fetch area paths: {e}")
+            return []
 
     def get_available_iteration_paths(self) -> list:
         """Get all available iteration paths in the project. Stub returns empty list if not implemented."""
@@ -109,14 +126,22 @@ class AzureDevOpsIntegrator:
         """Ensure area and iteration paths exist in Azure DevOps, create if missing."""
         # Area Path
         area_paths = self.get_available_area_paths()
-        if self.area_path not in area_paths:
+        # Accept both direct area name and full path for matching
+        area_path_valid = self.area_path in area_paths or any(
+            ap.split('\\')[-1] == self.area_path for ap in area_paths
+        )
+        if not area_path_valid:
             self.logger.info(f"Area path '{self.area_path}' not found. Creating...")
-            self.create_area_path(self.area_path)
+            # If area_path contains backslashes, split to get parent and child
+            if '\\' in self.area_path:
+                parent_path, area_name = self.area_path.rsplit('\\', 1)
+                self.create_area_path(area_name, parent_path)
+            else:
+                self.create_area_path(self.area_path)
         # Iteration Path
         iteration_paths = [it['path'] for it in self.get_available_iteration_paths()]
         if self.iteration_path not in iteration_paths:
             self.logger.info(f"Iteration path '{self.iteration_path}' not found. Creating...")
-            # For now, create with no dates (could be extended to accept dates from API)
             self.create_iteration_path(self.iteration_path, start_date=None, end_date=None)
 
     def create_work_items(self, backlog_data: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -905,8 +930,27 @@ class AzureDevOpsIntegrator:
     
     def create_area_path(self, area_name: str, parent_path: Optional[str] = None) -> Dict[str, Any]:
         """Create a new area path in the project."""
-        # TODO: Implement area path creation
-        pass
+        # If parent_path is None, create under the project root
+        if parent_path:
+            url = f"{self.project_base_url}/wit/classificationnodes/areas/{parent_path}?api-version=7.0"
+        else:
+            url = f"{self.project_base_url}/wit/classificationnodes/areas?api-version=7.0"
+        
+        data = {"name": area_name}
+        self.logger.info(f"Creating area path '{area_name}' under '{parent_path or self.project}' (URL: {url})")
+        try:
+            response = requests.post(url, json=data, auth=self.auth, headers=self.headers)
+            if response.status_code == 409:
+                self.logger.info(f"Area path '{area_name}' already exists.")
+                return {"status": "exists"}
+            response.raise_for_status()
+            self.logger.info(f"Area path '{area_name}' created successfully.")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create area path '{area_name}': {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
     
     def create_iteration_path(self, iteration_name: str, start_date: str, end_date: str, 
                             parent_path: Optional[str] = None) -> Dict[str, Any]:
