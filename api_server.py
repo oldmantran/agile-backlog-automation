@@ -77,8 +77,6 @@ class ProjectBasics(BaseModel):
     name: str = Field(..., description="Project name")
     description: str = Field(..., description="Project description")
     domain: str = Field(..., description="Business domain")
-    teamSize: int = Field(..., ge=1, le=50, description="Team size")
-    timeline: str = Field(..., description="Project timeline")
 
 class ProductVision(BaseModel):
     visionStatement: str = Field(..., description="Product vision statement")
@@ -322,8 +320,6 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "project_type": project_domain,
             "project_name": project_name,
             "project_description": project_data["basics"]["description"],
-            "team_size": project_data["basics"]["teamSize"],
-            "timeline": project_data["basics"]["timeline"],
             "vision_statement": project_data["vision"]["visionStatement"],
             "business_objectives": project_data["vision"]["businessObjectives"],
             "target_audience": project_data["vision"]["targetAudience"],
@@ -346,8 +342,6 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         Business Objectives: {', '.join(project_data["vision"]["businessObjectives"])}
         Target Audience: {project_data["vision"]["targetAudience"]}
         Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
-        Team Size: {project_data["basics"]["teamSize"]}
-        Timeline: {project_data["basics"]["timeline"]}
         """
         
         # Run the supervisor workflow

@@ -2,8 +2,6 @@ export interface ProjectBasics {
   name: string;
   description: string;
   domain: string;
-  teamSize: number;
-  timeline: string;
 }
 
 export interface ProductVision {

@@ -43,8 +43,6 @@ export const useProject = () => {
           name: 'Sample Project',
           description: 'This is a sample project',
           domain: 'software',
-          teamSize: 5,
-          timeline: '3 months'
         },
         vision: {
           visionStatement: 'To create an innovative software solution',
@@ -59,9 +57,9 @@ export const useProject = () => {
           areaPath: 'SampleProject\\Area',
           iterationPath: 'SampleProject\\Iteration'
         },
-        status: 'completed',
+        status: 'draft',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
       
       setIsLoading(false);

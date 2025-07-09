@@ -9,11 +9,6 @@ import {
   Textarea,
   VStack,
   HStack,
-  Slider,
-  SliderTrack,
-  SliderFilledTrack,
-  SliderThumb,
-  SliderMark,
   FormHelperText,
   useColorModeValue,
 } from '@chakra-ui/react';
@@ -30,23 +25,15 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
   onNext,
   initialData = {},
 }) => {
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       name: initialData.name || '',
       description: initialData.description || '',
       domain: initialData.domain || '',
-      teamSize: initialData.teamSize || 5,
-      timeline: initialData.timeline || '3 months',
     }
   });
   
-  const teamSize = watch('teamSize');
   const bgColor = useColorModeValue('white', 'gray.700');
-  
-  // Handle slider change since it can't use register directly
-  const handleSliderChange = (value: number) => {
-    setValue('teamSize', value);
-  };
   
   const onSubmit = (data: any) => {
     onNext(data);
@@ -61,7 +48,7 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
       width="full"
     >
       <form onSubmit={handleSubmit(onSubmit)}>
-        <VStack spacing={6} align="stretch">
+        <VStack spacing={4} align="stretch">
           <FormControl isRequired isInvalid={!!errors.name}>
             <FormLabel>Project Name</FormLabel>
             <Input 
@@ -79,14 +66,19 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
             )}
           </FormControl>
           
-          <FormControl>
+          <FormControl isRequired isInvalid={!!errors.description}>
             <FormLabel>Description</FormLabel>
             <Textarea 
-              {...register('description')} 
+              {...register('description', { required: 'Description is required' })} 
               placeholder="Brief description of the project"
               size="lg"
               rows={3}
             />
+            {errors.description && (
+              <FormHelperText color="red.500">
+                {errors.description.message as string}
+              </FormHelperText>
+            )}
           </FormControl>
           
           <FormControl isRequired isInvalid={!!errors.domain}>
@@ -109,53 +101,7 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
             )}
           </FormControl>
           
-          <FormControl>
-            <FormLabel>Team Size: {teamSize} people</FormLabel>
-            <Slider
-              value={teamSize}
-              min={1}
-              max={20}
-              step={1}
-              onChange={handleSliderChange}
-              colorScheme="brand"
-            >
-              <SliderMark value={1} mt='3' ml='-1' fontSize='sm'>
-                1
-              </SliderMark>
-              <SliderMark value={10} mt='3' ml='-2' fontSize='sm'>
-                10
-              </SliderMark>
-              <SliderMark value={20} mt='3' ml='-2' fontSize='sm'>
-                20+
-              </SliderMark>
-              <SliderTrack>
-                <SliderFilledTrack />
-              </SliderTrack>
-              <SliderThumb boxSize={6} />
-            </Slider>
-          </FormControl>
-          
-          <FormControl isRequired isInvalid={!!errors.timeline}>
-            <FormLabel>Timeline</FormLabel>
-            <Select 
-              {...register('timeline', { required: 'Timeline is required' })}
-              placeholder="Select project timeline"
-              size="lg"
-            >
-              <option value="1 month">1 Month</option>
-              <option value="3 months">3 Months</option>
-              <option value="6 months">6 Months</option>
-              <option value="1 year">1 Year</option>
-              <option value="1+ years">More than 1 Year</option>
-            </Select>
-            {errors.timeline && (
-              <FormHelperText color="red.500">
-                {errors.timeline.message as string}
-              </FormHelperText>
-            )}
-          </FormControl>
-          
-          <HStack justify="flex-end" pt={4}>
+          <HStack mt={8} justify="flex-end">
             <Button 
               colorScheme="brand" 
               size="lg" 

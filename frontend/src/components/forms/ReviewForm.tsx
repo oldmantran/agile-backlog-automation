@@ -54,8 +54,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const projectName = basics.name || 'Untitled Project';
   const projectDescription = basics.description || 'No description provided';
   const domain = basics.domain || 'Not specified';
-  const teamSize = basics.teamSize || 0;
-  const timeline = basics.timeline || 'Not specified';
   const visionStatement = vision.visionStatement || 'Not provided';
   const businessObjectives = vision.businessObjectives || [];
   const azureOrg = azure.organizationUrl || 'Not configured';
@@ -127,20 +125,10 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
                       <Text fontWeight="semibold">Description:</Text>
                       <Text>{projectDescription}</Text>
                     </Box>
-                    <HStack>
-                      <Box>
-                        <Text fontWeight="semibold">Domain:</Text>
-                        <Text>{domain}</Text>
-                      </Box>
-                      <Box>
-                        <Text fontWeight="semibold">Team Size:</Text>
-                        <Text>{teamSize} members</Text>
-                      </Box>
-                      <Box>
-                        <Text fontWeight="semibold">Timeline:</Text>
-                        <Text>{timeline}</Text>
-                      </Box>
-                    </HStack>
+                    <Box>
+                      <Text fontWeight="semibold">Domain:</Text>
+                      <Text>{domain}</Text>
+                    </Box>
                   </VStack>
                 </CardBody>
               </Card>
