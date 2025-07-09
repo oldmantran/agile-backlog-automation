@@ -116,6 +116,11 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
       };
       onNext(envConfig);
     } else {
+      // Require areaPath and iterationPath
+      if (!data.areaPath || !data.iterationPath) {
+        alert('Both Area Path and Iteration Path are required.');
+        return;
+      }
       onNext(data);
     }
   };
@@ -241,7 +246,7 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                     )}
                   </FormControl>
                   
-                  <FormControl>
+                  <FormControl isRequired isInvalid={!!errors.areaPath}>
                     <FormLabel>Area Path</FormLabel>
                     <Input 
                       {...register('areaPath')} 
@@ -258,9 +263,14 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                     <FormHelperText>
                       Leave empty to use the root area
                     </FormHelperText>
+                    {errors.areaPath && (
+                      <FormHelperText color="red.500">
+                        {errors.areaPath.message as string}
+                      </FormHelperText>
+                    )}
                   </FormControl>
                   
-                  <FormControl>
+                  <FormControl isRequired isInvalid={!!errors.iterationPath}>
                     <FormLabel>Iteration Path</FormLabel>
                     <Input 
                       {...register('iterationPath')} 
@@ -277,6 +287,11 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                     <FormHelperText>
                       Leave empty to use the current iteration
                     </FormHelperText>
+                    {errors.iterationPath && (
+                      <FormHelperText color="red.500">
+                        {errors.iterationPath.message as string}
+                      </FormHelperText>
+                    )}
                   </FormControl>
                 </>
               )}
