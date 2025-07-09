@@ -13,9 +13,10 @@ import requests
 from requests.auth import HTTPBasicAuth
 import base64
 import logging
+import urllib.parse
 
 from config.config_loader import Config
-
+from clients.azure_devops_test_client import AzureDevOpsTestClient
 
 class AzureDevOpsIntegrator:
     """
@@ -59,6 +60,16 @@ class AzureDevOpsIntegrator:
         self.work_items_url = f"{self.base_url}/wit/workitems"
         self.test_plans_url = f"{self.base_url}/testplan/plans"
         self.test_suites_url = f"{self.base_url}/testplan/suites"
+
+        # Initialize test management client
+        if self.enabled:
+            self.test_client = AzureDevOpsTestClient(
+                organization=self.organization,
+                project=self.project,
+                personal_access_token=self.pat
+            )
+        else:
+            self.test_client = None
         
         # Set up authentication
         self.auth = HTTPBasicAuth('', self.pat)
@@ -242,6 +253,55 @@ class AzureDevOpsIntegrator:
     
     def _create_test_case(self, test_case_data: Dict[str, Any], parent_id: int, suite_id: int = None) -> Dict[str, Any]:
         """Create a Test Case work item and optionally assign to a test suite."""
+        
+        # Use test client for better test step formatting
+        if self.test_client:
+            steps = self._format_test_steps_for_test_client(test_case_data.get('steps', []))
+            test_case_wi = self.test_client.create_test_case_work_item(
+                title=test_case_data.get('title', 'Untitled Test Case'),
+                description=test_case_data.get('description', ''),
+                steps=steps
+            )
+            
+            if not test_case_wi:
+                # Fallback to original method if test client fails
+                return self._create_test_case_fallback(test_case_data, parent_id, suite_id)
+            
+            # Convert test client response to match expected format
+            result = {
+                'id': test_case_wi['id'],
+                'type': 'Test Case',
+                'title': test_case_wi['fields']['System.Title'],
+                'url': test_case_wi['_links']['html']['href'],
+                'state': test_case_wi['fields']['System.State']
+            }
+            
+        else:
+            # Fallback to original work item creation
+            result = self._create_test_case_fallback(test_case_data, parent_id, suite_id)
+        
+        # Link to parent (User Story or Feature)
+        self._create_parent_link(result['id'], parent_id)
+        
+        # Add to test suite if specified using test client
+        if suite_id and self.test_client:
+            try:
+                # Get test plan ID from suite (you'll need to implement this)
+                test_plan_id = self._get_test_plan_id_from_suite(suite_id)
+                if test_plan_id:
+                    success = self.test_client.add_test_case_to_suite(test_plan_id, suite_id, result['id'])
+                    if success:
+                        result['suite_id'] = suite_id
+                        self.logger.info(f"Test case {result['id']} added to test suite {suite_id}")
+                    else:
+                        self.logger.warning(f"Failed to add test case to suite {suite_id}")
+            except Exception as e:
+                self.logger.warning(f"Failed to add test case to suite: {e}")
+        
+        return result
+
+    def _create_test_case_fallback(self, test_case_data: Dict[str, Any], parent_id: int, suite_id: int = None) -> Dict[str, Any]:
+        """Fallback method using direct work item API when test client is unavailable."""
         fields = {
             '/fields/System.Title': test_case_data.get('title', 'Untitled Test Case'),
             '/fields/System.Description': test_case_data.get('description', ''),
@@ -255,22 +315,104 @@ class AzureDevOpsIntegrator:
         if self.iteration_path:
             fields['/fields/System.IterationPath'] = self.iteration_path
         
-        test_item = self._create_work_item('Test Case', fields)
+        return self._create_work_item('Test Case', fields)
+
+    def _format_test_steps_for_test_client(self, steps: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+        """Format test steps for the test client."""
+        if not steps:
+            return [{'action': 'Execute test case', 'expectedResult': 'Test passes successfully'}]
         
-        # Link to parent (User Story or Feature)
-        self._create_parent_link(test_item['id'], parent_id)
+        formatted_steps = []
+        for step in steps:
+            formatted_steps.append({
+                'action': step.get('action', 'Execute step'),
+                'expectedResult': step.get('expected_result', step.get('expectedResult', 'Step completes successfully'))
+            })
         
-        # Add to test suite if specified
-        if suite_id:
-            try:
-                self.add_test_cases_to_suite(suite_id, [test_item['id']])
-                test_item['suite_id'] = suite_id
-                self.logger.info(f"Test case {test_item['id']} added to test suite {suite_id}")
-            except Exception as e:
-                self.logger.warning(f"Failed to add test case to suite: {e}")
-        
-        return test_item
+        return formatted_steps
+
+    def _get_test_plan_id_from_suite(self, suite_id: int) -> Optional[int]:
+        """Get test plan ID from a test suite ID."""
+        # This would need to be implemented based on your test suite caching or API call
+        # For now, you could maintain a mapping in your test_suites_cache
+        for plan_id, suites in self.test_suites_cache.items():
+            if suite_id in [s.get('id') for s in suites]:
+                return plan_id
+        return None
     
+    def _create_test_plan(self, feature_data: Dict[str, Any], feature_id: int) -> Dict[str, Any]:
+        """Create a test plan for a feature using the dedicated test client."""
+        if not self.test_client:
+            self.logger.warning("Test client not available - skipping test plan creation")
+            return None
+        
+        feature_name = feature_data.get('title', 'Unknown Feature')
+        test_plan = self.test_client.ensure_test_plan_exists(feature_id, feature_name)
+        
+        if test_plan:
+            # Cache the test plan for later use
+            self.test_plans_cache[feature_id] = test_plan
+            
+            return {
+                'id': test_plan['id'],
+                'type': 'Test Plan',
+                'title': test_plan['name'],
+                'url': f"https://dev.azure.com/{self.organization}/{self.project}/_testPlans/execute?planId={test_plan['id']}",
+                'state': test_plan.get('state', 'Active')
+            }
+        return None
+
+    def _create_test_suite(self, user_story_data: Dict[str, Any], test_plan_id: int, user_story_id: int) -> Dict[str, Any]:
+        """Create a test suite for a user story using the dedicated test client."""
+        if not self.test_client:
+            self.logger.warning("Test client not available - skipping test suite creation")
+            return None
+        
+        user_story_name = user_story_data.get('title', 'Unknown User Story')
+        test_suite = self.test_client.ensure_test_suite_exists(test_plan_id, user_story_id, user_story_name)
+        
+        if test_suite:
+            # Cache the test suite for later use
+            if test_plan_id not in self.test_suites_cache:
+                self.test_suites_cache[test_plan_id] = []
+            self.test_suites_cache[test_plan_id].append(test_suite)
+            
+            return {
+                'id': test_suite['id'],
+                'type': 'Test Suite',
+                'title': test_suite['name'],
+                'url': f"https://dev.azure.com/{self.organization}/{self.project}/_testPlans/execute?planId={test_plan_id}&suiteId={test_suite['id']}",
+                'state': 'Active'
+            }
+        return None
+
+    def _create_default_test_suite(self, feature_data: Dict[str, Any], test_plan_id: int, feature_id: int) -> Dict[str, Any]:
+        """Create a default test suite for feature-level test cases."""
+        if not self.test_client:
+            self.logger.warning("Test client not available - skipping default test suite creation")
+            return None
+        
+        feature_name = feature_data.get('title', 'Unknown Feature')
+        suite_name = f"Feature Tests: {feature_name}"
+        
+        # Create a generic test suite for feature-level tests
+        test_suite = self.test_client.ensure_test_suite_exists(test_plan_id, feature_id, suite_name)
+        
+        if test_suite:
+            # Cache the test suite for later use
+            if test_plan_id not in self.test_suites_cache:
+                self.test_suites_cache[test_plan_id] = []
+            self.test_suites_cache[test_plan_id].append(test_suite)
+            
+            return {
+                'id': test_suite['id'],
+                'type': 'Test Suite',
+                'title': test_suite['name'],
+                'url': f"https://dev.azure.com/{self.organization}/{self.project}/_testPlans/execute?planId={test_plan_id}&suiteId={test_suite['id']}",
+                'state': 'Active'
+            }
+        return None
+
     def _create_user_story(self, story_data: Dict[str, Any], parent_feature_id: int) -> Dict[str, Any]:
         """Create a User Story work item."""
         fields = {
@@ -297,7 +439,6 @@ class AzureDevOpsIntegrator:
     def _create_work_item(self, work_item_type: str, fields: Dict[str, Any]) -> Dict[str, Any]:
         """Create a work item with specified type and fields."""
         # URL encode the work item type to handle spaces
-        import urllib.parse
         encoded_type = urllib.parse.quote(work_item_type)
         url = f"{self.project_base_url}/wit/workitems/${encoded_type}?api-version=7.0"
         
@@ -488,6 +629,130 @@ class AzureDevOpsIntegrator:
         
         return priority_mapping.get(priority.lower(), 2)  # Default to Medium
     
+    # Delegation methods for test management (replace duplicate public methods)
+    def ensure_test_plan_exists(self, feature_id: int, feature_name: str) -> Dict:
+        """Ensure a test plan exists for a feature, create if it doesn't."""
+        if not self.test_client:
+            raise ValueError("Test client not available - Azure DevOps integration disabled")
+        
+        return self.test_client.ensure_test_plan_exists(feature_id, feature_name)
+
+    def ensure_test_suite_exists(self, test_plan_id: int, user_story_id: int, user_story_name: str) -> Dict:
+        """Ensure a test suite exists for a user story in a test plan, create if it doesn't."""
+        if not self.test_client:
+            raise ValueError("Test client not available - Azure DevOps integration disabled")
+        
+        return self.test_client.ensure_test_suite_exists(test_plan_id, user_story_id, user_story_name)
+
+    def add_test_case_to_suite(self, test_plan_id: int, test_suite_id: int, test_case_id: int) -> bool:
+        """Add a test case to a test suite."""
+        if not self.test_client:
+            raise ValueError("Test client not available - Azure DevOps integration disabled")
+        
+        return self.test_client.add_test_case_to_suite(test_plan_id, test_suite_id, test_case_id)
+
+    def create_test_case(self, title: str, description: str, steps: list) -> Optional[Dict]:
+        """Create a test case work item."""
+        if not self.test_client:
+            raise ValueError("Test client not available - Azure DevOps integration disabled")
+        
+        return self.test_client.create_test_case_work_item(title, description, steps)
+
+    # Helper methods for Azure DevOps API operations
+    def _get_auth(self) -> HTTPBasicAuth:
+        """Get authentication for Azure DevOps requests."""
+        return HTTPBasicAuth('', self.pat)
+
+    def _handle_response(self, response: requests.Response) -> Dict:
+        """Handle Azure DevOps API response."""
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Azure DevOps API error: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
+
+    def get_work_item_relations(self, work_item_id: int) -> List[Dict]:
+        """Get work item relations."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        url = f"{self.project_base_url}/wit/workitems/{work_item_id}?$expand=relations&api-version=7.0"
+        
+        try:
+            response = requests.get(url, auth=self.auth)
+            response.raise_for_status()
+            work_item = response.json()
+            return work_item.get('relations', [])
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to get work item relations for {work_item_id}: {e}")
+            return []
+
+    def get_work_item_details(self, work_item_ids: List[int]) -> List[Dict]:
+        """Get detailed work item information for multiple IDs."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        if not work_item_ids:
+            return []
+        
+        # Azure DevOps API supports batch requests for up to 200 work items
+        batch_size = 200
+        all_work_items = []
+        
+        for i in range(0, len(work_item_ids), batch_size):
+            batch_ids = work_item_ids[i:i + batch_size]
+            ids_param = ','.join(str(id) for id in batch_ids)
+            
+            url = f"{self.project_base_url}/wit/workitems?ids={ids_param}&api-version=7.0"
+            
+            try:
+                response = requests.get(url, auth=self.auth)
+                response.raise_for_status()
+                batch_result = response.json()
+                all_work_items.extend(batch_result.get('value', []))
+                
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f"Failed to get work item details for batch {batch_ids}: {e}")
+                continue
+        
+        return all_work_items
+
+    def create_work_item_relation(self, source_id: int, target_id: int, relation_type: str) -> bool:
+        """Create a relation between two work items."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        url = f"{self.project_base_url}/wit/workitems/{source_id}?api-version=7.0"
+        
+        patch_document = [{
+            'op': 'add',
+            'path': '/relations/-',
+            'value': {
+                'rel': relation_type,
+                'url': f"{self.project_base_url}/wit/workitems/{target_id}"
+            }
+        }]
+        
+        try:
+            response = requests.patch(
+                url,
+                json=patch_document,
+                auth=self.auth,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            
+            self.logger.info(f"Created relation {relation_type} between {source_id} and {target_id}")
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create work item relation: {e}")
+            return False
+    
     def get_work_item(self, work_item_id: int) -> Dict[str, Any]:
         """Retrieve a work item by ID."""
         if not self.enabled:
@@ -585,8 +850,9 @@ class AzureDevOpsIntegrator:
         # TODO: Implement iteration path retrieval
         pass
     
-    def create_test_plan(self, name: str, area_path: str = None, iteration_path: str = None, description: str = None) -> Dict:
-        """Create a new test plan in Azure DevOps."""
+    # Legacy test management methods - use delegation methods above instead
+    def create_test_plan_legacy(self, name: str, area_path: str = None, iteration_path: str = None, description: str = None) -> Dict:
+        """Create a new test plan in Azure DevOps (legacy method - use ensure_test_plan_exists instead)."""
         url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/testplan/plans?api-version=7.1-preview.1"
         
         data = {
@@ -599,8 +865,8 @@ class AzureDevOpsIntegrator:
         response = requests.post(url, json=data, auth=self._get_auth())
         return self._handle_response(response)
 
-    def create_test_suite(self, test_plan_id: int, name: str, parent_suite_id: int = None) -> Dict:
-        """Create a test suite in a test plan."""
+    def create_test_suite_legacy(self, test_plan_id: int, name: str, parent_suite_id: int = None) -> Dict:
+        """Create a test suite in a test plan (legacy method - use ensure_test_suite_exists instead)."""
         url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/testplan/Plans/{test_plan_id}/suites?api-version=7.1-preview.1"
         
         data = {
@@ -625,12 +891,6 @@ class AzureDevOpsIntegrator:
         response = requests.get(url, auth=self._get_auth())
         result = self._handle_response(response)
         return result.get("value", [])
-
-    def add_test_case_to_suite(self, test_plan_id: int, test_suite_id: int, test_case_id: int) -> Dict:
-        """Add a test case to a test suite."""
-        url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/testplan/Plans/{test_plan_id}/Suites/{test_suite_id}/TestCases/{test_case_id}?api-version=7.1-preview.1"
-        response = requests.post(url, auth=self._get_auth())
-        return self._handle_response(response)
 
     def get_test_cases_in_suite(self, test_plan_id: int, test_suite_id: int) -> List[Dict]:
         """Get all test cases in a test suite."""
@@ -662,30 +922,6 @@ class AzureDevOpsIntegrator:
                    str(user_story_id) in link.get("url", ""):
                     return suite
         return None
-
-    def ensure_test_plan_exists(self, feature_id: int, feature_name: str) -> Dict:
-        """Ensure a test plan exists for a feature, create if it doesn't."""
-        test_plan = self.get_feature_test_plan(feature_id)
-        if not test_plan:
-            test_plan = self.create_test_plan(
-                name=f"Test Plan: {feature_name}",
-                description=f"Test plan for feature: {feature_name}",
-            )
-            # Link the test plan to the feature
-            self.create_work_item_relation(test_plan["id"], feature_id, "Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse")
-        return test_plan
-
-    def ensure_test_suite_exists(self, test_plan_id: int, user_story_id: int, user_story_name: str) -> Dict:
-        """Ensure a test suite exists for a user story in a test plan, create if it doesn't."""
-        test_suite = self.get_user_story_test_suite(test_plan_id, user_story_id)
-        if not test_suite:
-            test_suite = self.create_test_suite(
-                test_plan_id=test_plan_id,
-                name=f"Test Suite: {user_story_name}",
-            )
-            # Link the test suite to the user story
-            self.create_work_item_relation(test_suite["id"], user_story_id, "Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse")
-        return test_suite
 
     def get_features(self) -> List[Dict]:
         """Get all features in the project."""

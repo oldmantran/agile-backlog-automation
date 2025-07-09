@@ -1,4 +1,5 @@
 import json
+import logging
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
@@ -8,10 +9,23 @@ class QATesterAgent(Agent):
         super().__init__("qa_tester_agent", config)
         # Initialize quality validator
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
+        
+        # Initialize logger
+        self.logger = logging.getLogger(self.__class__.__name__)
+        
+        # Initialize ADO client if available
+        self.ado_client = None
+        if hasattr(config, 'ado_client'):
+            self.ado_client = config.ado_client
 
     def generate_test_cases(self, feature: dict, context: dict = None) -> list[dict]:
         """Generate test cases and potential bugs from a feature description."""
         
+        # Validate input
+        if not feature:
+            self.logger.error("No feature provided for test case generation")
+            return []
+            
         # Build context for prompt template
         prompt_context = {
             'domain': context.get('domain', 'software development') if context else 'software development',
@@ -28,10 +42,16 @@ Acceptance Criteria: {feature.get('acceptance_criteria', [])}
 Priority: {feature.get('priority', 'Medium')}
 """
         print(f"🧪 [QATesterAgent] Generating test cases for: {feature.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
-
+        
         try:
+            response = self.run(user_input, prompt_context)
+            
+            if not response:
+                self.logger.warning("Empty response from AI model")
+                return []
+                
             test_cases = json.loads(response)
+            
             if isinstance(test_cases, list):
                 # Validate and enhance test cases for quality compliance
                 enhanced_test_cases = self._validate_and_enhance_test_cases(test_cases)
@@ -40,12 +60,16 @@ Priority: {feature.get('priority', 'Medium')}
                 enhanced_test_cases = self._validate_and_enhance_test_cases(test_cases['test_cases'])
                 return enhanced_test_cases
             else:
-                print("⚠️ Grok response was not in expected format.")
+                self.logger.warning("Response was not in expected format")
                 return []
+                
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
+            self.logger.error(f"Failed to parse JSON: {e}")
+            if 'response' in locals():
+                self.logger.debug(f"Raw response: {response}")
+            return []
+        except Exception as e:
+            self.logger.error(f"Error generating test cases: {e}")
             return []
 
     def generate_edge_cases(self, feature: dict, context: dict = None) -> list[dict]:
@@ -336,9 +360,16 @@ Provide:
         Validate and enhance test cases to meet quality standards.
         Ensures compliance with Backlog Sweeper monitoring rules.
         """
+        if not test_cases:
+            return []
+            
         enhanced_test_cases = []
         
         for test_case in test_cases:
+            if not isinstance(test_case, dict):
+                self.logger.warning(f"Skipping invalid test case: {test_case}")
+                continue
+                
             enhanced_test_case = self._enhance_single_test_case(test_case)
             enhanced_test_cases.append(enhanced_test_case)
         
@@ -463,108 +494,263 @@ Provide:
             'enhanced_criteria': self.quality_validator.enhance_acceptance_criteria(acceptance_criteria, story_context) if not is_valid else acceptance_criteria
         }
 
-    def ensure_test_organization(self, user_story: dict) -> dict:
+    def ensure_test_organization(self, user_story: dict, required: bool = True) -> dict:
         """Ensure proper test organization exists for a user story."""
         
-        # Get the feature this user story belongs to
-        relations = self.ado_client.get_work_item_relations(user_story['id'])
-        feature_rel = next((r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Reverse'), None)
-        
-        if not feature_rel:
-            self.logger.warning(f"No parent feature found for user story {user_story['id']}")
-            return None
+        if not self.ado_client:
+            self.logger.warning("ADO client not available - cannot create test organization")
+            return None if required else {'test_plan': None, 'test_suite': None, 'feature_id': None}
             
-        feature_id = int(feature_rel['url'].split('/')[-1])
-        feature = self.ado_client.get_work_item_details([feature_id])[0]
-        
-        # Ensure test plan exists for the feature
-        test_plan = self.ado_client.ensure_test_plan_exists(
-            feature_id=feature_id,
-            feature_name=feature['fields'].get('System.Title', 'Unknown Feature')
-        )
-        
-        # Ensure test suite exists for the user story
-        test_suite = self.ado_client.ensure_test_suite_exists(
-            test_plan_id=test_plan['id'],
-            user_story_id=user_story['id'],
-            user_story_name=user_story['fields'].get('System.Title', 'Unknown User Story')
-        )
-        
-        return {
-            'test_plan': test_plan,
-            'test_suite': test_suite
-        }
-
-    def create_test_cases(self, user_story: dict, test_cases: list) -> list:
-        """Create test cases and organize them in proper test suite."""
-        created_test_cases = []
-        
-        # First ensure we have proper test organization
-        test_org = self.ensure_test_organization(user_story)
-        if not test_org:
-            self.logger.error(f"Failed to create test organization for user story {user_story['id']}")
-            return []
+        # Validate input
+        if not user_story or not user_story.get('id'):
+            self.logger.error("Invalid user story provided - missing ID")
+            return None if required else {'test_plan': None, 'test_suite': None, 'feature_id': None}
             
-        test_plan = test_org['test_plan']
-        test_suite = test_org['test_suite']
-        
-        # Create each test case and add to suite
-        for test_case in test_cases:
-            try:
-                # Create the test case work item
-                test_case_wi = self.ado_client.create_test_case(
-                    title=test_case['title'],
-                    description=json.dumps(test_case, indent=2),
-                    steps=self._format_test_steps(test_case)
+        try:
+            # Get the feature this user story belongs to
+            relations = self.ado_client.get_work_item_relations(user_story['id'])
+            feature_rel = next((r for r in relations if r.get('rel') == 'System.LinkTypes.Hierarchy-Reverse'), None)
+            
+            if not feature_rel:
+                self.logger.warning(f"No parent feature found for user story {user_story['id']}")
+                return None if required else {'test_plan': None, 'test_suite': None, 'feature_id': None}
+                
+            feature_id = int(feature_rel['url'].split('/')[-1])
+            feature_details = self.ado_client.get_work_item_details([feature_id])
+            
+            if not feature_details:
+                self.logger.error(f"Could not retrieve feature details for ID {feature_id}")
+                return None if required else {'test_plan': None, 'test_suite': None, 'feature_id': feature_id}
+                
+            feature = feature_details[0]
+            
+            # Try to ensure test plan exists for the feature
+            test_plan = self.ado_client.ensure_test_plan_exists(
+                feature_id=feature_id,
+                feature_name=feature.get('fields', {}).get('System.Title', 'Unknown Feature')
+            )
+            
+            if not test_plan:
+                self.logger.warning(f"Failed to create/find test plan for feature {feature_id}")
+                if required:
+                    return None
+                test_plan = None
+            
+            # Try to ensure test suite exists for the user story
+            test_suite = None
+            if test_plan:  # Only try to create test suite if we have a test plan
+                test_suite = self.ado_client.ensure_test_suite_exists(
+                    test_plan_id=test_plan['id'],
+                    user_story_id=user_story['id'],
+                    user_story_name=user_story.get('fields', {}).get('System.Title', user_story.get('title', 'Unknown User Story'))
                 )
                 
-                if test_case_wi:
-                    # Add test case to test suite
-                    self.ado_client.add_test_case_to_suite(
-                        test_plan_id=test_plan['id'],
-                        test_suite_id=test_suite['id'],
-                        test_case_id=test_case_wi['id']
+                if not test_suite:
+                    self.logger.warning(f"Failed to create/find test suite for user story {user_story['id']}")
+                    if required:
+                        return None
+            
+            return {
+                'test_plan': test_plan,
+                'test_suite': test_suite,
+                'feature_id': feature_id
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error ensuring test organization: {e}")
+            return None if required else {'test_plan': None, 'test_suite': None, 'feature_id': None}
+
+    def create_test_cases(self, user_story: dict, test_cases: list, require_organization: bool = False) -> list:
+        """Create test cases and organize them in proper test suite if possible."""
+        
+        if not self.ado_client:
+            self.logger.warning("ADO client not available - cannot create test cases in ADO")
+            return []
+            
+        created_test_cases = []
+        
+        try:
+            # Try to ensure we have proper test organization (but don't fail if we can't)
+            test_org = self.ensure_test_organization(user_story, required=require_organization)
+            
+            if not test_org and require_organization:
+                self.logger.error(f"Failed to create test organization for user story {user_story.get('id', 'Unknown')}")
+                return []
+            
+            test_plan = test_org.get('test_plan') if test_org else None
+            test_suite = test_org.get('test_suite') if test_org else None
+            
+            # Create each test case
+            for test_case in test_cases:
+                try:
+                    # Validate test case has required fields
+                    if not test_case.get('title'):
+                        self.logger.warning(f"Skipping test case without title: {test_case}")
+                        continue
+                        
+                    # Create the test case work item
+                    test_case_wi = self.ado_client.create_test_case(
+                        title=test_case['title'],
+                        description=json.dumps(test_case, indent=2),
+                        steps=self._format_test_steps(test_case)
                     )
                     
-                    # Link test case to user story
-                    self.ado_client.create_work_item_relation(
-                        test_case_wi['id'],
-                        user_story['id'],
-                        "Microsoft.VSTS.TestCase.SharedSteps-Forward"
-                    )
+                    if test_case_wi:
+                        # Add test case to test suite if we have proper organization
+                        if test_plan and test_suite:
+                            try:
+                                self.ado_client.add_test_case_to_suite(
+                                    test_plan_id=test_plan['id'],
+                                    test_suite_id=test_suite['id'],
+                                    test_case_id=test_case_wi['id']
+                                )
+                                self.logger.info(f"Added test case to test suite: {test_case['title']}")
+                            except Exception as e:
+                                self.logger.warning(f"Failed to add test case to test suite: {e}")
+                        else:
+                            self.logger.info(f"Created test case without test suite organization: {test_case['title']}")
+                        
+                        # Link test case to user story if possible
+                        try:
+                            self.ado_client.create_work_item_relation(
+                                test_case_wi['id'],
+                                user_story.get('id'),
+                                "Microsoft.VSTS.Common.TestedBy-Reverse"
+                            )
+                        except Exception as e:
+                            self.logger.warning(f"Failed to link test case to user story: {e}")
+                        
+                        created_test_cases.append(test_case_wi)
+                        self.logger.info(f"Created test case: {test_case['title']}")
+                        
+                except Exception as e:
+                    self.logger.error(f"Failed to create test case '{test_case.get('title', 'Unknown')}': {e}")
+                    continue
                     
-                    created_test_cases.append(test_case_wi)
-                    
-            except Exception as e:
-                self.logger.error(f"Failed to create test case: {e}")
-                continue
+            self.logger.info(f"Successfully created {len(created_test_cases)} test cases for user story {user_story.get('id', 'Unknown')}")
+            if not test_plan or not test_suite:
+                self.logger.warning("Test cases created but may not be properly organized in test suites")
+            
+            return created_test_cases
+            
+        except Exception as e:
+            self.logger.error(f"Error creating test cases: {e}")
+            return []
+        
+    def create_test_cases_with_fallback(self, user_story: dict, test_cases: list) -> dict:
+        """
+        Create test cases with fallback options if test organization fails.
+        Returns detailed results about what was created and what failed.
+        """
+        result = {
+            'test_cases_created': [],
+            'test_organization_created': False,
+            'test_plan': None,
+            'test_suite': None,
+            'warnings': [],
+            'errors': []
+        }
+        
+        try:
+            # First, try to create test cases with full organization
+            created_test_cases = self.create_test_cases(user_story, test_cases, require_organization=False)
+            result['test_cases_created'] = created_test_cases
+            
+            # Check if we got proper organization
+            test_org = self.ensure_test_organization(user_story, required=False)
+            if test_org:
+                result['test_plan'] = test_org.get('test_plan')
+                result['test_suite'] = test_org.get('test_suite')
+                result['test_organization_created'] = bool(test_org.get('test_plan') and test_org.get('test_suite'))
                 
-        return created_test_cases
+                if not result['test_organization_created']:
+                    result['warnings'].append("Test cases created but test organization is incomplete")
+            else:
+                result['warnings'].append("Test cases created without test organization")
+                
+            return result
+            
+        except Exception as e:
+            result['errors'].append(f"Failed to create test cases: {e}")
+            return result
 
     def _format_test_steps(self, test_case: dict) -> list:
         """Format test case into steps for Azure DevOps."""
         steps = []
         
-        if 'gherkin' in test_case:
-            # Add Given conditions
-            for given in test_case['gherkin'].get('given', []):
+        try:
+            # Check for Gherkin format first
+            if 'gherkin' in test_case and isinstance(test_case['gherkin'], dict):
+                gherkin = test_case['gherkin']
+                
+                # Add Given conditions
+                for given in gherkin.get('given', []):
+                    steps.append({
+                        'action': f"GIVEN {given}",
+                        'expectedResult': "Precondition is satisfied"
+                    })
+                    
+                # Add When actions
+                for when in gherkin.get('when', []):
+                    steps.append({
+                        'action': f"WHEN {when}",
+                        'expectedResult': "Action is performed successfully"
+                    })
+                    
+                # Add Then verifications
+                for then in gherkin.get('then', []):
+                    steps.append({
+                        'action': f"THEN {then}",
+                        'expectedResult': then
+                    })
+                    
+            # Check for explicit test steps
+            elif 'test_steps' in test_case and test_case['test_steps']:
+                for i, step in enumerate(test_case['test_steps']):
+                    if isinstance(step, dict):
+                        steps.append({
+                            'action': step.get('action', f"Step {i+1}"),
+                            'expectedResult': step.get('expectedResult', step.get('expected_result', 'Step completes successfully'))
+                        })
+                    else:
+                        steps.append({
+                            'action': str(step),
+                            'expectedResult': test_case.get('expected_result', 'Step completes successfully')
+                        })
+                        
+            # Check for steps field
+            elif 'steps' in test_case and test_case['steps']:
+                for i, step in enumerate(test_case['steps']):
+                    if isinstance(step, dict):
+                        steps.append({
+                            'action': step.get('action', f"Step {i+1}"),
+                            'expectedResult': step.get('expectedResult', step.get('expected_result', 'Step completes successfully'))
+                        })
+                    else:
+                        steps.append({
+                            'action': str(step),
+                            'expectedResult': test_case.get('expected_result', 'Step completes successfully')
+                        })
+            else:
+                # Fallback to basic steps if no explicit steps
                 steps.append({
-                    'action': f"GIVEN {given}",
-                    'expectedResult': "Precondition is satisfied"
+                    'action': test_case.get('description', 'Execute test case'),
+                    'expectedResult': test_case.get('expected_result', test_case.get('expected_outcome', 'Test passes successfully'))
                 })
                 
-            # Add When actions
-            for when in test_case['gherkin'].get('when', []):
-                steps.append({
-                    'action': f"WHEN {when}",
-                    'expectedResult': "Action is performed successfully"
-                })
+            # Ensure we have at least one step
+            if not steps:
+                steps = [{
+                    'action': 'Execute test case',
+                    'expectedResult': 'Test passes successfully'
+                }]
                 
-            # Add Then verifications
-            for then in test_case['gherkin'].get('then', []):
-                steps.append({
-                    'action': f"THEN {then}",
-                    'expectedResult': then
-                })
+        except Exception as e:
+            self.logger.error(f"Error formatting test steps: {e}")
+            # Provide minimal fallback
+            steps = [{
+                'action': 'Execute test case',
+                'expectedResult': 'Test passes successfully'
+            }]
                 
         return steps
