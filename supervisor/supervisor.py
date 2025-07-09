@@ -39,14 +39,16 @@ class WorkflowSupervisor:
     - Provide human-in-the-loop capabilities
     """
     
-    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None):
+    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None, job_id: str = None):
         """Initialize the supervisor with configuration and agents."""
         # Load configuration
         self.config = Config(config_path) if config_path else Config()
         
         # Setup logging
         self.logger = setup_logger("supervisor", "logs/supervisor.log")
-        self.logger.info("Initializing WorkflowSupervisor")
+        self.logger.info(f"Initializing WorkflowSupervisor for job_id={job_id}")
+        if organization_url or project or area_path or iteration_path:
+            self.logger.info(f"Azure DevOps config for job_id={job_id}: org_url={organization_url}, project={project}, area_path={area_path}, iteration_path={iteration_path}")
         
         # Initialize project context
         self.project_context = ProjectContext(self.config)
@@ -62,6 +64,7 @@ class WorkflowSupervisor:
         self.organization_url = organization_url
         self.project = project
         self.personal_access_token = personal_access_token
+        self.job_id = job_id
         if all([self.organization_url, self.project, self.personal_access_token, self.area_path, self.iteration_path]):
             self.azure_integrator = AzureDevOpsIntegrator(
                 organization_url=self.organization_url,

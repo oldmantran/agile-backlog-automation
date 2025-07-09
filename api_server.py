@@ -317,13 +317,14 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             active_jobs[job_id]["endTime"] = datetime.now()
             return
 
-        # Initialize the workflow supervisor with all Azure DevOps config
+        # Initialize the workflow supervisor with all Azure DevOps config and job_id
         supervisor = WorkflowSupervisor(
             organization_url=organization_url,
             project=project_name_ado,
             personal_access_token=personal_access_token,
             area_path=area_path,
-            iteration_path=iteration_path
+            iteration_path=iteration_path,
+            job_id=job_id
         )
         
         # Update progress
