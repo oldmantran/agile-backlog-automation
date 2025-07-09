@@ -90,12 +90,25 @@ class AzureDevOpsIntegrator:
         self.area_path = area_path
         self.iteration_path = iteration_path
         
+        # Always prepend project name to area/iteration path if not already present
+        if self.area_path and not self.area_path.startswith(self.project + "\\"):
+            self.area_path = f"{self.project}\\{self.area_path}"
+        if self.iteration_path and not self.iteration_path.startswith(self.project + "\\"):
+            self.iteration_path = f"{self.project}\\{self.iteration_path}"
+        
         # Ensure area/iteration path exists in ADO, create if missing
         self._ensure_area_and_iteration_paths()
         
         # Cache for created test plans and suites
         self.test_plans_cache = {}
         self.test_suites_cache = {}
+
+        # Debug: Log the PAT (masked) to confirm it is loaded
+        if self.pat:
+            masked_pat = self.pat[:4] + '...' + self.pat[-4:]
+            self.logger.info(f"Loaded Azure DevOps PAT: {masked_pat}")
+        else:
+            self.logger.warning("Azure DevOps PAT is missing or not loaded!")
 
     def get_available_area_paths(self) -> list:
         """Get all available area paths in the project."""
@@ -518,6 +531,9 @@ class AzureDevOpsIntegrator:
         self.logger.info(f"Creating work item: {work_item_type}")
         self.logger.info(f"URL: {url}")
         self.logger.info(f"Fields: {patch_document}")
+        
+        # Debug: Log the patch document for work item creation
+        self.logger.info(f"Work item PATCH payload: {json.dumps(patch_document, indent=2)}")
         
         try:
             response = requests.post(
