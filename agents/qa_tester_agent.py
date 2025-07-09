@@ -18,12 +18,22 @@ class QATesterAgent(Agent):
         if hasattr(config, 'ado_client'):
             self.ado_client = config.ado_client
 
-    def generate_test_cases(self, feature: dict, context: dict = None) -> list[dict]:
-        """Generate test cases and potential bugs from a feature description."""
+    # FEATURE-LEVEL METHODS REMOVED - QA Tester Agent now focuses exclusively on User Story testing
+    # Use generate_user_story_test_cases() for all test case generation needs
+
+    # FEATURE-LEVEL EDGE CASE GENERATION REMOVED - Use generate_user_story_test_cases() with comprehensive coverage
+
+    # FEATURE-LEVEL ACCEPTANCE CRITERIA VALIDATION REMOVED - Use validate_user_story_testability() for comprehensive analysis
+
+    def generate_user_story_test_cases(self, user_story: dict, context: dict = None) -> list[dict]:
+        """
+        Generate comprehensive test cases specifically for a user story following ADO best practices.
+        Includes boundary conditions, failure scenarios, and acceptance criteria validation.
+        """
         
         # Validate input
-        if not feature:
-            self.logger.error("No feature provided for test case generation")
+        if not user_story:
+            self.logger.error("No user story provided for test case generation")
             return []
             
         # Build context for prompt template
@@ -35,13 +45,58 @@ class QATesterAgent(Agent):
             'compliance_requirements': context.get('compliance_requirements', 'standard') if context else 'standard'
         }
         
+        # First validate and enhance acceptance criteria if needed
+        criteria_analysis = self._analyze_acceptance_criteria(user_story)
+        enhanced_criteria = criteria_analysis.get('enhanced_criteria', user_story.get('acceptance_criteria', []))
+        
         user_input = f"""
-Feature: {feature.get('title', 'Unknown Feature')}
-Description: {feature.get('description', 'No description provided')}
-Acceptance Criteria: {feature.get('acceptance_criteria', [])}
-Priority: {feature.get('priority', 'Medium')}
+Generate comprehensive test cases for this User Story that will be organized in Azure DevOps Test Suites:
+
+User Story: {user_story.get('title', 'Unknown User Story')}
+Description: {user_story.get('description', 'No description provided')}
+Acceptance Criteria: {enhanced_criteria}
+Priority: {user_story.get('priority', 'Medium')}
+Story Points: {user_story.get('story_points', 'Not estimated')}
+
+CRITICAL REQUIREMENTS - Generate test cases that include:
+
+1. **Acceptance Criteria Coverage**: Create at least one test case per acceptance criterion
+2. **Boundary/Edge Cases**: Test limits, maximum/minimum values, empty inputs, special characters
+3. **Failure Scenarios**: Invalid inputs, error conditions, system failures, permission denials
+4. **Integration Points**: API calls, database operations, external services
+5. **Security Validation**: Input sanitization, authentication, authorization
+6. **Performance Considerations**: Response times, resource usage for complex operations
+
+QUALITY STANDARDS:
+- Focus exclusively on this User Story's functionality (not broader feature functionality)
+- Each test case must be executable independently
+- Include both positive (happy path) and negative (error) scenarios
+- Ensure test cases validate business rules and data integrity
+- Consider the story priority ({user_story.get('priority', 'Medium')}) and complexity ({user_story.get('story_points', 'Unknown')} points) for coverage depth
+
+TEST ORGANIZATION:
+- Test cases will be linked to this specific User Story in Azure DevOps
+- Organized in a dedicated Test Suite for this User Story
+- Part of a broader Test Plan for the parent Feature
+- Executable by QA engineers during story validation
+
+COVERAGE DEPTH BASED ON STORY CHARACTERISTICS:
+- Story Points: {user_story.get('story_points', 'Unknown')} - {'Comprehensive' if str(user_story.get('story_points', 0)).isdigit() and int(user_story.get('story_points', 0)) >= 8 else 'Standard' if str(user_story.get('story_points', 0)).isdigit() and int(user_story.get('story_points', 0)) >= 5 else 'Basic'} coverage needed
+- Priority: {user_story.get('priority', 'Medium')} - {'High' if user_story.get('priority', '').lower() == 'high' else 'Medium' if user_story.get('priority', '').lower() == 'medium' else 'Standard'} test priority
+
+ACCEPTANCE CRITERIA ANALYSIS:
+{criteria_analysis.get('analysis_summary', 'Standard acceptance criteria validation required')}
+
+Generate test cases covering:
+- All acceptance criteria with dedicated test cases
+- Boundary conditions and edge cases specific to this story
+- Error handling and failure recovery scenarios
+- Security and validation requirements
+- Integration points and dependencies
+- Performance considerations where applicable
 """
-        print(f"🧪 [QATesterAgent] Generating test cases for: {feature.get('title', 'Unknown')}")
+        
+        print(f"🧪 [QATesterAgent] Generating comprehensive User Story test cases for: {user_story.get('title', 'Unknown')}")
         
         try:
             response = self.run(user_input, prompt_context)
@@ -53,15 +108,34 @@ Priority: {feature.get('priority', 'Medium')}
             test_cases = json.loads(response)
             
             if isinstance(test_cases, list):
-                # Validate and enhance test cases for quality compliance
-                enhanced_test_cases = self._validate_and_enhance_test_cases(test_cases)
-                return enhanced_test_cases
+                enhanced_test_cases = test_cases
             elif isinstance(test_cases, dict) and 'test_cases' in test_cases:
-                enhanced_test_cases = self._validate_and_enhance_test_cases(test_cases['test_cases'])
-                return enhanced_test_cases
+                enhanced_test_cases = test_cases['test_cases']
             else:
                 self.logger.warning("Response was not in expected format")
                 return []
+                
+            # Enhance test cases with User Story specific metadata and quality validation
+            for test_case in enhanced_test_cases:
+                test_case['user_story_id'] = user_story.get('id')
+                test_case['user_story_title'] = user_story.get('title', 'Unknown')
+                test_case['story_points'] = user_story.get('story_points')
+                test_case['story_priority'] = user_story.get('priority', 'Medium')
+                
+                # Add coverage analysis metadata
+                test_case['acceptance_criteria_validation'] = criteria_analysis.get('testability_score', 7)
+                test_case['coverage_type'] = self._determine_coverage_type(test_case, user_story)
+                
+            # Validate and enhance all test cases for quality compliance
+            enhanced_test_cases = self._validate_and_enhance_test_cases(enhanced_test_cases)
+            
+            # Ensure we have comprehensive coverage
+            coverage_validation = self._validate_test_coverage(enhanced_test_cases, user_story, enhanced_criteria)
+            if coverage_validation.get('missing_coverage'):
+                self.logger.warning(f"Missing test coverage detected: {coverage_validation['missing_coverage']}")
+                
+            print(f"✅ [QATesterAgent] Generated {len(enhanced_test_cases)} comprehensive test cases")
+            return enhanced_test_cases
                 
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse JSON: {e}")
@@ -69,156 +143,25 @@ Priority: {feature.get('priority', 'Medium')}
                 self.logger.debug(f"Raw response: {response}")
             return []
         except Exception as e:
-            self.logger.error(f"Error generating test cases: {e}")
-            return []
-
-    def generate_edge_cases(self, feature: dict, context: dict = None) -> list[dict]:
-        """Generate edge cases and potential failure scenarios."""
-        
-        # Build context for prompt template
-        prompt_context = {
-            'domain': context.get('domain', 'software development') if context else 'software development',
-            'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
-            'platform': context.get('platform', 'web application') if context else 'web application',
-            'security_requirements': context.get('security_requirements', 'standard') if context else 'standard'
-        }
-        
-        user_input = f"""
-Analyze this feature for edge cases and potential failure scenarios:
-
-Feature: {feature.get('title', 'Unknown Feature')}
-Description: {feature.get('description', 'No description provided')}
-Acceptance Criteria: {feature.get('acceptance_criteria', [])}
-
-Focus on:
-1. Boundary conditions
-2. Error handling scenarios
-3. Performance edge cases
-4. Security vulnerabilities
-5. Integration failure points
-"""
-        print(f"⚠️ [QATesterAgent] Generating edge cases for: {feature.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
-
-        try:
-            edge_cases = json.loads(response)
-            if isinstance(edge_cases, list):
-                return edge_cases
-            elif isinstance(edge_cases, dict) and 'edge_cases' in edge_cases:
-                return edge_cases['edge_cases']
-            else:
-                print("⚠️ Grok response was not in expected format.")
-                return []
-        except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
-            return []
-
-    def validate_acceptance_criteria(self, feature: dict, context: dict = None) -> dict:
-        """Validate and enhance acceptance criteria for testability."""
-        
-        # Build context for prompt template
-        prompt_context = {
-            'domain': context.get('domain', 'software development') if context else 'software development',
-            'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
-            'quality_standards': context.get('quality_standards', 'industry standard') if context else 'industry standard'
-        }
-        
-        user_input = f"""
-Review and enhance these acceptance criteria for testability:
-
-Feature: {feature.get('title', 'Unknown Feature')}
-Description: {feature.get('description', 'No description provided')}
-Current Acceptance Criteria: {feature.get('acceptance_criteria', [])}
-
-Provide:
-1. Enhanced acceptance criteria (if needed)
-2. Testability score (1-10)
-3. Recommendations for improvement
-4. Missing test scenarios
-"""
-        print(f"✅ [QATesterAgent] Validating acceptance criteria for: {feature.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
-
-        try:
-            validation = json.loads(response)
-            return validation
-        except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
-            return {
-                "enhanced_criteria": feature.get('acceptance_criteria', []),
-                "testability_score": 5,
-                "recommendations": ["Manual review required due to parsing error"],
-                "missing_scenarios": []
-            }
-
-    def generate_user_story_test_cases(self, user_story: dict, context: dict = None) -> list[dict]:
-        """Generate test cases specifically for a user story following ADO best practices."""
-        
-        # Build context for prompt template
-        prompt_context = {
-            'domain': context.get('domain', 'software development') if context else 'software development',
-            'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
-            'platform': context.get('platform', 'web application') if context else 'web application',
-            'test_environment': context.get('test_environment', 'automated testing') if context else 'automated testing',
-            'compliance_requirements': context.get('compliance_requirements', 'standard') if context else 'standard'
-        }
-        
-        user_input = f"""
-Generate comprehensive test cases for this User Story that will be organized in Azure DevOps Test Suites:
-
-User Story: {user_story.get('title', 'Unknown User Story')}
-Description: {user_story.get('description', 'No description provided')}
-Acceptance Criteria: {user_story.get('acceptance_criteria', [])}
-Priority: {user_story.get('priority', 'Medium')}
-Story Points: {user_story.get('story_points', 'Not estimated')}
-
-Focus on:
-1. Testing the specific user story functionality (not broader feature functionality)
-2. Validating each acceptance criterion with dedicated test cases
-3. Creating test cases that can be executed independently
-4. Including both positive and negative scenarios for the story
-5. Considering the story priority and complexity for test coverage depth
-
-Generate test cases that will be:
-- Linked to this specific User Story in Azure DevOps
-- Organized in a dedicated Test Suite for this User Story
-- Part of a broader Test Plan for the parent Feature
-- Executable by QA engineers during story validation
-"""
-        print(f"🧪 [QATesterAgent] Generating User Story test cases for: {user_story.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
-
-        try:
-            test_cases = json.loads(response)
-            if isinstance(test_cases, list):
-                # Enhance test cases with User Story specific metadata
-                for test_case in test_cases:
-                    test_case['user_story_id'] = user_story.get('id')
-                    test_case['user_story_title'] = user_story.get('title', 'Unknown')
-                    test_case['story_points'] = user_story.get('story_points')
-                return test_cases
-            elif isinstance(test_cases, dict) and 'test_cases' in test_cases:
-                # Enhance test cases with User Story specific metadata
-                for test_case in test_cases['test_cases']:
-                    test_case['user_story_id'] = user_story.get('id')
-                    test_case['user_story_title'] = user_story.get('title', 'Unknown')
-                    test_case['story_points'] = user_story.get('story_points')
-                return test_cases['test_cases']
-            else:
-                print("⚠️ Grok response was not in expected format.")
-                return []
-        except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
+            self.logger.error(f"Error generating comprehensive test cases: {e}")
             return []
 
     def validate_user_story_testability(self, user_story: dict, context: dict = None) -> dict:
-        """Analyze a user story for testability and suggest improvements."""
+        """
+        Comprehensive analysis of a user story for testability with enhanced acceptance criteria validation.
+        Includes boundary/failure scenario analysis and improvement recommendations.
+        """
+        
+        # Validate input
+        if not user_story:
+            self.logger.error("No user story provided for testability analysis")
+            return {
+                "testability_score": 0,
+                "improvement_recommendations": ["No user story provided"],
+                "missing_scenarios": [],
+                "enhanced_criteria": [],
+                "risk_assessment": "High - no user story data"
+            }
         
         # Build context for prompt template
         prompt_context = {
@@ -227,8 +170,11 @@ Generate test cases that will be:
             'quality_standards': context.get('quality_standards', 'industry standard') if context else 'industry standard'
         }
         
+        # Perform initial acceptance criteria analysis
+        criteria_analysis = self._analyze_acceptance_criteria(user_story)
+        
         user_input = f"""
-Analyze this User Story for testability and provide improvement recommendations:
+Perform comprehensive testability analysis for this User Story with focus on acceptance criteria enhancement and boundary/failure scenario identification:
 
 User Story: {user_story.get('title', 'Unknown User Story')}
 Description: {user_story.get('description', 'No description provided')}
@@ -236,53 +182,113 @@ Acceptance Criteria: {user_story.get('acceptance_criteria', [])}
 Priority: {user_story.get('priority', 'Medium')}
 Story Points: {user_story.get('story_points', 'Not estimated')}
 
-Evaluate:
-1. Clarity of the user story requirements
-2. Completeness and testability of acceptance criteria
-3. Missing scenarios or edge cases
-4. Dependencies that might affect testing
-5. Potential test automation opportunities
-6. Risk areas requiring additional test coverage
+ENHANCED ACCEPTANCE CRITERIA ANALYSIS:
+Current Criteria Analysis: {criteria_analysis.get('analysis_summary', 'Standard validation')}
+Testability Score: {criteria_analysis.get('testability_score', 7)}/10
+Missing Coverage: {criteria_analysis.get('missing_coverage', [])}
 
-Provide:
-1. Testability score (1-10)
-2. Specific improvement recommendations
-3. Missing test scenarios
-4. Suggested acceptance criteria enhancements
-5. Risk assessment for the story
+COMPREHENSIVE TESTABILITY EVALUATION:
+
+1. **Acceptance Criteria Quality Assessment**:
+   - Clarity and specificity of requirements
+   - Measurable and verifiable outcomes
+   - Completeness of functional coverage
+   - Missing acceptance criteria identification
+
+2. **Boundary and Edge Case Analysis**:
+   - Input validation boundaries (min/max values, length limits)
+   - Data type and format validations
+   - System resource limitations
+   - Concurrent access scenarios
+   - Performance boundary conditions
+
+3. **Failure Scenario Identification**:
+   - Error handling requirements
+   - Invalid input processing
+   - System failure recovery
+   - Network/connectivity issues
+   - Permission and security failures
+   - Integration point failures
+
+4. **Risk Assessment for Testing**:
+   - Business impact of story failure
+   - Technical complexity and dependencies
+   - Security and compliance considerations
+   - Performance and scalability risks
+   - Data integrity and consistency risks
+
+5. **Test Automation Opportunities**:
+   - Regression testing candidates
+   - API/service testing potential
+   - Data validation automation
+   - Performance monitoring needs
+
+6. **Missing Test Scenarios**:
+   - Uncover gaps in current acceptance criteria
+   - Identify boundary conditions not covered
+   - Suggest failure scenarios to test
+   - Recommend integration test points
+
+STORY COMPLEXITY ANALYSIS:
+- Story Points: {user_story.get('story_points', 'Unknown')} 
+- Priority: {user_story.get('priority', 'Medium')}
+- Expected Test Coverage: {'Comprehensive' if str(user_story.get('story_points', 0)).isdigit() and int(user_story.get('story_points', 0)) >= 8 else 'Standard' if str(user_story.get('story_points', 0)).isdigit() and int(user_story.get('story_points', 0)) >= 5 else 'Basic'}
+
+Provide detailed analysis including:
+1. Enhanced testability score (1-10) with justification
+2. Specific improvement recommendations for acceptance criteria
+3. Missing boundary and failure test scenarios
+4. Enhanced acceptance criteria suggestions
+5. Comprehensive risk assessment for testing
+6. Test automation recommendations
+7. Priority-based testing approach recommendations
 """
-        print(f"✅ [QATesterAgent] Analyzing testability for: {user_story.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
-
+        
+        print(f"✅ [QATesterAgent] Performing comprehensive testability analysis for: {user_story.get('title', 'Unknown')}")
+        
         try:
+            response = self.run(user_input, prompt_context)
+            
+            if not response:
+                self.logger.warning("Empty response from AI model")
+                return self._generate_fallback_analysis(user_story, criteria_analysis)
+                
             analysis = json.loads(response)
-            # Add metadata
+            
+            # Enhance analysis with metadata and validation
             analysis['user_story_id'] = user_story.get('id')
             analysis['user_story_title'] = user_story.get('title', 'Unknown')
+            analysis['story_points'] = user_story.get('story_points')
+            analysis['story_priority'] = user_story.get('priority', 'Medium')
+            
+            # Combine with criteria analysis
+            analysis['criteria_analysis'] = criteria_analysis
+            analysis['enhanced_criteria'] = analysis.get('enhanced_criteria', criteria_analysis.get('enhanced_criteria', []))
+            
+            # Validate and enhance the analysis
+            analysis = self._enhance_testability_analysis(analysis, user_story)
+            
+            print(f"✅ [QATesterAgent] Testability analysis complete - Score: {analysis.get('testability_score', 'Unknown')}/10")
             return analysis
+            
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
-            return {
-                "testability_score": 5,
-                "improvement_recommendations": ["Manual review required due to parsing error"],
-                "missing_scenarios": [],
-                "enhanced_criteria": user_story.get('acceptance_criteria', []),
-                "risk_assessment": "Medium - requires manual review",
-                "user_story_id": user_story.get('id'),
-                "user_story_title": user_story.get('title', 'Unknown')
-            }
+            self.logger.error(f"Failed to parse JSON: {e}")
+            if 'response' in locals():
+                self.logger.debug(f"Raw response: {response}")
+            return self._generate_fallback_analysis(user_story, criteria_analysis)
+        except Exception as e:
+            self.logger.error(f"Error performing testability analysis: {e}")
+            return self._generate_fallback_analysis(user_story, criteria_analysis)
 
     def create_test_plan_structure(self, feature: dict, context: dict = None) -> dict:
-        """Create a recommended test plan structure for a feature with its user stories."""
+        """Create a recommended test plan structure for a feature with its user stories - USER STORY FOCUSED."""
         
         test_plan_structure = {
             "feature_title": feature.get('title', 'Unknown Feature'),
             "feature_description": feature.get('description', ''),
             "test_plan_name": f"Test Plan - {feature.get('title', 'Unknown Feature')}",
             "test_suites": [],
-            "feature_level_tests": [],
+            "user_story_focus": True,  # Indicates focus on user story testing
             "recommendations": []
         }
         
@@ -298,7 +304,8 @@ Provide:
                 "story_points": user_story.get('story_points'),
                 "test_cases_count": len(user_story.get('test_cases', [])),
                 "acceptance_criteria_count": len(user_story.get('acceptance_criteria', [])),
-                "recommended_test_types": []
+                "recommended_test_types": [],
+                "coverage_focus": "comprehensive_user_story"  # Focus on comprehensive user story coverage
             }
             
             # Analyze story complexity to recommend test types
@@ -309,50 +316,59 @@ Provide:
                 except:
                     story_points = 3  # Default medium complexity
             
+            # Comprehensive test type recommendations based on story complexity
             if story_points >= 8:
                 suite_structure["recommended_test_types"].extend([
-                    "Functional Testing", "Integration Testing", "Performance Testing", "Security Testing"
+                    "Functional Testing", "Boundary Testing", "Negative Testing", 
+                    "Integration Testing", "Performance Testing", "Security Testing"
                 ])
+                suite_structure["coverage_depth"] = "comprehensive"
             elif story_points >= 5:
                 suite_structure["recommended_test_types"].extend([
-                    "Functional Testing", "Integration Testing", "Edge Case Testing"
+                    "Functional Testing", "Boundary Testing", "Negative Testing", "Integration Testing"
                 ])
+                suite_structure["coverage_depth"] = "standard"
             else:
                 suite_structure["recommended_test_types"].extend([
-                    "Functional Testing", "Basic Validation"
+                    "Functional Testing", "Basic Boundary Testing", "Basic Negative Testing"
                 ])
+                suite_structure["coverage_depth"] = "basic"
+            
+            # Add priority-based recommendations
+            if user_story.get('priority', '').lower() == 'high':
+                suite_structure["recommended_test_types"].append("Critical Path Testing")
+                suite_structure["priority_notes"] = "High priority - requires comprehensive testing"
             
             test_plan_structure["test_suites"].append(suite_structure)
         
-        # Add feature-level test recommendations
-        if feature.get('test_cases'):
-            test_plan_structure["feature_level_tests"] = [
-                {
-                    "suite_name": f"Feature Tests: {feature.get('title', 'Unknown')}",
-                    "description": "Cross-story integration and feature-level validation tests",
-                    "test_cases_count": len(feature.get('test_cases', [])),
-                    "recommended_test_types": ["Integration Testing", "End-to-End Testing", "Feature Validation"]
-                }
-            ]
-        
-        # Add general recommendations
+        # Add user story focused recommendations
         total_stories = len(user_stories)
         total_test_cases = sum(len(story.get('test_cases', [])) for story in user_stories)
         
         test_plan_structure["recommendations"] = [
             f"Organize {total_test_cases} test cases across {total_stories} user story test suites",
-            "Execute test cases at the user story level for faster feedback",
-            "Use test suite organization to track story completion status",
+            "Execute test cases at the user story level for faster feedback during development",
+            "Use test suite organization to track individual story completion status",
             "Prioritize testing based on user story priority and business value",
-            "Consider automated testing for high-complexity user stories"
+            "Focus on boundary conditions and failure scenarios for each user story",
+            "Validate acceptance criteria comprehensively at the story level",
+            "Consider automated testing for high-complexity user stories (8+ points)"
         ]
         
         if total_stories > 10:
             test_plan_structure["recommendations"].append(
-                "Consider grouping related user stories into test suite categories"
+                "Consider grouping related user stories into test suite categories for better organization"
             )
         
-        print(f"📋 [QATesterAgent] Created test plan structure for feature: {feature.get('title', 'Unknown')}")
+        # Add coverage analysis
+        high_complexity_stories = sum(1 for story in user_stories 
+                                    if isinstance(story.get('story_points', 0), int) and story.get('story_points', 0) >= 8)
+        if high_complexity_stories > 0:
+            test_plan_structure["recommendations"].append(
+                f"{high_complexity_stories} high-complexity stories require comprehensive boundary and failure testing"
+            )
+        
+        print(f"📋 [QATesterAgent] Created user story-focused test plan structure for feature: {feature.get('title', 'Unknown')}")
         return test_plan_structure
 
     def _validate_and_enhance_test_cases(self, test_cases: list) -> list:
@@ -377,7 +393,7 @@ Provide:
     
     def _enhance_single_test_case(self, test_case: dict) -> dict:
         """
-        Enhance a single test case to meet quality standards.
+        Enhance a single test case to meet quality standards with focus on boundary/failure scenarios.
         """
         enhanced_test_case = test_case.copy()
         
@@ -385,7 +401,7 @@ Provide:
         title = test_case.get('title', '')
         title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "Test Case")
         if not title_valid:
-            print(f"⚠️ Test case title issues: {', '.join(title_issues)}")
+            self.logger.warning(f"Test case title issues: {', '.join(title_issues)}")
             if not title:
                 enhanced_test_case['title'] = f"Test Case: {test_case.get('description', 'Validation test')[:50]}..."
         
@@ -402,35 +418,273 @@ Provide:
         if not enhanced_test_case.get('expected_result') and not enhanced_test_case.get('expected_outcome'):
             enhanced_test_case['expected_result'] = "System behaves as specified in acceptance criteria"
         
-        # Add test case metadata
-        if not enhanced_test_case.get('test_type'):
-            description = enhanced_test_case.get('description', '').lower()
-            title_lower = title.lower()
-            
-            if any(word in description or word in title_lower for word in ['functional', 'feature', 'user']):
-                enhanced_test_case['test_type'] = 'functional'
-            elif any(word in description or word in title_lower for word in ['performance', 'load', 'stress']):
-                enhanced_test_case['test_type'] = 'performance'
-            elif any(word in description or word in title_lower for word in ['security', 'auth', 'permission']):
-                enhanced_test_case['test_type'] = 'security'
-            elif any(word in description or word in title_lower for word in ['ui', 'interface', 'usability']):
-                enhanced_test_case['test_type'] = 'ui'
-            else:
-                enhanced_test_case['test_type'] = 'functional'
+        # Enhanced test case classification with focus on boundary/failure scenarios
+        test_type = self._classify_test_type(enhanced_test_case)
+        enhanced_test_case['test_type'] = test_type
+        
+        # Add coverage analysis
+        coverage_type = enhanced_test_case.get('coverage_type', self._determine_coverage_type(enhanced_test_case, {}))
+        enhanced_test_case['coverage_type'] = coverage_type
         
         # Add priority if missing
         if not enhanced_test_case.get('priority'):
-            enhanced_test_case['priority'] = 'Medium'
-        
-        # Add automation recommendation
-        if not enhanced_test_case.get('automation_candidate'):
-            title_lower = title.lower()
-            if any(word in title_lower for word in ['regression', 'smoke', 'api', 'data']):
-                enhanced_test_case['automation_candidate'] = True
+            # Priority based on test type and coverage
+            if coverage_type in ['security', 'negative', 'boundary']:
+                enhanced_test_case['priority'] = 'High'
+            elif coverage_type in ['integration', 'performance']:
+                enhanced_test_case['priority'] = 'Medium'
             else:
-                enhanced_test_case['automation_candidate'] = False
+                enhanced_test_case['priority'] = 'Medium'
+        
+        # Enhanced automation recommendation
+        automation_score = self._calculate_automation_score(enhanced_test_case)
+        enhanced_test_case['automation_candidate'] = automation_score >= 7
+        enhanced_test_case['automation_score'] = automation_score
+        enhanced_test_case['automation_reasoning'] = self._get_automation_reasoning(enhanced_test_case, automation_score)
+        
+        # Add risk assessment
+        risk_level = self._assess_test_risk(enhanced_test_case)
+        enhanced_test_case['risk_level'] = risk_level
+        
+        # Add boundary/failure scenario metadata
+        scenario_analysis = self._analyze_test_scenario(enhanced_test_case)
+        enhanced_test_case.update(scenario_analysis)
+        
+        # Add execution complexity estimate
+        complexity = self._estimate_execution_complexity(enhanced_test_case)
+        enhanced_test_case['execution_complexity'] = complexity
+        enhanced_test_case['estimated_execution_time'] = self._estimate_execution_time(complexity, test_type)
         
         return enhanced_test_case
+    
+    def _classify_test_type(self, test_case: dict) -> str:
+        """
+        Enhanced test type classification with boundary/failure scenario focus.
+        """
+        title = test_case.get('title', '').lower()
+        description = test_case.get('description', '').lower()
+        combined_text = f"{title} {description}"
+        
+        # Boundary testing indicators
+        boundary_keywords = ['boundary', 'edge', 'limit', 'maximum', 'minimum', 'range', 'threshold']
+        if any(word in combined_text for word in boundary_keywords):
+            return 'boundary'
+        
+        # Security testing indicators
+        security_keywords = ['security', 'auth', 'permission', 'access', 'privilege', 'injection', 'xss', 'csrf']
+        if any(word in combined_text for word in security_keywords):
+            return 'security'
+        
+        # Performance testing indicators
+        performance_keywords = ['performance', 'load', 'stress', 'response', 'time', 'speed', 'scalability']
+        if any(word in combined_text for word in performance_keywords):
+            return 'performance'
+        
+        # Integration testing indicators
+        integration_keywords = ['integration', 'api', 'service', 'database', 'external', 'interface']
+        if any(word in combined_text for word in integration_keywords):
+            return 'integration'
+        
+        # Negative/Error testing indicators
+        negative_keywords = ['error', 'invalid', 'fail', 'exception', 'negative', 'reject', 'deny']
+        if any(word in combined_text for word in negative_keywords):
+            return 'negative'
+        
+        # UI/Usability testing indicators
+        ui_keywords = ['ui', 'interface', 'usability', 'user experience', 'navigation', 'display']
+        if any(word in combined_text for word in ui_keywords):
+            return 'ui'
+        
+        # Default to functional
+        return 'functional'
+    
+    def _calculate_automation_score(self, test_case: dict) -> int:
+        """
+        Calculate automation suitability score (1-10).
+        """
+        score = 5  # Base score
+        
+        title = test_case.get('title', '').lower()
+        description = test_case.get('description', '').lower()
+        test_type = test_case.get('test_type', 'functional')
+        
+        # Positive indicators for automation
+        if any(word in title or word in description for word in ['api', 'regression', 'smoke', 'data', 'calculation']):
+            score += 2
+        
+        if test_type in ['integration', 'performance', 'security']:
+            score += 1
+        
+        if any(word in title or word in description for word in ['repetitive', 'frequent', 'bulk', 'batch']):
+            score += 2
+        
+        # Negative indicators for automation
+        if any(word in title or word in description for word in ['visual', 'usability', 'manual', 'exploratory']):
+            score -= 2
+        
+        if test_type in ['ui', 'usability']:
+            score -= 1
+        
+        if any(word in title or word in description for word in ['complex', 'judgment', 'subjective']):
+            score -= 1
+        
+        return max(1, min(10, score))
+    
+    def _get_automation_reasoning(self, test_case: dict, score: int) -> str:
+        """
+        Provide reasoning for automation recommendation.
+        """
+        test_type = test_case.get('test_type', 'functional')
+        
+        if score >= 8:
+            return f"High automation priority - {test_type} tests are ideal for automation"
+        elif score >= 6:
+            return f"Good automation candidate - {test_type} tests benefit from automation"
+        elif score >= 4:
+            return f"Consider automation - {test_type} tests may require manual validation"
+        else:
+            return f"Manual testing recommended - {test_type} tests require human judgment"
+    
+    def _assess_test_risk(self, test_case: dict) -> str:
+        """
+        Assess the risk level of the test case.
+        """
+        test_type = test_case.get('test_type', 'functional')
+        coverage_type = test_case.get('coverage_type', 'functional')
+        title = test_case.get('title', '').lower()
+        description = test_case.get('description', '').lower()
+        
+        # High risk indicators
+        high_risk_keywords = ['critical', 'payment', 'financial', 'security', 'data loss', 'corruption']
+        if any(word in title or word in description for word in high_risk_keywords):
+            return 'high'
+        
+        if test_type in ['security', 'performance'] or coverage_type in ['security', 'negative']:
+            return 'high'
+        
+        # Medium risk indicators
+        if test_type in ['integration', 'boundary'] or coverage_type in ['boundary', 'integration']:
+            return 'medium'
+        
+        # Default to low risk
+        return 'low'
+    
+    def _analyze_test_scenario(self, test_case: dict) -> dict:
+        """
+        Analyze test scenario for boundary/failure characteristics.
+        """
+        title = test_case.get('title', '').lower()
+        description = test_case.get('description', '').lower()
+        combined_text = f"{title} {description}"
+        
+        analysis = {
+            'has_boundary_conditions': False,
+            'has_failure_scenarios': False,
+            'boundary_types': [],
+            'failure_types': [],
+            'scenario_complexity': 'low'
+        }
+        
+        # Check for boundary conditions
+        boundary_indicators = {
+            'input_validation': ['length', 'size', 'format', 'type'],
+            'numeric_bounds': ['maximum', 'minimum', 'range', 'limit'],
+            'capacity_limits': ['capacity', 'volume', 'count', 'quota'],
+            'time_bounds': ['timeout', 'expiry', 'duration', 'deadline']
+        }
+        
+        for boundary_type, keywords in boundary_indicators.items():
+            if any(word in combined_text for word in keywords):
+                analysis['has_boundary_conditions'] = True
+                analysis['boundary_types'].append(boundary_type)
+        
+        # Check for failure scenarios
+        failure_indicators = {
+            'input_errors': ['invalid', 'malformed', 'incorrect', 'wrong'],
+            'system_failures': ['unavailable', 'down', 'timeout', 'connection'],
+            'permission_failures': ['unauthorized', 'forbidden', 'access denied'],
+            'data_errors': ['missing', 'null', 'empty', 'corrupt']
+        }
+        
+        for failure_type, keywords in failure_indicators.items():
+            if any(word in combined_text for word in keywords):
+                analysis['has_failure_scenarios'] = True
+                analysis['failure_types'].append(failure_type)
+        
+        # Determine scenario complexity
+        if len(analysis['boundary_types']) + len(analysis['failure_types']) >= 3:
+            analysis['scenario_complexity'] = 'high'
+        elif len(analysis['boundary_types']) + len(analysis['failure_types']) >= 1:
+            analysis['scenario_complexity'] = 'medium'
+        
+        return analysis
+    
+    def _estimate_execution_complexity(self, test_case: dict) -> str:
+        """
+        Estimate test execution complexity.
+        """
+        test_type = test_case.get('test_type', 'functional')
+        steps_count = len(test_case.get('test_steps', test_case.get('steps', [])))
+        scenario_complexity = test_case.get('scenario_complexity', 'low')
+        
+        complexity_score = 0
+        
+        # Base complexity from test type
+        type_complexity = {
+            'functional': 1,
+            'ui': 2,
+            'integration': 3,
+            'performance': 4,
+            'security': 3,
+            'boundary': 2,
+            'negative': 2
+        }
+        complexity_score += type_complexity.get(test_type, 1)
+        
+        # Add complexity from steps
+        if steps_count > 10:
+            complexity_score += 3
+        elif steps_count > 5:
+            complexity_score += 2
+        elif steps_count > 2:
+            complexity_score += 1
+        
+        # Add complexity from scenario
+        if scenario_complexity == 'high':
+            complexity_score += 2
+        elif scenario_complexity == 'medium':
+            complexity_score += 1
+        
+        if complexity_score >= 6:
+            return 'high'
+        elif complexity_score >= 3:
+            return 'medium'
+        else:
+            return 'low'
+    
+    def _estimate_execution_time(self, complexity: str, test_type: str) -> int:
+        """
+        Estimate test execution time in minutes.
+        """
+        base_times = {
+            'functional': 10,
+            'ui': 15,
+            'integration': 20,
+            'performance': 30,
+            'security': 25,
+            'boundary': 15,
+            'negative': 12
+        }
+        
+        base_time = base_times.get(test_type, 10)
+        
+        complexity_multipliers = {
+            'low': 1.0,
+            'medium': 1.5,
+            'high': 2.5
+        }
+        
+        return int(base_time * complexity_multipliers.get(complexity, 1.0))
     
     def enhance_acceptance_criteria(self, user_story: dict, context: dict = None) -> list:
         """
@@ -754,3 +1008,257 @@ Provide:
             }]
                 
         return steps
+
+    def _analyze_acceptance_criteria(self, user_story: dict) -> dict:
+        """
+        Analyze acceptance criteria for testability and enhancement needs.
+        Returns enhanced criteria and analysis summary.
+        """
+        current_criteria = user_story.get('acceptance_criteria', [])
+        story_title = user_story.get('title', '')
+        story_description = user_story.get('description', '')
+        
+        analysis = {
+            'enhanced_criteria': current_criteria,
+            'testability_score': 7,  # Default score
+            'missing_coverage': [],
+            'analysis_summary': ''
+        }
+        
+        if not current_criteria:
+            analysis['enhanced_criteria'] = [
+                "User can access the functionality described in the story",
+                "System responds appropriately to user actions",
+                "Data is processed and stored correctly",
+                "Appropriate feedback is provided to the user"
+            ]
+            analysis['testability_score'] = 5
+            analysis['missing_coverage'] = ['No original acceptance criteria provided']
+            analysis['analysis_summary'] = 'Basic acceptance criteria generated - original criteria missing'
+            return analysis
+        
+        # Analyze criteria for common issues
+        vague_criteria = []
+        missing_negative_scenarios = True
+        missing_boundary_conditions = True
+        
+        for i, criteria in enumerate(current_criteria):
+            criteria_lower = criteria.lower()
+            
+            # Check for vague language
+            if any(word in criteria_lower for word in ['should work', 'properly', 'correctly', 'appropriately', 'good', 'nice']):
+                vague_criteria.append(f"Criteria {i+1} is too vague for testing")
+                
+            # Check for negative scenarios
+            if any(word in criteria_lower for word in ['cannot', 'error', 'invalid', 'fail', 'reject']):
+                missing_negative_scenarios = False
+                
+            # Check for boundary conditions
+            if any(word in criteria_lower for word in ['maximum', 'minimum', 'limit', 'boundary', 'edge', 'range']):
+                missing_boundary_conditions = False
+        
+        # Build enhanced criteria if needed
+        enhanced_criteria = list(current_criteria)
+        
+        if missing_negative_scenarios:
+            enhanced_criteria.append("System handles invalid inputs gracefully with appropriate error messages")
+            analysis['missing_coverage'].append('Negative test scenarios')
+            
+        if missing_boundary_conditions:
+            enhanced_criteria.append("System enforces appropriate limits and boundaries for input values")
+            analysis['missing_coverage'].append('Boundary condition testing')
+        
+        # Calculate testability score
+        issues_count = len(vague_criteria) + (1 if missing_negative_scenarios else 0) + (1 if missing_boundary_conditions else 0)
+        analysis['testability_score'] = max(3, 10 - issues_count)
+        analysis['enhanced_criteria'] = enhanced_criteria
+        
+        # Generate analysis summary
+        if issues_count == 0:
+            analysis['analysis_summary'] = 'Acceptance criteria are well-defined and testable'
+        else:
+            analysis['analysis_summary'] = f'Acceptance criteria enhanced - {issues_count} issues addressed: {", ".join(analysis["missing_coverage"])}'
+        
+        return analysis
+    
+    def _determine_coverage_type(self, test_case: dict, user_story: dict) -> str:
+        """
+        Determine the type of coverage this test case provides.
+        """
+        title = test_case.get('title', '').lower()
+        description = test_case.get('description', '').lower()
+        
+        # Check for different coverage types
+        if any(word in title or word in description for word in ['boundary', 'edge', 'limit', 'maximum', 'minimum']):
+            return 'boundary'
+        elif any(word in title or word in description for word in ['error', 'invalid', 'fail', 'exception', 'negative']):
+            return 'negative'
+        elif any(word in title or word in description for word in ['security', 'auth', 'permission', 'access']):
+            return 'security'
+        elif any(word in title or word in description for word in ['performance', 'load', 'response', 'time']):
+            return 'performance'
+        elif any(word in title or word in description for word in ['integration', 'api', 'service', 'database']):
+            return 'integration'
+        else:
+            return 'functional'
+    
+    def _validate_test_coverage(self, test_cases: list, user_story: dict, acceptance_criteria: list) -> dict:
+        """
+        Validate that test cases provide comprehensive coverage for the user story.
+        """
+        coverage_validation = {
+            'missing_coverage': [],
+            'coverage_score': 0,
+            'recommendations': []
+        }
+        
+        if not test_cases:
+            coverage_validation['missing_coverage'] = ['No test cases generated']
+            return coverage_validation
+        
+        # Check coverage types
+        coverage_types = set()
+        for test_case in test_cases:
+            coverage_types.add(test_case.get('coverage_type', 'functional'))
+        
+        expected_coverage = {'functional'}
+        story_points = user_story.get('story_points', 0)
+        
+        # Determine expected coverage based on story complexity
+        if isinstance(story_points, str) and story_points.isdigit():
+            story_points = int(story_points)
+        elif not isinstance(story_points, int):
+            story_points = 3  # Default complexity
+        
+        if story_points >= 8:  # High complexity
+            expected_coverage.update(['negative', 'boundary', 'integration', 'security'])
+        elif story_points >= 5:  # Medium complexity
+            expected_coverage.update(['negative', 'boundary', 'integration'])
+        else:  # Low complexity
+            expected_coverage.update(['negative'])
+        
+        # Check for missing coverage
+        missing_coverage = expected_coverage - coverage_types
+        if missing_coverage:
+            coverage_validation['missing_coverage'] = [f"Missing {coverage_type} test coverage" for coverage_type in missing_coverage]
+        
+        # Check acceptance criteria coverage
+        if len(test_cases) < len(acceptance_criteria):
+            coverage_validation['missing_coverage'].append(f"Insufficient test cases for acceptance criteria ({len(test_cases)} test cases for {len(acceptance_criteria)} criteria)")
+        
+        # Calculate coverage score
+        coverage_score = (len(coverage_types) / len(expected_coverage)) * 100
+        coverage_validation['coverage_score'] = min(100, coverage_score)
+        
+        # Generate recommendations
+        if coverage_validation['coverage_score'] < 80:
+            coverage_validation['recommendations'].append("Consider adding more comprehensive test coverage")
+        
+        return coverage_validation
+    
+    def _generate_fallback_analysis(self, user_story: dict, criteria_analysis: dict) -> dict:
+        """
+        Generate a fallback testability analysis when AI response fails.
+        """
+        story_points = user_story.get('story_points', 0)
+        if isinstance(story_points, str) and story_points.isdigit():
+            story_points = int(story_points)
+        elif not isinstance(story_points, int):
+            story_points = 3
+            
+        base_score = criteria_analysis.get('testability_score', 5)
+        
+        return {
+            "testability_score": base_score,
+            "improvement_recommendations": [
+                "Manual review required due to AI parsing error",
+                "Validate acceptance criteria for clarity and completeness",
+                "Consider adding boundary condition tests",
+                "Include negative test scenarios for error handling"
+            ],
+            "missing_scenarios": [
+                "Boundary condition testing",
+                "Error handling scenarios", 
+                "Integration failure testing"
+            ],
+            "enhanced_criteria": criteria_analysis.get('enhanced_criteria', user_story.get('acceptance_criteria', [])),
+            "risk_assessment": f"Medium - Story complexity: {story_points} points, requires manual validation",
+            "user_story_id": user_story.get('id'),
+            "user_story_title": user_story.get('title', 'Unknown'),
+            "criteria_analysis": criteria_analysis,
+            "story_points": story_points,
+            "story_priority": user_story.get('priority', 'Medium'),
+            "automation_opportunities": ["Manual review needed"],
+            "boundary_scenarios": ["Define based on story requirements"],
+            "failure_scenarios": ["Include error handling tests"]
+        }
+    
+    def _enhance_testability_analysis(self, analysis: dict, user_story: dict) -> dict:
+        """
+        Enhance and validate the testability analysis with additional quality checks.
+        """
+        # Ensure required fields exist
+        required_fields = [
+            'testability_score', 'improvement_recommendations', 'missing_scenarios',
+            'enhanced_criteria', 'risk_assessment'
+        ]
+        
+        for field in required_fields:
+            if field not in analysis:
+                analysis[field] = self._get_default_field_value(field, user_story)
+        
+        # Validate testability score
+        score = analysis.get('testability_score')
+        if not isinstance(score, (int, float)) or score < 1 or score > 10:
+            analysis['testability_score'] = 5
+            analysis['improvement_recommendations'].append("Testability score validation failed - using default")
+        
+        # Ensure recommendations are actionable
+        if not analysis.get('improvement_recommendations'):
+            analysis['improvement_recommendations'] = [
+                "Review acceptance criteria for clarity and completeness",
+                "Add boundary condition testing scenarios",
+                "Include error handling test cases"
+            ]
+        
+        # Add story-specific insights
+        story_points = user_story.get('story_points', 0)
+        if isinstance(story_points, str) and story_points.isdigit():
+            story_points = int(story_points)
+        
+        if story_points >= 8:
+            analysis['complexity_recommendations'] = [
+                "High complexity story - requires comprehensive test coverage",
+                "Consider performance testing for complex operations",
+                "Security testing recommended for high-complexity features",
+                "Integration testing across multiple system components"
+            ]
+        elif story_points >= 5:
+            analysis['complexity_recommendations'] = [
+                "Medium complexity story - standard test coverage recommended",
+                "Include integration testing for external dependencies",
+                "Consider boundary condition testing"
+            ]
+        else:
+            analysis['complexity_recommendations'] = [
+                "Low complexity story - basic functional testing sufficient",
+                "Focus on acceptance criteria validation"
+            ]
+        
+        return analysis
+    
+    def _get_default_field_value(self, field: str, user_story: dict):
+        """
+        Get default value for a missing analysis field.
+        """
+        defaults = {
+            'testability_score': 5,
+            'improvement_recommendations': ["Review acceptance criteria", "Add boundary tests", "Include error scenarios"],
+            'missing_scenarios': ["Boundary testing", "Error handling", "Integration testing"],
+            'enhanced_criteria': user_story.get('acceptance_criteria', []),
+            'risk_assessment': f"Medium - {user_story.get('story_points', 'Unknown')} story points, requires validation",
+            'automation_opportunities': ["API testing", "Regression testing"],
+            'boundary_scenarios': ["Input validation", "Data limits"],
+            'failure_scenarios': ["Error handling", "System failures"]
+        }
+        return defaults.get(field, [])

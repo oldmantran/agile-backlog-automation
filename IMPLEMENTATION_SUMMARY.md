@@ -67,6 +67,13 @@ GET    /api/health                     # Health check
 
 ### Quick Start:
 1. **Install Dependencies:**
+   **For PowerShell:**
+   ```powershell
+   pip install -r requirements.txt
+   cd frontend; npm install
+   ```
+   
+   **For Bash/CMD:**
    ```bash
    pip install -r requirements.txt
    cd frontend && npm install
