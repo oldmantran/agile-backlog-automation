@@ -306,6 +306,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         azure_config = project_data.get("azureConfig", {})
         area_path = azure_config.get("areaPath")
         iteration_path = azure_config.get("iterationPath")
+        if not area_path or not iteration_path:
+            error_msg = "Both areaPath and iterationPath must be provided in the Azure DevOps configuration."
+            logger.error(error_msg)
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = error_msg
+            active_jobs[job_id]["endTime"] = datetime.now()
+            return
         
         # Initialize the workflow supervisor with area/iteration path
         supervisor = WorkflowSupervisor(area_path=area_path, iteration_path=iteration_path)
