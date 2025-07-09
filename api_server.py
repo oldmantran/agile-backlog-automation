@@ -346,7 +346,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         """
         
         # Run the supervisor workflow
-        results = await asyncio.to_thread(supervisor.execute_workflow, product_vision, save_outputs=True)
+        results = await asyncio.to_thread(supervisor.execute_workflow, product_vision, save_outputs=True, integrate_azure=True)
         
         # Update final progress
         active_jobs[job_id]["status"] = "completed"

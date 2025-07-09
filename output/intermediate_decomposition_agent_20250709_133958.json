@@ -1,0 +1,1000 @@
+{
+  "product_vision": "\n        Project: Ride Sharing\n        Domain: software\n        Description: testing the backlog automation with a sample Ride Sharing app vision statement\n        Vision Statement: Product Vision Statement for RideSharing App\n\nVision: To revolutionize urban mobility by providing a seamless, safe, and sustainable ride-sharing experience powered by autonomous vehicles, ensuring accessibility, efficiency, and environmental responsibility for all.\n\nCore Offering: Our app delivers an intuitive platform for users to book, track, and manage rides in a fleet of fully autonomous, electric vehicles. With real-time navigation, dynamic pricing, and personalized ride preferences, we aim to redefine convenience while reducing carbon footprints and urban congestion.\n\nKey Features:\n\n\n\n\n\nAutonomous Rides: Safe, driverless vehicles equipped with advanced AI for reliable navigation and passenger safety.\n\n\n\nSeamless Experience: User-friendly app interface for booking, real-time tracking, and in-ride customization (e.g., temperature, music).\n\n\n\nSustainability: 100% electric fleet to minimize environmental impact.\n\n\n\nAccessibility: Affordable pricing, inclusive design for diverse needs, and coverage in urban and suburban areas.\n\n\n\nScalability: Data-driven optimization for route efficiency, demand prediction, and fleet management.\n\nTarget Audience: Urban dwellers, commuters, and environmentally conscious individuals seeking convenient, cost-effective, and eco-friendly transportation.\n\nValue Proposition: Empowering communities with a future-forward, autonomous ride-sharing solution that prioritizes safety, sustainability, and simplicity, transforming the way people move.\n        Business Objectives: Increase Market Penetration, Enhance Operational Efficiency, Drive Sustainability Goals\n        Target Audience: The target audience includes:\n\nUrban Dwellers: Residents of cities and densely populated areas who need convenient, on-demand transportation for daily commutes, errands, or social activities.\nCommuters: Professionals, students, and others who regularly travel within urban and suburban areas and seek reliable, efficient alternatives to personal vehicles or public transit.\nEnvironmentally Conscious Individuals: Users who prioritize sustainability and prefer eco-friendly transportation options, such as electric autonomous vehicles, to reduce their carbon footprint.\n        Success Metrics: Achieve a 20% share of the urban ride-sharing market within the first two years by expanding autonomous vehicle coverage and offering competitive pricing to attract new users., Optimize fleet utilization and reduce operational costs by 15% annually through AI-driven route planning, predictive maintenance, and dynamic demand forecasting., Transition to a 100% electric autonomous fleet by 2027, reducing carbon emissions by 30% compared to traditional ride-sharing services, and promote eco-friendly transportation to environmentally conscious consumers.\n        Team Size: 5\n        Timeline: 1 month\n        ",
+  "epics": [
+    {
+      "title": "Autonomous Ride Booking System",
+      "description": "Develop a core platform enabling users to book rides with autonomous vehicles through an intuitive app interface. This includes user authentication, vehicle selection, and payment integration to ensure a seamless booking experience.",
+      "business_value": "Drives market penetration by providing a unique autonomous ride option, targeting a 10% user adoption rate in urban areas within the first year.",
+      "priority": "High",
+      "estimated_complexity": "L",
+      "dependencies": [
+        "Integration with autonomous vehicle API for availability and control"
+      ],
+      "success_criteria": [
+        "Achieve 95% successful booking completion rate",
+        "Support 10,000 concurrent bookings without downtime"
+      ],
+      "target_personas": [
+        "Urban Dwellers",
+        "Commuters"
+      ],
+      "risks": [
+        "Delays in integrating with autonomous vehicle systems",
+        "User trust in driverless technology adoption"
+      ],
+      "features": [
+        {
+          "title": "User Authentication and Profile Management",
+          "description": "Enable users to securely register, log in, and manage their profiles within the ride-sharing app. This feature supports account creation with email or social media, password recovery, and profile updates to ensure a personalized and secure user experience. It forms the foundation for user interaction with the autonomous ride booking system.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Identity provider integration for social login",
+            "Backend infrastructure for user data storage"
+          ],
+          "ui_ux_requirements": [
+            "Simple registration and login forms with clear error messaging",
+            "Responsive design for mobile and web platforms",
+            "Accessibility support for visually impaired users with screen reader compatibility"
+          ],
+          "technical_considerations": [
+            "Implement OAuth 2.0 for secure authentication",
+            "Ensure GDPR/CCPA compliance for user data protection",
+            "Use encryption for storing sensitive user information"
+          ],
+          "business_value": "Builds user trust through secure access and personalization, essential for user retention and achieving the 10% adoption target in urban areas.",
+          "edge_cases": [
+            "Behavior when user enters incorrect credentials multiple times (account lockout)",
+            "Handling of duplicate email registrations during signup"
+          ]
+        },
+        {
+          "title": "Autonomous Vehicle Selection Interface",
+          "description": "Provide users with an intuitive interface to view and select available autonomous vehicles based on location, availability, and user preferences such as vehicle type or estimated arrival time. This feature will display vehicle details, including capacity and features, to help users make informed choices for their ride.",
+          "priority": "High",
+          "estimated_story_points": 13,
+          "dependencies": [
+            "Real-time vehicle tracking API",
+            "Geolocation services for user and vehicle positioning"
+          ],
+          "ui_ux_requirements": [
+            "Interactive map interface showing vehicle locations and ETAs",
+            "Filter options for vehicle preferences on mobile and web",
+            "Clear visual indicators for vehicle availability and status"
+          ],
+          "technical_considerations": [
+            "Integrate with vehicle management system via REST API for real-time data",
+            "Optimize map rendering for performance on low-bandwidth connections",
+            "Ensure scalability to handle high user traffic during peak times"
+          ],
+          "business_value": "Enhances user experience by offering choice and transparency in ride selection, directly supporting market penetration goals through a differentiated autonomous ride option.",
+          "edge_cases": [
+            "Behavior when no vehicles are available in the user’s vicinity",
+            "Handling of sudden vehicle status changes (e.g., maintenance required)"
+          ]
+        },
+        {
+          "title": "Ride Booking and Confirmation Workflow",
+          "description": "Allow users to book an autonomous ride by selecting a vehicle, specifying pickup and drop-off locations, and confirming the booking. This feature will provide immediate confirmation with ride details such as estimated cost, ETA, and vehicle information, ensuring a seamless booking process.",
+          "priority": "High",
+          "estimated_story_points": 13,
+          "dependencies": [
+            "Vehicle selection interface",
+            "Routing and ETA calculation services"
+          ],
+          "ui_ux_requirements": [
+            "Step-by-step booking flow with clear navigation and confirmation screens",
+            "Responsive design for quick input on mobile devices",
+            "Visual feedback for booking status updates (e.g., pending, confirmed)"
+          ],
+          "technical_considerations": [
+            "Integrate with routing APIs for accurate travel time and cost estimation",
+            "Implement transactional integrity to prevent double bookings",
+            "Ensure high availability of booking service during peak demand"
+          ],
+          "business_value": "Streamlines the core booking process, critical for user satisfaction and achieving a 10% adoption rate by reducing friction in ride scheduling.",
+          "edge_cases": [
+            "Behavior when a selected vehicle becomes unavailable during booking",
+            "Handling of invalid or unreachable pickup/drop-off locations"
+          ]
+        },
+        {
+          "title": "Payment Integration for Ride Transactions",
+          "description": "Enable users to securely pay for autonomous rides through multiple payment methods, including credit/debit cards, digital wallets, and in-app credits. This feature will handle payment processing, store payment preferences, and provide transaction history for user convenience and trust.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Third-party payment gateway integration",
+            "User authentication system"
+          ],
+          "ui_ux_requirements": [
+            "Secure and minimal input payment form with saved payment options",
+            "Clear transaction confirmation and receipt generation",
+            "Accessible design for users with motor or visual impairments"
+          ],
+          "technical_considerations": [
+            "Integrate with PCI-compliant payment processors via REST APIs",
+            "Implement tokenization for secure storage of payment details",
+            "Ensure rollback mechanisms for failed transactions"
+          ],
+          "business_value": "Facilitates seamless and secure transactions, building user confidence and supporting revenue generation to meet adoption targets.",
+          "edge_cases": [
+            "Behavior when a payment fails during the booking process",
+            "Handling of disputed transactions or refunds"
+          ]
+        },
+        {
+          "title": "Ride Status Tracking and Notifications",
+          "description": "Provide users with real-time updates on their booked autonomous ride, including vehicle location, ETA, and status changes (e.g., en route, arrived). This feature will send push notifications or in-app alerts to keep users informed throughout the ride process, enhancing transparency and trust.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Vehicle tracking API",
+            "User authentication for personalized alerts"
+          ],
+          "ui_ux_requirements": [
+            "Real-time map updates showing vehicle progress",
+            "Notification settings for user customization (e.g., sound, vibration)",
+            "Clear status indicators in the app interface"
+          ],
+          "technical_considerations": [
+            "Implement WebSocket or push notification services for real-time updates",
+            "Optimize notification delivery for reliability across devices",
+            "Handle large-scale notification distribution during high usage"
+          ],
+          "business_value": "Improves user experience by keeping them informed, reducing uncertainty, and supporting retention critical for the 10% urban adoption goal.",
+          "edge_cases": [
+            "Behavior when user’s device is offline during status updates",
+            "Handling of delayed or missed notifications due to network issues"
+          ]
+        },
+        {
+          "title": "User Feedback and Ride Rating System",
+          "description": "Allow users to provide feedback and rate their autonomous ride experience after completion. This feature will collect user input on vehicle condition, ride quality, and overall satisfaction to improve service and build a feedback loop for continuous enhancement of the platform.",
+          "priority": "Medium",
+          "estimated_story_points": 3,
+          "dependencies": [
+            "Ride booking and confirmation system",
+            "User profile management"
+          ],
+          "ui_ux_requirements": [
+            "Simple post-ride feedback form with rating scale and optional comments",
+            "Non-intrusive prompt timing to maximize response rates",
+            "Accessible design for quick input on mobile devices"
+          ],
+          "technical_considerations": [
+            "Store feedback data in a scalable database for analysis",
+            "Implement moderation for user comments to prevent abuse",
+            "Ensure data privacy for user-submitted feedback"
+          ],
+          "business_value": "Gathers critical insights to refine autonomous ride services, directly impacting user satisfaction and long-term adoption rates.",
+          "edge_cases": [
+            "Behavior when a user skips or delays providing feedback",
+            "Handling of negative feedback or reported issues requiring follow-up"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Real-Time Ride Tracking and Customization",
+      "description": "Implement real-time tracking of autonomous vehicles with in-ride customization features like temperature and music preferences. This enhances user experience by providing transparency and control during rides.",
+      "business_value": "Increases user satisfaction and retention by 15% through personalized ride experiences.",
+      "priority": "High",
+      "estimated_complexity": "M",
+      "dependencies": [
+        "Autonomous Ride Booking System for ride data",
+        "Vehicle IoT integration for customization controls"
+      ],
+      "success_criteria": [
+        "Track 100% of active rides in real-time with <5-second latency",
+        "Enable customization for 90% of rides without errors"
+      ],
+      "target_personas": [
+        "Urban Dwellers",
+        "Commuters"
+      ],
+      "risks": [
+        "Latency issues in real-time tracking",
+        "Compatibility challenges with vehicle hardware"
+      ],
+      "features": [
+        {
+          "title": "Real-Time Vehicle Location Tracking",
+          "description": "Enable users to view the real-time location of their assigned autonomous vehicle on a map interface during the ride. This feature provides transparency by showing the vehicle's current position, estimated time of arrival at waypoints or destination, and route updates. It ensures users feel informed and secure throughout their journey.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Integration with GPS and mapping service APIs",
+            "Backend infrastructure for real-time data streaming"
+          ],
+          "ui_ux_requirements": [
+            "Interactive map interface displaying vehicle location and route",
+            "Responsive design for web and mobile platforms",
+            "Accessibility support for visually impaired users through audio updates"
+          ],
+          "technical_considerations": [
+            "WebSocket or similar technology for real-time updates",
+            "Scalability to handle high-frequency location data for multiple rides",
+            "Data privacy measures for storing and transmitting location information"
+          ],
+          "business_value": "Enhances user trust and satisfaction by providing visibility into ride progress, contributing to a projected 10% increase in ride completion rates.",
+          "edge_cases": [
+            "Behavior when GPS signal is lost or unreliable",
+            "Handling scenarios where vehicle deviates from planned route"
+          ]
+        },
+        {
+          "title": "In-Ride Temperature Control Customization",
+          "description": "Allow users to adjust the temperature inside the autonomous vehicle during the ride via the app. This feature connects to the vehicle’s climate control system, enabling users to set their preferred temperature for a comfortable experience, with immediate feedback on the adjustment status.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Integration with vehicle IoT systems for climate control",
+            "Secure API endpoints for sending user commands to vehicles"
+          ],
+          "ui_ux_requirements": [
+            "Simple slider or button controls for temperature adjustment",
+            "Visual confirmation of temperature changes",
+            "Responsive design for easy access on mobile devices during ride"
+          ],
+          "technical_considerations": [
+            "Secure communication protocols between app and vehicle systems",
+            "Latency optimization for near-instant command execution",
+            "Fallback mechanism if vehicle system is unresponsive"
+          ],
+          "business_value": "Improves user comfort and satisfaction, contributing to a projected 5% increase in positive user feedback for ride experience.",
+          "edge_cases": [
+            "Behavior when vehicle climate system fails to respond",
+            "Handling temperature adjustment limits for safety and hardware constraints"
+          ]
+        },
+        {
+          "title": "In-Ride Music Preference Customization",
+          "description": "Enable users to select music playlists or genres during the ride through the app, integrating with the vehicle’s audio system. Users can choose from predefined playlists or connect their personal streaming accounts to play preferred music, enhancing the personalized ride experience.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Integration with third-party music streaming services (e.g., Spotify, Apple Music)",
+            "Vehicle audio system API access for playback control"
+          ],
+          "ui_ux_requirements": [
+            "User-friendly interface for selecting playlists or connecting accounts",
+            "Clear feedback on music playback status",
+            "Accessibility features for voice-activated music selection"
+          ],
+          "technical_considerations": [
+            "Secure OAuth integration for user music account linking",
+            "Bandwidth optimization for streaming audio in varying network conditions",
+            "Fallback to default playlists if streaming fails"
+          ],
+          "business_value": "Enhances ride personalization, contributing to higher user engagement and a projected 7% increase in app usage during rides.",
+          "edge_cases": [
+            "Behavior when internet connectivity is lost during streaming",
+            "Handling conflicts if multiple passengers attempt to control music"
+          ]
+        },
+        {
+          "title": "Ride Progress Notifications and Alerts",
+          "description": "Provide users with real-time notifications about ride progress, including updates on delays, route changes, and arrival estimates. Alerts can be delivered via push notifications on mobile devices or in-app messages, ensuring users are kept informed of any changes during their journey.",
+          "priority": "High",
+          "estimated_story_points": 3,
+          "dependencies": [
+            "Real-time vehicle tracking system",
+            "Push notification service integration"
+          ],
+          "ui_ux_requirements": [
+            "Non-intrusive notification design with customizable settings",
+            "Clear messaging for different types of updates (e.g., delay, arrival)",
+            "Support for multiple languages in notifications"
+          ],
+          "technical_considerations": [
+            "Reliable push notification delivery across platforms",
+            "Rate limiting to avoid notification spam",
+            "User preference storage for notification settings"
+          ],
+          "business_value": "Reduces user anxiety by keeping them informed, contributing to a projected 8% improvement in user satisfaction scores.",
+          "edge_cases": [
+            "Behavior when user device is offline or notifications are disabled",
+            "Handling frequent route updates to avoid overwhelming users"
+          ]
+        },
+        {
+          "title": "User Feedback on Ride Customization",
+          "description": "Allow users to provide feedback on their in-ride customization experience (e.g., temperature, music) at the end of the trip or during the ride. This feature collects user input through a simple form or rating system to help improve personalization features and vehicle settings for future rides.",
+          "priority": "Low",
+          "estimated_story_points": 2,
+          "dependencies": [
+            "Core ride completion workflow",
+            "Backend system for storing feedback data"
+          ],
+          "ui_ux_requirements": [
+            "Minimalistic feedback form with quick rating options",
+            "Option to skip feedback without disrupting user flow",
+            "Responsive design for easy access post-ride"
+          ],
+          "technical_considerations": [
+            "Data storage for feedback with anonymization options",
+            "Scalable database design for high-volume feedback collection",
+            "Integration with analytics for trend identification"
+          ],
+          "business_value": "Provides actionable insights to refine customization features, contributing to continuous improvement in user experience and retention.",
+          "edge_cases": [
+            "Behavior when user skips feedback or provides incomplete data",
+            "Handling negative feedback with follow-up prompts if necessary"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Dynamic Pricing and Demand Forecasting",
+      "description": "Build an AI-driven pricing model that adjusts fares based on demand, traffic, and time of day, alongside predictive analytics for demand forecasting. This optimizes fleet utilization and ensures competitive pricing for users.",
+      "business_value": "Reduces operational costs by 10% through efficient fleet management and increases revenue with dynamic pricing adjustments.",
+      "priority": "Medium",
+      "estimated_complexity": "L",
+      "dependencies": [
+        "Historical ride and traffic data for model training"
+      ],
+      "success_criteria": [
+        "Achieve 85% accuracy in demand forecasting",
+        "Implement dynamic pricing updates in under 1 minute"
+      ],
+      "target_personas": [
+        "Urban Dwellers",
+        "Commuters"
+      ],
+      "risks": [
+        "Inaccurate data leading to poor predictions",
+        "User backlash to frequent price changes"
+      ],
+      "features": [
+        {
+          "title": "Dynamic Fare Adjustment Based on Real-Time Demand",
+          "description": "This feature enables the system to dynamically adjust ride fares in real-time based on current demand levels, traffic conditions, and time of day. By leveraging AI algorithms, fares will increase during peak hours or high-demand areas to balance supply and demand, while lowering fares during off-peak times to attract more users. The feature ensures transparency by notifying users of fare changes before booking.",
+          "priority": "High",
+          "estimated_story_points": 13,
+          "dependencies": [
+            "Availability of real-time traffic data API",
+            "Integration with AI/ML pricing model"
+          ],
+          "ui_ux_requirements": [
+            "Display fare changes with clear explanations to users during booking",
+            "Responsive design for fare updates on mobile and web platforms",
+            "Accessibility support for fare notifications (e.g., screen reader compatibility)"
+          ],
+          "technical_considerations": [
+            "Integration with third-party traffic and weather data APIs",
+            "Scalable AI model deployment for real-time fare calculations",
+            "Ensure data privacy for user location and ride patterns"
+          ],
+          "business_value": "Increases revenue by optimizing pricing during high-demand periods and improves user acquisition during low-demand times",
+          "edge_cases": [
+            "Behavior when traffic data API is unavailable or delayed",
+            "Handling extreme fare spikes to prevent user dissatisfaction"
+          ]
+        },
+        {
+          "title": "Demand Forecasting for Fleet Utilization",
+          "description": "This feature uses predictive analytics to forecast ride demand based on historical data, time of day, events, and seasonal trends. It provides actionable insights to optimize fleet distribution by predicting high-demand areas and times, enabling proactive driver allocation. This reduces idle time for drivers and improves service availability for users.",
+          "priority": "High",
+          "estimated_story_points": 13,
+          "dependencies": [
+            "Historical ride data availability",
+            "AI/ML model for demand prediction"
+          ],
+          "ui_ux_requirements": [
+            "Dashboard for administrators to view demand forecasts and fleet allocation suggestions",
+            "Clear visualizations (e.g., heatmaps) for high-demand areas",
+            "Responsive and accessible interface for admin tools"
+          ],
+          "technical_considerations": [
+            "Batch processing of historical data for model training",
+            "Real-time updates to forecasts based on live data",
+            "Secure storage and handling of historical ride data"
+          ],
+          "business_value": "Reduces operational costs by minimizing driver idle time and improves user satisfaction through better ride availability",
+          "edge_cases": [
+            "Behavior when historical data is incomplete or inaccurate",
+            "Handling unexpected demand surges (e.g., unplanned events)"
+          ]
+        },
+        {
+          "title": "Surge Pricing Notification System",
+          "description": "This feature ensures users are informed about surge pricing or fare adjustments due to high demand or other factors before they confirm a ride. It provides transparency by explaining why fares are higher and offers options like waiting for lower fares or choosing alternative ride types. This builds trust and reduces booking cancellations.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Dynamic Fare Adjustment feature implementation"
+          ],
+          "ui_ux_requirements": [
+            "Pop-up or in-app notification showing surge pricing details and reasons",
+            "Option to set fare alerts for when prices drop",
+            "Accessible notifications with clear language and visual cues"
+          ],
+          "technical_considerations": [
+            "Real-time fare calculation integration with notification system",
+            "Performance optimization to avoid delays in notification delivery",
+            "Secure handling of user preferences for fare alerts"
+          ],
+          "business_value": "Improves user trust and reduces booking cancellations by ensuring transparency in pricing",
+          "edge_cases": [
+            "Behavior when users miss or ignore surge notifications",
+            "Handling notification delivery failures due to network issues"
+          ]
+        },
+        {
+          "title": "Administrator Pricing Override Controls",
+          "description": "This feature allows administrators to manually override dynamic pricing in specific scenarios, such as during emergencies, major events, or system errors. It provides a safety net to ensure fair pricing and prevent user dissatisfaction during exceptional circumstances, with audit logs to track changes for accountability.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Dynamic Fare Adjustment feature implementation"
+          ],
+          "ui_ux_requirements": [
+            "Admin dashboard with controls to set temporary fare caps or discounts",
+            "Clear logging of override actions with timestamps and reasons",
+            "Accessible and intuitive interface for admin overrides"
+          ],
+          "technical_considerations": [
+            "Secure access controls for pricing override functionality",
+            "Audit logging for all manual pricing changes",
+            "Ensure overrides sync with real-time fare systems without delays"
+          ],
+          "business_value": "Protects brand reputation by enabling fair pricing during crises and ensures accountability for manual interventions",
+          "edge_cases": [
+            "Behavior when multiple admins attempt overrides simultaneously",
+            "Handling overrides during system downtime or errors"
+          ]
+        },
+        {
+          "title": "Performance Monitoring for Pricing Algorithms",
+          "description": "This feature provides tools to monitor the performance and accuracy of dynamic pricing and demand forecasting models. It tracks key metrics like fare adjustment frequency, prediction accuracy, and revenue impact, enabling continuous improvement of AI models. Alerts are triggered for anomalies or underperformance to ensure reliability.",
+          "priority": "Medium",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Dynamic Fare Adjustment and Demand Forecasting features"
+          ],
+          "ui_ux_requirements": [
+            "Admin dashboard with real-time metrics and visualizations for pricing performance",
+            "Alert system for anomalies with actionable insights",
+            "Accessible design for monitoring tools and reports"
+          ],
+          "technical_considerations": [
+            "Integration with observability tools for AI model performance",
+            "Scalable storage for performance metrics and logs",
+            "Secure access to monitoring data for authorized personnel only"
+          ],
+          "business_value": "Ensures reliability of pricing and forecasting systems, minimizing revenue loss from errors and improving model accuracy over time",
+          "edge_cases": [
+            "Behavior when monitoring tools detect false positives in anomalies",
+            "Handling performance data storage during high-traffic periods"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Sustainability Metrics and Reporting",
+      "description": "Create a system to track and report carbon emissions savings from the 100% electric fleet, integrated into the user app and admin dashboard. This reinforces the app’s eco-friendly value proposition to users and stakeholders.",
+      "business_value": "Attracts environmentally conscious users, targeting a 20% increase in user base from this demographic within 18 months.",
+      "priority": "Medium",
+      "estimated_complexity": "S",
+      "dependencies": [
+        "Vehicle energy usage data integration"
+      ],
+      "success_criteria": [
+        "Display accurate emissions savings to 95% of users post-ride",
+        "Generate quarterly sustainability reports for stakeholders"
+      ],
+      "target_personas": [
+        "Environmentally Conscious Individuals"
+      ],
+      "risks": [
+        "Inaccurate energy consumption data",
+        "Limited user interest in sustainability metrics"
+      ],
+      "features": [
+        {
+          "title": "Carbon Emissions Savings Calculator for Users",
+          "description": "Enable users to view real-time carbon emissions savings based on their ride history with the electric fleet. This feature calculates savings per ride and cumulative savings over time, displaying the data in an engaging format within the user app to reinforce the eco-friendly value of the service. It aims to educate and motivate users by visualizing their environmental impact.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Availability of ride history data API",
+            "Integration with third-party carbon calculation service or internal algorithm"
+          ],
+          "ui_ux_requirements": [
+            "Interactive dashboard widget in the user app for emissions savings",
+            "Visual graphs or icons showing per-ride and total savings",
+            "Responsive design for mobile and web app interfaces",
+            "Accessibility support for screen readers with descriptive alt text"
+          ],
+          "technical_considerations": [
+            "REST API integration for fetching ride data and emissions calculations",
+            "Performance optimization for real-time data display",
+            "Data caching to reduce server load for frequent access"
+          ],
+          "business_value": "Increases user engagement by showcasing tangible environmental impact, targeting a 15% increase in app interaction from eco-conscious users.",
+          "edge_cases": [
+            "Behavior when ride data is incomplete or unavailable",
+            "Handling discrepancies in carbon calculation due to third-party service downtime"
+          ]
+        },
+        {
+          "title": "Admin Dashboard for Fleet Emissions Reporting",
+          "description": "Provide administrators with a comprehensive dashboard to monitor and report on carbon emissions savings across the entire electric fleet. This feature aggregates data by time period, region, or vehicle, offering exportable reports for stakeholder presentations or compliance purposes, reinforcing the company’s sustainability commitment.",
+          "priority": "Medium",
+          "estimated_story_points": 13,
+          "dependencies": [
+            "Centralized database for fleet and ride data",
+            "User authentication and role-based access control for admin features"
+          ],
+          "ui_ux_requirements": [
+            "Filterable dashboard with options for time, region, and vehicle metrics",
+            "Export functionality for reports in PDF or CSV formats",
+            "Responsive design optimized for desktop and tablet admin usage",
+            "Clear data visualization with charts and summary statistics"
+          ],
+          "technical_considerations": [
+            "Scalable database queries for handling large datasets",
+            "Secure data handling for sensitive fleet information",
+            "Integration with reporting tools or libraries for export functionality"
+          ],
+          "business_value": "Empowers admins to demonstrate sustainability impact to stakeholders, supporting marketing efforts and regulatory compliance.",
+          "edge_cases": [
+            "Behavior when fleet data is partially unavailable due to system errors",
+            "Handling large data exports without performance degradation"
+          ]
+        },
+        {
+          "title": "User Notifications for Emissions Milestones",
+          "description": "Notify users when they reach significant carbon emissions savings milestones (e.g., saving 100kg of CO2). This feature sends push notifications or in-app messages to celebrate achievements, encouraging continued use of the service and fostering a sense of accomplishment tied to environmental impact.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Carbon emissions calculator feature for accurate data",
+            "Push notification infrastructure for mobile app"
+          ],
+          "ui_ux_requirements": [
+            "Customizable notification settings in user profile",
+            "Engaging and celebratory message design for milestones",
+            "Support for in-app and push notification delivery",
+            "Accessibility considerations for notification text and visuals"
+          ],
+          "technical_considerations": [
+            "Event-driven architecture to trigger notifications at milestones",
+            "Rate limiting to avoid notification spam",
+            "Integration with existing notification systems"
+          ],
+          "business_value": "Boosts user retention by gamifying sustainability efforts, targeting a 10% increase in repeat usage among notified users.",
+          "edge_cases": [
+            "Behavior when users disable notifications",
+            "Handling milestone calculation errors or delays"
+          ]
+        },
+        {
+          "title": "Public Sustainability Impact Page",
+          "description": "Create a public-facing web page within the app or website that showcases the total carbon emissions savings achieved by the entire fleet. This feature displays anonymized, aggregated data to highlight the company’s environmental impact, building trust and attracting eco-conscious users and partners.",
+          "priority": "Low",
+          "estimated_story_points": 3,
+          "dependencies": [
+            "Aggregated emissions data from fleet reporting system"
+          ],
+          "ui_ux_requirements": [
+            "Visually appealing page with real-time or daily updated metrics",
+            "Responsive design for web and mobile browser access",
+            "Shareable content options for social media integration",
+            "Accessibility compliance with WCAG standards"
+          ],
+          "technical_considerations": [
+            "High availability design for public-facing page",
+            "Caching mechanisms to handle high traffic volumes",
+            "Secure handling of aggregated data to prevent misuse"
+          ],
+          "business_value": "Enhances brand reputation as a sustainability leader, targeting a 5% increase in organic user acquisition through shared content.",
+          "edge_cases": [
+            "Behavior during data aggregation failures or delays",
+            "Handling high traffic spikes from social media shares"
+          ]
+        },
+        {
+          "title": "Integration with Carbon Offset Programs",
+          "description": "Allow users to opt into carbon offset programs directly through the app by linking their emissions savings data to third-party offset services. This feature provides a seamless way for users to further reduce their environmental footprint by contributing to verified offset initiatives, aligning with the app’s eco-friendly mission.",
+          "priority": "Low",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Partnerships or APIs with carbon offset providers",
+            "User emissions data from calculator feature"
+          ],
+          "ui_ux_requirements": [
+            "Simple opt-in flow within the user app sustainability section",
+            "Clear explanations of offset programs and their impact",
+            "Responsive design for program selection and payment interfaces",
+            "Accessibility support for program descriptions and navigation"
+          ],
+          "technical_considerations": [
+            "Secure API integration with third-party offset services",
+            "Payment gateway integration for offset contributions",
+            "Data privacy measures for user consent and information sharing"
+          ],
+          "business_value": "Differentiates the app by offering actionable sustainability options, targeting a niche segment of highly eco-conscious users for a 3% user base increase.",
+          "edge_cases": [
+            "Behavior when third-party offset service is unavailable",
+            "Handling user data privacy concerns during opt-in process"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Accessibility Features for Inclusive Design",
+      "description": "Incorporate accessibility features such as voice commands, high-contrast UI, and support for mobility aids in the app and vehicle onboarding process. This ensures the platform is usable by diverse populations with varying needs.",
+      "business_value": "Expands market reach by 5% through inclusive design, tapping into underserved user segments.",
+      "priority": "Medium",
+      "estimated_complexity": "M",
+      "dependencies": [
+        "User feedback on accessibility needs",
+        "Vehicle design compatibility for mobility aids"
+      ],
+      "success_criteria": [
+        "Achieve 90% positive feedback on accessibility features",
+        "Support voice commands in 3 major languages"
+      ],
+      "target_personas": [
+        "Urban Dwellers",
+        "Commuters"
+      ],
+      "risks": [
+        "High cost of retrofitting vehicles for accessibility",
+        "Complexity in supporting multiple accessibility standards"
+      ],
+      "features": [
+        {
+          "title": "Voice Command Navigation for Hands-Free Interaction",
+          "description": "Enable users to interact with the ride-sharing app using voice commands for key actions such as booking a ride, selecting destinations, and confirming payments. This feature supports users with visual impairments or limited mobility by providing a hands-free way to navigate the app, ensuring accessibility and ease of use.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Integration with third-party speech recognition APIs",
+            "Availability of device microphone permissions"
+          ],
+          "ui_ux_requirements": [
+            "Clear audio feedback for user commands and app responses",
+            "Support for multiple languages in voice recognition",
+            "Accessible onboarding tutorial for voice command setup"
+          ],
+          "technical_considerations": [
+            "Ensure low-latency processing for real-time voice interaction",
+            "Secure handling of voice data for privacy compliance",
+            "Offline fallback mode for limited connectivity scenarios"
+          ],
+          "business_value": "Increases app usability for users with visual or motor impairments, potentially expanding user base by targeting underserved segments.",
+          "edge_cases": [
+            "Behavior when voice input is unclear or misinterpreted",
+            "Handling background noise interference during voice commands"
+          ]
+        },
+        {
+          "title": "High-Contrast UI Mode for Visual Accessibility",
+          "description": "Provide a high-contrast user interface mode to improve readability for users with visual impairments such as low vision or color blindness. This feature allows users to toggle between standard and high-contrast themes, ensuring text, buttons, and icons are clearly distinguishable.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Existing UI design system for theme customization"
+          ],
+          "ui_ux_requirements": [
+            "Responsive design for high-contrast mode across web and mobile",
+            "User toggle for switching between standard and high-contrast themes",
+            "Compliance with WCAG 2.1 AA contrast ratio guidelines"
+          ],
+          "technical_considerations": [
+            "CSS theming for efficient theme switching without performance impact",
+            "Testing across devices for consistent rendering of high-contrast elements",
+            "Storage of user theme preference in user profile"
+          ],
+          "business_value": "Enhances user experience for visually impaired users, fostering inclusivity and increasing app adoption among diverse populations.",
+          "edge_cases": [
+            "Behavior when third-party content does not support high-contrast mode",
+            "Handling user preferences conflicts across multiple devices"
+          ]
+        },
+        {
+          "title": "Screen Reader Support for App Navigation",
+          "description": "Ensure the ride-sharing app is fully compatible with screen readers to assist users who are blind or have severe visual impairments. This feature focuses on proper labeling of UI elements, navigation sequences, and interactive components to enable seamless app usage through auditory feedback.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Adherence to ARIA (Accessible Rich Internet Applications) standards",
+            "Testing with popular screen readers like VoiceOver and TalkBack"
+          ],
+          "ui_ux_requirements": [
+            "Clear auditory descriptions for all interactive elements",
+            "Logical tab order for navigation via screen readers",
+            "User guide for screen reader setup and usage within the app"
+          ],
+          "technical_considerations": [
+            "Implementation of semantic HTML for better screen reader parsing",
+            "Regular audits for accessibility compliance during updates",
+            "Performance optimization to avoid delays in screen reader feedback"
+          ],
+          "business_value": "Enables blind users to independently use the app, broadening the platform's reach and demonstrating commitment to inclusivity.",
+          "edge_cases": [
+            "Behavior when dynamic content updates occur during screen reader usage",
+            "Handling unsupported screen reader versions or configurations"
+          ]
+        },
+        {
+          "title": "Mobility Aid Support in Vehicle Onboarding",
+          "description": "Allow users to specify mobility aid requirements (e.g., wheelchairs, walkers) during ride booking and ensure drivers are notified of these needs. This feature also includes options for accessible vehicle preferences to match users with suitable rides, improving the onboarding process for users with physical disabilities.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Driver app integration for receiving accessibility notifications",
+            "Database updates to include vehicle accessibility features"
+          ],
+          "ui_ux_requirements": [
+            "Simple form for users to input mobility aid requirements during booking",
+            "Clear indicators for accessible vehicle availability in search results",
+            "Confirmation prompts for drivers acknowledging special requirements"
+          ],
+          "technical_considerations": [
+            "API updates to include accessibility flags in ride requests",
+            "Matching algorithm adjustments to prioritize accessible vehicles",
+            "Secure storage of user accessibility preferences with opt-in consent"
+          ],
+          "business_value": "Improves ride accessibility for users with mobility challenges, enhancing user satisfaction and loyalty while expanding market reach.",
+          "edge_cases": [
+            "Behavior when no accessible vehicles are available in the user’s area",
+            "Handling incorrect or outdated driver/vehicle accessibility data"
+          ]
+        },
+        {
+          "title": "Customizable Font Size and Zoom Features",
+          "description": "Enable users to adjust font sizes and zoom levels within the app to accommodate visual impairments or personal preferences. This feature ensures that text and UI elements remain legible and usable for users with varying degrees of vision challenges.",
+          "priority": "Medium",
+          "estimated_story_points": 3,
+          "dependencies": [
+            "Existing responsive design framework for scaling adjustments"
+          ],
+          "ui_ux_requirements": [
+            "Slider or button controls for easy font size and zoom adjustments",
+            "Preview mode to show changes before applying settings",
+            "Retention of user preferences across app sessions and devices"
+          ],
+          "technical_considerations": [
+            "CSS and layout adjustments to prevent content overlap at larger sizes",
+            "Performance testing to ensure smooth rendering at different zoom levels",
+            "Compatibility with native device zoom settings for consistency"
+          ],
+          "business_value": "Enhances usability for users with vision difficulties, reducing barriers to app interaction and increasing user retention.",
+          "edge_cases": [
+            "Behavior when zoomed content affects critical UI functionality",
+            "Handling conflicts with device-level accessibility settings"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Fleet Management and Route Optimization",
+      "description": "Develop a backend system for fleet management with AI-driven route optimization to minimize travel time and energy usage. This improves operational efficiency and supports scalability across urban and suburban areas.",
+      "business_value": "Reduces operational costs by 15% through optimized routing and increases vehicle availability by 20%.",
+      "priority": "High",
+      "estimated_complexity": "XL",
+      "dependencies": [
+        "Real-time traffic data integration",
+        "Autonomous vehicle API for route updates"
+      ],
+      "success_criteria": [
+        "Reduce average ride delay by 10 minutes",
+        "Improve fleet utilization rate to 80% during peak hours"
+      ],
+      "target_personas": [
+        "Administrators",
+        "Commuters"
+      ],
+      "risks": [
+        "Unreliable traffic data impacting route accuracy",
+        "High computational cost of real-time optimization"
+      ],
+      "features": [
+        {
+          "title": "Fleet Vehicle Tracking and Status Monitoring",
+          "description": "Enable real-time tracking of fleet vehicles to provide administrators with up-to-date information on vehicle location, status (e.g., in-use, idle, maintenance), and availability. This feature supports operational oversight by allowing fleet managers to monitor vehicle usage patterns and respond to issues promptly, ensuring maximum vehicle uptime.",
+          "priority": "High",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "GPS integration for vehicle tracking",
+            "Backend infrastructure for real-time data processing"
+          ],
+          "ui_ux_requirements": [
+            "Dashboard with map view for real-time vehicle locations",
+            "Status indicators for each vehicle (color-coded for quick recognition)",
+            "Responsive design for desktop and mobile access by fleet managers"
+          ],
+          "technical_considerations": [
+            "Integration with GPS hardware or third-party APIs for location data",
+            "Scalable backend to handle real-time updates for large fleets",
+            "Data retention policies for historical tracking data"
+          ],
+          "business_value": "Improves fleet visibility for administrators, reducing downtime and enabling proactive management, contributing to a 20% increase in vehicle availability.",
+          "edge_cases": [
+            "Behavior when GPS signal is lost or data is delayed",
+            "Handling of vehicles temporarily offline or in maintenance"
+          ]
+        },
+        {
+          "title": "AI-Driven Route Optimization Engine",
+          "description": "Implement an AI-based route optimization system that calculates the most efficient routes for drivers based on real-time traffic data, distance, energy consumption, and delivery or pickup schedules. This feature minimizes travel time and fuel/energy usage, directly impacting operational costs and environmental footprint.",
+          "priority": "High",
+          "estimated_story_points": 13,
+          "dependencies": [
+            "Integration with traffic data APIs",
+            "Historical data for AI model training"
+          ],
+          "ui_ux_requirements": [
+            "Visual representation of optimized routes on a map for drivers and managers",
+            "Alerts for route deviations or delays with re-optimization options",
+            "Simple interface for drivers to accept or view route suggestions"
+          ],
+          "technical_considerations": [
+            "AI/ML model integration for route prediction and optimization",
+            "Real-time API calls to traffic and weather services for dynamic updates",
+            "Performance optimization to handle large-scale route calculations"
+          ],
+          "business_value": "Reduces travel time and energy costs by up to 15% through intelligent routing, directly lowering operational expenses.",
+          "edge_cases": [
+            "Behavior during unexpected road closures or traffic spikes",
+            "Handling of incomplete or inaccurate traffic data"
+          ]
+        },
+        {
+          "title": "Fleet Maintenance Scheduling and Alerts",
+          "description": "Provide a system for scheduling vehicle maintenance based on mileage, usage patterns, and manufacturer recommendations, with automated alerts for administrators and drivers. This feature ensures vehicles remain in optimal condition, reducing unexpected breakdowns and extending vehicle lifespan.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Vehicle usage data from tracking system",
+            "Integration with maintenance history database"
+          ],
+          "ui_ux_requirements": [
+            "Calendar view for scheduled maintenance across the fleet",
+            "Notification system for upcoming or overdue maintenance tasks",
+            "Accessible interface for administrators to update maintenance records"
+          ],
+          "technical_considerations": [
+            "Database design for storing maintenance schedules and history",
+            "Automated notification system via email or in-app alerts",
+            "Integration with vehicle diagnostics for predictive maintenance if available"
+          ],
+          "business_value": "Minimizes vehicle downtime and repair costs by ensuring timely maintenance, supporting overall fleet availability goals.",
+          "edge_cases": [
+            "Behavior when maintenance data is missing or outdated",
+            "Handling of emergency maintenance needs outside scheduled intervals"
+          ]
+        },
+        {
+          "title": "Driver Assignment and Route Allocation",
+          "description": "Enable administrators to assign drivers to vehicles and allocate optimized routes based on driver availability, proximity, and workload. This feature streamlines the assignment process, ensuring balanced workloads and efficient use of human resources alongside vehicle assets.",
+          "priority": "Medium",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Route optimization engine",
+            "Driver availability data"
+          ],
+          "ui_ux_requirements": [
+            "Drag-and-drop interface for assigning drivers to vehicles/routes",
+            "Overview dashboard showing driver workload and assignment status",
+            "Mobile notifications for drivers about new assignments"
+          ],
+          "technical_considerations": [
+            "Database for storing driver profiles and assignment history",
+            "Real-time updates to reflect changes in driver availability",
+            "Secure access controls to prevent unauthorized assignment changes"
+          ],
+          "business_value": "Optimizes driver utilization and reduces idle time, contributing to operational efficiency and supporting scalability in fleet operations.",
+          "edge_cases": [
+            "Behavior when drivers are unavailable or reject assignments",
+            "Handling of last-minute changes or cancellations in schedules"
+          ]
+        },
+        {
+          "title": "Fleet Performance Analytics and Reporting",
+          "description": "Develop a reporting module to analyze fleet performance metrics such as average travel time, fuel/energy efficiency, vehicle utilization rates, and route adherence. This feature provides actionable insights for administrators to identify inefficiencies and make data-driven decisions for fleet improvements.",
+          "priority": "Medium",
+          "estimated_story_points": 8,
+          "dependencies": [
+            "Data from vehicle tracking and route optimization features"
+          ],
+          "ui_ux_requirements": [
+            "Customizable dashboards with charts and graphs for key metrics",
+            "Exportable reports in PDF or CSV formats for stakeholder sharing",
+            "Filters for time periods, specific vehicles, or drivers"
+          ],
+          "technical_considerations": [
+            "Data aggregation and processing for large datasets",
+            "Performance optimization for quick report generation",
+            "Secure storage and access control for sensitive performance data"
+          ],
+          "business_value": "Empowers administrators with insights to further optimize operations, targeting a 15% reduction in costs through informed decision-making.",
+          "edge_cases": [
+            "Behavior when data is incomplete or inconsistent across sources",
+            "Handling of outliers in performance metrics that skew reports"
+          ]
+        },
+        {
+          "title": "Integration with Third-Party Logistics Systems",
+          "description": "Build APIs to integrate the fleet management system with third-party logistics or delivery platforms for seamless data sharing on vehicle availability, routes, and schedules. This feature supports interoperability and scalability, especially for partnerships or subcontracted services in urban and suburban areas.",
+          "priority": "Low",
+          "estimated_story_points": 5,
+          "dependencies": [
+            "Core fleet management APIs",
+            "Documentation of third-party system requirements"
+          ],
+          "ui_ux_requirements": [
+            "Admin interface to manage API keys and connection statuses",
+            "Error notifications for failed integrations or data mismatches",
+            "Clear documentation for third-party developers to connect"
+          ],
+          "technical_considerations": [
+            "RESTful API design for secure and scalable integrations",
+            "Rate limiting and throttling to manage API usage",
+            "Data validation to ensure consistency across systems"
+          ],
+          "business_value": "Expands business opportunities by enabling partnerships and integrations, supporting scalability and operational growth.",
+          "edge_cases": [
+            "Behavior when third-party systems are down or unresponsive",
+            "Handling of data format mismatches or integration failures"
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "project_context": {
+      "project_name": "Ride Sharing",
+      "domain": "software development",
+      "methodology": "Agile/Scrum",
+      "tech_stack": "Modern Web Stack (React, Node.js, Python)",
+      "architecture_pattern": "Microservices",
+      "database_type": "PostgreSQL/MongoDB",
+      "cloud_platform": "AWS/Azure",
+      "platform": "Web Application with Mobile Support",
+      "team_size": 5,
+      "sprint_duration": "2 weeks",
+      "experience_level": "Senior",
+      "target_users": "End users and administrators",
+      "timeline": "1 month",
+      "budget_constraints": "Standard enterprise budget",
+      "compliance_requirements": "GDPR, SOC2",
+      "test_environment": "Automated CI/CD pipeline",
+      "quality_standards": "Industry best practices",
+      "security_requirements": "Enterprise security standards",
+      "integrations": "REST APIs, third-party services",
+      "external_systems": "CRM, Analytics, Payment systems",
+      "project_type": "software",
+      "project_description": "testing the backlog automation with a sample Ride Sharing app vision statement",
+      "vision_statement": "Product Vision Statement for RideSharing App\n\nVision: To revolutionize urban mobility by providing a seamless, safe, and sustainable ride-sharing experience powered by autonomous vehicles, ensuring accessibility, efficiency, and environmental responsibility for all.\n\nCore Offering: Our app delivers an intuitive platform for users to book, track, and manage rides in a fleet of fully autonomous, electric vehicles. With real-time navigation, dynamic pricing, and personalized ride preferences, we aim to redefine convenience while reducing carbon footprints and urban congestion.\n\nKey Features:\n\n\n\n\n\nAutonomous Rides: Safe, driverless vehicles equipped with advanced AI for reliable navigation and passenger safety.\n\n\n\nSeamless Experience: User-friendly app interface for booking, real-time tracking, and in-ride customization (e.g., temperature, music).\n\n\n\nSustainability: 100% electric fleet to minimize environmental impact.\n\n\n\nAccessibility: Affordable pricing, inclusive design for diverse needs, and coverage in urban and suburban areas.\n\n\n\nScalability: Data-driven optimization for route efficiency, demand prediction, and fleet management.\n\nTarget Audience: Urban dwellers, commuters, and environmentally conscious individuals seeking convenient, cost-effective, and eco-friendly transportation.\n\nValue Proposition: Empowering communities with a future-forward, autonomous ride-sharing solution that prioritizes safety, sustainability, and simplicity, transforming the way people move.",
+      "business_objectives": [
+        "Increase Market Penetration",
+        "Enhance Operational Efficiency",
+        "Drive Sustainability Goals"
+      ],
+      "target_audience": "The target audience includes:\n\nUrban Dwellers: Residents of cities and densely populated areas who need convenient, on-demand transportation for daily commutes, errands, or social activities.\nCommuters: Professionals, students, and others who regularly travel within urban and suburban areas and seek reliable, efficient alternatives to personal vehicles or public transit.\nEnvironmentally Conscious Individuals: Users who prioritize sustainability and prefer eco-friendly transportation options, such as electric autonomous vehicles, to reduce their carbon footprint.",
+      "azure_config": {
+        "organizationUrl": "https://dev.azure.com/c4workx",
+        "personalAccessToken": "1MQIffkGxb6az6Y6lA8hIG1eNQPVoIsMiK4aSwgU00jFyh3zUo2fJQQJ99BFACAAAAAlpST6AAASAZDOPaeG",
+        "project": "Backlog Automation",
+        "areaPath": "Ride Sharing",
+        "iterationPath": "Sprint 2025-07"
+      }
+    },
+    "execution_config": {
+      "stages": [
+        "epic_strategist",
+        "decomposition_agent",
+        "developer_agent",
+        "qa_tester_agent"
+      ],
+      "human_review": false,
+      "save_outputs": true,
+      "integrate_azure": false
+    }
+  }
+}
