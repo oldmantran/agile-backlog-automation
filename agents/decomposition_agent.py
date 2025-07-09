@@ -74,10 +74,11 @@ Business Value: {epic.get('business_value', 'Not specified')}
         user_input = f"""
 Feature: {feature.get('title', 'Unknown Feature')}
 Description: {feature.get('description', 'No description provided')}
-User Stories: {feature.get('user_stories', [])}
-Acceptance Criteria: {feature.get('acceptance_criteria', [])}
 Priority: {feature.get('priority', 'Medium')}
 Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
+Business Value: {feature.get('business_value', 'Not specified')}
+Dependencies: {feature.get('dependencies', [])}
+UI/UX Requirements: {feature.get('ui_ux_requirements', [])}
 """
         
         print(f"📱 [DecompositionAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
@@ -106,7 +107,7 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
                                     'description': f"Extracted from feature: {feature.get('description', '')}",
                                     'story_points': feature.get('estimated_story_points', 5) // len(stories) if stories else 5,
                                     'priority': feature.get('priority', 'Medium'),
-                                    'acceptance_criteria': feature.get('acceptance_criteria', [])
+                                    'acceptance_criteria': []  # Will be populated during enhancement
                                 })
                     return extracted_stories
                 else:
@@ -170,45 +171,52 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         
         title = feature.get('title', 'Feature')
         description = feature.get('description', 'No description')
-        acceptance_criteria = feature.get('acceptance_criteria', [])
         priority = feature.get('priority', 'Medium')
         story_points = feature.get('estimated_story_points', 8)
         
-        # Create 2-3 basic user stories based on acceptance criteria
+        # Create 2-3 basic user stories based on feature description
         user_stories = []
         
-        if acceptance_criteria:
-            for i, criterion in enumerate(acceptance_criteria[:3]):  # Max 3 stories
-                story = {
-                    'title': f"{title} - {criterion[:50]}...",
-                    'user_story': f"As a user, I want to {criterion.lower()} so that I can effectively use the {title.lower()} feature",
-                    'description': f"This user story covers: {criterion}. {description[:100]}...",
-                    'story_points': max(1, story_points // len(acceptance_criteria[:3])),
-                    'priority': priority,
-                    'acceptance_criteria': [criterion],
-                    'dependencies': [],
-                    'definition_of_ready': ['Requirements clarified', 'UI mockups available'],
-                    'definition_of_done': ['Code complete', 'Tests passing', 'Code reviewed'],
-                    'category': 'feature_implementation',
-                    'user_type': 'general_user'
-                }
-                user_stories.append(story)
-        else:
-            # Create a single basic user story
-            story = {
-                'title': f"{title} Implementation",
-                'user_story': f"As a user, I want to use {title.lower()} so that I can benefit from its functionality",
-                'description': description,
-                'story_points': story_points,
-                'priority': priority,
-                'acceptance_criteria': [f"User can access {title.lower()}", f"User can use {title.lower()} effectively"],
-                'dependencies': [],
-                'definition_of_ready': ['Requirements clarified', 'UI mockups available'],
-                'definition_of_done': ['Code complete', 'Tests passing', 'Code reviewed'],
-                'category': 'feature_implementation',
+        # Generate user stories based on feature functionality
+        base_story = {
+            'title': f"{title} - Core Functionality",
+            'user_story': f"As a user, I want to use {title.lower()} so that I can benefit from its functionality",
+            'description': f"Core functionality for {title}. {description[:100]}...",
+            'story_points': max(2, story_points // 2),
+            'priority': priority,
+            'acceptance_criteria': [
+                f"Given I have access to the system, when I use {title.lower()}, then I can access its core functionality",
+                f"Given I am using {title.lower()}, when I perform basic operations, then the system responds appropriately",
+                f"Given I complete tasks with {title.lower()}, when I verify results, then they meet my expectations"
+            ],
+            'dependencies': [],
+            'definition_of_ready': ['Requirements clarified', 'UI mockups available'],
+            'definition_of_done': ['Code complete', 'Tests passing', 'Code reviewed'],
+            'category': 'feature_implementation',
+            'user_type': 'general_user'
+        }
+        user_stories.append(base_story)
+        
+        # Add additional stories for complex features
+        if story_points > 5:
+            validation_story = {
+                'title': f"{title} - Input Validation and Error Handling",
+                'user_story': f"As a user, I want {title.lower()} to handle errors gracefully so that I have a smooth experience",
+                'description': f"Error handling and validation for {title}.",
+                'story_points': max(1, story_points // 4),
+                'priority': 'Medium',
+                'acceptance_criteria': [
+                    f"Given I provide invalid input to {title.lower()}, when I submit, then I receive clear error messages",
+                    f"Given an error occurs in {title.lower()}, when I encounter it, then I can recover or get guidance",
+                    f"Given I use {title.lower()} incorrectly, when I make mistakes, then the system helps me correct them"
+                ],
+                'dependencies': [base_story['title']],
+                'definition_of_ready': ['Error scenarios identified', 'Validation rules defined'],
+                'definition_of_done': ['Error handling implemented', 'Edge cases tested'],
+                'category': 'error_handling',
                 'user_type': 'general_user'
             }
-            user_stories.append(story)
+            user_stories.append(validation_story)
         
         return user_stories
     

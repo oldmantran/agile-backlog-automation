@@ -1115,45 +1115,45 @@ Provide detailed analysis including:
         if not test_cases:
             coverage_validation['missing_coverage'] = ['No test cases generated']
             return coverage_validation
-        
+
         # Check coverage types
         coverage_types = set()
         for test_case in test_cases:
             coverage_types.add(test_case.get('coverage_type', 'functional'))
-        
+
         expected_coverage = {'functional'}
         story_points = user_story.get('story_points', 0)
-        
+
         # Determine expected coverage based on story complexity
         if isinstance(story_points, str) and story_points.isdigit():
             story_points = int(story_points)
         elif not isinstance(story_points, int):
             story_points = 3  # Default complexity
-        
+
         if story_points >= 8:  # High complexity
             expected_coverage.update(['negative', 'boundary', 'integration', 'security'])
         elif story_points >= 5:  # Medium complexity
             expected_coverage.update(['negative', 'boundary', 'integration'])
         else:  # Low complexity
             expected_coverage.update(['negative'])
-        
+
         # Check for missing coverage
         missing_coverage = expected_coverage - coverage_types
         if missing_coverage:
             coverage_validation['missing_coverage'] = [f"Missing {coverage_type} test coverage" for coverage_type in missing_coverage]
-        
+
         # Check acceptance criteria coverage
         if len(test_cases) < len(acceptance_criteria):
             coverage_validation['missing_coverage'].append(f"Insufficient test cases for acceptance criteria ({len(test_cases)} test cases for {len(acceptance_criteria)} criteria)")
-        
+
         # Calculate coverage score
         coverage_score = (len(coverage_types) / len(expected_coverage)) * 100
         coverage_validation['coverage_score'] = min(100, coverage_score)
-        
+
         # Generate recommendations
         if coverage_validation['coverage_score'] < 80:
             coverage_validation['recommendations'].append("Consider adding more comprehensive test coverage")
-        
+
         return coverage_validation
     
     def _generate_fallback_analysis(self, user_story: dict, criteria_analysis: dict) -> dict:
@@ -1192,7 +1192,7 @@ Provide detailed analysis including:
             "boundary_scenarios": ["Define based on story requirements"],
             "failure_scenarios": ["Include error handling tests"]
         }
-    
+
     def _enhance_testability_analysis(self, analysis: dict, user_story: dict) -> dict:
         """
         Enhance and validate the testability analysis with additional quality checks.

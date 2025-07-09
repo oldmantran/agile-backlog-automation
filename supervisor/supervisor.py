@@ -296,7 +296,7 @@ class WorkflowSupervisor:
                                     'title': f"User Story {i+1} for {feature.get('title', 'Feature')}",
                                     'user_story': story_item,
                                     'description': f"From feature: {feature.get('title', 'Unknown Feature')}",
-                                    'acceptance_criteria': feature.get('acceptance_criteria', []),
+                                    'acceptance_criteria': [],  # User stories should define their own acceptance criteria
                                     'priority': feature.get('priority', 'Medium'),
                                     'story_points': feature.get('estimated_story_points', 5)
                                 }
@@ -328,19 +328,25 @@ class WorkflowSupervisor:
                 for feature in epic.get('features', []):
                     self.logger.info(f"Generating QA artifacts for feature: {feature.get('title', 'Untitled')}")
                     
-                    # Generate test cases
-                    test_cases = agent.generate_test_cases(feature, context)
-                    feature['test_cases'] = test_cases
+                    # Process each user story within the feature for QA activities
+                    for user_story in feature.get('user_stories', []):
+                        self.logger.info(f"Generating QA artifacts for user story: {user_story.get('title', 'Untitled')}")
+                        
+                        # Generate user story test cases (replaces feature-level test generation)
+                        test_cases = agent.generate_user_story_test_cases(user_story, context)
+                        user_story['test_cases'] = test_cases
+                        
+                        # Validate user story testability (replaces feature-level acceptance criteria validation)
+                        validation = agent.validate_user_story_testability(user_story, context)
+                        user_story['qa_validation'] = validation
+                        
+                        self.logger.info(f"Generated QA artifacts for user story: {len(test_cases)} test cases, testability score: {validation.get('testability_score', 'N/A')}")
                     
-                    # Generate edge cases
-                    edge_cases = agent.generate_edge_cases(feature, context)
-                    feature['edge_cases'] = edge_cases
+                    # Create test plan structure for the feature (organizational level)
+                    test_plan_structure = agent.create_test_plan_structure(feature, context)
+                    feature['test_plan_structure'] = test_plan_structure
                     
-                    # Validate acceptance criteria
-                    validation = agent.validate_acceptance_criteria(feature, context)
-                    feature['qa_validation'] = validation
-                    
-                    self.logger.info(f"Generated QA artifacts: {len(test_cases)} test cases, {len(edge_cases)} edge cases")
+                    self.logger.info(f"Created test plan structure for feature: {feature.get('title', 'Untitled')}")
                     
         except Exception as e:
             self.logger.error(f"QA generation failed: {e}")

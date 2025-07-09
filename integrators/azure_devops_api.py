@@ -23,9 +23,10 @@ class AzureDevOpsIntegrator:
     Integrates with Azure DevOps to create work items from generated backlog data.
     
     Supports:
-    - Epic creation with business value and acceptance criteria
-    - Feature creation with user stories and test plans
-    - User Story/Task creation with estimates and assignments
+    - Epic creation with business value and high-level strategic goals
+    - Feature creation with business value and technical considerations (NO acceptance criteria)
+    - User Story creation with acceptance criteria and detailed requirements
+    - Task creation with estimates and technical details
     - Test Plan creation with organized test suites
     - Test Suite creation for user story grouping
     - Test Case creation with steps and expected results
@@ -414,7 +415,7 @@ class AzureDevOpsIntegrator:
         return None
 
     def _create_user_story(self, story_data: Dict[str, Any], parent_feature_id: int) -> Dict[str, Any]:
-        """Create a User Story work item."""
+        """Create a User Story work item with proper acceptance criteria field mapping."""
         fields = {
             '/fields/System.Title': story_data.get('title', 'Untitled User Story'),
             '/fields/System.Description': self._format_user_story_description(story_data),
@@ -422,6 +423,12 @@ class AzureDevOpsIntegrator:
             '/fields/Microsoft.VSTS.Common.ValueArea': 'Business',
             '/fields/Microsoft.VSTS.Scheduling.StoryPoints': story_data.get('story_points', 0),
         }
+        
+        # Add acceptance criteria to the dedicated ADO field if available
+        if story_data.get('acceptance_criteria'):
+            # Format acceptance criteria for the dedicated ADO field
+            acceptance_criteria_text = self._format_acceptance_criteria_for_ado(story_data['acceptance_criteria'])
+            fields['/fields/Microsoft.VSTS.Common.AcceptanceCriteria'] = acceptance_criteria_text
         
         # Add area and iteration paths if configured
         if self.area_path:
@@ -547,18 +554,30 @@ class AzureDevOpsIntegrator:
         return description
     
     def _format_feature_description(self, feature_data: Dict[str, Any]) -> str:
-        """Format feature description with acceptance criteria."""
+        """Format feature description focusing on business value and high-level functionality."""
         description = feature_data.get('description', '')
         
-        # Add user story format if available
-        if feature_data.get('user_story'):
-            description = f"**User Story:**\n{feature_data['user_story']}\n\n{description}"
+        # Add business value if available
+        if feature_data.get('business_value'):
+            description += f"\n\n**Business Value:**\n{feature_data['business_value']}"
         
-        # Add acceptance criteria
-        if feature_data.get('acceptance_criteria'):
-            description += "\n\n**Acceptance Criteria:**"
-            for criterion in feature_data['acceptance_criteria']:
-                description += f"\n- {criterion}"
+        # Add UI/UX requirements if available
+        if feature_data.get('ui_ux_requirements'):
+            description += "\n\n**UI/UX Requirements:**"
+            for requirement in feature_data['ui_ux_requirements']:
+                description += f"\n- {requirement}"
+        
+        # Add technical considerations if available
+        if feature_data.get('technical_considerations'):
+            description += "\n\n**Technical Considerations:**"
+            for consideration in feature_data['technical_considerations']:
+                description += f"\n- {consideration}"
+        
+        # Add dependencies if available
+        if feature_data.get('dependencies'):
+            description += "\n\n**Dependencies:**"
+            for dependency in feature_data['dependencies']:
+                description += f"\n- {dependency}"
         
         return description
     
@@ -580,15 +599,39 @@ class AzureDevOpsIntegrator:
         
         return description
     
+    def _format_acceptance_criteria_for_ado(self, acceptance_criteria: List[str]) -> str:
+        """Format acceptance criteria for Azure DevOps Acceptance Criteria field."""
+        if not acceptance_criteria:
+            return ""
+        
+        # Format as a numbered list for ADO
+        formatted_criteria = []
+        for i, criterion in enumerate(acceptance_criteria, 1):
+            formatted_criteria.append(f"{i}. {criterion}")
+        
+        return "\n".join(formatted_criteria)
+
     def _format_user_story_description(self, story_data: Dict[str, Any]) -> str:
-        """Format user story description with acceptance criteria."""
+        """Format user story description without acceptance criteria (they go in dedicated field)."""
         description = story_data.get('description', '')
         
-        # Add acceptance criteria
-        if story_data.get('acceptance_criteria'):
-            description += "\n\n**Acceptance Criteria:**"
-            for criterion in story_data['acceptance_criteria']:
-                description += f"\n- {criterion}"
+        # Add user story format if available
+        if story_data.get('user_story'):
+            description = f"**User Story:**\n{story_data['user_story']}\n\n{description}"
+        
+        # Add definition of ready if available
+        if story_data.get('definition_of_ready'):
+            description += "\n\n**Definition of Ready:**"
+            for item in story_data['definition_of_ready']:
+                description += f"\n- {item}"
+        
+        # Add definition of done if available
+        if story_data.get('definition_of_done'):
+            description += "\n\n**Definition of Done:**"
+            for item in story_data['definition_of_done']:
+                description += f"\n- {item}"
+        
+        # Note: Acceptance criteria are now stored in the dedicated ADO field
         
         return description
     
