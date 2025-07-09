@@ -686,3 +686,53 @@ class AzureDevOpsIntegrator:
             # Link the test suite to the user story
             self.create_work_item_relation(test_suite["id"], user_story_id, "Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Reverse")
         return test_suite
+
+    def get_features(self) -> List[Dict]:
+        """Get all features in the project."""
+        wiql = """
+        SELECT [System.Id]
+        FROM WorkItems
+        WHERE [System.WorkItemType] = 'Feature'
+        AND [System.TeamProject] = @project
+        ORDER BY [System.Id]
+        """
+        
+        # Get work item IDs
+        ids = self.run_wiql(wiql)
+        if not ids:
+            return []
+            
+        # Get full work items
+        return self.get_work_item_details(ids)
+
+    def get_user_stories(self) -> List[Dict]:
+        """Get all user stories in the project."""
+        wiql = """
+        SELECT [System.Id]
+        FROM WorkItems
+        WHERE [System.WorkItemType] = 'User Story'
+        AND [System.TeamProject] = @project
+        ORDER BY [System.Id]
+        """
+        
+        # Get work item IDs
+        ids = self.run_wiql(wiql)
+        if not ids:
+            return []
+            
+        # Get full work items
+        return self.get_work_item_details(ids)
+    
+    def run_wiql(self, wiql: str) -> List[int]:
+        """Run a WIQL query and return work item IDs."""
+        url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/wit/wiql?api-version=7.1-preview.2"
+        
+        data = {
+            "query": wiql
+        }
+        
+        response = requests.post(url, json=data, auth=self._get_auth())
+        result = self._handle_response(response)
+        
+        # Extract work item IDs
+        return [int(item['id']) for item in result.get('workItems', [])]
