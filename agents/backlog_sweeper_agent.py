@@ -947,67 +947,320 @@ class BacklogSweeperAgent:
         except Exception as e:
             self.logger.error(f"Error in targeted sweep for stage {stage}: {e}")
             return []
-if __name__ == "__main__":
-    from supervisor.supervisor import WorkflowSupervisor
-    from config.config_loader import Config
-    from integrators.azure_devops_api import AzureDevOpsIntegrator
-    
-    # Load configuration
-    config = Config()
-    
-    # Initialize components
-    supervisor = WorkflowSupervisor()
-    ado_client = AzureDevOpsIntegrator(config)
-    agent = BacklogSweeperAgent(
-        ado_client=ado_client, 
-        supervisor_callback=supervisor.receive_sweeper_report,
-        config=config.settings  # Pass the actual settings dictionary
-    )
-    
-    print("[INFO] Starting scheduled backlog sweeper...")
 
-    def scheduled_sweep():
-        print(f"[INFO] Running backlog sweep at {datetime.now().astimezone().isoformat()}")
-        agent.run_sweep()
-
-    # Check if sweeper is enabled in config
-    sweeper_config = config.config.get('agents', {}).get('backlog_sweeper_agent', {})
-    if not sweeper_config.get('enabled', True):
-        print("[INFO] Backlog sweeper is disabled in configuration. Exiting.")
-        exit(0)
-    
-    # Get schedule from config (default to daily at 12:00 UTC)
-    schedule_cron = sweeper_config.get('schedule', '0 12 * * *')
-    
-    if APSCHEDULER_AVAILABLE:
-        scheduler = BackgroundScheduler(timezone="UTC")
+    def validate_pre_integration(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Comprehensive quality check before Azure DevOps integration.
         
-        # Parse cron format (minute hour day month dayofweek)
-        # For simplicity, we'll handle the most common case: daily at specific hour
-        parts = schedule_cron.split()
-        if len(parts) >= 2:
-            minute = int(parts[0]) if parts[0] != '*' else 0
-            hour = int(parts[1]) if parts[1] != '*' else 12
-        else:
-            minute, hour = 0, 12
+        Validates:
+        - Data structure integrity
+        - Required fields for ADO work items
+        - Hierarchical relationships
+        - Content quality and completeness
+        - ADO-specific requirements
         
-        scheduler.add_job(scheduled_sweep, 'cron', hour=hour, minute=minute)
-        scheduler.start()
-        print(f"[INFO] APScheduler started. Sweep will run daily at {hour:02d}:{minute:02d} UTC.")
+        Args:
+            workflow_data: Complete workflow data ready for ADO integration
+            
+        Returns:
+            Validation report with issues found and recommendations
+        """
+        validation_start = datetime.now()
+        self.logger.info("🔍 Starting pre-integration validation for ADO upload")
+        
+        validation_report = {
+            'timestamp': validation_start.isoformat(),
+            'validation_type': 'pre_integration_quality_check',
+            'status': 'passed',  # Will be changed to 'failed' if critical issues found
+            'summary': {
+                'total_issues': 0,
+                'critical_issues': 0,
+                'warning_issues': 0,
+                'info_issues': 0
+            },
+            'issues': [],
+            'structure_check': {},
+            'content_quality': {},
+            'ado_compatibility': {},
+            'recommendations': []
+        }
         
         try:
-            while True:
-                time.sleep(60)
-        except (KeyboardInterrupt, SystemExit):
-            scheduler.shutdown()
-    else:
-        print("[WARN] APScheduler not available. Using fallback loop.")
-        last_run = None
-        target_hour = 12  # Default to 12:00 UTC
+            epics = workflow_data.get('epics', [])
+            
+            # 1. Structure Validation
+            structure_issues = self._validate_structure_integrity(epics)
+            validation_report['issues'].extend(structure_issues)
+            validation_report['structure_check'] = {
+                'epic_count': len(epics),
+                'total_features': sum(len(epic.get('features', [])) for epic in epics),
+                'total_user_stories': sum(len(feature.get('user_stories', [])) 
+                                        for epic in epics 
+                                        for feature in epic.get('features', [])),
+                'total_tasks': sum(len(story.get('tasks', [])) 
+                                 for epic in epics 
+                                 for feature in epic.get('features', [])
+                                 for story in feature.get('user_stories', [])),
+                'total_test_cases': sum(len(story.get('test_cases', [])) 
+                                      for epic in epics 
+                                      for feature in epic.get('features', [])
+                                      for story in feature.get('user_stories', []))
+            }
+            
+            # 2. ADO Field Validation
+            ado_issues = self._validate_ado_required_fields(epics)
+            validation_report['issues'].extend(ado_issues)
+            
+            # 3. Content Quality Validation
+            content_issues = self._validate_content_quality(epics)
+            validation_report['issues'].extend(content_issues)
+            
+            # 4. Relationship Validation
+            relationship_issues = self._validate_integration_relationships(epics)
+            validation_report['issues'].extend(relationship_issues)
+            
+            # 5. Test Plan Structure Validation
+            test_issues = self._validate_test_plan_structure(epics)
+            validation_report['issues'].extend(test_issues)
+            
+            # Categorize issues by severity
+            for issue in validation_report['issues']:
+                severity = issue.get('severity', 'info')
+                if severity == 'critical':
+                    validation_report['summary']['critical_issues'] += 1
+                elif severity == 'warning':
+                    validation_report['summary']['warning_issues'] += 1
+                else:
+                    validation_report['summary']['info_issues'] += 1
+            
+            validation_report['summary']['total_issues'] = len(validation_report['issues'])
+            
+            # Determine overall status
+            if validation_report['summary']['critical_issues'] > 0:
+                validation_report['status'] = 'failed'
+                validation_report['recommendations'].append(
+                    "CRITICAL: Fix critical issues before attempting ADO integration"
+                )
+            elif validation_report['summary']['warning_issues'] > 5:
+                validation_report['status'] = 'warning'
+                validation_report['recommendations'].append(
+                    "WARNING: Consider fixing warning issues for better ADO integration"
+                )
+            
+            # Add specific recommendations
+            if validation_report['summary']['critical_issues'] == 0:
+                validation_report['recommendations'].append(
+                    "✅ Structure validation passed - ready for ADO integration"
+                )
+            
+            validation_end = datetime.now()
+            validation_duration = (validation_end - validation_start).total_seconds()
+            
+            self.logger.info(f"✅ Pre-integration validation completed in {validation_duration:.2f}s")
+            self.logger.info(f"📊 Status: {validation_report['status']}")
+            self.logger.info(f"🔍 Issues found: {validation_report['summary']['total_issues']} "
+                           f"(Critical: {validation_report['summary']['critical_issues']}, "
+                           f"Warning: {validation_report['summary']['warning_issues']})")
+            
+            return validation_report
+            
+        except Exception as e:
+            self.logger.error(f"❌ Pre-integration validation failed: {e}")
+            validation_report['status'] = 'error'
+            validation_report['issues'].append({
+                'severity': 'critical',
+                'category': 'validation_error',
+                'description': f"Validation process failed: {str(e)}",
+                'suggested_action': 'Check logs and fix validation process'
+            })
+            return validation_report
+
+    def _validate_structure_integrity(self, epics: List[Dict]) -> List[Dict]:
+        """Validate basic structure integrity for ADO integration."""
+        issues = []
         
-        while True:
-            now = datetime.now().astimezone()
-            if now.hour == target_hour and (last_run is None or (now - last_run) > timedelta(hours=23)):
-                scheduled_sweep()
-                last_run = now
-            time.sleep(60)
+        if not epics:
+            issues.append({
+                'severity': 'critical',
+                'category': 'structure',
+                'description': 'No epics found in workflow data',
+                'suggested_action': 'Ensure epic strategist generated at least one epic'
+            })
+            return issues
+        
+        for epic_idx, epic in enumerate(epics):
+            # Check epic has required structure
+            if not epic.get('title'):
+                issues.append({
+                    'severity': 'critical',
+                    'category': 'structure',
+                    'description': f'Epic {epic_idx + 1} missing title',
+                    'suggested_action': 'Ensure epic strategist provides titles for all epics'
+                })
+            
+            features = epic.get('features', [])
+            if not features:
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'structure',
+                    'description': f'Epic "{epic.get("title", "Unknown")}" has no features',
+                    'suggested_action': 'Ensure feature decomposer creates features for each epic'
+                })
+                continue
+            
+            for feature_idx, feature in enumerate(features):
+                if not feature.get('title'):
+                    issues.append({
+                        'severity': 'critical',
+                        'category': 'structure',
+                        'description': f'Feature {feature_idx + 1} in epic "{epic.get("title")}" missing title',
+                        'suggested_action': 'Ensure feature decomposer provides titles for all features'
+                    })
+                
+                user_stories = feature.get('user_stories', [])
+                if not user_stories:
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'structure',
+                        'description': f'Feature "{feature.get("title", "Unknown")}" has no user stories',
+                        'suggested_action': 'Ensure user story decomposer creates stories for each feature'
+                    })
+        
+        return issues
+
+    def _validate_ado_required_fields(self, epics: List[Dict]) -> List[Dict]:
+        """Validate all required fields for ADO work item creation."""
+        issues = []
+        
+        for epic in epics:
+            # Epic validation
+            if not epic.get('description'):
+                issues.append({
+                    'severity': 'warning',
+                    'category': 'ado_fields',
+                    'description': f'Epic "{epic.get("title")}" missing description',
+                    'suggested_action': 'Add epic description for better ADO work item quality'
+                })
+            
+            for feature in epic.get('features', []):
+                # Feature validation
+                if not feature.get('description'):
+                    issues.append({
+                        'severity': 'warning',
+                        'category': 'ado_fields',
+                        'description': f'Feature "{feature.get("title")}" missing description',
+                        'suggested_action': 'Add feature description for better ADO work item quality'
+                    })
+                
+                for user_story in feature.get('user_stories', []):
+                    # User story validation
+                    if not user_story.get('acceptance_criteria'):
+                        issues.append({
+                            'severity': 'critical',
+                            'category': 'ado_fields',
+                            'description': f'User story "{user_story.get("title")}" missing acceptance criteria',
+                            'suggested_action': 'Ensure QA tester agent generates acceptance criteria for all user stories'
+                        })
+                    
+                    for task in user_story.get('tasks', []):
+                        # Task validation
+                        if not task.get('description'):
+                            issues.append({
+                                'severity': 'warning',
+                                'category': 'ado_fields',
+                                'description': f'Task "{task.get("title")}" missing description',
+                                'suggested_action': 'Add task descriptions for better ADO work item quality'
+                            })
+        
+        return issues
+
+    def _validate_content_quality(self, epics: List[Dict]) -> List[Dict]:
+        """Validate content quality for ADO integration."""
+        issues = []
+        
+        for epic in epics:
+            # Check for reasonable content length
+            if epic.get('description') and len(epic['description']) < 50:
+                issues.append({
+                    'severity': 'info',
+                    'category': 'content_quality',
+                    'description': f'Epic "{epic.get("title")}" has very short description ({len(epic["description"])} chars)',
+                    'suggested_action': 'Consider enhancing epic description for better context'
+                })
+            
+            for feature in epic.get('features', []):
+                for user_story in feature.get('user_stories', []):
+                    acceptance_criteria = user_story.get('acceptance_criteria', [])
+                    if isinstance(acceptance_criteria, list) and len(acceptance_criteria) < 2:
+                        issues.append({
+                            'severity': 'warning',
+                            'category': 'content_quality',
+                            'description': f'User story "{user_story.get("title")}" has too few acceptance criteria ({len(acceptance_criteria)})',
+                            'suggested_action': 'Ensure user stories have sufficient acceptance criteria (minimum 2-3)'
+                        })
+        
+        return issues
+
+    def _validate_integration_relationships(self, epics: List[Dict]) -> List[Dict]:
+        """Validate hierarchical relationships for ADO integration."""
+        issues = []
+        
+        # This reuses existing relationship validation but focuses on ADO integration concerns
+        relationship_issues = self.validate_epic_feature_relationships(epics)
+        relationship_issues.extend(self.validate_feature_user_story_relationships(epics))
+        
+        # Convert to integration-focused format
+        for issue in relationship_issues:
+            issues.append({
+                'severity': 'warning',
+                'category': 'relationships',
+                'description': issue.get('description', 'Relationship issue detected'),
+                'suggested_action': 'Fix relationship issues to ensure proper ADO work item hierarchy'
+            })
+        
+        return issues
+
+    def _validate_test_plan_structure(self, epics: List[Dict]) -> List[Dict]:
+        """Validate test plan structure for ADO test management integration."""
+        issues = []
+        
+        for epic in epics:
+            for feature in epic.get('features', []):
+                has_test_cases = False
+                
+                # Check feature-level test cases
+                if feature.get('test_cases'):
+                    has_test_cases = True
+                
+                # Check user story-level test cases
+                for user_story in feature.get('user_stories', []):
+                    if user_story.get('test_cases'):
+                        has_test_cases = True
+                        
+                        # Validate test case structure
+                        for test_case in user_story.get('test_cases', []):
+                            if not test_case.get('title'):
+                                issues.append({
+                                    'severity': 'warning',
+                                    'category': 'test_structure',
+                                    'description': f'Test case in user story "{user_story.get("title")}" missing title',
+                                    'suggested_action': 'Ensure all test cases have descriptive titles'
+                                })
+                            
+                            if not test_case.get('steps'):
+                                issues.append({
+                                    'severity': 'warning',
+                                    'category': 'test_structure',
+                                    'description': f'Test case "{test_case.get("title")}" missing test steps',
+                                    'suggested_action': 'Ensure all test cases have detailed test steps'
+                                })
+                
+                if not has_test_cases:
+                    issues.append({
+                        'severity': 'info',
+                        'category': 'test_coverage',
+                        'description': f'Feature "{feature.get("title")}" has no test cases',
+                        'suggested_action': 'Consider adding test cases for better quality assurance'
+                    })
+        
+        return issues

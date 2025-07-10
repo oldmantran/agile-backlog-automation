@@ -580,10 +580,51 @@ class WorkflowSupervisor:
         # Add more detailed views for other stages as needed
     
     def _integrate_with_azure_devops(self):
-        """Integrate generated backlog with Azure DevOps."""
-        self.logger.info("Integrating with Azure DevOps")
+        """Integrate generated backlog with Azure DevOps with pre-integration validation."""
+        self.logger.info("Preparing for Azure DevOps integration")
         
         try:
+            # Perform pre-integration quality check using backlog sweeper
+            self.logger.info("🔍 Running pre-integration validation...")
+            validation_report = self.backlog_sweeper.validate_pre_integration(self.workflow_data)
+            
+            # Store validation results
+            self.workflow_data['pre_integration_validation'] = validation_report
+            
+            # Check validation status
+            if validation_report['status'] == 'failed':
+                critical_count = validation_report['summary']['critical_issues']
+                self.logger.error(f"❌ Pre-integration validation failed with {critical_count} critical issues")
+                
+                # Store failed integration attempt
+                self.workflow_data['azure_integration'] = {
+                    'status': 'validation_failed',
+                    'validation_issues': critical_count,
+                    'timestamp': datetime.now().isoformat(),
+                    'error': f"Pre-integration validation failed with {critical_count} critical issues"
+                }
+                
+                # Log critical issues for debugging
+                for issue in validation_report['issues']:
+                    if issue.get('severity') == 'critical':
+                        self.logger.error(f"CRITICAL: {issue.get('description')} - {issue.get('suggested_action')}")
+                
+                raise ValueError(f"Pre-integration validation failed with {critical_count} critical issues. Check validation report for details.")
+            
+            elif validation_report['status'] == 'warning':
+                warning_count = validation_report['summary']['warning_issues']
+                self.logger.warning(f"⚠️ Pre-integration validation passed with {warning_count} warnings")
+                
+                # Log warnings but continue
+                for issue in validation_report['issues']:
+                    if issue.get('severity') == 'warning':
+                        self.logger.warning(f"WARNING: {issue.get('description')}")
+            
+            else:
+                self.logger.info("✅ Pre-integration validation passed successfully")
+            
+            # Proceed with ADO integration
+            self.logger.info("🚀 Starting Azure DevOps work item creation...")
             results = self.azure_integrator.create_work_items(self.workflow_data)
             
             # Store integration results
