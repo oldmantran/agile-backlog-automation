@@ -31,6 +31,7 @@ Each feature must include:
 
 ### Best Practices:
 - Create **4-8 features** per epic that together fulfill the epic's objectives
+- For every feature, you must always decompose it into 3–6 user stories, covering all major workflows, alternate flows, error handling, and edge cases. Features without user stories are not allowed.
 - Ensure features are **independently deliverable** where possible
 - Focus on **user workflows** and **job-to-be-done** scenarios
 - Consider **accessibility** and **responsive design** requirements

@@ -171,18 +171,18 @@ UI/UX Requirements: {feature.get('ui_ux_requirements', [])}
             return self.run(user_input, context)
 
     def _create_fallback_user_stories(self, feature: dict) -> list[dict]:
-        """Create basic user stories as fallback when template fails."""
+        """Create multiple user stories as fallback when template fails, covering core, edge, and error scenarios."""
         print("🔄 Creating fallback user stories...")
         
         title = feature.get('title', 'Feature')
         description = feature.get('description', 'No description')
         priority = feature.get('priority', 'Medium')
         story_points = feature.get('estimated_story_points', 8)
-        
-        # Create 2-3 basic user stories based on feature description
+
+        # Create 3 user stories: core, edge case, and error handling
         user_stories = []
-        
-        # Generate user stories based on feature functionality
+
+        # Core functionality
         base_story = {
             'title': f"{title} - Core Functionality",
             'user_story': f"As a user, I want to use {title.lower()} so that I can benefit from its functionality",
@@ -201,28 +201,46 @@ UI/UX Requirements: {feature.get('ui_ux_requirements', [])}
             'user_type': 'general_user'
         }
         user_stories.append(base_story)
-        
-        # Add additional stories for complex features
-        if story_points > 5:
-            validation_story = {
-                'title': f"{title} - Input Validation and Error Handling",
-                'user_story': f"As a user, I want {title.lower()} to handle errors gracefully so that I have a smooth experience",
-                'description': f"Error handling and validation for {title}.",
-                'story_points': max(1, story_points // 4),
-                'priority': 'Medium',
-                'acceptance_criteria': [
-                    f"Given I provide invalid input to {title.lower()}, when I submit, then I receive clear error messages",
-                    f"Given an error occurs in {title.lower()}, when I encounter it, then I can recover or get guidance",
-                    f"Given I use {title.lower()} incorrectly, when I make mistakes, then the system helps me correct them"
-                ],
-                'dependencies': [base_story['title']],
-                'definition_of_ready': ['Error scenarios identified', 'Validation rules defined'],
-                'definition_of_done': ['Error handling implemented', 'Edge cases tested'],
-                'category': 'error_handling',
-                'user_type': 'general_user'
-            }
-            user_stories.append(validation_story)
-        
+
+        # Edge case
+        edge_story = {
+            'title': f"{title} - Edge Case",
+            'user_story': f"As a user, I want {title.lower()} to handle unusual or boundary scenarios so that the system is robust",
+            'description': f"Edge case handling for {title}.",
+            'story_points': max(1, story_points // 4),
+            'priority': 'Medium',
+            'acceptance_criteria': [
+                f"Given an unusual or rare input to {title.lower()}, when I submit, then the system handles it gracefully",
+                f"Given a boundary condition in {title.lower()}, when it occurs, then the system does not fail"
+            ],
+            'dependencies': [base_story['title']],
+            'definition_of_ready': ['Edge cases identified'],
+            'definition_of_done': ['Edge cases tested'],
+            'category': 'edge_case',
+            'user_type': 'general_user'
+        }
+        user_stories.append(edge_story)
+
+        # Error handling
+        validation_story = {
+            'title': f"{title} - Input Validation and Error Handling",
+            'user_story': f"As a user, I want {title.lower()} to handle errors gracefully so that I have a smooth experience",
+            'description': f"Error handling and validation for {title}.",
+            'story_points': max(1, story_points // 4),
+            'priority': 'Medium',
+            'acceptance_criteria': [
+                f"Given I provide invalid input to {title.lower()}, when I submit, then I receive clear error messages",
+                f"Given an error occurs in {title.lower()}, when I encounter it, then I can recover or get guidance",
+                f"Given I use {title.lower()} incorrectly, when I make mistakes, then the system helps me correct them"
+            ],
+            'dependencies': [base_story['title']],
+            'definition_of_ready': ['Error scenarios identified', 'Validation rules defined'],
+            'definition_of_done': ['Error handling implemented', 'Edge cases tested'],
+            'category': 'error_handling',
+            'user_type': 'general_user'
+        }
+        user_stories.append(validation_story)
+
         return user_stories
     
     def _validate_and_enhance_user_stories(self, user_stories: list) -> list:

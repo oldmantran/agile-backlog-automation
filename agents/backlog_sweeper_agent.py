@@ -770,11 +770,12 @@ class BacklogSweeperAgent:
         return discrepancies
 
     def validate_feature_user_story_relationships(self, epics: list) -> list:
-        """Validate that every feature has at least one user story with a title."""
+        """Validate that every feature has 3–6 user stories, each with a title, for thoroughness and completeness."""
         discrepancies = []
         for epic in epics:
             for feature in epic.get('features', []):
                 user_stories = feature.get('user_stories', [])
+                # Check for missing or too few/many user stories
                 if not user_stories:
                     discrepancies.append({
                         'type': 'missing_child_user_story',
@@ -783,6 +784,26 @@ class BacklogSweeperAgent:
                         'title': feature.get('title', ''),
                         'description': 'Feature missing child User Story.',
                         'severity': 'high',
+                        'suggested_agent': 'decomposition_agent'
+                    })
+                elif len(user_stories) < 3:
+                    discrepancies.append({
+                        'type': 'insufficient_user_stories',
+                        'work_item_id': feature.get('id'),
+                        'work_item_type': 'Feature',
+                        'title': feature.get('title', ''),
+                        'description': f"Feature has only {len(user_stories)} user stories (should have 3–6 for completeness).",
+                        'severity': 'medium',
+                        'suggested_agent': 'decomposition_agent'
+                    })
+                elif len(user_stories) > 6:
+                    discrepancies.append({
+                        'type': 'excessive_user_stories',
+                        'work_item_id': feature.get('id'),
+                        'work_item_type': 'Feature',
+                        'title': feature.get('title', ''),
+                        'description': f"Feature has {len(user_stories)} user stories (should have 3–6 for focus and clarity).",
+                        'severity': 'low',
                         'suggested_agent': 'decomposition_agent'
                     })
                 for us in user_stories:

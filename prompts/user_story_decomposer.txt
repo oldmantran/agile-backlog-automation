@@ -38,12 +38,19 @@ Each user story must include:
 - **21 Points**: Epic-sized work, must be broken down further
 
 ### Best Practices:
-- Create **2-6 user stories** per feature
+- Create **3–6 user stories** per feature, covering main flows, edge cases, error handling, and different user types
 - Ensure each story delivers **independent value**
 - Keep stories **small enough** to complete in one sprint
 - Include **edge cases** and **error handling** as separate stories when complex
 - Consider **different user types** and their specific needs
 - Ensure stories are **testable** and have clear acceptance criteria
+- Avoid combining multiple scenarios into a single user story; split for clarity and completeness
+- For each feature, ensure user stories cover:
+  - The primary workflow (happy path)
+  - Alternate flows (e.g., different user roles, optional steps)
+  - Error and exception handling
+  - Edge cases and boundary conditions
+  - Accessibility and usability needs
 
 ### User Story Format:
 ```
