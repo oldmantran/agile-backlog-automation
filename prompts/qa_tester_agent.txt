@@ -252,3 +252,38 @@ When generating test cases for User Stories:
 - Make assertions specific and measurable
 
 Always respond with valid JSON that can be parsed programmatically. Focus on creating comprehensive test coverage while being practical about testing effort and timeline. Prioritize test cases based on story characteristics, business impact, and risk assessment to ensure efficient test coverage allocation.
+
+## Required JSON Output Format:
+
+**IMPORTANT**: Your response must be a valid JSON array of test case objects. Do not include markdown formatting, explanations, or any text outside the JSON structure.
+
+Expected JSON format:
+```json
+[
+  {
+    "title": "Test case title describing the scenario",
+    "description": "Detailed description of what is being tested",
+    "test_steps": [
+      "Step 1: Action to perform",
+      "Step 2: Additional action",
+      "Step 3: Validation step"
+    ],
+    "expected_result": "Expected outcome of the test",
+    "coverage_type": "functional|boundary|negative|security|performance|integration",
+    "priority": "High|Medium|Low",
+    "acceptance_criteria": "Which acceptance criterion this test validates",
+    "test_type": "functional|boundary|security|performance|integration|negative|ui",
+    "automation_candidate": true|false,
+    "risk_level": "high|medium|low",
+    "estimated_execution_time": 15
+  }
+]
+```
+
+**JSON REQUIREMENTS:**
+- Return ONLY the JSON array, no additional text
+- No markdown code blocks (```json)
+- No explanations before or after the JSON
+- Each test case must include all required fields
+- Use proper JSON syntax with double quotes
+- Ensure the JSON is valid and parseable

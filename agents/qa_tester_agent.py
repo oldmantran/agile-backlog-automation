@@ -104,8 +104,10 @@ Generate test cases covering:
             if not response:
                 self.logger.warning("Empty response from AI model")
                 return []
-                
-            test_cases = json.loads(response)
+            
+            # Extract JSON from markdown code blocks if present
+            cleaned_response = self._extract_json_from_response(response)
+            test_cases = json.loads(cleaned_response)
             
             if isinstance(test_cases, list):
                 enhanced_test_cases = test_cases
@@ -1262,3 +1264,340 @@ Provide detailed analysis including:
             'failure_scenarios': ["Error handling", "System failures"]
         }
         return defaults.get(field, [])
+
+    def _extract_json_from_response(self, response: str) -> str:
+        """
+        Extract JSON content from AI response, handling markdown code blocks and fallback parsing.
+        
+        Args:
+            response: Raw response from AI model
+            
+        Returns:
+            Cleaned JSON string or converted test cases
+        """
+        if not response:
+            return "[]"
+        
+        import re
+        
+        # Look for JSON inside ```json blocks
+        json_pattern = r'```json\s*([\s\S]*?)\s*```'
+        json_match = re.search(json_pattern, response, re.IGNORECASE)
+        
+        if json_match:
+            return json_match.group(1).strip()
+        
+        # Look for JSON inside ``` blocks (without language specifier)
+        code_pattern = r'```\s*([\s\S]*?)\s*```'
+        code_match = re.search(code_pattern, response)
+        
+        if code_match:
+            content = code_match.group(1).strip()
+            # Check if it looks like JSON (starts with { or [)
+            if content.startswith(('{', '[')):
+                return content
+        
+        # If no markdown blocks, look for JSON-like content
+        # Find content between first { or [ and last } or ]
+        start_chars = ['{', '[']
+        end_chars = ['}', ']']
+        
+        for start_char, end_char in zip(start_chars, end_chars):
+            start_idx = response.find(start_char)
+            end_idx = response.rfind(end_char)
+            
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                potential_json = response[start_idx:end_idx + 1]
+                # Basic validation - count brackets/braces
+                if start_char == '{' and potential_json.count('{') == potential_json.count('}'):
+                    return potential_json
+                elif start_char == '[' and potential_json.count('[') == potential_json.count(']'):
+                    return potential_json
+        
+        # If no JSON found, try to parse markdown-formatted test cases
+        self.logger.warning("No JSON found in response, attempting to parse markdown test cases")
+        return self._convert_markdown_to_json(response)
+    
+    def _convert_markdown_to_json(self, markdown_response: str) -> str:
+        """
+        Convert markdown-formatted test cases to JSON format.
+        
+        Args:
+            markdown_response: Markdown formatted response with test cases
+            
+        Returns:
+            JSON string with parsed test cases
+        """
+        import re
+        
+        test_cases = []
+        
+        try:
+            # Pattern to match test case sections - flexible for different formats  
+            patterns = [
+                r'#### \*\*Test Case \d+:.*?\*\*\n(.*?)(?=\n---\n\n#### \*\*Test Case|\n---\n\n##|\Z)',
+                r'### \*\*Test Case \d+:.*?\*\*\n(.*?)(?=\n---\n\n### \*\*Test Case|\n---\n\n##|\Z)',  
+                r'## \d+\. .*?\n\n### \*\*Test Case \d+:.*?\*\*\n(.*?)(?=\n---\n\n## \d+\.|\n---\n\n##|\Z)'
+            ]
+            
+            matches = []
+            for pattern in patterns:
+                matches = re.findall(pattern, markdown_response, re.DOTALL)
+                if matches:
+                    break
+            
+            for i, test_case_content in enumerate(matches):
+                test_case = self._parse_single_test_case(test_case_content, i + 1)
+                if test_case:
+                    test_cases.append(test_case)
+            
+            # If no matches with the above pattern, try a simpler approach
+            if not test_cases:
+                self.logger.info("Trying alternative markdown parsing...")
+                test_cases = self._parse_markdown_alternative(markdown_response)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to parse markdown test cases: {e}")
+            # Return minimal fallback
+            test_cases = [{
+                "title": "Fallback Test Case",
+                "description": "Generated due to parsing error",
+                "test_steps": ["Review and update test case manually"],
+                "expected_result": "Test case needs manual review",
+                "coverage_type": "functional",
+                "priority": "Medium"
+            }]
+        
+        return json.dumps(test_cases)
+    
+    def _parse_single_test_case(self, content: str, case_number: int) -> dict:
+        """
+        Parse a single test case from markdown content.
+        
+        Args:
+            content: Raw content of a single test case
+            case_number: Test case number for fallback naming
+            
+        Returns:
+            Dictionary representing the test case
+        """
+        test_case = {}
+        
+        try:
+            lines = content.strip().split('\n')
+            
+            # Extract basic information
+            title = None
+            description = None
+            test_steps = []
+            expected_result = None
+            
+            current_section = None
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Check for field markers
+                if line.startswith('- **Test Case ID:**'):
+                    test_case['test_id'] = line.split(':', 1)[1].strip()
+                elif line.startswith('- **Title:**'):
+                    title = line.split(':', 1)[1].strip()
+                elif line.startswith('- **Description:**'):
+                    description = line.split(':', 1)[1].strip()
+                elif line.startswith('- **Test Steps:**'):
+                    current_section = 'steps'
+                elif line.startswith('- **Expected Results:**'):
+                    current_section = 'expected'
+                elif line.startswith('- **Acceptance Criteria Covered:**'):
+                    test_case['acceptance_criteria'] = line.split(':', 1)[1].strip()
+                elif line.startswith('- **Security:**'):
+                    test_case['coverage_type'] = 'security'
+                elif line.startswith('- **Performance**'):
+                    test_case['coverage_type'] = 'performance'
+                elif line.startswith('- **Integration:**'):
+                    test_case['coverage_type'] = 'integration'
+                elif current_section == 'steps' and line.startswith(('1.', '2.', '3.', '4.', '5.')):
+                    test_steps.append(line[2:].strip())
+                elif current_section == 'expected':
+                    if line.startswith('- '):
+                        if not expected_result:
+                            expected_result = line[2:].strip()
+                        else:
+                            expected_result += "; " + line[2:].strip()
+            
+            # Build the test case
+            test_case['title'] = title or f"Test Case {case_number}"
+            test_case['description'] = description or f"Test case {case_number} description"
+            test_case['test_steps'] = test_steps if test_steps else ["Execute test case"]
+            test_case['expected_result'] = expected_result or "Test passes successfully"
+            
+            if 'coverage_type' not in test_case:
+                test_case['coverage_type'] = 'functional'
+            
+            test_case['priority'] = 'Medium'
+            test_case['automation_candidate'] = False
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing test case {case_number}: {e}")
+            test_case = {
+                'title': f"Test Case {case_number} (Parse Error)",
+                'description': "Failed to parse test case details",
+                'test_steps': ["Review manually"],
+                'expected_result': "Manual review required",
+                'coverage_type': 'functional',
+                'priority': 'Medium'
+            }
+        
+        return test_case
+    
+    def _parse_markdown_alternative(self, markdown_response: str) -> list:
+        """
+        Alternative markdown parsing approach for different formats.
+        
+        Args:
+            markdown_response: Markdown response text
+            
+        Returns:
+            List of test case dictionaries
+        """
+        test_cases = []
+        
+        import re  # Ensure re is imported
+        
+        # Try multiple patterns to match test cases
+        patterns = [
+            # Pattern 1: ### **Test Case 1: Title** (most common AI format)
+            r'### \*\*Test Case \d+: (.+?)\*\*\n(.*?)(?=\n---\n|### \*\*Test Case|\n##|\Z)',
+            # Pattern 2: #### **Test Case 1: Title** 
+            r'#### \*\*Test Case \d+: (.+?)\*\*\n(.*?)(?=\n---\n|#### \*\*Test Case|\n##|\Z)',
+            # Pattern 3: #### TC01 - Title format
+            r'#### (TC\d+) - (.+?)\n(.*?)(?=\n#### TC\d+|\n---|\n##|\Z)',
+            # Pattern 4: **Test Case 1:** (without ###)
+            r'\*\*Test Case \d+:\s*(.+?)\*\*\n(.*?)(?=\n\*\*Test Case|\n---|\n##|\Z)',
+            # Pattern 5: Simple numbered format
+            r'(\d+)\. (.+?)\n(.*?)(?=\n\d+\.|\n---|\n##|\Z)',
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, markdown_response, re.DOTALL | re.IGNORECASE)
+            if matches:
+                self.logger.info(f"Found {len(matches)} test cases with pattern")
+                for i, match in enumerate(matches):
+                    if len(match) == 3:  # TC_ID, Title, Content
+                        tc_id, title, content = match
+                        test_case = self._parse_test_case_content(title, content, i + 1)
+                        if test_case:
+                            test_cases.append(test_case)
+                    elif len(match) == 2:  # Title, Content
+                        title, content = match
+                        test_case = self._parse_test_case_content(title, content, i + 1)
+                        if test_case:
+                            test_cases.append(test_case)
+                break
+        
+        # If still no test cases found, create a basic one from the content
+        if not test_cases:
+            test_cases = [{
+                'title': 'Comprehensive Test Coverage',
+                'description': 'AI generated comprehensive test cases - manual extraction needed',
+                'test_steps': ['Review AI response', 'Extract specific test cases', 'Implement test procedures'],
+                'expected_result': 'All test scenarios covered as per AI recommendations',
+                'coverage_type': 'comprehensive',
+                'priority': 'High'
+            }]
+        
+        return test_cases
+    
+    def _parse_test_case_content(self, title: str, content: str, case_number: int) -> dict:
+        """
+        Parse test case content from different markdown formats.
+        
+        Args:
+            title: Test case title
+            content: Test case content 
+            case_number: Test case number for fallback
+            
+        Returns:
+            Dictionary representing the test case
+        """
+        test_case = {
+            'title': title.strip(),
+            'description': '',
+            'test_steps': [],
+            'expected_result': 'Test passes successfully',
+            'coverage_type': 'functional',
+            'priority': 'Medium'
+        }
+        
+        try:
+            lines = content.strip().split('\n')
+            current_section = None
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Look for different section markers
+                if any(marker in line.lower() for marker in ['precondition', 'setup']):
+                    current_section = 'preconditions'
+                elif any(marker in line.lower() for marker in ['step', 'action']):
+                    current_section = 'steps'
+                elif any(marker in line.lower() for marker in ['expected', 'result']):
+                    current_section = 'expected'
+                elif any(marker in line.lower() for marker in ['title:', 'description:']):
+                    if 'description:' in line.lower():
+                        test_case['description'] = line.split(':', 1)[-1].strip()
+                elif line.startswith(('1.', '2.', '3.', '4.', '5.')):
+                    # Numbered steps
+                    test_case['test_steps'].append(line[2:].strip())
+                elif line.startswith('- ') and current_section == 'steps':
+                    # Bullet point steps
+                    test_case['test_steps'].append(line[2:].strip())
+                elif current_section == 'expected' and line.startswith('- '):
+                    # Expected results
+                    if test_case['expected_result'] == 'Test passes successfully':
+                        test_case['expected_result'] = line[2:].strip()
+                    else:
+                        test_case['expected_result'] += "; " + line[2:].strip()
+            
+            # If no explicit steps found, try to extract from content
+            if not test_case['test_steps']:
+                # Look for action words in content
+                action_lines = []
+                for line in lines:
+                    if any(word in line.lower() for word in ['submit', 'enter', 'click', 'verify', 'check', 'navigate', 'access']):
+                        action_lines.append(line.strip())
+                
+                if action_lines:
+                    test_case['test_steps'] = action_lines[:5]  # Limit to 5 steps
+                else:
+                    test_case['test_steps'] = ['Execute test case steps', 'Verify expected behavior']
+            
+            # Determine coverage type from title and content
+            combined_text = f"{title} {content}".lower()
+            if any(word in combined_text for word in ['boundary', 'edge', 'limit', 'max', 'min']):
+                test_case['coverage_type'] = 'boundary'
+            elif any(word in combined_text for word in ['security', 'auth', 'permission', 'access']):
+                test_case['coverage_type'] = 'security'
+            elif any(word in combined_text for word in ['performance', 'load', 'scale', 'concurrent']):
+                test_case['coverage_type'] = 'performance'
+            elif any(word in combined_text for word in ['integration', 'api', 'database', 'service']):
+                test_case['coverage_type'] = 'integration'
+            elif any(word in combined_text for word in ['error', 'fail', 'invalid', 'exception']):
+                test_case['coverage_type'] = 'negative'
+                
+            # Set priority based on content
+            if any(word in combined_text for word in ['critical', 'high', 'important']):
+                test_case['priority'] = 'High'
+            elif any(word in combined_text for word in ['low', 'minor']):
+                test_case['priority'] = 'Low'
+                
+        except Exception as e:
+            self.logger.error(f"Error parsing test case content: {e}")
+            # Return basic fallback
+            test_case['test_steps'] = ['Execute test procedure', 'Verify results']
+        
+        return test_case
