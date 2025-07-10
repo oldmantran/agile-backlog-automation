@@ -16,8 +16,15 @@ class Config:
             "AZURE_DEVOPS_PAT": os.getenv("AZURE_DEVOPS_PAT"),
             "AZURE_DEVOPS_ORG": os.getenv("AZURE_DEVOPS_ORG"),
             "AZURE_DEVOPS_PROJECT": os.getenv("AZURE_DEVOPS_PROJECT"),
+            # Grok (xAI)
             "GROK_API_KEY": os.getenv("GROK_API_KEY"),
             "GROK_MODEL": os.getenv("GROK_MODEL", "grok-3-latest"),
+            # OpenAI
+            "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+            "OPENAI_MODEL": os.getenv("OPENAI_MODEL", "gpt-4.1"),
+            # LLM Provider (set to openai or grok)
+            "LLM_PROVIDER": os.getenv("LLM_PROVIDER", "openai"),
+            # Notifications
             "TEAMS_WEBHOOK_URL": os.getenv("TEAMS_WEBHOOK_URL"),
             "EMAIL_SMTP_SERVER": os.getenv("EMAIL_SMTP_SERVER"),
             "EMAIL_SMTP_PORT": os.getenv("EMAIL_SMTP_PORT", "587"),

@@ -9,9 +9,15 @@ class Agent:
     def __init__(self, name: str, config: Config):
         self.name = name
         self.config = config
-        self.model = config.get_env("GROK_MODEL")
-        self.api_key = config.get_env("GROK_API_KEY")
-        
+        self.llm_provider = config.get_env("LLM_PROVIDER") or "openai"
+        if self.llm_provider == "openai":
+            self.model = config.get_env("OPENAI_MODEL")
+            self.api_key = config.get_env("OPENAI_API_KEY")
+            self.api_url = "https://api.openai.com/v1/chat/completions"
+        else:
+            self.model = config.get_env("GROK_MODEL")
+            self.api_key = config.get_env("GROK_API_KEY")
+            self.api_url = "https://api.x.ai/v1/chat/completions"
         # Validate that template exists
         try:
             validation = prompt_manager.validate_template(name)
@@ -32,16 +38,14 @@ class Agent:
             return f"You are a {self.name.replace('_', ' ')} agent."
 
     def run(self, user_input: str, context: dict = None) -> str:
-        """Send a message to Grok and return the assistant's response."""
-        url = "https://api.x.ai/v1/chat/completions"
+        """Send a message to the selected LLM and return the assistant's response."""
+        url = self.api_url
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        
         # Generate prompt with context
         system_prompt = self.get_prompt(context)
-        
         payload = {
             "model": self.model,
             "messages": [
@@ -49,21 +53,17 @@ class Agent:
                 { "role": "user", "content": user_input }
             ]
         }
-
-        print(f"📤 Sending to Grok:\n{json.dumps(payload, indent=2)}")
-
+        print(f"📤 Sending to {self.llm_provider.capitalize()} (model: {self.model}):\n{json.dumps(payload, indent=2)}")
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)  # Increased timeout to 60 seconds
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
             response.raise_for_status()
             data = response.json()
-
             print(f"📥 Response:\n{response.text}")
-
+            # OpenAI and Grok both return choices/message structure
             return data["choices"][0]["message"]["content"].strip()
         except Exception as e:
             print(f"❌ Agent '{self.name}' failed: {e}")
             return ""
-        
         
 
     def __repr__(self):
