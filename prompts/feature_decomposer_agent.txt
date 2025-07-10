@@ -30,7 +30,7 @@ Each feature must include:
 **Features should NOT include acceptance criteria.** Acceptance criteria are defined at the User Story level during feature decomposition. Features should focus on high-level functionality and business value.
 
 ### Best Practices:
-- Create **4-8 features** per epic that together fulfill the epic's objectives
+- Create **exactly 2 features** per epic that together fulfill the epic's objectives (testing mode)
 - Each feature should be **independently deliverable** where possible
 - Focus on **user workflows** and **job-to-be-done** scenarios
 - Consider **feature cohesion** - related functionality should be grouped together

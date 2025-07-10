@@ -65,19 +65,19 @@ When generating test cases for User Stories:
 **High Priority Stories (Critical Business Value):**
 - **Coverage Level**: Comprehensive (100% of acceptance criteria + edge cases + integration)
 - **Test Types**: Functional, Integration, Security, Performance, Edge Cases
-- **Estimated Test Cases**: 8-15 test cases per story
+- **Estimated Test Cases**: 3 test cases maximum per story (test mode)
 - **Focus Areas**: Core functionality, error handling, security validation, performance impact
 
 **Medium Priority Stories (Important Features):**
 - **Coverage Level**: Standard (100% of acceptance criteria + key edge cases)
 - **Test Types**: Functional, Integration, Edge Cases
-- **Estimated Test Cases**: 5-10 test cases per story
+- **Estimated Test Cases**: 3 test cases maximum per story (test mode)
 - **Focus Areas**: Happy path, alternative flows, basic error scenarios
 
 **Low Priority Stories (Nice-to-Have Features):**
 - **Coverage Level**: Basic (100% of acceptance criteria)
 - **Test Types**: Functional, Basic Validation
-- **Estimated Test Cases**: 3-6 test cases per story
+- **Estimated Test Cases**: 3 test cases maximum per story (test mode)
 - **Focus Areas**: Core functionality validation
 
 ### Story Points-Based Coverage Recommendations:

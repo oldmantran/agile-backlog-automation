@@ -30,7 +30,7 @@ Each task must include:
 8. **Acceptance Criteria**: Specific technical completion criteria
 
 ### Best Practices:
-- Create **5-12 tasks** per feature that cover the complete implementation
+- Create **3 tasks maximum** per user story for fast testing
 - Ensure tasks are **appropriately sized** (2-16 hours each)
 - Include **testing tasks** for quality assurance
 - Consider **documentation** and **code review** requirements

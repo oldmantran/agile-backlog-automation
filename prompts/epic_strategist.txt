@@ -26,7 +26,7 @@ Each epic must include:
 7. **Success Criteria**: Measurable outcomes
 
 ### Best Practices:
-- Create **3-7 epics** that together deliver the complete vision
+- Create **exactly 2 epics** that together deliver the complete vision (testing mode)
 - Ensure epics are **independent** where possible
 - Focus on **user outcomes** rather than technical implementation
 - Consider **MVP delivery** for early value realization

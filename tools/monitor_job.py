@@ -37,7 +37,7 @@ def monitor_job(job_id, check_interval_seconds=30):
                 error = job_data.get('error')
                 
                 # Check for status or significant progress changes
-                if status != last_status or abs(progress - (last_progress or 0)) >= 10:
+                if status != last_status or abs(progress - (last_progress or 0)) >= 5:
                     timestamp = datetime.now().strftime('%H:%M:%S')
                     runtime = datetime.now() - start_time
                     
@@ -81,4 +81,4 @@ def monitor_job(job_id, check_interval_seconds=30):
 
 if __name__ == "__main__":
     job_id = sys.argv[1] if len(sys.argv) > 1 else "job_20250710_135032"
-    monitor_job(job_id, 30)  # Check every 30 seconds
+    monitor_job(job_id, 10)  # Check every 10 seconds for more responsive updates

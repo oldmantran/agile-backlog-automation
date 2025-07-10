@@ -255,7 +255,9 @@ Provide detailed analysis including:
                 self.logger.warning("Empty response from AI model")
                 return self._generate_fallback_analysis(user_story, criteria_analysis)
                 
-            analysis = json.loads(response)
+            # Extract JSON from markdown code blocks if present
+            cleaned_response = self._extract_json_from_response(response)
+            analysis = json.loads(cleaned_response)
             
             # Enhance analysis with metadata and validation
             analysis['user_story_id'] = user_story.get('id')

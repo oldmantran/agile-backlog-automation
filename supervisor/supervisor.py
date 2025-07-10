@@ -243,7 +243,8 @@ class WorkflowSupervisor:
                         stages: List[str] = None,
                         human_review: bool = False,
                         save_outputs: bool = True,
-                        integrate_azure: bool = False) -> Dict[str, Any]:
+                        integrate_azure: bool = False,
+                        progress_callback: callable = None) -> Dict[str, Any]:
         """
         Execute the complete workflow or specific stages.
         
@@ -253,6 +254,7 @@ class WorkflowSupervisor:
             human_review: Whether to pause for human review between stages
             save_outputs: Whether to save intermediate outputs
             integrate_azure: Whether to create Azure DevOps work items
+            progress_callback: Optional callback function to report progress (stage_index, total_stages, stage_name)
             
         Returns:
             Complete workflow results including all generated artifacts
@@ -278,9 +280,16 @@ class WorkflowSupervisor:
             }
             # Execute stages in sequence
             stages_to_run = stages or self._get_default_stages()
+            total_stages = len(stages_to_run)
             self.sweeper_retry_tracker = {}
-            for stage in stages_to_run:
-                self.logger.info(f"Executing stage: {stage}")
+            
+            for stage_index, stage in enumerate(stages_to_run):
+                self.logger.info(f"Executing stage: {stage} ({stage_index + 1}/{total_stages})")
+                
+                # Report progress at start of stage
+                if progress_callback:
+                    progress_callback(stage_index, total_stages, stage, "starting")
+                
                 self.sweeper_retry_tracker[stage] = {}
                 max_retries = 5
                 completed = False
@@ -318,6 +327,9 @@ class WorkflowSupervisor:
                         incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
                         if not incomplete_items:
                             completed = True
+                            # Report progress at completion of stage
+                            if progress_callback:
+                                progress_callback(stage_index, total_stages, stage, "completed")
                             break
                         # Targeted retry logic
                         still_incomplete = []
@@ -343,6 +355,9 @@ class WorkflowSupervisor:
                                 still_incomplete.append(item)
                         if not still_incomplete:
                             completed = True
+                            # Report progress at completion of stage
+                            if progress_callback:
+                                progress_callback(stage_index, total_stages, stage, "completed")
                         else:
                             self.logger.info(f"{len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
                     except Exception as e:
@@ -350,6 +365,9 @@ class WorkflowSupervisor:
                         self.execution_metadata['errors'].append(f"{stage} failed: {e}")
                         self._send_error_notifications(e)
                         completed = True  # Move to next stage even on error
+                        # Report progress at completion of stage (even if failed)
+                        if progress_callback:
+                            progress_callback(stage_index, total_stages, stage, "failed")
             # Final processing
             self._finalize_workflow_data()
             # Azure DevOps integration
