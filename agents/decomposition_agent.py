@@ -10,7 +10,7 @@ class DecompositionAgent(Agent):
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
     def decompose_epic(self, epic: dict, context: dict = None) -> list[dict]:
-        """Break down an epic into detailed features with contextual information."""
+        """Break down an epic into detailed features with contextual information, and always decompose features into user stories."""
         
         # Build context for prompt template
         prompt_context = {
@@ -48,6 +48,11 @@ Business Value: {epic.get('business_value', 'Not specified')}
             
             features = json.loads(response)
             if isinstance(features, list):
+                # For each feature, always decompose to user stories
+                for feature in features:
+                    # Defensive: ensure user_stories key exists
+                    if 'user_stories' not in feature or not isinstance(feature['user_stories'], list):
+                        feature['user_stories'] = self.decompose_feature_to_user_stories(feature, context)
                 return features
             else:
                 print("⚠️ Grok response was not a list.")
