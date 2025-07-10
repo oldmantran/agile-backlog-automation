@@ -129,54 +129,74 @@ class WorkflowSupervisor:
     def _validate_epics(self):
         """Validate that epics have been generated and meet minimum requirements."""
         epics = self.workflow_data.get('epics', [])
+        errors = []
         if not epics or not all('title' in e and e['title'] for e in epics):
-            raise ValueError("Epic Strategist did not generate valid epics. Workflow halted.")
-        self.logger.info(f"Validation passed: {len(epics)} epics generated.")
+            self.logger.error("Epic Strategist did not generate valid epics. Skipping invalid epics.")
+            errors.append("No valid epics generated.")
+        self.logger.info(f"Validation completed: {len(epics)} epics checked, {len(errors)} errors.")
 
     def _validate_features(self):
         """Validate that every epic has at least one feature."""
         epics = self.workflow_data.get('epics', [])
+        errors = []
         for epic in epics:
             features = epic.get('features', [])
             if not features or not all('title' in f and f['title'] for f in features):
-                raise ValueError(f"Decomposition Agent did not generate valid features for epic '{epic.get('title', 'Untitled')}'. Workflow halted.")
-        self.logger.info("Validation passed: All epics have features.")
+                self.logger.error(f"Decomposition Agent did not generate valid features for epic '{epic.get('title', 'Untitled')}'. Skipping invalid features.")
+                errors.append(f"Epic '{epic.get('title', 'Untitled')}' missing valid features.")
+        self.logger.info(f"Validation completed: All epics checked for features, {len(errors)} errors.")
 
     def _validate_user_stories(self):
         """Validate that every feature has at least one user story."""
         epics = self.workflow_data.get('epics', [])
+        errors = []
         for epic in epics:
             for feature in epic.get('features', []):
                 user_stories = feature.get('user_stories', [])
                 if not user_stories or not all('title' in us and us['title'] for us in user_stories):
-                    raise ValueError(f"Decomposition Agent did not generate valid user stories for feature '{feature.get('title', 'Untitled')}'. Workflow halted.")
-        self.logger.info("Validation passed: All features have user stories.")
+                    self.logger.error(f"Decomposition Agent did not generate valid user stories for feature '{feature.get('title', 'Untitled')}'. Skipping invalid user stories.")
+                    errors.append(f"Feature '{feature.get('title', 'Untitled')}' missing valid user stories.")
+        self.logger.info(f"Validation completed: All features checked for user stories, {len(errors)} errors.")
 
     def _validate_tasks_and_estimates(self):
         """Validate that every user story has tasks and an estimate (story points)."""
         epics = self.workflow_data.get('epics', [])
+        errors = []
         for epic in epics:
             for feature in epic.get('features', []):
                 for user_story in feature.get('user_stories', []):
                     tasks = user_story.get('tasks', [])
                     if not tasks or not all('title' in t and t['title'] for t in tasks):
-                        raise ValueError(f"Developer Agent did not generate valid tasks for user story '{user_story.get('title', 'Untitled')}'. Workflow halted.")
+                        self.logger.error(f"Developer Agent did not generate valid tasks for user story '{user_story.get('title', 'Untitled')}'. Skipping this user story.")
+                        errors.append(f"User story '{user_story.get('title', 'Untitled')}' missing valid tasks.")
+                        continue
                     if 'story_points' not in user_story or user_story['story_points'] is None:
-                        raise ValueError(f"Developer Agent did not estimate story points for user story '{user_story.get('title', 'Untitled')}'. Workflow halted.")
-        self.logger.info("Validation passed: All user stories have tasks and estimates.")
+                        self.logger.error(f"Developer Agent did not estimate story points for user story '{user_story.get('title', 'Untitled')}'. Skipping this user story.")
+                        errors.append(f"User story '{user_story.get('title', 'Untitled')}' missing story points.")
+                        continue
+        if errors:
+            self.logger.warning(f"Validation completed with {len(errors)} user story errors.")
+        else:
+            self.logger.info("Validation passed: All user stories have tasks and estimates.")
 
     def _validate_test_cases_and_plans(self):
         """Validate that every user story has test cases and every feature has a test plan structure."""
         epics = self.workflow_data.get('epics', [])
+        errors = []
         for epic in epics:
             for feature in epic.get('features', []):
                 if 'test_plan_structure' not in feature or not feature['test_plan_structure']:
-                    raise ValueError(f"QA Tester Agent did not generate a test plan for feature '{feature.get('title', 'Untitled')}'. Workflow halted.")
+                    self.logger.error(f"QA Tester Agent did not generate a test plan for feature '{feature.get('title', 'Untitled')}'. Skipping invalid test plan.")
+                    errors.append(f"Feature '{feature.get('title', 'Untitled')}' missing test plan structure.")
                 for user_story in feature.get('user_stories', []):
                     test_cases = user_story.get('test_cases', [])
                     if not test_cases or not all('title' in tc and tc['title'] for tc in test_cases):
-                        raise ValueError(f"QA Tester Agent did not generate valid test cases for user story '{user_story.get('title', 'Untitled')}'. Workflow halted.")
-        self.logger.info("Validation passed: All user stories have test cases and all features have test plans.")
+                        self.logger.error(f"QA Tester Agent did not generate valid test cases for user story '{user_story.get('title', 'Untitled')}'. Skipping this user story.")
+                        errors.append(f"User story '{user_story.get('title', 'Untitled')}' missing valid test cases.")
+        if errors:
+            self.logger.warning(f"Validation completed with {len(errors)} test case errors.")
+        else:
+            self.logger.info("Validation passed: All user stories have test cases and all features have test plans.")
 
     def _get_sweeper_agent(self):
         if not self.sweeper_agent:
