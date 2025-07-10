@@ -91,6 +91,7 @@ class WorkflowSupervisor:
         }
         self.sweeper_agent = None  # Will be initialized as needed
         self.sweeper_retry_tracker = {}  # {stage: {item_id: retry_count}}
+        self.backlog_sweeper = None  # Will be initialized for validation
         
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
@@ -615,6 +616,10 @@ class WorkflowSupervisor:
             return
         
         try:
+            # Initialize backlog sweeper for validation if not already done
+            if self.backlog_sweeper is None:
+                self.backlog_sweeper = BacklogSweeperAgent(self.config)
+            
             # Perform pre-integration quality check using backlog sweeper
             self.logger.info("🔍 Running pre-integration validation...")
             validation_report = self.backlog_sweeper.validate_pre_integration(self.workflow_data)
