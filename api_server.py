@@ -210,6 +210,20 @@ async def get_generation_status(job_id: str):
         "data": GenerationStatus(**job_status).dict()
     }
 
+@app.get("/api/jobs")
+async def get_all_jobs():
+    """Get all active and recent jobs."""
+    return {
+        "success": True,
+        "data": [
+            {
+                **job_data,
+                "jobId": job_id
+            }
+            for job_id, job_data in active_jobs.items()
+        ]
+    }
+
 @app.get("/api/backlog/templates")
 async def get_templates(domain: Optional[str] = None):
     """Get available backlog templates."""

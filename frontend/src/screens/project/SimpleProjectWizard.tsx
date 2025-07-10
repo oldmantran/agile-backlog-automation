@@ -46,15 +46,28 @@ const SimpleProjectWizard: React.FC = () => {
         const backlogResponse = await backlogApi.generateBacklog(projectId);
         
         if (backlogResponse.jobId) {
+          // Store job info in localStorage for dashboard
+          const jobInfo = {
+            jobId: backlogResponse.jobId,
+            projectId: projectId,
+            status: 'queued',
+            progress: 0,
+            startTime: new Date().toISOString(),
+          };
+          
+          const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+          existingJobs.push(jobInfo);
+          localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+          
           toast({
             title: 'Backlog Generation Started',
-            description: 'Your backlog is being generated. Check the dashboard for progress.',
+            description: `Your backlog is being generated. Job ID: ${backlogResponse.jobId}. Check the dashboard for progress.`,
             status: 'success',
             duration: 5000,
           });
           
-          // Redirect to dashboard or project view
-          window.location.href = `/dashboard?project=${projectId}`;
+          // Redirect to dashboard with job ID
+          window.location.href = `/dashboard?job=${backlogResponse.jobId}`;
         } else {
           throw new Error('Failed to start backlog generation');
         }
