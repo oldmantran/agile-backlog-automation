@@ -85,16 +85,16 @@ class ProductVision(BaseModel):
     targetAudience: str = Field(default="end users", description="Target audience (extracted from vision if default)")
 
 class AzureConfig(BaseModel):
-    organizationUrl: str = Field(..., description="Azure DevOps organization URL")
+    organizationUrl: str = Field(default="", description="Azure DevOps organization URL")
     personalAccessToken: str = Field(default="", description="Personal access token (loaded from .env if empty)")
-    project: str = Field(..., description="Azure DevOps project name")
-    areaPath: str = Field(..., description="Area path")
-    iterationPath: str = Field(..., description="Iteration path")
+    project: str = Field(default="", description="Azure DevOps project name")
+    areaPath: str = Field(default="", description="Area path")
+    iterationPath: str = Field(default="", description="Iteration path")
 
 class CreateProjectRequest(BaseModel):
     basics: ProjectBasics
     vision: ProductVision
-    azureConfig: AzureConfig
+    azureConfig: AzureConfig = Field(default_factory=AzureConfig, description="Azure DevOps configuration (optional for content-only mode)")
 
 class GenerationStatus(BaseModel):
     jobId: str
@@ -319,11 +319,27 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         # Extract area/iteration path and Azure DevOps credentials from Azure config
         azure_config = project_data.get("azureConfig", {})
         organization_url = azure_config.get("organizationUrl")
-        personal_access_token = azure_config.get("personalAccessToken") or os.getenv("AZURE_DEVOPS_PAT")
         project_name_ado = azure_config.get("project")
         area_path = azure_config.get("areaPath")
         iteration_path = azure_config.get("iterationPath")
-        if not all([organization_url, personal_access_token, project_name_ado, area_path, iteration_path]):
+        
+        # Only get PAT from environment if explicitly provided in config
+        personal_access_token = azure_config.get("personalAccessToken")
+        if not personal_access_token:
+            # Only use environment PAT if other config is provided
+            if organization_url or project_name_ado or area_path or iteration_path:
+                personal_access_token = os.getenv("AZURE_DEVOPS_PAT")
+        
+        # Check if Azure integration is enabled (if any meaningful Azure config is provided)
+        azure_integration_enabled = bool(
+            (organization_url and organization_url.strip()) or
+            (personal_access_token and personal_access_token.strip()) or
+            (project_name_ado and project_name_ado.strip()) or
+            (area_path and area_path.strip()) or
+            (iteration_path and iteration_path.strip())
+        )
+        
+        if azure_integration_enabled and not all([organization_url, personal_access_token, project_name_ado, area_path, iteration_path]):
             error_msg = "organizationUrl, personalAccessToken (or AZURE_DEVOPS_PAT in .env), project, areaPath, and iterationPath must all be provided in the Azure DevOps configuration."
             logger.error(error_msg)
             active_jobs[job_id]["status"] = "failed"
@@ -331,15 +347,19 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             active_jobs[job_id]["endTime"] = datetime.now()
             return
 
-        # Initialize the workflow supervisor with all Azure DevOps config and job_id
-        supervisor = WorkflowSupervisor(
-            organization_url=organization_url,
-            project=project_name_ado,
-            personal_access_token=personal_access_token,
-            area_path=area_path,
-            iteration_path=iteration_path,
-            job_id=job_id
-        )
+        # Initialize the workflow supervisor with Azure DevOps config (if enabled) and job_id
+        if azure_integration_enabled:
+            supervisor = WorkflowSupervisor(
+                organization_url=organization_url,
+                project=project_name_ado,
+                personal_access_token=personal_access_token,
+                area_path=area_path,
+                iteration_path=iteration_path,
+                job_id=job_id
+            )
+        else:
+            # Content-only mode (no Azure integration)
+            supervisor = WorkflowSupervisor(job_id=job_id)
         
         # Update progress
         active_jobs[job_id]["currentAgent"] = "supervisor"

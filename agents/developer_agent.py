@@ -58,10 +58,13 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         """
         import re
         
-        # Try to find JSON in code blocks first
+        print("🔍 Extracting JSON from markdown...")
+        
+        # Try to find JSON in markdown code blocks first
         json_block_pattern = r'```json\s*(.*?)\s*```'
         match = re.search(json_block_pattern, response, re.DOTALL)
         if match:
+            print("✅ Found JSON in markdown block")
             return match.group(1).strip()
         
         # Try to find JSON in generic code blocks
@@ -71,15 +74,26 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             content = match.group(1).strip()
             # Check if it looks like JSON (starts with [ or {)
             if content.strip().startswith(('[', '{')):
+                print("✅ Found JSON in generic code block")
                 return content
         
         # If no code blocks, try to find JSON by looking for array/object patterns
-        json_pattern = r'(\[.*?\]|\{.*?\})'
-        match = re.search(json_pattern, response, re.DOTALL)
-        if match:
-            return match.group(1).strip()
+        # Look for the largest JSON structure in the response
+        json_array_pattern = r'\[(?:[^[\]]*(?:\[(?:[^[\]]*(?:\[(?:[^[\]]*(?:\[[^\[\]]*\][^[\]]*)*)*\][^[\]]*)*)*\][^[\]]*)*)*\]'
+        json_object_pattern = r'\{(?:[^{}]*(?:\{(?:[^{}]*(?:\{(?:[^{}]*(?:\{[^{}]*\}[^{}]*)*)*\}[^{}]*)*)*\}[^{}]*)*)*\}'
+        
+        array_matches = re.findall(json_array_pattern, response, re.DOTALL)
+        object_matches = re.findall(json_object_pattern, response, re.DOTALL)
+        
+        # Prefer arrays over objects, and longer matches over shorter ones
+        all_matches = [(match, len(match)) for match in array_matches + object_matches]
+        if all_matches:
+            best_match = max(all_matches, key=lambda x: x[1])
+            print("✅ Found JSON using pattern matching")
+            return best_match[0].strip()
         
         # If all else fails, return the original response
+        print("⚠️ No JSON found, returning original response")
         return response.strip()
 
     def _validate_and_enhance_tasks(self, tasks: list) -> list:

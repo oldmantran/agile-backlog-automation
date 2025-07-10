@@ -44,6 +44,14 @@ Edge Cases: {feature.get('edge_cases', [])}
         response = self.run_with_template(user_input, prompt_context, template_name="user_story_decomposer")
 
         try:
+            # Check for markdown code blocks and extract JSON
+            if "```json" in response:
+                print("🔍 Extracting JSON from markdown...")
+                start = response.find("```json") + 7
+                end = response.find("```", start)
+                if end > start:
+                    response = response[start:end].strip()
+            
             user_stories = json.loads(response)
             
             # Handle different response formats
@@ -75,70 +83,17 @@ Edge Cases: {feature.get('edge_cases', [])}
                 return self._validate_and_enhance_user_stories(user_stories['user_stories'])
             else:
                 print("⚠️ LLM response was not in expected format.")
-                print("🔄 Using fallback user story generation...")
-                return self._create_fallback_user_stories(feature)
+                print("� Response structure:", type(user_stories))
+                print("🔎 Response content:", user_stories)
+                raise ValueError(f"LLM response was not in expected format. Expected list of user stories, got {type(user_stories)}")
                 
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse JSON: {e}")
             print("🔎 Raw response:")
             print(response)
-            print("🔄 Using fallback user story generation...")
-            return self._create_fallback_user_stories(feature)
-
-    def _create_fallback_user_stories(self, feature: dict) -> list[dict]:
-        """Create multiple user stories as fallback when LLM processing fails, covering core, edge, and error scenarios."""
-        feature_title = feature.get('title', 'Unknown Feature')
-        feature_description = feature.get('description', 'No description')
-        estimated_points = feature.get('estimated_story_points', 8)
-        
-        # Create 3 user stories covering main scenarios
-        fallback_stories = [
-            {
-                'title': f"Main {feature_title} Workflow",
-                'user_story': f"As a user, I want to {feature_title.lower()} so that I can accomplish my primary goal",
-                'description': f"Primary user workflow for {feature_description}",
-                'acceptance_criteria': [
-                    "User can access the main feature functionality",
-                    "System provides clear feedback on user actions",
-                    "Core workflow completes successfully"
-                ],
-                'story_points': max(1, estimated_points // 3),
-                'priority': feature.get('priority', 'Medium'),
-                'user_type': 'primary_user',
-                'category': 'core_functionality'
-            },
-            {
-                'title': f"{feature_title} Error Handling",
-                'user_story': f"As a user, I want appropriate error handling for {feature_title.lower()} so that I understand what went wrong",
-                'description': f"Error handling and edge cases for {feature_description}",
-                'acceptance_criteria': [
-                    "System displays meaningful error messages",
-                    "User can recover from error states",
-                    "Invalid inputs are handled gracefully"
-                ],
-                'story_points': max(1, estimated_points // 3),
-                'priority': 'Medium',
-                'user_type': 'general_user',
-                'category': 'error_handling'
-            },
-            {
-                'title': f"{feature_title} Validation and Feedback",
-                'user_story': f"As a user, I want validation and feedback for {feature_title.lower()} so that I know my actions are working correctly",
-                'description': f"User feedback and validation for {feature_description}",
-                'acceptance_criteria': [
-                    "System validates user inputs",
-                    "User receives confirmation of successful actions",
-                    "Progress indicators are shown for long operations"
-                ],
-                'story_points': max(1, estimated_points - (2 * max(1, estimated_points // 3))),
-                'priority': feature.get('priority', 'Medium'),
-                'user_type': 'general_user',
-                'category': 'user_experience'
-            }
-        ]
-        
-        print(f"🔄 Generated {len(fallback_stories)} fallback user stories for feature")
-        return self._validate_and_enhance_user_stories(fallback_stories)
+            print("� Response length:", len(response))
+            print("🔎 First 500 chars:", response[:500])
+            raise ValueError(f"Failed to parse JSON response from LLM: {e}")
 
     def _validate_and_enhance_user_stories(self, user_stories: list) -> list:
         """

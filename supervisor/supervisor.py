@@ -583,6 +583,19 @@ class WorkflowSupervisor:
         """Integrate generated backlog with Azure DevOps with pre-integration validation."""
         self.logger.info("Preparing for Azure DevOps integration")
         
+        # Check if Azure integration is enabled
+        if self.azure_integrator is None:
+            self.logger.info("🚫 Azure DevOps integration disabled (no Azure config provided)")
+            self.logger.info("✅ Content generation completed - skipping Azure upload")
+            
+            # Store integration results as skipped
+            self.workflow_data['azure_integration'] = {
+                'status': 'skipped',
+                'reason': 'No Azure DevOps configuration provided',
+                'timestamp': datetime.now().isoformat()
+            }
+            return
+        
         try:
             # Perform pre-integration quality check using backlog sweeper
             self.logger.info("🔍 Running pre-integration validation...")
