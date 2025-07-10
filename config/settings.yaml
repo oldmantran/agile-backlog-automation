@@ -68,6 +68,13 @@ workflow:
     immediate_validation: true  # Run targeted sweeps after each stage
     max_retries_per_stage: 3   # How many times to retry a stage if issues found
     fail_fast: false          # Stop workflow on first stage failure
+  
+  # Output limits (set to null for unlimited production use)
+  limits:
+    max_epics: null           # null = unlimited (production mode)
+    max_features_per_epic: null  # null = unlimited (production mode)  
+    max_user_stories_per_feature: null  # null = unlimited
+  
   output_format: "azure_devops"
 
 notifications:

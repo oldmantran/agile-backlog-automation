@@ -14,8 +14,11 @@ class FeatureDecomposerAgent(Agent):
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
-    def decompose_epic(self, epic: dict, context: dict = None) -> list[dict]:
+    def decompose_epic(self, epic: dict, context: dict = None, max_features: int = None) -> list[dict]:
         """Break down an epic into detailed features with business value and strategic considerations."""
+        
+        # Apply max_features constraint if specified (null = unlimited)
+        feature_limit = max_features if max_features is not None else None  # None = unlimited
         
         # Build context for prompt template
         prompt_context = {
@@ -24,7 +27,8 @@ class FeatureDecomposerAgent(Agent):
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
-            'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs'
+            'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs',
+            'max_features': feature_limit if feature_limit else "unlimited"
         }
         
         user_input = f"""
@@ -34,6 +38,8 @@ Priority: {epic.get('priority', 'Medium')}
 Business Value: {epic.get('business_value', 'Not specified')}
 Success Criteria: {epic.get('success_criteria', [])}
 Dependencies: {epic.get('dependencies', [])}
+
+{f'IMPORTANT: Generate a maximum of {feature_limit} features only.' if feature_limit else ''}
 """
         
         print(f"🏗️ [FeatureDecomposerAgent] Decomposing epic: {epic.get('title', 'Unknown')}")
@@ -55,21 +61,27 @@ Dependencies: {epic.get('dependencies', [])}
             
             features = json.loads(response)
             if isinstance(features, list) and len(features) > 0:
-                # Validate and enhance features
-                enhanced_features = self._validate_and_enhance_features(features)
+                # Apply the feature limit constraint if specified
+                if feature_limit:
+                    limited_features = features[:feature_limit]
+                    if len(features) > feature_limit:
+                        print(f"🔧 [FeatureDecomposerAgent] Limited output from {len(features)} to {len(limited_features)} features (configuration limit)")
+                    enhanced_features = self._validate_and_enhance_features(limited_features)
+                else:
+                    enhanced_features = self._validate_and_enhance_features(features)
                 return enhanced_features
             else:
                 print("⚠️ LLM response was not a valid list.")
-                return self._create_fallback_features(epic)
+                return self._create_fallback_features(epic, feature_limit)
                 
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse JSON: {e}")
             print("🔎 Raw response:")
             print(response)
             print("🔄 Using fallback feature generation...")
-            return self._create_fallback_features(epic)
+            return self._create_fallback_features(epic, feature_limit)
 
-    def _create_fallback_features(self, epic: dict) -> list[dict]:
+    def _create_fallback_features(self, epic: dict, max_features: int = None) -> list[dict]:
         """Create fallback features when LLM processing fails."""
         epic_title = epic.get('title', 'Unknown Epic')
         epic_description = epic.get('description', 'No description')
@@ -110,8 +122,14 @@ Dependencies: {epic.get('dependencies', [])}
             }
         ]
         
-        print(f"🔄 Generated {len(fallback_features)} fallback features for epic")
-        return fallback_features
+        # Apply the constraint to fallback features if specified
+        if max_features:
+            limited_fallback = fallback_features[:max_features]
+            print(f"🔄 Generated {len(limited_fallback)} fallback features for epic (limited to {max_features})")
+            return limited_fallback
+        else:
+            print(f"🔄 Generated {len(fallback_features)} fallback features for epic")
+            return fallback_features
 
     def _validate_and_enhance_features(self, features: list) -> list[dict]:
         """Validate and enhance features to meet quality standards."""

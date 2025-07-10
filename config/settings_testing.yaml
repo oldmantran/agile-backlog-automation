@@ -1,0 +1,96 @@
+# Settings for end-to-end testing with limited output
+# Copy this over settings.yaml when running tests, then restore original for production
+
+domains:
+  supported:
+    - "software_development"
+    - "fintech" 
+    - "ecommerce"
+    - "healthcare"
+    - "education"
+    - "shipping_logistics"
+    - "oil_gas"
+    - "ride_sharing"
+  default: "ride_sharing"
+
+agents:
+  epic_strategist:
+    prompt_file: "prompts/epic_strategist.txt"
+  feature_decomposer_agent:
+    prompt_file: "prompts/feature_decomposer_agent.txt"
+  user_story_decomposer_agent:
+    prompt_file: "prompts/user_story_decomposer.txt"
+  decomposition_agent:
+    prompt_file: "prompts/decomposition_agent.txt"  # Legacy support
+  developer_agent:
+    prompt_file: "prompts/developer_agent.txt"
+    estimation_unit: "hours"
+  qa_tester_agent:
+    prompt_file: "prompts/qa_tester_agent.txt"
+    test_case_format: "gherkin"
+  backlog_sweeper_agent:
+    enabled: true
+    
+    # Targeted sweeps (supervisor-initiated after each stage)
+    targeted_sweep:
+      enabled: true
+      trigger_stages: ["epic_strategist", "feature_decomposer_agent", "user_story_decomposer_agent", "developer_agent", "qa_tester_agent"]
+      immediate_execution: true
+      focus_scope: "recent_changes"
+    
+    # Scheduled sweeps (periodic comprehensive monitoring)
+    scheduled_sweep:
+      enabled: true
+      schedule: "0 9 * * MON"  # Every Monday at 9 AM
+      comprehensive_scope: true
+      notification_threshold: 10
+      
+    # Quality validation criteria
+    validation_criteria:
+      epic_requirements:
+        min_business_value_clarity: 8
+        require_success_criteria: true
+        max_complexity_without_breakdown: "Large"
+      feature_requirements:
+        min_description_length: 50
+        require_user_story_breakdown: true
+        max_story_points_per_feature: 21
+      user_story_requirements:
+        min_acceptance_criteria_count: 3
+        max_acceptance_criteria_count: 8
+        require_bdd_format: true
+        require_functional_and_nonfunctional: true
+    severity_thresholds:
+      critical_notification_count: 5
+      max_discrepancies_per_run: 100
+
+workflow:
+  sequence:
+    - epic_strategist
+    - feature_decomposer_agent
+    - user_story_decomposer_agent
+    - developer_agent
+    - qa_tester_agent
+  
+  # Quality validation options
+  validation:
+    immediate_validation: true
+    max_retries_per_stage: 3
+    fail_fast: false
+  
+  # TESTING LIMITS - Set to specific numbers for testing, null for production
+  limits:
+    max_epics: 2                    # *** TESTING: Limit to 2 epics ***
+    max_features_per_epic: 3        # *** TESTING: Limit to 3 features per epic ***
+    max_user_stories_per_feature: null  # Unlimited for testing
+  
+  output_format: "azure_devops"
+
+notifications:
+  enabled: true
+  channels: [teams, email]
+  summary_report:
+    format: markdown
+    send_to:
+      - kevin.tran@c4workx.com
+      - thaogtran@gmail.com

@@ -382,13 +382,18 @@ class WorkflowSupervisor:
             agent = self.agents['epic_strategist']
             context = self.project_context.get_context('epic_strategist')
             
-            epics = agent.generate_epics(self.workflow_data['product_vision'], context)
+            # Get limits from configuration (null = unlimited)
+            max_epics = self.config.settings.get('workflow', {}).get('limits', {}).get('max_epics')
+            epics = agent.generate_epics(self.workflow_data['product_vision'], context, max_epics=max_epics)
             
             if not epics:
                 raise ValueError("Epic generation failed - no epics returned")
             
             self.workflow_data['epics'] = epics
-            self.logger.info(f"Generated {len(epics)} epics")
+            if max_epics:
+                self.logger.info(f"Generated {len(epics)} epics (limited to {max_epics} for testing)")
+            else:
+                self.logger.info(f"Generated {len(epics)} epics")
             
         except Exception as e:
             self.logger.error(f"Epic generation failed: {e}")
@@ -402,13 +407,19 @@ class WorkflowSupervisor:
             agent = self.agents['feature_decomposer_agent']
             context = self.project_context.get_context('feature_decomposer_agent')
             
+            # Get limits from configuration (null = unlimited)
+            max_features = self.config.settings.get('workflow', {}).get('limits', {}).get('max_features_per_epic')
+            
             for epic in self.workflow_data['epics']:
                 self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
                 
-                features = agent.decompose_epic(epic, context)
+                features = agent.decompose_epic(epic, context, max_features=max_features)
                 epic['features'] = features
                 
-                self.logger.info(f"Generated {len(features)} features for epic")
+                if max_features:
+                    self.logger.info(f"Generated {len(features)} features for epic (limited to {max_features} for testing)")
+                else:
+                    self.logger.info(f"Generated {len(features)} features for epic")
                 
         except Exception as e:
             self.logger.error(f"Feature decomposition failed: {e}")

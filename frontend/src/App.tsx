@@ -6,6 +6,7 @@ import theme from './theme';
 // Screen imports
 import MainDashboard from './screens/dashboard/MainDashboard';
 import ProjectWizard from './screens/project/ProjectWizard';
+import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
 import WelcomeScreen from './screens/onboarding/WelcomeScreen';
 
 // Layout imports
@@ -29,6 +30,13 @@ function App() {
           
           {/* Routes with WizardLayout */}
           <Route path="/project/new" element={
+            <WizardLayout>
+              <SimpleProjectWizard />
+            </WizardLayout>
+          } />
+          
+          {/* Legacy full wizard (for reference) */}
+          <Route path="/project/wizard" element={
             <WizardLayout>
               <ProjectWizard />
             </WizardLayout>
