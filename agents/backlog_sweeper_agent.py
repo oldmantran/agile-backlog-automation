@@ -715,6 +715,147 @@ class BacklogSweeperAgent:
         """Lazy logger property."""
         return self.get_logger()
 
+    def validate_epics(self, epics: list) -> list:
+        """Validate that all epics have required fields (title, description)."""
+        discrepancies = []
+        for epic in epics:
+            if not epic.get('title'):
+                discrepancies.append({
+                    'type': 'missing_epic_title',
+                    'work_item_id': epic.get('id'),
+                    'work_item_type': 'Epic',
+                    'title': '',
+                    'description': 'Epic missing title.',
+                    'severity': 'high',
+                    'suggested_agent': 'epic_strategist'
+                })
+            if not epic.get('description'):
+                discrepancies.append({
+                    'type': 'missing_epic_description',
+                    'work_item_id': epic.get('id'),
+                    'work_item_type': 'Epic',
+                    'title': epic.get('title', ''),
+                    'description': 'Epic missing description.',
+                    'severity': 'high',
+                    'suggested_agent': 'epic_strategist'
+                })
+        return discrepancies
+
+    def validate_epic_feature_relationships(self, epics: list) -> list:
+        """Validate that every epic has at least one feature with a title."""
+        discrepancies = []
+        for epic in epics:
+            features = epic.get('features', [])
+            if not features:
+                discrepancies.append({
+                    'type': 'missing_child_feature',
+                    'work_item_id': epic.get('id'),
+                    'work_item_type': 'Epic',
+                    'title': epic.get('title', ''),
+                    'description': 'Epic missing child Feature.',
+                    'severity': 'high',
+                    'suggested_agent': 'epic_strategist'
+                })
+            for feature in features:
+                if not feature.get('title'):
+                    discrepancies.append({
+                        'type': 'missing_feature_title',
+                        'work_item_id': feature.get('id'),
+                        'work_item_type': 'Feature',
+                        'title': '',
+                        'description': f"Feature under epic '{epic.get('title','')}' missing title.",
+                        'severity': 'high',
+                        'suggested_agent': 'decomposition_agent'
+                    })
+        return discrepancies
+
+    def validate_feature_user_story_relationships(self, epics: list) -> list:
+        """Validate that every feature has at least one user story with a title."""
+        discrepancies = []
+        for epic in epics:
+            for feature in epic.get('features', []):
+                user_stories = feature.get('user_stories', [])
+                if not user_stories:
+                    discrepancies.append({
+                        'type': 'missing_child_user_story',
+                        'work_item_id': feature.get('id'),
+                        'work_item_type': 'Feature',
+                        'title': feature.get('title', ''),
+                        'description': 'Feature missing child User Story.',
+                        'severity': 'high',
+                        'suggested_agent': 'decomposition_agent'
+                    })
+                for us in user_stories:
+                    if not us.get('title'):
+                        discrepancies.append({
+                            'type': 'missing_story_title',
+                            'work_item_id': us.get('id'),
+                            'work_item_type': 'User Story',
+                            'title': '',
+                            'description': f"User Story under feature '{feature.get('title','')}' missing title.",
+                            'severity': 'high',
+                            'suggested_agent': 'decomposition_agent'
+                        })
+        return discrepancies
+
+    def validate_user_story_tasks(self, epics: list) -> list:
+        """Validate that every user story has tasks and story points."""
+        discrepancies = []
+        for epic in epics:
+            for feature in epic.get('features', []):
+                for us in feature.get('user_stories', []):
+                    tasks = us.get('tasks', [])
+                    if not tasks:
+                        discrepancies.append({
+                            'type': 'missing_child_task',
+                            'work_item_id': us.get('id'),
+                            'work_item_type': 'User Story',
+                            'title': us.get('title', ''),
+                            'description': 'User Story missing child Task.',
+                            'severity': 'medium',
+                            'suggested_agent': 'developer_agent'
+                        })
+                    if us.get('story_points') is None:
+                        discrepancies.append({
+                            'type': 'missing_story_points',
+                            'work_item_id': us.get('id'),
+                            'work_item_type': 'User Story',
+                            'title': us.get('title', ''),
+                            'description': 'User Story missing story points.',
+                            'severity': 'medium',
+                            'suggested_agent': 'developer_agent'
+                        })
+        return discrepancies
+
+    def validate_test_artifacts(self, epics: list) -> list:
+        """Validate that every user story has test cases and every feature has a test plan structure."""
+        discrepancies = []
+        for epic in epics:
+            for feature in epic.get('features', []):
+                if not feature.get('test_plan_structure'):
+                    discrepancies.append({
+                        'type': 'missing_test_plan',
+                        'work_item_id': feature.get('id'),
+                        'work_item_type': 'Feature',
+                        'title': feature.get('title', ''),
+                        'description': 'Feature missing test plan structure.',
+                        'severity': 'high',
+                        'suggested_agent': 'qa_tester_agent'
+                    })
+                for us in feature.get('user_stories', []):
+                    test_cases = us.get('test_cases', [])
+                    if not test_cases:
+                        discrepancies.append({
+                            'type': 'missing_child_test_case',
+                            'work_item_id': us.get('id'),
+                            'work_item_type': 'User Story',
+                            'title': us.get('title', ''),
+                            'description': 'User Story missing test cases.',
+                            'severity': 'high',
+                            'suggested_agent': 'qa_tester_agent'
+                        })
+        return discrepancies
+# ...existing code...
 if __name__ == "__main__":
     from supervisor.supervisor import WorkflowSupervisor
     from config.config_loader import Config
@@ -778,4 +919,4 @@ if __name__ == "__main__":
             if now.hour == target_hour and (last_run is None or (now - last_run) > timedelta(hours=23)):
                 scheduled_sweep()
                 last_run = now
-            time.sleep(60) 
+            time.sleep(60)
