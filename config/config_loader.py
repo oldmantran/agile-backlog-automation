@@ -22,7 +22,7 @@ class Config:
             # OpenAI
             "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
             "OPENAI_MODEL": os.getenv("OPENAI_MODEL", "gpt-4.1"),
-            # LLM Provider (set to openai or grok)
+            # LLM Provider
             "LLM_PROVIDER": os.getenv("LLM_PROVIDER", "openai"),
             # Notifications
             "TEAMS_WEBHOOK_URL": os.getenv("TEAMS_WEBHOOK_URL"),
