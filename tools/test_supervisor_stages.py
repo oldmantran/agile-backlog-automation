@@ -36,7 +36,7 @@ def test_epic_strategist_stage_invocation(monkeypatch, supervisor):
     supervisor._validate_epics()
     assert supervisor.workflow_data['epics']
 
-def test_decomposition_agent_stage_invocation(monkeypatch, supervisor):
+def test_feature_decomposer_agent_stage_invocation(monkeypatch, supervisor):
     def one_feature(*args, **kwargs):
         return [{
             'title': 'Feature 1',
@@ -50,7 +50,7 @@ def test_decomposition_agent_stage_invocation(monkeypatch, supervisor):
             'edge_cases': [],
             'user_stories': []
         }]
-    monkeypatch.setattr(supervisor.agents['decomposition_agent'], 'decompose_epic', one_feature)
+    monkeypatch.setattr(supervisor.agents['feature_decomposer_agent'], 'decompose_epic', one_feature)
     supervisor.workflow_data = {
         'product_vision': 'Test vision',
         'epics': [{
@@ -73,7 +73,7 @@ def test_user_story_decomposer_stage_invocation(monkeypatch, supervisor):
             'tags': [],
             'tasks': []
         }]
-    monkeypatch.setattr(supervisor.agents['decomposition_agent'], 'decompose_feature_to_user_stories', one_user_story)
+    monkeypatch.setattr(supervisor.agents['user_story_decomposer_agent'], 'decompose_feature_to_user_stories', one_user_story)
     supervisor.workflow_data = {
         'product_vision': 'Test vision',
         'epics': [{
@@ -210,8 +210,8 @@ def test_full_backlog_creation_minimal(monkeypatch, supervisor):
 
     # Patch all agent methods
     monkeypatch.setattr(supervisor.agents['epic_strategist'], 'generate_epics', one_epic)
-    monkeypatch.setattr(supervisor.agents['decomposition_agent'], 'decompose_epic', one_feature)
-    monkeypatch.setattr(supervisor.agents['decomposition_agent'], 'decompose_feature_to_user_stories', one_user_story)
+    monkeypatch.setattr(supervisor.agents['feature_decomposer_agent'], 'decompose_epic', one_feature)
+    monkeypatch.setattr(supervisor.agents['user_story_decomposer_agent'], 'decompose_feature_to_user_stories', one_user_story)
     monkeypatch.setattr(supervisor.agents['developer_agent'], 'generate_tasks', one_task)
     monkeypatch.setattr(supervisor.agents['qa_tester_agent'], 'generate_user_story_test_cases', one_test_case)
     monkeypatch.setattr(supervisor.agents['qa_tester_agent'], 'create_test_plan_structure', one_test_plan)

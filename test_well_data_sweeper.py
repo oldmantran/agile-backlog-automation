@@ -126,7 +126,7 @@ def test_data_visualization_sweeper():
                         'title': title,
                         'description': f'{wi_type} missing title.',
                         'priority': 'high',
-                        'suggested_agent': 'decomposition_agent',
+                        'suggested_agent': 'user_story_decomposer_agent',
                         'area_path': get_field(wi, 'System.AreaPath')
                     })
                 

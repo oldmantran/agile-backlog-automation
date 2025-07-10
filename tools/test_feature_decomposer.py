@@ -1,8 +1,8 @@
 from config.config_loader import Config
-from agents.decomposition_agent import DecompositionAgent
+from agents.feature_decomposer_agent import FeatureDecomposerAgent
 
 config = Config()
-agent = DecompositionAgent(config)
+agent = FeatureDecomposerAgent(config)
 
 epic = {
     "title": "Invoice Management",

@@ -72,7 +72,7 @@ def demo_prompt_system():
         # Show how each agent's prompt adapts
         print("\n🤖 Agent Prompt Adaptations:")
         
-        agents = ['epic_strategist', 'decomposition_agent', 'developer_agent', 'qa_tester_agent']
+        agents = ['epic_strategist', 'feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_tester_agent']
         for agent in agents:
             try:
                 context = project_context.get_context(agent)

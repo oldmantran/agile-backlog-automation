@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 from config.config_loader import Config
-from agents.decomposition_agent import DecompositionAgent
+from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 
 def test_user_story_decomposition():
     """Test decomposing a feature into user stories."""
@@ -19,8 +19,8 @@ def test_user_story_decomposition():
     try:
         # Initialize
         config = Config()
-        agent = DecompositionAgent(config)
-        print("✅ DecompositionAgent initialized")
+        agent = UserStoryDecomposerAgent(config)
+        print("✅ UserStoryDecomposerAgent initialized")
         
         # Test feature data
         test_feature = {

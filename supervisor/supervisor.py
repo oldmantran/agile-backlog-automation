@@ -17,6 +17,8 @@ import re
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
 from agents.decomposition_agent import DecompositionAgent
+from agents.feature_decomposer_agent import FeatureDecomposerAgent
+from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
@@ -96,9 +98,13 @@ class WorkflowSupervisor:
         
         try:
             agents['epic_strategist'] = EpicStrategist(self.config)
-            agents['decomposition_agent'] = DecompositionAgent(self.config)
+            agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
+            agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
             agents['developer_agent'] = DeveloperAgent(self.config)
             agents['qa_tester_agent'] = QATesterAgent(self.config)
+            
+            # Keep backward compatibility with old decomposition_agent reference
+            agents['decomposition_agent'] = agents['feature_decomposer_agent']
             
             self.logger.info(f"Initialized {len(agents)} agents successfully")
             return agents
@@ -202,7 +208,12 @@ class WorkflowSupervisor:
         if not self.sweeper_agent:
             # Use AzureDevOpsIntegrator if available, else pass None
             ado_client = getattr(self, 'azure_integrator', None)
-            self.sweeper_agent = BacklogSweeperAgent(ado_client=ado_client, config=self.config.settings)
+            # Pass supervisor callback so sweeper can report discrepancies back to supervisor
+            self.sweeper_agent = BacklogSweeperAgent(
+                ado_client=ado_client, 
+                config=self.config.settings,
+                supervisor_callback=self.receive_sweeper_report
+            )
         return self.sweeper_agent
 
     def _sweeper_validate_and_get_incomplete(self, stage: str) -> list:
@@ -211,8 +222,12 @@ class WorkflowSupervisor:
         epics = self.workflow_data.get('epics', [])
         if stage == 'epic_strategist':
             return sweeper.validate_epics(epics)
+        elif stage == 'feature_decomposer_agent':
+            return sweeper.validate_epic_feature_relationships(epics)
+        elif stage == 'user_story_decomposer_agent':
+            return sweeper.validate_feature_user_story_relationships(epics)
         elif stage == 'decomposition_agent':
-            # Validate both epic-feature and feature-user story relationships
+            # Backward compatibility - validate both epic-feature and feature-user story relationships
             return sweeper.validate_epic_feature_relationships(epics) + sweeper.validate_feature_user_story_relationships(epics)
         elif stage == 'user_story_decomposer':
             return sweeper.validate_feature_user_story_relationships(epics)
@@ -275,9 +290,18 @@ class WorkflowSupervisor:
                         if stage == 'epic_strategist':
                             self._execute_epic_generation()
                             self._validate_epics()
-                        elif stage == 'decomposition_agent':
+                        elif stage == 'feature_decomposer_agent':
                             self._execute_feature_decomposition()
                             self._validate_features()
+                        elif stage == 'user_story_decomposer_agent':
+                            self._execute_user_story_decomposition()
+                            self._validate_user_stories()
+                        elif stage == 'decomposition_agent':
+                            # Backward compatibility - run both feature and user story decomposition
+                            self._execute_feature_decomposition()
+                            self._validate_features()
+                            self._execute_user_story_decomposition()
+                            self._validate_user_stories()
                         elif stage == 'user_story_decomposer':
                             self._execute_user_story_decomposition()
                             self._validate_user_stories()
@@ -375,8 +399,8 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing epics into features")
         
         try:
-            agent = self.agents['decomposition_agent']
-            context = self.project_context.get_context('decomposition_agent')
+            agent = self.agents['feature_decomposer_agent']
+            context = self.project_context.get_context('feature_decomposer_agent')
             
             for epic in self.workflow_data['epics']:
                 self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
@@ -395,8 +419,8 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing features into user stories")
         
         try:
-            agent = self.agents['decomposition_agent']
-            context = self.project_context.get_context('decomposition_agent')
+            agent = self.agents['user_story_decomposer_agent']
+            context = self.project_context.get_context('user_story_decomposer_agent')
             
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
@@ -685,8 +709,8 @@ class WorkflowSupervisor:
         """Get default workflow stages from configuration."""
         return self.config.settings.get('workflow', {}).get('sequence', [
             'epic_strategist',
-            'decomposition_agent',
-            'user_story_decomposer',
+            'feature_decomposer_agent',
+            'user_story_decomposer_agent',
             'developer_agent',
             'qa_tester_agent'
         ])
@@ -788,8 +812,13 @@ class WorkflowSupervisor:
         # Route to appropriate agent
         if agent_name == 'epic_strategist' and hasattr(self, 'agents'):
             self._handle_epic_strategist_discrepancies(work_item_groups)
+        elif agent_name == 'feature_decomposer_agent' and hasattr(self, 'agents'):
+            self._handle_feature_decomposer_discrepancies(work_item_groups)
+        elif agent_name == 'user_story_decomposer_agent' and hasattr(self, 'agents'):
+            self._handle_user_story_decomposer_discrepancies(work_item_groups)
         elif agent_name == 'decomposition_agent' and hasattr(self, 'agents'):
-            self._handle_decomposition_discrepancies(work_item_groups)
+            # Backward compatibility - handle as feature decomposer
+            self._handle_feature_decomposer_discrepancies(work_item_groups)
         elif agent_name == 'developer_agent' and hasattr(self, 'agents'):
             self._handle_developer_discrepancies(work_item_groups)
         elif agent_name == 'qa_tester_agent' and hasattr(self, 'agents'):
@@ -809,14 +838,40 @@ class WorkflowSupervisor:
                 # In a full implementation, you would call:
                 # self.agents['epic_strategist'].remediate_discrepancy(disc)
     
-    def _handle_decomposition_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
-        """Handle discrepancies that require Decomposition Agent intervention."""
+    def _handle_feature_decomposer_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require Feature Decomposer Agent intervention."""
         for wi_id, discrepancies in work_item_groups.items():
-            self.logger.info(f"Decomposition Agent: Reviewing work item {wi_id}")
+            self.logger.info(f"Feature Decomposer Agent: Reviewing work item {wi_id}")
             for disc in discrepancies:
                 self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
                 # In a full implementation, you would call:
-                # self.agents['decomposition_agent'].remediate_discrepancy(disc)
+                # self.agents['feature_decomposer_agent'].remediate_discrepancy(disc)
+    
+    def _handle_user_story_decomposer_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require User Story Decomposer Agent intervention."""
+        for wi_id, discrepancies in work_item_groups.items():
+            self.logger.info(f"User Story Decomposer Agent: Reviewing work item {wi_id}")
+            for disc in discrepancies:
+                self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
+                # In a full implementation, you would call:
+                # self.agents['user_story_decomposer_agent'].remediate_discrepancy(disc)
+    
+    def _handle_decomposition_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
+        """Handle discrepancies that require Decomposition Agent intervention (backward compatibility)."""
+        for wi_id, discrepancies in work_item_groups.items():
+            self.logger.info(f"Decomposition Agent (Legacy): Reviewing work item {wi_id}")
+            for disc in discrepancies:
+                self.logger.info(f"  - {disc.get('type', 'unknown')}: {disc.get('description', 'No description')}")
+                # Route to appropriate new agent based on discrepancy type
+                if disc.get('type') in ['missing_feature_title', 'missing_feature_description', 'invalid_feature_child']:
+                    self.logger.info(f"    → Routing to Feature Decomposer Agent")
+                    self._handle_feature_decomposer_discrepancies({wi_id: [disc]})
+                elif disc.get('type') in ['missing_story_title', 'missing_or_invalid_story_description', 'missing_child_user_story']:
+                    self.logger.info(f"    → Routing to User Story Decomposer Agent")
+                    self._handle_user_story_decomposer_discrepancies({wi_id: [disc]})
+                else:
+                    # Default to feature decomposer for unknown types
+                    self._handle_feature_decomposer_discrepancies({wi_id: [disc]})
     
     def _handle_developer_discrepancies(self, work_item_groups: Dict[int, List[Dict]]):
         """Handle discrepancies that require Developer Agent intervention."""
@@ -1240,3 +1295,64 @@ class WorkflowSupervisor:
                 
         except Exception as e:
             self.logger.error(f"Failed to send critical issue notification: {e}")
+    
+    def _execute_stage_with_validation(self, stage: str, enable_immediate_remediation: bool = True):
+        """
+        Execute a workflow stage and perform immediate validation and remediation.
+        
+        Args:
+            stage: The workflow stage to execute
+            enable_immediate_remediation: Whether to immediately remediate found issues
+        """
+        self.logger.info(f"Executing stage with validation: {stage}")
+        
+        # Execute the core stage logic
+        if stage == 'epic_strategist':
+            self._execute_epic_generation()
+            self._validate_epics()
+        elif stage == 'feature_decomposer_agent':
+            self._execute_feature_decomposition()
+            self._validate_features()
+        elif stage == 'user_story_decomposer_agent':
+            self._execute_user_story_decomposition()
+            self._validate_user_stories()
+        elif stage == 'decomposition_agent':
+            # Backward compatibility - run both feature and user story decomposition
+            self._execute_feature_decomposition()
+            self._validate_features()
+            self._execute_user_story_decomposition()
+            self._validate_user_stories()
+        elif stage == 'user_story_decomposer':
+            self._execute_user_story_decomposition()
+            self._validate_user_stories()
+        elif stage == 'developer_agent':
+            self._execute_task_generation()
+            self._validate_tasks_and_estimates()
+        elif stage == 'qa_tester_agent':
+            self._execute_qa_generation()
+            self._validate_test_cases_and_plans()
+        else:
+            self.logger.warning(f"Unknown stage: {stage}")
+            return False
+        
+        # Run targeted sweep for immediate validation
+        if enable_immediate_remediation:
+            sweeper = self._get_sweeper_agent()
+            discrepancies = sweeper.run_targeted_sweep(
+                stage=stage, 
+                workflow_data=self.workflow_data, 
+                immediate_callback=True
+            )
+            
+            # If discrepancies found, they will be automatically reported to supervisor
+            # via the callback and routed to appropriate agents
+            if discrepancies:
+                self.logger.info(f"Found {len(discrepancies)} issues in {stage}, routing for immediate remediation")
+                return False  # Indicate stage needs remediation
+            else:
+                self.logger.info(f"Stage {stage} completed successfully with no issues")
+                return True
+        else:
+            # Use legacy validation method
+            incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
+            return len(incomplete_items) == 0

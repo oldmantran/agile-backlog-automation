@@ -12,8 +12,12 @@ domains:
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"
+  feature_decomposer_agent:
+    prompt_file: "prompts/feature_decomposer_agent.txt"
+  user_story_decomposer_agent:
+    prompt_file: "prompts/user_story_decomposer.txt"
   decomposition_agent:
-    prompt_file: "prompts/decomposition_agent.txt"
+    prompt_file: "prompts/decomposition_agent.txt"  # Legacy support
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
@@ -22,7 +26,26 @@ agents:
     test_case_format: "gherkin"
   backlog_sweeper_agent:
     enabled: true
-    schedule: "0 12 * * *"  # Daily at 12:00 UTC (cron format)
+    
+    # Targeted sweeps (supervisor-initiated after each stage)
+    targeted_sweeps:
+      enabled: true
+      immediate_remediation: true
+      max_retries_per_stage: 3
+      stages:
+        - epic_strategist
+        - feature_decomposer_agent  
+        - user_story_decomposer_agent
+        - developer_agent
+        - qa_tester_agent
+    
+    # Scheduled sweeps (autonomous recurring health checks)
+    scheduled_sweeps:
+      enabled: true
+      schedule: "0 12 * * *"  # Daily at 12:00 UTC (cron format)
+      comprehensive: true
+      report_only: false  # Set to true to only report, not attempt remediation
+    
     acceptance_criteria:
       min_criteria_count: 3
       max_criteria_count: 8
@@ -35,9 +58,16 @@ agents:
 workflow:
   sequence:
     - epic_strategist
-    - decomposition_agent
+    - feature_decomposer_agent
+    - user_story_decomposer_agent
     - developer_agent
     - qa_tester_agent
+  
+  # Quality validation options
+  validation:
+    immediate_validation: true  # Run targeted sweeps after each stage
+    max_retries_per_stage: 3   # How many times to retry a stage if issues found
+    fail_fast: false          # Stop workflow on first stage failure
   output_format: "azure_devops"
 
 notifications:

@@ -12,7 +12,8 @@ from datetime import datetime
 # Add project root to Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from agents.decomposition_agent import DecompositionAgent
+from agents.feature_decomposer_agent import FeatureDecomposerAgent
+from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
@@ -20,13 +21,13 @@ from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
 
 
-def test_decomposition_agent_quality():
-    """Test that Decomposition Agent creates compliant user stories."""
-    print("🔧 Testing Decomposition Agent Quality Compliance")
+def test_user_story_decomposer_quality():
+    """Test that User Story Decomposer Agent creates compliant user stories."""
+    print("🔧 Testing User Story Decomposer Agent Quality Compliance")
     print("=" * 60)
     
     config = Config()
-    agent = DecompositionAgent(config)
+    agent = UserStoryDecomposerAgent(config)
     validator = WorkItemQualityValidator(config.settings)
     
     # Test feature to decompose
@@ -258,8 +259,8 @@ def test_integration_compliance():
     # Create sample work items from all agents
     config = Config()
     
-    # Get user stories from decomposition agent
-    decomp_agent = DecompositionAgent(config)
+    # Get user stories from user story decomposer agent
+    decomp_agent = UserStoryDecomposerAgent(config)
     test_feature = {
         'title': 'User Profile Management',
         'description': 'Enable users to manage their profile information',
@@ -312,7 +313,7 @@ if __name__ == "__main__":
     
     try:
         # Run all tests
-        decomp_pass, user_stories = test_decomposition_agent_quality()
+        decomp_pass, user_stories = test_user_story_decomposer_quality()
         dev_pass, tasks = test_developer_agent_quality()
         qa_pass, test_cases = test_qa_tester_agent_quality()
         integration_pass = test_integration_compliance()

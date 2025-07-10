@@ -6,7 +6,8 @@ from datetime import datetime
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.decomposition_agent import DecompositionAgent
+from agents.feature_decomposer_agent import FeatureDecomposerAgent
+from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
 from utils.project_context import ProjectContext
@@ -55,7 +56,8 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
     
     # Initialize agents
     epic_agent = EpicStrategist(config)
-    feature_agent = DecompositionAgent(config)
+    feature_agent = FeatureDecomposerAgent(config)
+    story_agent = UserStoryDecomposerAgent(config)
     dev_agent = DeveloperAgent(config)
     qa_agent = QATesterAgent(config)
 
@@ -70,7 +72,7 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
     for epic in epics:
         if run_stage in ["all", "feature"]:
             print(f"🔍 Decomposing epic: {epic.get('title', 'Untitled Epic')}")
-            context = project_context.get_context('decomposition_agent')
+            context = project_context.get_context('feature_decomposer_agent')
             features = feature_agent.decompose_epic(epic, context)
         else:
             features = epic.get("features", [])
@@ -78,6 +80,15 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
         epic["features"] = []
 
         for feature in features:
+            # Add user story decomposition step
+            if run_stage in ["all", "user_story"]:
+                print(f"📋 Decomposing feature into user stories: {feature.get('title', 'Untitled Feature')}")
+                context = project_context.get_context('user_story_decomposer_agent')
+                user_stories = story_agent.decompose_feature_to_user_stories(feature, context)
+                feature["user_stories"] = user_stories
+            else:
+                feature["user_stories"] = feature.get("user_stories", [])
+
             if run_stage in ["all", "developer"]:
                 print(f"⚙️ Generating tasks for feature: {feature.get('title', 'Untitled Feature')}")
                 context = project_context.get_context('developer_agent')
@@ -131,7 +142,7 @@ def load_input_from_yaml(path: str) -> dict:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run backlog automation pipeline.")
-    parser.add_argument("--run", choices=["all", "epic", "feature", "developer", "qa"], default="all", help="Which stage(s) to run")
+    parser.add_argument("--run", choices=["all", "epic", "feature", "user_story", "developer", "qa"], default="all", help="Which stage(s) to run")
     parser.add_argument("--input", type=str, help="Path to YAML file with product_vision")
     parser.add_argument("--project-type", choices=["fintech", "healthcare", "ecommerce", "education", "mobile_app", "saas"], help="Apply predefined project context")
     parser.add_argument("--project-name", type=str, help="Override project name")

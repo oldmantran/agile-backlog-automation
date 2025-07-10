@@ -62,14 +62,14 @@ class BacklogSweeperAgent:
             'missing_epic_description': 'epic_strategist', 
             'missing_child_feature': 'epic_strategist',
             'invalid_epic_child': 'epic_strategist',
-            'missing_feature_title': 'decomposition_agent',
-            'missing_feature_description': 'decomposition_agent',
-            'missing_child_user_story': 'decomposition_agent',
-            'invalid_feature_child': 'decomposition_agent',
+            'missing_feature_title': 'feature_decomposer_agent',
+            'missing_feature_description': 'feature_decomposer_agent',
+            'missing_child_user_story': 'user_story_decomposer_agent',
+            'invalid_feature_child': 'feature_decomposer_agent',
             
             # User Story level issues
-            'missing_story_title': 'decomposition_agent',
-            'missing_or_invalid_story_description': 'decomposition_agent',
+            'missing_story_title': 'user_story_decomposer_agent',
+            'missing_or_invalid_story_description': 'user_story_decomposer_agent',
             'missing_acceptance_criteria': 'qa_tester_agent',
             'invalid_acceptance_criteria': 'qa_tester_agent',
             'missing_story_points': 'developer_agent',
@@ -85,9 +85,12 @@ class BacklogSweeperAgent:
             'invalid_test_case_parent': 'qa_tester_agent',
             
             # Relationship issues
-            'relationship_issue': 'decomposition_agent',
+            'relationship_issue': 'feature_decomposer_agent',
             'user_story_missing_tasks': 'developer_agent',
-            'orphaned_work_item': 'decomposition_agent'
+            'orphaned_work_item': 'feature_decomposer_agent',
+            
+            # Backward compatibility mappings
+            'decomposition_agent': 'feature_decomposer_agent'
         }
 
     def report_to_supervisor(self, report):
@@ -154,8 +157,7 @@ class BacklogSweeperAgent:
                 'work_item_type': 'User Story',
                 'title': title,
                 'description': f'{len(criteria_items)} acceptance criteria found. Consider breaking story down - recommend {self.min_criteria_count}-{self.max_criteria_count} criteria max.',
-                'severity': 'medium',
-                'suggested_agent': 'decomposition_agent'
+                'suggested_agent': 'user_story_decomposer_agent'
             })
         
         # Check for BDD format (if required by configuration)
@@ -300,7 +302,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'Feature missing title.',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('missing_feature_title', 'decomposition_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_feature_title', 'feature_decomposer_agent')
                     })
                     
                 if not description:
@@ -311,7 +313,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'Feature missing description.',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('missing_feature_description', 'decomposition_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_feature_description', 'feature_decomposer_agent')
                     })
                 
                 child_ids = [int(r['url'].split('/')[-1]) for r in children]
@@ -325,7 +327,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'Feature missing child User Story.',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('missing_child_user_story', 'decomposition_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_child_user_story', 'feature_decomposer_agent')
                     })
                 
                 for cid, ct in zip(child_ids, child_types):
@@ -337,7 +339,7 @@ class BacklogSweeperAgent:
                             'title': title,
                             'description': f'Feature has invalid child type: {ct} (ID {cid})',
                             'severity': 'medium',
-                            'suggested_agent': self.agent_assignments.get('invalid_feature_child', 'decomposition_agent')
+                            'suggested_agent': self.agent_assignments.get('invalid_feature_child', 'feature_decomposer_agent')
                         })
 
             # User Story validation rules (with advanced acceptance criteria validation)
@@ -350,7 +352,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'User Story missing title.',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('missing_story_title', 'decomposition_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_story_title', 'user_story_decomposer_agent')
                     })
                 
                 if not description or 'As a' not in description:
@@ -361,7 +363,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'User Story missing or invalid description (should follow "As a..." format).',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('missing_or_invalid_story_description', 'decomposition_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_or_invalid_story_description', 'user_story_decomposer_agent')
                     })
                 
                 # Advanced acceptance criteria validation
@@ -515,7 +517,7 @@ class BacklogSweeperAgent:
                     'title': title,
                     'description': f'{wi_type} has no parent work item.',
                     'severity': 'high',
-                    'suggested_agent': self.agent_assignments.get('orphaned_work_item', 'decomposition_agent')
+                    'suggested_agent': self.agent_assignments.get('orphaned_work_item', 'feature_decomposer_agent')
                 })
         
         return discrepancies
@@ -765,7 +767,7 @@ class BacklogSweeperAgent:
                         'title': '',
                         'description': f"Feature under epic '{epic.get('title','')}' missing title.",
                         'severity': 'high',
-                        'suggested_agent': 'decomposition_agent'
+                        'suggested_agent': 'feature_decomposer_agent'
                     })
         return discrepancies
 
@@ -784,7 +786,7 @@ class BacklogSweeperAgent:
                         'title': feature.get('title', ''),
                         'description': 'Feature missing child User Story.',
                         'severity': 'high',
-                        'suggested_agent': 'decomposition_agent'
+                        'suggested_agent': 'feature_decomposer_agent'
                     })
                 elif len(user_stories) < 3:
                     discrepancies.append({
@@ -794,7 +796,7 @@ class BacklogSweeperAgent:
                         'title': feature.get('title', ''),
                         'description': f"Feature has only {len(user_stories)} user stories (should have 3–6 for completeness).",
                         'severity': 'medium',
-                        'suggested_agent': 'decomposition_agent'
+                        'suggested_agent': 'feature_decomposer_agent'
                     })
                 elif len(user_stories) > 6:
                     discrepancies.append({
@@ -804,7 +806,7 @@ class BacklogSweeperAgent:
                         'title': feature.get('title', ''),
                         'description': f"Feature has {len(user_stories)} user stories (should have 3–6 for focus and clarity).",
                         'severity': 'low',
-                        'suggested_agent': 'decomposition_agent'
+                        'suggested_agent': 'feature_decomposer_agent'
                     })
                 for us in user_stories:
                     if not us.get('title'):
@@ -815,7 +817,7 @@ class BacklogSweeperAgent:
                             'title': '',
                             'description': f"User Story under feature '{feature.get('title','')}' missing title.",
                             'severity': 'high',
-                            'suggested_agent': 'decomposition_agent'
+                            'suggested_agent': 'user_story_decomposer_agent'
                         })
         return discrepancies
 
@@ -876,7 +878,75 @@ class BacklogSweeperAgent:
                             'suggested_agent': 'qa_tester_agent'
                         })
         return discrepancies
-# ...existing code...
+
+    def run_targeted_sweep(self, stage: str, workflow_data: dict, immediate_callback: bool = True) -> List[Dict[str, Any]]:
+        """
+        Run a targeted sweep for a specific workflow stage.
+        Used by supervisor for immediate validation after agent execution.
+        
+        Args:
+            stage: The workflow stage to validate ('epic_strategist', 'feature_decomposer_agent', etc.)
+            workflow_data: Current workflow data containing epics, features, user stories
+            immediate_callback: Whether to immediately report to supervisor (default: True)
+            
+        Returns:
+            List of discrepancies found for the specific stage
+        """
+        epics = workflow_data.get('epics', [])
+        discrepancies = []
+        
+        try:
+            if stage == 'epic_strategist':
+                discrepancies = self.validate_epics(epics)
+            elif stage == 'feature_decomposer_agent':
+                discrepancies = self.validate_epic_feature_relationships(epics)
+            elif stage == 'user_story_decomposer_agent':
+                discrepancies = self.validate_feature_user_story_relationships(epics)
+            elif stage == 'decomposition_agent':
+                # Backward compatibility - validate both epic-feature and feature-user story
+                discrepancies = (self.validate_epic_feature_relationships(epics) + 
+                               self.validate_feature_user_story_relationships(epics))
+            elif stage == 'developer_agent':
+                discrepancies = self.validate_user_story_tasks(epics)
+            elif stage == 'qa_tester_agent':
+                discrepancies = self.validate_test_artifacts(epics)
+            else:
+                self.logger.warning(f"Unknown stage for targeted sweep: {stage}")
+                return []
+            
+            # Create targeted report if discrepancies found and callback requested
+            if discrepancies and immediate_callback and self.supervisor_callback:
+                # Group by suggested agent for efficient routing
+                agent_assignments = {}
+                for discrepancy in discrepancies:
+                    agent = discrepancy.get('suggested_agent', 'supervisor')
+                    if agent not in agent_assignments:
+                        agent_assignments[agent] = []
+                    agent_assignments[agent].append(discrepancy)
+                
+                # Create targeted report
+                targeted_report = {
+                    'timestamp': datetime.now().isoformat(),
+                    'sweep_type': 'targeted_stage_validation',
+                    'stage': stage,
+                    'summary': {
+                        'total_discrepancies': len(discrepancies),
+                        'high_priority_count': len([d for d in discrepancies if d.get('severity') == 'high']),
+                        'agents_with_assignments': len(agent_assignments)
+                    },
+                    'agent_assignments': agent_assignments,
+                    'immediate_remediation_requested': True,
+                    'recommended_actions': [f"Remediate {len(discrepancies)} issues found in {stage} stage"]
+                }
+                
+                # Report immediately to supervisor
+                self.report_to_supervisor(targeted_report)
+            
+            return discrepancies
+            
+        except Exception as e:
+            self.logger.error(f"Error in targeted sweep for stage {stage}: {e}")
+            return []
 if __name__ == "__main__":
     from supervisor.supervisor import WorkflowSupervisor
     from config.config_loader import Config

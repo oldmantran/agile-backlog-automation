@@ -9,9 +9,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 from config.config_loader import Config
-from agents.decomposition_agent import DecompositionAgent
+from agents.feature_decomposer_agent import FeatureDecomposerAgent
 
-def test_decomposition_agent():
+def test_feature_decomposition_agent():
     """Test feature decomposer with a sample epic."""
     print("🔍 Debug Feature Decomposer")
     print("=" * 40)
@@ -19,8 +19,8 @@ def test_decomposition_agent():
     try:
         # Initialize
         config = Config()
-        agent = DecompositionAgent(config)
-        print("✅ DecompositionAgent initialized")
+        agent = FeatureDecomposerAgent(config)
+        print("✅ FeatureDecomposerAgent initialized")
         
         # Sample epic (matching epic strategist output format)
         epic = {
@@ -96,7 +96,7 @@ def test_decomposition_agent():
         return False
 
 def main():
-    success = test_decomposition_agent()
+    success = test_feature_decomposition_agent()
     
     if success:
         print(f"\\n🎉 Feature decomposer test passed!")

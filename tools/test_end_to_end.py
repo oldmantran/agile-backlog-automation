@@ -52,8 +52,8 @@ This should be a simple, focused MVP for individual productivity.
         # Run with shorter stages for faster testing
         test_stages = [
             'epic_strategist',
-            'decomposition_agent', 
-            'user_story_decomposer'
+            'feature_decomposer_agent', 
+            'user_story_decomposer_agent'
         ]
         
         result = supervisor.execute_workflow(
