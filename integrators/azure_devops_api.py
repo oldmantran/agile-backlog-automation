@@ -617,19 +617,19 @@ class AzureDevOpsIntegrator:
         if epic_data.get('success_criteria'):
             description += "\n\n**Success Criteria:**"
             for criterion in epic_data['success_criteria']:
-                description += f"\n- {criterion}"
+                description += f"\n\n- {criterion}"
         
         # Add dependencies
         if epic_data.get('dependencies'):
             description += "\n\n**Dependencies:**"
             for dependency in epic_data['dependencies']:
-                description += f"\n- {dependency}"
+                description += f"\n\n- {dependency}"
         
         # Add risks
         if epic_data.get('risks'):
             description += "\n\n**Risks:**"
             for risk in epic_data['risks']:
-                description += f"\n- {risk}"
+                description += f"\n\n- {risk}"
         
         return description
     
@@ -645,19 +645,19 @@ class AzureDevOpsIntegrator:
         if feature_data.get('ui_ux_requirements'):
             description += "\n\n**UI/UX Requirements:**"
             for requirement in feature_data['ui_ux_requirements']:
-                description += f"\n- {requirement}"
+                description += f"\n\n- {requirement}"
         
         # Add technical considerations if available
         if feature_data.get('technical_considerations'):
             description += "\n\n**Technical Considerations:**"
             for consideration in feature_data['technical_considerations']:
-                description += f"\n- {consideration}"
+                description += f"\n\n- {consideration}"
         
         # Add dependencies if available
         if feature_data.get('dependencies'):
             description += "\n\n**Dependencies:**"
             for dependency in feature_data['dependencies']:
-                description += f"\n- {dependency}"
+                description += f"\n\n- {dependency}"
         
         return description
     
@@ -669,13 +669,13 @@ class AzureDevOpsIntegrator:
         if task_data.get('technical_requirements'):
             description += "\n\n**Technical Requirements:**"
             for req in task_data['technical_requirements']:
-                description += f"\n- {req}"
+                description += f"\n\n- {req}"
         
         # Add definition of done
         if task_data.get('definition_of_done'):
             description += "\n\n**Definition of Done:**"
             for item in task_data['definition_of_done']:
-                description += f"\n- {item}"
+                description += f"\n\n- {item}"
         
         return description
     
@@ -684,12 +684,13 @@ class AzureDevOpsIntegrator:
         if not acceptance_criteria:
             return ""
         
-        # Format as a numbered list for ADO
+        # Format as a numbered list with double line spacing for readability
         formatted_criteria = []
         for i, criterion in enumerate(acceptance_criteria, 1):
             formatted_criteria.append(f"{i}. {criterion}")
         
-        return "\n".join(formatted_criteria)
+        # Use double line spacing between criteria for better readability
+        return "\n\n".join(formatted_criteria)
 
     def _format_user_story_description(self, story_data: Dict[str, Any]) -> str:
         """Format user story description without acceptance criteria (they go in dedicated field)."""
@@ -703,13 +704,13 @@ class AzureDevOpsIntegrator:
         if story_data.get('definition_of_ready'):
             description += "\n\n**Definition of Ready:**"
             for item in story_data['definition_of_ready']:
-                description += f"\n- {item}"
+                description += f"\n\n- {item}"
         
         # Add definition of done if available
         if story_data.get('definition_of_done'):
             description += "\n\n**Definition of Done:**"
             for item in story_data['definition_of_done']:
-                description += f"\n- {item}"
+                description += f"\n\n- {item}"
         
         # Note: Acceptance criteria are now stored in the dedicated ADO field
         

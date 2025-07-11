@@ -1318,12 +1318,12 @@ class WorkflowSupervisor:
         if not criteria:
             return ""
         
-        # Format as numbered list
+        # Format as numbered list with double line spacing for readability
         formatted_lines = []
         for i, criterion in enumerate(criteria, 1):
             formatted_lines.append(f"{i}. {criterion}")
         
-        return '\n'.join(formatted_lines)
+        return '\n\n'.join(formatted_lines)
 
     def create_complete_user_story_with_children(self, user_story_data: Dict[str, Any], parent_feature_id: int = None) -> Dict[str, Any]:
         """

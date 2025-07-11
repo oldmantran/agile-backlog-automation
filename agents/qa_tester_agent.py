@@ -484,7 +484,7 @@ Provide detailed analysis including:
         if '; ' in criteria:
             parts = criteria.split('; ')
             if len(parts) > 1:
-                return ';\n'.join(parts)
+                return ';\n\n'.join(parts)
         
         # Handle long single criteria
         if len(criteria) > 100:
