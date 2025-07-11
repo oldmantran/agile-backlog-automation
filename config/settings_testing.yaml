@@ -25,16 +25,23 @@ agents:
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
-  qa_tester_agent:
-    prompt_file: "prompts/qa_tester_agent.txt"
+  qa_lead_agent:
+    prompt_file: "prompts/qa_lead_agent.txt"
     test_case_format: "gherkin"
+    sub_agents:
+      test_plan_agent:
+        prompt_file: "prompts/test_plan_agent.txt"
+      test_suite_agent:
+        prompt_file: "prompts/test_suite_agent.txt"
+      test_case_agent:
+        prompt_file: "prompts/test_case_agent.txt"
   backlog_sweeper_agent:
     enabled: true
     
     # Targeted sweeps (supervisor-initiated after each stage)
     targeted_sweep:
       enabled: true
-      trigger_stages: ["epic_strategist", "feature_decomposer_agent", "user_story_decomposer_agent", "developer_agent", "qa_tester_agent"]
+      trigger_stages: ["epic_strategist", "feature_decomposer_agent", "user_story_decomposer_agent", "developer_agent", "qa_lead_agent"]
       immediate_execution: true
       focus_scope: "recent_changes"
     
@@ -70,7 +77,7 @@ workflow:
     - feature_decomposer_agent
     - user_story_decomposer_agent
     - developer_agent
-    - qa_tester_agent
+    - qa_lead_agent
   
   # Quality validation options
   validation:

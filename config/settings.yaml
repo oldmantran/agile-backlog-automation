@@ -21,9 +21,16 @@ agents:
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
-  qa_tester_agent:
-    prompt_file: "prompts/qa_tester_agent.txt"
-    test_case_format: "gherkin"
+  qa_lead_agent:
+    prompt_file: "prompts/qa_lead_agent.txt"
+    sub_agents:
+      test_plan_agent:
+        prompt_file: "prompts/test_plan_agent.txt"
+      test_suite_agent:
+        prompt_file: "prompts/test_suite_agent.txt"
+      test_case_agent:
+        prompt_file: "prompts/test_case_agent.txt"
+        test_case_format: "gherkin"
   backlog_sweeper_agent:
     enabled: true
     
@@ -37,7 +44,7 @@ agents:
         - feature_decomposer_agent  
         - user_story_decomposer_agent
         - developer_agent
-        - qa_tester_agent
+        - qa_lead_agent
     
     # Scheduled sweeps (autonomous recurring health checks)
     scheduled_sweeps:
@@ -61,7 +68,7 @@ workflow:
     - feature_decomposer_agent
     - user_story_decomposer_agent
     - developer_agent
-    - qa_tester_agent
+    - qa_lead_agent
   
   # Quality validation options
   validation:

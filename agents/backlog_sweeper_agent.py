@@ -70,19 +70,23 @@ class BacklogSweeperAgent:
             # User Story level issues
             'missing_story_title': 'user_story_decomposer_agent',
             'missing_or_invalid_story_description': 'user_story_decomposer_agent',
-            'missing_acceptance_criteria': 'qa_tester_agent',
-            'invalid_acceptance_criteria': 'qa_tester_agent',
+            'missing_acceptance_criteria': 'qa_lead_agent',
+            'invalid_acceptance_criteria': 'qa_lead_agent',
             'missing_story_points': 'developer_agent',
             'missing_child_task': 'developer_agent',
-            'missing_child_test_case': 'qa_tester_agent',
+            'missing_child_test_case': 'qa_lead_agent',
             
             # Task/Test level issues
             'missing_task_title': 'developer_agent',
             'missing_task_description': 'developer_agent',
             'task_has_children': 'developer_agent',
             'invalid_task_parent': 'developer_agent',
-            'missing_test_case_title': 'qa_tester_agent',
-            'invalid_test_case_parent': 'qa_tester_agent',
+            'missing_test_case_title': 'qa_lead_agent',
+            'invalid_test_case_parent': 'qa_lead_agent',
+            'missing_test_plan': 'qa_lead_agent',
+            'missing_test_suite': 'qa_lead_agent',
+            'test_plan_suite_mismatch': 'qa_lead_agent',
+            'test_case_suite_mismatch': 'qa_lead_agent',
             
             # Relationship issues
             'relationship_issue': 'feature_decomposer_agent',
@@ -125,7 +129,7 @@ class BacklogSweeperAgent:
                 'title': title,
                 'description': 'User Story missing acceptance criteria.',
                 'severity': 'high',
-                'suggested_agent': 'qa_tester_agent'
+                'suggested_agent': 'qa_lead_agent'
             }]
         
         # Split criteria into individual items (assuming line breaks or bullet points)
@@ -148,7 +152,7 @@ class BacklogSweeperAgent:
                 'title': title,
                 'description': f'Only {len(criteria_items)} acceptance criteria found. Recommend {self.min_criteria_count}-{self.max_criteria_count} criteria for proper coverage.',
                 'severity': 'medium',
-                'suggested_agent': 'qa_tester_agent'
+                'suggested_agent': 'qa_lead_agent'
             })
         elif len(criteria_items) > self.max_criteria_count:
             discrepancies.append({
@@ -175,7 +179,7 @@ class BacklogSweeperAgent:
                     'title': title,
                     'description': 'No Given-When-Then format found in acceptance criteria. Consider using BDD format for clarity.',
                     'severity': 'low',
-                    'suggested_agent': 'qa_tester_agent'
+                    'suggested_agent': 'qa_lead_agent'
                 })
         
         # Check for functional vs non-functional criteria mix (if required)
@@ -194,7 +198,7 @@ class BacklogSweeperAgent:
                     'title': title,
                     'description': 'Consider adding non-functional acceptance criteria (performance, security, usability).',
                     'severity': 'low',
-                    'suggested_agent': 'qa_tester_agent'
+                    'suggested_agent': 'qa_lead_agent'
                 })
         
         # Check for vague or unmeasurable criteria
@@ -209,7 +213,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': f'Criteria {i+1} contains vague language: "{criteria[:50]}...". Make it more specific and measurable.',
                         'severity': 'medium',
-                        'suggested_agent': 'qa_tester_agent'
+                        'suggested_agent': 'qa_lead_agent'
                     })
         
         return discrepancies
@@ -407,7 +411,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'User Story missing child Test Case.',
                         'severity': 'medium',
-                        'suggested_agent': self.agent_assignments.get('missing_child_test_case', 'qa_tester_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_child_test_case', 'qa_lead_agent')
                     })
 
             # Task validation rules
@@ -469,7 +473,7 @@ class BacklogSweeperAgent:
                         'title': title,
                         'description': 'Test Case missing title.',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('missing_test_case_title', 'qa_tester_agent')
+                        'suggested_agent': self.agent_assignments.get('missing_test_case_title', 'qa_lead_agent')
                     })
                 
                 if parents:
@@ -483,7 +487,7 @@ class BacklogSweeperAgent:
                             'title': title,
                             'description': f'Test Case has invalid parent type: {parent_type} (ID {parent_id})',
                             'severity': 'medium',
-                            'suggested_agent': self.agent_assignments.get('invalid_test_case_parent', 'qa_tester_agent')
+                            'suggested_agent': self.agent_assignments.get('invalid_test_case_parent', 'qa_lead_agent')
                         })
 
         return discrepancies
@@ -851,21 +855,36 @@ class BacklogSweeperAgent:
         return discrepancies
 
     def validate_test_artifacts(self, epics: list) -> list:
-        """Validate that every user story has test cases and every feature has a test plan structure."""
+        """Validate QA hierarchy: test plans for features, test suites for user stories, and test cases."""
         discrepancies = []
         for epic in epics:
             for feature in epic.get('features', []):
-                if not feature.get('test_plan_structure'):
+                # Check for test plan at feature level
+                if not feature.get('test_plan') and not feature.get('test_plan_structure'):
                     discrepancies.append({
                         'type': 'missing_test_plan',
                         'work_item_id': feature.get('id'),
                         'work_item_type': 'Feature',
                         'title': feature.get('title', ''),
-                        'description': 'Feature missing test plan structure.',
+                        'description': 'Feature missing test plan.',
                         'severity': 'high',
-                        'suggested_agent': 'qa_tester_agent'
+                        'suggested_agent': 'qa_lead_agent'
                     })
+                
                 for us in feature.get('user_stories', []):
+                    # Check for test suite at user story level
+                    if not us.get('test_suite'):
+                        discrepancies.append({
+                            'type': 'missing_test_suite',
+                            'work_item_id': us.get('id'),
+                            'work_item_type': 'User Story',
+                            'title': us.get('title', ''),
+                            'description': 'User Story missing test suite.',
+                            'severity': 'high',
+                            'suggested_agent': 'qa_lead_agent'
+                        })
+                    
+                    # Check for test cases at user story level
                     test_cases = us.get('test_cases', [])
                     if not test_cases:
                         discrepancies.append({
@@ -875,8 +894,36 @@ class BacklogSweeperAgent:
                             'title': us.get('title', ''),
                             'description': 'User Story missing test cases.',
                             'severity': 'high',
-                            'suggested_agent': 'qa_tester_agent'
+                            'suggested_agent': 'qa_lead_agent'
                         })
+                    else:
+                        # Validate test case structure
+                        for test_case in test_cases:
+                            if not test_case.get('title'):
+                                discrepancies.append({
+                                    'type': 'missing_test_case_title',
+                                    'work_item_id': us.get('id'),
+                                    'work_item_type': 'Test Case',
+                                    'title': f"Test case in {us.get('title', '')}",
+                                    'description': 'Test case missing title.',
+                                    'severity': 'medium',
+                                    'suggested_agent': 'qa_lead_agent'
+                                })
+                    
+                    # Validate test suite and test plan relationship
+                    test_suite = us.get('test_suite', {})
+                    test_plan = feature.get('test_plan', {})
+                    if test_suite and test_plan:
+                        if test_suite.get('feature_id') != feature.get('id'):
+                            discrepancies.append({
+                                'type': 'test_plan_suite_mismatch',
+                                'work_item_id': us.get('id'),
+                                'work_item_type': 'User Story',
+                                'title': us.get('title', ''),
+                                'description': 'Test suite not properly linked to feature test plan.',
+                                'severity': 'medium',
+                                'suggested_agent': 'qa_lead_agent'
+                            })
         return discrepancies
 
     def run_targeted_sweep(self, stage: str, workflow_data: dict, immediate_callback: bool = True) -> List[Dict[str, Any]]:
@@ -908,7 +955,7 @@ class BacklogSweeperAgent:
                                self.validate_feature_user_story_relationships(epics))
             elif stage == 'developer_agent':
                 discrepancies = self.validate_user_story_tasks(epics)
-            elif stage == 'qa_tester_agent':
+            elif stage == 'qa_tester_agent' or stage == 'qa_lead_agent':
                 discrepancies = self.validate_test_artifacts(epics)
             else:
                 self.logger.warning(f"Unknown stage for targeted sweep: {stage}")

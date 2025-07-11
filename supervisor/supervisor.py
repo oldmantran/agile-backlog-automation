@@ -20,6 +20,7 @@ from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
 from utils.project_context import ProjectContext
 from utils.logger import setup_logger
@@ -103,7 +104,8 @@ class WorkflowSupervisor:
             agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
             agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
             agents['developer_agent'] = DeveloperAgent(self.config)
-            agents['qa_tester_agent'] = QATesterAgent(self.config)
+            agents['qa_tester_agent'] = QATesterAgent(self.config)  # Keep for backward compatibility
+            agents['qa_lead_agent'] = QALeadAgent(self.config.get_agent_config('qa_lead_agent'))
             
             # Keep backward compatibility with old decomposition_agent reference
             agents['decomposition_agent'] = agents['feature_decomposer_agent']
@@ -351,6 +353,9 @@ class WorkflowSupervisor:
                         elif stage == 'qa_tester_agent':
                             self._execute_qa_generation(update_progress)
                             self._validate_test_cases_and_plans()
+                        elif stage == 'qa_lead_agent':
+                            self._execute_qa_generation(update_progress)
+                            self._validate_test_cases_and_plans()
                         else:
                             self.logger.warning(f"Unknown stage: {stage}")
                             break
@@ -569,14 +574,17 @@ class WorkflowSupervisor:
             raise
     
     def _execute_qa_generation(self, update_progress_callback=None):
-        """Execute QA test case generation stage."""
-        self.logger.info("Generating QA test cases and validation")
+        """Execute QA generation using hierarchical QA Lead Agent."""
+        self.logger.info("Generating QA artifacts using QA Lead Agent")
         
         try:
-            agent = self.agents['qa_tester_agent']
-            context = self.project_context.get_context('qa_tester_agent')
+            agent = self.agents['qa_lead_agent']
+            context = self.project_context.get_context('qa_lead_agent')
             
-            # Count total user stories and features for progress tracking
+            # Determine area path for test artifacts
+            area_path = self._determine_qa_area_path(context)
+            
+            # Count total items for progress tracking
             total_features = 0
             total_stories = 0
             for epic in self.workflow_data['epics']:
@@ -584,49 +592,64 @@ class WorkflowSupervisor:
                 for feature in epic.get('features', []):
                     total_stories += len(feature.get('user_stories', []))
             
-            total_items = total_stories + total_features  # stories + features for test plans
+            total_items = total_features + total_stories
             processed_items = 0
             
-            for epic in self.workflow_data['epics']:
-                for feature in epic.get('features', []):
-                    self.logger.info(f"Generating QA artifacts for feature: {feature.get('title', 'Untitled')}")
-                    
-                    # Process each user story within the feature for QA activities
-                    for user_story in feature.get('user_stories', []):
-                        self.logger.info(f"Generating QA artifacts for user story: {user_story.get('title', 'Untitled')}")
-                        
-                        # Update progress with granular tracking
-                        if update_progress_callback and total_items > 0:
-                            sub_progress = processed_items / total_items
-                            story_title = user_story.get('title', 'Untitled')[:30] + ('...' if len(user_story.get('title', '')) > 30 else '')
-                            update_progress_callback(5, f"Generating QA for: {story_title}", sub_progress)
-                        
-                        # Generate user story test cases (replaces feature-level test generation)
-                        test_cases = agent.generate_user_story_test_cases(user_story, context)
-                        user_story['test_cases'] = test_cases
-                        
-                        # Validate user story testability (replaces feature-level acceptance criteria validation)
-                        validation = agent.validate_user_story_testability(user_story, context)
-                        user_story['qa_validation'] = validation
-                        
-                        processed_items += 1
-                        self.logger.info(f"Generated QA artifacts for user story: {len(test_cases)} test cases, testability score: {validation.get('testability_score', 'N/A')}")
-                    
-                    # Create test plan structure for the feature (organizational level)
-                    if update_progress_callback and total_items > 0:
-                        sub_progress = processed_items / total_items
-                        feature_title = feature.get('title', 'Untitled')[:25] + ('...' if len(feature.get('title', '')) > 25 else '')
-                        update_progress_callback(5, f"Creating test plan: {feature_title}", sub_progress)
-                    
-                    test_plan_structure = agent.create_test_plan_structure(feature, context)
-                    feature['test_plan_structure'] = test_plan_structure
-                    
-                    processed_items += 1
-                    self.logger.info(f"Created test plan structure for feature: {feature.get('title', 'Untitled')}")
-                    
+            self.logger.info(f"Starting QA generation for {total_features} features and {total_stories} user stories")
+            
+            # Use QA Lead Agent to orchestrate the entire QA process
+            qa_result = agent.generate_quality_assurance(
+                epics=self.workflow_data['epics'],
+                context=context,
+                area_path=area_path
+            )
+            
+            # Update workflow data with QA results
+            if qa_result.get('epics'):
+                self.workflow_data['epics'] = qa_result['epics']
+            
+            # Log QA generation summary
+            qa_summary = qa_result.get('qa_summary', {})
+            self.logger.info(f"QA generation completed: {qa_summary}")
+            
+            # Final progress update
+            if update_progress_callback:
+                update_progress_callback(5, "QA generation completed", 1.0)
+                
         except Exception as e:
             self.logger.error(f"QA generation failed: {e}")
             raise
+    
+    def _determine_qa_area_path(self, context: Dict[str, Any]) -> str:
+        """Determine the appropriate area path for QA artifacts."""
+        try:
+            # Try to get area path from context
+            project_context = context.get('project_context', {})
+            
+            # Look for explicit area path setting
+            if 'area_path' in project_context:
+                return project_context['area_path']
+            
+            # Try to derive from project name or domain
+            project_name = project_context.get('project_name', '')
+            domain = project_context.get('domain', '')
+            
+            # Domain-based area path logic
+            if 'ride' in project_name.lower() or 'transport' in domain.lower():
+                return "Ride Sharing"
+            elif 'oil' in domain.lower() or 'gas' in domain.lower():
+                return "Oil and Gas Operations"
+            elif 'fintech' in domain.lower() or 'financial' in project_name.lower():
+                return "Financial Services"
+            elif 'healthcare' in domain.lower() or 'medical' in project_name.lower():
+                return "Healthcare"
+            else:
+                # Use project name as area path, fallback to default
+                return project_name or "Backlog Automation"
+                
+        except Exception as e:
+            self.logger.warning(f"Could not determine area path, using default: {e}")
+            return "Backlog Automation"
     
     def _human_review_checkpoint(self, stage: str):
         """Pause for human review and approval."""
