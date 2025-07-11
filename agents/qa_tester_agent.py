@@ -97,11 +97,9 @@ Generate test cases covering:
 """
         
         print(f"🧪 [QATesterAgent] Generating comprehensive User Story test cases for: {user_story.get('title', 'Unknown')}")
-        print(f"🧪 [QA DEBUG] Starting test case generation...")
         
         try:
             response = self.run(user_input, prompt_context)
-            print(f"🧪 [QA DEBUG] Got AI response, length: {len(response) if response else 0} chars")
             
             if not response:
                 self.logger.warning("Empty response from AI model")
@@ -109,11 +107,6 @@ Generate test cases covering:
             
             # Extract JSON from markdown code blocks if present
             cleaned_response = self._extract_json_from_response(response)
-            
-            # DEBUG: Print what we're trying to parse
-            print(f"🔍 [QA DEBUG] Response length: {len(cleaned_response)} chars")
-            print(f"🔍 [QA DEBUG] Response preview: {cleaned_response[:300]}...")
-            
             test_cases = json.loads(cleaned_response)
             
             if isinstance(test_cases, list):
@@ -135,6 +128,9 @@ Generate test cases covering:
                 test_case['acceptance_criteria_validation'] = criteria_analysis.get('testability_score', 7)
                 test_case['coverage_type'] = self._determine_coverage_type(test_case, user_story)
                 
+            # Apply formatting improvements for readability
+            enhanced_test_cases = [self._format_test_case_content(tc) for tc in enhanced_test_cases]
+            
             # Validate and enhance all test cases for quality compliance
             enhanced_test_cases = self._validate_and_enhance_test_cases(enhanced_test_cases)
             
@@ -262,9 +258,7 @@ Provide detailed analysis including:
                 self.logger.warning("Empty response from AI model")
                 return self._generate_fallback_analysis(user_story, criteria_analysis)
                 
-            # Extract JSON from markdown code blocks if present
-            cleaned_response = self._extract_json_from_response(response)
-            analysis = json.loads(cleaned_response)
+            analysis = json.loads(response)
             
             # Enhance analysis with metadata and validation
             analysis['user_story_id'] = user_story.get('id')
@@ -381,6 +375,121 @@ Provide detailed analysis including:
         
         print(f"📋 [QATesterAgent] Created user story-focused test plan structure for feature: {feature.get('title', 'Unknown')}")
         return test_plan_structure
+
+    def _format_test_case_content(self, test_case: dict) -> dict:
+        """
+        Format test case content for enhanced readability and structure.
+        Applies line breaks and formatting to descriptions, test steps, and expected results.
+        """
+        formatted_test_case = test_case.copy()
+        
+        # Format test case description
+        description = test_case.get('description', '')
+        if description and len(description) > 120:
+            formatted_test_case['description'] = self._format_long_description(description)
+        
+        # Format test steps for better readability
+        test_steps = test_case.get('test_steps', [])
+        if test_steps:
+            formatted_steps = []
+            for i, step in enumerate(test_steps):
+                if isinstance(step, str) and len(step) > 80:
+                    # Break long test steps into readable chunks
+                    formatted_step = self._format_long_test_step(step)
+                    formatted_steps.append(formatted_step)
+                else:
+                    formatted_steps.append(step)
+            formatted_test_case['test_steps'] = formatted_steps
+        
+        # Format expected result for readability
+        expected_result = test_case.get('expected_result', '')
+        if expected_result and len(expected_result) > 100:
+            formatted_test_case['expected_result'] = self._format_long_expected_result(expected_result)
+        
+        # Format acceptance criteria mapping if present
+        acceptance_criteria = test_case.get('acceptance_criteria', '')
+        if acceptance_criteria and len(acceptance_criteria) > 100:
+            formatted_test_case['acceptance_criteria'] = self._format_acceptance_criteria_mapping(acceptance_criteria)
+        
+        return formatted_test_case
+    
+    def _format_long_description(self, description: str) -> str:
+        """Format long test case descriptions with appropriate line breaks."""
+        # Split at natural break points like 'and', 'when', 'then', 'that'
+        break_patterns = [
+            ' and ', ' when ', ' then ', ' that ', ' which ', ' while ', 
+            ', and ', ', when ', ', then ', ', that ', ', which ', ', while '
+        ]
+        
+        formatted = description
+        for pattern in break_patterns:
+            if pattern in formatted and len(formatted) > 120:
+                parts = formatted.split(pattern)
+                if len(parts) > 1:
+                    # Only break if it results in reasonably sized chunks
+                    if all(40 <= len(part.strip()) <= 100 for part in parts):
+                        formatted = (pattern.strip() + '\n').join(parts)
+                        break
+        
+        return formatted
+    
+    def _format_long_test_step(self, step: str) -> str:
+        """Format long test steps with line breaks at logical points."""
+        # Remove redundant "Step X:" prefixes if present
+        step_clean = step
+        if step.startswith('Step ') and ':' in step:
+            parts = step.split(':', 1)
+            if len(parts) > 1:
+                step_clean = parts[1].strip()
+        
+        # Break at logical points for test actions
+        if len(step_clean) > 80:
+            break_patterns = [
+                ' and verify ', ' and check ', ' and confirm ', ' and validate ',
+                ' then verify ', ' then check ', ' then confirm ', ' then validate ',
+                ' with ', ' containing ', ' including ', ' such as '
+            ]
+            
+            for pattern in break_patterns:
+                if pattern in step_clean:
+                    parts = step_clean.split(pattern, 1)
+                    if len(parts) == 2 and 30 <= len(parts[0]) <= 80:
+                        return parts[0] + pattern.strip() + '\n   ' + parts[1]
+                    break
+        
+        return step_clean
+    
+    def _format_long_expected_result(self, expected_result: str) -> str:
+        """Format long expected results with line breaks for clarity."""
+        # Break at natural points in expected results
+        break_patterns = [
+            ' and ', ' with ', ' showing ', ' displaying ', ' containing ',
+            ', and ', ', with ', ', showing ', ', displaying ', ', containing '
+        ]
+        
+        formatted = expected_result
+        for pattern in break_patterns:
+            if pattern in formatted and len(formatted) > 100:
+                parts = formatted.split(pattern, 1)
+                if len(parts) == 2 and 30 <= len(parts[0]) <= 80:
+                    formatted = parts[0] + pattern.strip() + '\n' + parts[1]
+                    break
+        
+        return formatted
+    
+    def _format_acceptance_criteria_mapping(self, criteria: str) -> str:
+        """Format acceptance criteria mappings for better readability."""
+        # Handle structured acceptance criteria text
+        if '; ' in criteria:
+            parts = criteria.split('; ')
+            if len(parts) > 1:
+                return ';\n'.join(parts)
+        
+        # Handle long single criteria
+        if len(criteria) > 100:
+            return self._format_long_description(criteria)
+        
+        return criteria
 
     def _validate_and_enhance_test_cases(self, test_cases: list) -> list:
         """
@@ -1276,13 +1385,13 @@ Provide detailed analysis including:
 
     def _extract_json_from_response(self, response: str) -> str:
         """
-        Extract JSON content from AI response, handling markdown code blocks and fallback parsing.
+        Extract JSON content from AI response with improved bracket counting and validation.
         
         Args:
             response: Raw response from AI model
             
         Returns:
-            Cleaned JSON string or converted test cases
+            Cleaned JSON string
         """
         if not response:
             return "[]"
@@ -1306,26 +1415,83 @@ Provide detailed analysis including:
             if content.startswith(('{', '[')):
                 return content
         
-        # If no markdown blocks, look for JSON-like content
-        # Find content between first { or [ and last } or ]
-        start_chars = ['{', '[']
-        end_chars = ['}', ']']
+        # Enhanced JSON extraction with proper bracket counting
+        # Find the start of JSON array
+        start_idx = response.find('[')
+        if start_idx == -1:
+            start_idx = response.find('{')
+            if start_idx == -1:
+                self.logger.warning("No JSON found in response")
+                return "[]"
         
-        for start_char, end_char in zip(start_chars, end_chars):
-            start_idx = response.find(start_char)
-            end_idx = response.rfind(end_char)
+        # Count brackets/braces to find the complete JSON structure
+        if response[start_idx] == '[':
+            bracket_count = 0
+            brace_count = 0
+            in_string = False
+            escape_next = False
             
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                potential_json = response[start_idx:end_idx + 1]
-                # Basic validation - count brackets/braces
-                if start_char == '{' and potential_json.count('{') == potential_json.count('}'):
-                    return potential_json
-                elif start_char == '[' and potential_json.count('[') == potential_json.count(']'):
-                    return potential_json
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if escape_next:
+                    escape_next = False
+                    continue
+                    
+                if char == '\\' and in_string:
+                    escape_next = True
+                    continue
+                    
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                    
+                if not in_string:
+                    if char == '[':
+                        bracket_count += 1
+                    elif char == ']':
+                        bracket_count -= 1
+                        if bracket_count == 0:
+                            # Found the end of the JSON array
+                            return response[start_idx:i+1]
+                    elif char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
         
-        # If no JSON found, try to parse markdown-formatted test cases
-        self.logger.warning("No JSON found in response, attempting to parse markdown test cases")
-        return self._convert_markdown_to_json(response)
+        else:  # Starting with '{'
+            brace_count = 0
+            bracket_count = 0
+            in_string = False
+            escape_next = False
+            
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if escape_next:
+                    escape_next = False
+                    continue
+                    
+                if char == '\\' and in_string:
+                    escape_next = True
+                    continue
+                    
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                    
+                if not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            # Found the end of the JSON object
+                            return response[start_idx:i+1]
+                    elif char == '[':
+                        bracket_count += 1
+                    elif char == ']':
+                        bracket_count -= 1
+        
+        # Fallback: return everything from start to end of response
+        self.logger.warning("Could not find complete JSON structure, attempting full response")
+        return response[start_idx:].strip()
     
     def _convert_markdown_to_json(self, markdown_response: str) -> str:
         """

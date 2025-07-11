@@ -91,7 +91,6 @@ class WorkflowSupervisor:
         }
         self.sweeper_agent = None  # Will be initialized as needed
         self.sweeper_retry_tracker = {}  # {stage: {item_id: retry_count}}
-        self.backlog_sweeper = None  # Will be initialized for validation
         
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
@@ -244,8 +243,7 @@ class WorkflowSupervisor:
                         stages: List[str] = None,
                         human_review: bool = False,
                         save_outputs: bool = True,
-                        integrate_azure: bool = False,
-                        progress_callback: callable = None) -> Dict[str, Any]:
+                        integrate_azure: bool = False) -> Dict[str, Any]:
         """
         Execute the complete workflow or specific stages.
         
@@ -255,7 +253,6 @@ class WorkflowSupervisor:
             human_review: Whether to pause for human review between stages
             save_outputs: Whether to save intermediate outputs
             integrate_azure: Whether to create Azure DevOps work items
-            progress_callback: Optional callback function to report progress (stage_index, total_stages, stage_name)
             
         Returns:
             Complete workflow results including all generated artifacts
@@ -281,16 +278,9 @@ class WorkflowSupervisor:
             }
             # Execute stages in sequence
             stages_to_run = stages or self._get_default_stages()
-            total_stages = len(stages_to_run)
             self.sweeper_retry_tracker = {}
-            
-            for stage_index, stage in enumerate(stages_to_run):
-                self.logger.info(f"Executing stage: {stage} ({stage_index + 1}/{total_stages})")
-                
-                # Report progress at start of stage
-                if progress_callback:
-                    progress_callback(stage_index, total_stages, stage, "starting")
-                
+            for stage in stages_to_run:
+                self.logger.info(f"Executing stage: {stage}")
                 self.sweeper_retry_tracker[stage] = {}
                 max_retries = 5
                 completed = False
@@ -328,9 +318,6 @@ class WorkflowSupervisor:
                         incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
                         if not incomplete_items:
                             completed = True
-                            # Report progress at completion of stage
-                            if progress_callback:
-                                progress_callback(stage_index, total_stages, stage, "completed")
                             break
                         # Targeted retry logic
                         still_incomplete = []
@@ -356,9 +343,6 @@ class WorkflowSupervisor:
                                 still_incomplete.append(item)
                         if not still_incomplete:
                             completed = True
-                            # Report progress at completion of stage
-                            if progress_callback:
-                                progress_callback(stage_index, total_stages, stage, "completed")
                         else:
                             self.logger.info(f"{len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
                     except Exception as e:
@@ -366,9 +350,6 @@ class WorkflowSupervisor:
                         self.execution_metadata['errors'].append(f"{stage} failed: {e}")
                         self._send_error_notifications(e)
                         completed = True  # Move to next stage even on error
-                        # Report progress at completion of stage (even if failed)
-                        if progress_callback:
-                            progress_callback(stage_index, total_stages, stage, "failed")
             # Final processing
             self._finalize_workflow_data()
             # Azure DevOps integration
@@ -616,10 +597,6 @@ class WorkflowSupervisor:
             return
         
         try:
-            # Initialize backlog sweeper for validation if not already done
-            if self.backlog_sweeper is None:
-                self.backlog_sweeper = BacklogSweeperAgent(self.config)
-            
             # Perform pre-integration quality check using backlog sweeper
             self.logger.info("🔍 Running pre-integration validation...")
             validation_report = self.backlog_sweeper.validate_pre_integration(self.workflow_data)
@@ -735,10 +712,9 @@ class WorkflowSupervisor:
         epics_count = len(self.workflow_data.get('epics', []))
         features_count = sum(len(epic.get('features', [])) for epic in self.workflow_data.get('epics', []))
         tasks_count = sum(
-            len(user_story.get('tasks', []))
+            len(feature.get('tasks', []))
             for epic in self.workflow_data.get('epics', [])
             for feature in epic.get('features', [])
-            for user_story in feature.get('user_stories', [])
         )
         
         execution_time = None

@@ -38,7 +38,7 @@ Each user story must include:
 - **21 Points**: Epic-sized work, must be broken down further
 
 ### Best Practices:
-- Create **2-3 user stories** per feature, covering main flows and key edge cases (testing mode)
+- Create **3–6 user stories** per feature, covering main flows, edge cases, error handling, and different user types
 - Ensure each story delivers **independent value**
 - Keep stories **small enough** to complete in one sprint
 - Include **edge cases** and **error handling** as separate stories when complex

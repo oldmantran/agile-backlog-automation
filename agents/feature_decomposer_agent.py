@@ -153,14 +153,12 @@ Dependencies: {epic.get('dependencies', [])}
             if not title:
                 enhanced_feature['title'] = f"Feature: {feature.get('description', 'Undefined')[:50]}..."
         
-        # Validate and fix description with formatting
+        # Validate and fix description
         description = feature.get('description', '')
         if not description or len(description.strip()) < 20:
             print(f"⚠️ Feature description too short, enhancing...")
             enhanced_feature['description'] = f"Feature providing: {title}. " + (description or "Details to be defined during user story creation.")
-        else:
-            # Format the description for better readability
-            enhanced_feature['description'] = self._format_feature_description(description)
+        
         # Ensure required fields exist
         if not enhanced_feature.get('priority'):
             enhanced_feature['priority'] = 'Medium'
@@ -230,70 +228,3 @@ Dependencies: {epic.get('dependencies', [])}
             print(f"⚠️ Template {template_to_use} failed: {e}")
             print("🔄 Falling back to default prompt...")
             return self.run(user_input, context)
-    
-    def _format_feature_description(self, description: str) -> str:
-        """
-        Format feature descriptions with proper line breaks for sections and bullet lists.
-        """
-        if not description:
-            return description
-        
-        formatted_description = description.strip()
-        
-        import re
-        
-        # Add line breaks before section headers
-        section_patterns = [
-            r'(\*\*Business Value:\*\*)',
-            r'(\*\*UI/UX Requirements:\*\*)', 
-            r'(\*\*Technical Considerations:\*\*)',
-            r'(\*\*Dependencies:\*\*)',
-            r'(\*\*Acceptance Criteria:\*\*)',
-            r'(\*\*Success Criteria:\*\*)',
-            r'(\*\*Edge Cases:\*\*)'
-        ]
-        
-        for pattern in section_patterns:
-            formatted_description = re.sub(pattern, r'\n\n\1', formatted_description)
-        
-        # Handle bullet lists after section headers
-        bullet_pattern = r'(\*\*[^*]+\*\*)\s*-\s*([^*]+?)(?=\n\n\*\*|\Z)'
-        
-        def format_bullets(match):
-            header = match.group(1)
-            content = match.group(2).strip()
-            
-            # Split on ' - ' pattern
-            if ' - ' in content:
-                items = content.split(' - ')
-                items = [item.strip() for item in items if item.strip()]
-                
-                if len(items) > 1:
-                    bullet_list = '\n'.join([f'- {item}' for item in items])
-                    return f'{header}\n{bullet_list}'
-            
-            # If no splitting needed, still format as single bullet
-            return f'{header}\n- {content}'
-        
-        formatted_description = re.sub(bullet_pattern, format_bullets, formatted_description, flags=re.DOTALL)
-        
-        # Add line breaks for very long main descriptions
-        if len(formatted_description) > 400:
-            first_section_match = re.search(r'\n\n\*\*', formatted_description)
-            if first_section_match:
-                main_desc = formatted_description[:first_section_match.start()]
-                sections = formatted_description[first_section_match.start():]
-                
-                # Format main description with line breaks
-                if len(main_desc) > 250 and '. ' in main_desc:
-                    sentences = main_desc.split('. ')
-                    if len(sentences) > 3:
-                        third_point = len(sentences) // 3
-                        two_thirds_point = (2 * len(sentences)) // 3
-                        main_desc = ('. '.join(sentences[:third_point]) + '.\n\n' + 
-                                   '. '.join(sentences[third_point:two_thirds_point]) + '.\n\n' + 
-                                   '. '.join(sentences[two_thirds_point:]))
-                
-                formatted_description = main_desc + sections
-        
-        return formatted_description

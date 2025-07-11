@@ -361,9 +361,9 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             # Content-only mode (no Azure integration)
             supervisor = WorkflowSupervisor(job_id=job_id)
         
-        # Update initial progress
+        # Update progress
         active_jobs[job_id]["currentAgent"] = "supervisor"
-        active_jobs[job_id]["currentAction"] = "Initializing workflow stages"
+        active_jobs[job_id]["currentAction"] = "Running epic strategist"
         active_jobs[job_id]["progress"] = 30
         
         # Run the workflow with project context
@@ -377,55 +377,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "azure_config": project_data["azureConfig"]
         }
         
+        # Update progress
+        active_jobs[job_id]["currentAction"] = "Generating backlog items"
+        active_jobs[job_id]["progress"] = 60
+        
         # Set up the project context for the supervisor
         supervisor.configure_project_context(project_domain, context)
         
-        # Create progress callback to update job status in real-time
-        def progress_callback(stage_index: int, total_stages: int, stage_name: str, status: str):
-            """Update job progress based on stage completion."""
-            # Calculate progress based on stage completion
-            # Each stage gets equal weight in the progress calculation
-            if status == "starting":
-                # Stage is starting: progress = previous stages completed + 10% of current stage
-                stage_progress = (stage_index * 100) // total_stages + 10
-            elif status == "completed":
-                # Stage completed: progress = (completed stages / total) * 100
-                stage_progress = ((stage_index + 1) * 100) // total_stages
-            elif status == "failed":
-                # Stage failed: still count as completed for progress but mark as failed
-                stage_progress = ((stage_index + 1) * 100) // total_stages
-            else:
-                stage_progress = (stage_index * 100) // total_stages
-            
-            # Ensure progress is between 30 (initial) and 95 (before final completion)
-            stage_progress = max(30, min(95, stage_progress))
-            
-            # Update job status
-            active_jobs[job_id]["progress"] = stage_progress
-            active_jobs[job_id]["currentAgent"] = stage_name
-            
-            # Create user-friendly action descriptions
-            stage_actions = {
-                "epic_strategist": "Generating product epics",
-                "feature_decomposer_agent": "Decomposing epics into features", 
-                "user_story_decomposer_agent": "Creating user stories from features",
-                "developer_agent": "Generating technical tasks",
-                "qa_tester_agent": "Creating test cases and QA plans"
-            }
-            
-            action_suffix = {
-                "starting": "starting...",
-                "completed": "completed ✓",
-                "failed": "failed ✗"
-            }
-            
-            stage_action = stage_actions.get(stage_name, stage_name)
-            status_suffix = action_suffix.get(status, "")
-            
-            active_jobs[job_id]["currentAction"] = f"{stage_action} ({stage_index + 1}/{total_stages}) {status_suffix}".strip()
-            
-            logger.info(f"Job {job_id} progress: {stage_progress}% - {stage_action} {status}")
-
         # Create the product vision string
         product_vision = f"""
         Project: {project_name}
@@ -437,14 +395,8 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
         """
         
-        # Run the supervisor workflow with progress callback
-        results = await asyncio.to_thread(
-            supervisor.execute_workflow, 
-            product_vision, 
-            save_outputs=True, 
-            integrate_azure=True,
-            progress_callback=progress_callback
-        )
+        # Run the supervisor workflow
+        results = await asyncio.to_thread(supervisor.execute_workflow, product_vision, save_outputs=True, integrate_azure=True)
         
         # Update final progress
         active_jobs[job_id]["status"] = "completed"

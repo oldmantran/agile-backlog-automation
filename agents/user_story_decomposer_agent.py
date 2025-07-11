@@ -1,6 +1,7 @@
 import json
 from agents.base_agent import Agent
 from config.config_loader import Config
+from utils.quality_validator import WorkItemQualityValidator
 
 class UserStoryDecomposerAgent(Agent):
     """
@@ -10,6 +11,8 @@ class UserStoryDecomposerAgent(Agent):
     
     def __init__(self, config: Config):
         super().__init__("user_story_decomposer_agent", config)
+        # Initialize quality validator with current configuration
+        self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
     def decompose_feature_to_user_stories(self, feature: dict, context: dict = None) -> list[dict]:
         """Break down a feature into detailed user stories with acceptance criteria and story points."""
@@ -41,14 +44,6 @@ Edge Cases: {feature.get('edge_cases', [])}
         response = self.run_with_template(user_input, prompt_context, template_name="user_story_decomposer")
 
         try:
-            # Check for markdown code blocks and extract JSON
-            if "```json" in response:
-                print("🔍 Extracting JSON from markdown...")
-                start = response.find("```json") + 7
-                end = response.find("```", start)
-                if end > start:
-                    response = response[start:end].strip()
-            
             user_stories = json.loads(response)
             
             # Handle different response formats
@@ -80,27 +75,80 @@ Edge Cases: {feature.get('edge_cases', [])}
                 return self._validate_and_enhance_user_stories(user_stories['user_stories'])
             else:
                 print("⚠️ LLM response was not in expected format.")
-                print("� Response structure:", type(user_stories))
-                print("🔎 Response content:", user_stories)
-                raise ValueError(f"LLM response was not in expected format. Expected list of user stories, got {type(user_stories)}")
+                print("🔄 Using fallback user story generation...")
+                return self._create_fallback_user_stories(feature)
                 
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse JSON: {e}")
             print("🔎 Raw response:")
             print(response)
-            print("� Response length:", len(response))
-            print("🔎 First 500 chars:", response[:500])
-            raise ValueError(f"Failed to parse JSON response from LLM: {e}")
+            print("🔄 Using fallback user story generation...")
+            return self._create_fallback_user_stories(feature)
+
+    def _create_fallback_user_stories(self, feature: dict) -> list[dict]:
+        """Create multiple user stories as fallback when LLM processing fails, covering core, edge, and error scenarios."""
+        feature_title = feature.get('title', 'Unknown Feature')
+        feature_description = feature.get('description', 'No description')
+        estimated_points = feature.get('estimated_story_points', 8)
+        
+        # Create 3 user stories covering main scenarios
+        fallback_stories = [
+            {
+                'title': f"Main {feature_title} Workflow",
+                'user_story': f"As a user, I want to {feature_title.lower()} so that I can accomplish my primary goal",
+                'description': f"Primary user workflow for {feature_description}",
+                'acceptance_criteria': [
+                    "User can access the main feature functionality",
+                    "System provides clear feedback on user actions",
+                    "Core workflow completes successfully"
+                ],
+                'story_points': max(1, estimated_points // 3),
+                'priority': feature.get('priority', 'Medium'),
+                'user_type': 'primary_user',
+                'category': 'core_functionality'
+            },
+            {
+                'title': f"{feature_title} Error Handling",
+                'user_story': f"As a user, I want appropriate error handling for {feature_title.lower()} so that I understand what went wrong",
+                'description': f"Error handling and edge cases for {feature_description}",
+                'acceptance_criteria': [
+                    "System displays meaningful error messages",
+                    "User can recover from error states",
+                    "Invalid inputs are handled gracefully"
+                ],
+                'story_points': max(1, estimated_points // 3),
+                'priority': 'Medium',
+                'user_type': 'general_user',
+                'category': 'error_handling'
+            },
+            {
+                'title': f"{feature_title} Validation and Feedback",
+                'user_story': f"As a user, I want validation and feedback for {feature_title.lower()} so that I know my actions are working correctly",
+                'description': f"User feedback and validation for {feature_description}",
+                'acceptance_criteria': [
+                    "System validates user inputs",
+                    "User receives confirmation of successful actions",
+                    "Progress indicators are shown for long operations"
+                ],
+                'story_points': max(1, estimated_points - (2 * max(1, estimated_points // 3))),
+                'priority': feature.get('priority', 'Medium'),
+                'user_type': 'general_user',
+                'category': 'user_experience'
+            }
+        ]
+        
+        print(f"🔄 Generated {len(fallback_stories)} fallback user stories for feature")
+        return self._validate_and_enhance_user_stories(fallback_stories)
 
     def _validate_and_enhance_user_stories(self, user_stories: list) -> list:
         """
-        Format and clean user stories for better readability.
-        Quality validation is handled by the Backlog Sweeper.
+        Validate and enhance user stories to meet quality standards.
+        Ensures compliance with Backlog Sweeper monitoring rules.
         """
         enhanced_stories = []
         
         for story in user_stories:
-            # Format and clean user story structure
+            # Validate and fix user story structure
             enhanced_story = self._enhance_single_user_story(story)
             enhanced_stories.append(enhanced_story)
         
@@ -108,78 +156,43 @@ Edge Cases: {feature.get('edge_cases', [])}
 
     def _enhance_single_user_story(self, story: dict) -> dict:
         """
-        Format a single user story for better readability and structure.
-        Quality validation is handled by the Backlog Sweeper.
+        Enhance a single user story to meet quality standards.
         """
         enhanced_story = story.copy()
         
-        # Store the original title and description with formatting improvements
-        enhanced_story['title'] = story.get('title', '')
+        # Validate and fix title
+        title = story.get('title', '')
+        title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "User Story")
+        if not title_valid:
+            print(f"⚠️ Story title issues: {', '.join(title_issues)}")
+            if not title:
+                enhanced_story['title'] = f"User Story: {story.get('description', 'Undefined')[:50]}..."
         
-        # Format description for better readability
+        # Validate and fix description
         description = story.get('description', '') or story.get('user_story', '')
-        if description:
-            # Add line breaks for better readability if description is very long
-            if len(description) > 150 and '. ' in description and '\n' not in description:
-                # Split long sentences at sentence boundaries for readability
-                sentences = description.split('. ')
-                if len(sentences) > 1:
-                    description = '.\n'.join(sentences[:-1]) + '.' + sentences[-1] if sentences[-1] else '.\n'.join(sentences)
-        enhanced_story['description'] = description
-        
-        # Format acceptance criteria for better readability
-        criteria = story.get('acceptance_criteria', [])
-        if criteria:
-            # If criteria is a single string with numbered items, split it
-            if isinstance(criteria, str):
-                # First try to split on numbered patterns like "1. ", "2. ", etc.
-                import re
-                criteria_parts = re.split(r'(\d+\.\s+)', criteria)
-                formatted_criteria = []
-                for i in range(1, len(criteria_parts), 2):
-                    if i + 1 < len(criteria_parts):
-                        criterion = criteria_parts[i + 1].strip()
-                        if criterion:
-                            formatted_criteria.append(criterion)
-                
-                # If no numbered patterns found, try to split on Given-When-Then patterns
-                if not formatted_criteria:
-                    # Split on "Given" at the beginning of sentences (but not the first one)
-                    criteria_parts = re.split(r'(?<=\.)\s+(?=Given)', criteria)
-                    formatted_criteria = [part.strip() for part in criteria_parts if part.strip()]
-                
-                enhanced_story['acceptance_criteria'] = formatted_criteria
-            elif isinstance(criteria, list):
-                # Clean up each criterion and ensure proper formatting
-                formatted_criteria = []
-                for criterion in criteria:
-                    if isinstance(criterion, str):
-                        # Check if this criterion contains multiple Given-When-Then blocks
-                        clean_criterion = criterion.strip()
-                        if clean_criterion:
-                            # Split long criteria with multiple Given-When-Then patterns
-                            if clean_criterion.count('Given') > 1:
-                                # Split on "Given" but keep the first occurrence
-                                import re
-                                parts = re.split(r'(?<=\.)\s+(?=Given)', clean_criterion)
-                                for part in parts:
-                                    part = part.strip()
-                                    if part:
-                                        formatted_criteria.append(part)
-                            else:
-                                # Add line breaks within long criteria for readability
-                                if len(clean_criterion) > 120 and ', ' in clean_criterion and '\n' not in clean_criterion:
-                                    # Break at logical points (commas) for very long criteria
-                                    parts = clean_criterion.split(', ')
-                                    if len(parts) > 2:
-                                        mid_point = len(parts) // 2
-                                        clean_criterion = ', '.join(parts[:mid_point]) + ',\n' + ', '.join(parts[mid_point:])
-                                formatted_criteria.append(clean_criterion)
-                enhanced_story['acceptance_criteria'] = formatted_criteria
+        desc_valid, desc_issues = self.quality_validator.validate_user_story_description(description)
+        if not desc_valid:
+            print(f"⚠️ Story description issues: {', '.join(desc_issues)}")
+            # Try to fix the description
+            if 'As a' not in description and 'As an' not in description:
+                user_type = story.get('user_type', 'user')
+                goal = title.replace('User Story:', '').strip() if 'User Story:' in title else title
+                enhanced_story['description'] = f"As a {user_type}, I want {goal} so that I can achieve my objectives"
             else:
-                enhanced_story['acceptance_criteria'] = criteria
+                enhanced_story['description'] = description
         else:
-            enhanced_story['acceptance_criteria'] = []
+            enhanced_story['description'] = description
+        
+        # Validate and enhance acceptance criteria
+        criteria = story.get('acceptance_criteria', [])
+        criteria_valid, criteria_issues = self.quality_validator.validate_acceptance_criteria(criteria, title)
+        if not criteria_valid or criteria_issues:
+            print(f"📋 Enhancing acceptance criteria: {', '.join(criteria_issues)}")
+            enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
+                criteria, 
+                {'title': enhanced_story['title'], 'description': enhanced_story['description']}
+            )
+            enhanced_story['acceptance_criteria'] = enhanced_criteria
         
         # Ensure story points are set
         if not enhanced_story.get('story_points'):

@@ -111,7 +111,7 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
     
     def _enhance_single_task(self, task: dict) -> dict:
         """
-        Enhance a single task to meet quality standards and improve formatting.
+        Enhance a single task to meet quality standards.
         """
         enhanced_task = task.copy()
         
@@ -123,11 +123,8 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             if not title:
                 enhanced_task['title'] = f"Task: {task.get('description', 'Implementation task')[:50]}..."
         
-        # Format description for better readability
-        description = task.get('description', '')
-        if description:
-            enhanced_task['description'] = self._format_task_description(description)
-        elif not description:
+        # Ensure description exists
+        if not enhanced_task.get('description'):
             enhanced_task['description'] = f"Implement {enhanced_task.get('title', 'task functionality')}"
         
         # Ensure effort estimation
@@ -171,85 +168,6 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             enhanced_task['priority'] = 'Medium'
         
         return enhanced_task
-    
-    def _format_task_description(self, description: str) -> str:
-        """
-        Format task description for better readability, especially Definition of Done sections.
-        """
-        if not description:
-            return description
-        
-        formatted_description = description.strip()
-        
-        # Check if description contains "Definition of Done" or similar patterns
-        import re
-        
-        # Pattern to find "Definition of Done" followed by a list of items
-        dod_patterns = [
-            r'(\*\*Definition of Done:\*\*)\s*(.*?)(?=\n\n|\n\*\*|$)',
-            r'(Definition of Done:)\s*(.*?)(?=\n\n|\n\*\*|$)',
-            r'(\*\*DoD:\*\*)\s*(.*?)(?=\n\n|\n\*\*|$)',
-            r'(DoD:)\s*(.*?)(?=\n\n|\n\*\*|$)'
-        ]
-        
-        for pattern in dod_patterns:
-            match = re.search(pattern, formatted_description, re.DOTALL | re.IGNORECASE)
-            if match:
-                header = match.group(1)
-                content = match.group(2).strip()
-                
-                # Format the content as a bulleted list if it's not already
-                if content:
-                    # Split on common separators and clean up
-                    items = []
-                    
-                    # Try splitting on various patterns
-                    if ' - ' in content:
-                        items = [item.strip() for item in content.split(' - ') if item.strip()]
-                        # Remove leading dashes if they exist
-                        items = [item.lstrip('- ').strip() for item in items]
-                    elif content.count('- ') > 1:
-                        # Already has bullet points, just clean up spacing
-                        lines = content.split('\n')
-                        items = []
-                        for line in lines:
-                            line = line.strip()
-                            if line.startswith('- '):
-                                items.append(line[2:].strip())
-                            elif line and not line.startswith('-'):
-                                # Line without bullet, add it
-                                items.append(line)
-                    else:
-                        # Try to split on sentence patterns or commas
-                        if '. ' in content and len(content.split('. ')) > 1:
-                            items = [item.strip() for item in content.split('. ') if item.strip()]
-                            # Add periods back to items that don't end with punctuation
-                            items = [item if item.endswith(('.', '!', '?')) else item + '.' for item in items]
-                        elif ', ' in content and len(content.split(', ')) > 2:
-                            items = [item.strip() for item in content.split(', ') if item.strip()]
-                        else:
-                            # Single item or can't split, keep as is
-                            items = [content]
-                    
-                    # Format as bulleted list with proper line breaks
-                    if items:
-                        formatted_items = '\n'.join([f'- {item}' for item in items])
-                        formatted_dod = f'\n\n**Definition of Done:**\n{formatted_items}'
-                        
-                        # Replace the original DoD section with the formatted version
-                        formatted_description = re.sub(pattern, formatted_dod, formatted_description, flags=re.DOTALL | re.IGNORECASE)
-                
-                break
-        
-        # Add line breaks for better readability in long descriptions
-        if len(formatted_description) > 200 and '. ' in formatted_description and '\n' not in formatted_description:
-            # Split long sentences at sentence boundaries for readability
-            sentences = formatted_description.split('. ')
-            if len(sentences) > 2:
-                mid_point = len(sentences) // 2
-                formatted_description = '. '.join(sentences[:mid_point]) + '.\n\n' + '. '.join(sentences[mid_point:])
-        
-        return formatted_description
     
     def estimate_story_points(self, user_story: dict, context: dict = None) -> int:
         """

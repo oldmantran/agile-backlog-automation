@@ -819,56 +819,10 @@ class BacklogSweeperAgent:
                             'severity': 'high',
                             'suggested_agent': 'user_story_decomposer_agent'
                         })
-                    
-                    # Validate user story description format
-                    description = us.get('description', '')
-                    if not description:
-                        discrepancies.append({
-                            'type': 'missing_story_description',
-                            'work_item_id': us.get('id'),
-                            'work_item_type': 'User Story',
-                            'title': us.get('title', ''),
-                            'description': f"User Story '{us.get('title', '')}' missing description.",
-                            'severity': 'high',
-                            'suggested_agent': 'user_story_decomposer_agent'
-                        })
-                    elif 'As a' not in description and 'As an' not in description:
-                        discrepancies.append({
-                            'type': 'invalid_story_description',
-                            'work_item_id': us.get('id'),
-                            'work_item_type': 'User Story',
-                            'title': us.get('title', ''),
-                            'description': f"User Story '{us.get('title', '')}' description should follow 'As a [user], I want [goal] so that [benefit]' format.",
-                            'severity': 'high',
-                            'suggested_agent': 'user_story_decomposer_agent'
-                        })
-                    
-                    # Validate acceptance criteria
-                    acceptance_criteria = us.get('acceptance_criteria', [])
-                    if not acceptance_criteria:
-                        discrepancies.append({
-                            'type': 'missing_acceptance_criteria',
-                            'work_item_id': us.get('id'),
-                            'work_item_type': 'User Story',
-                            'title': us.get('title', ''),
-                            'description': f"User Story '{us.get('title', '')}' missing acceptance criteria.",
-                            'severity': 'high',
-                            'suggested_agent': 'user_story_decomposer_agent'
-                        })
-                    elif len(acceptance_criteria) < 2:
-                        discrepancies.append({
-                            'type': 'insufficient_acceptance_criteria',
-                            'work_item_id': us.get('id'),
-                            'work_item_type': 'User Story',
-                            'title': us.get('title', ''),
-                            'description': f"User Story '{us.get('title', '')}' should have at least 2 acceptance criteria for completeness.",
-                            'severity': 'medium',
-                            'suggested_agent': 'user_story_decomposer_agent'
-                        })
         return discrepancies
 
     def validate_user_story_tasks(self, epics: list) -> list:
-        """Validate that every user story has tasks with proper formatting and Definition of Done."""
+        """Validate that every user story has tasks and story points."""
         discrepancies = []
         for epic in epics:
             for feature in epic.get('features', []):
@@ -884,60 +838,6 @@ class BacklogSweeperAgent:
                             'severity': 'medium',
                             'suggested_agent': 'developer_agent'
                         })
-                    else:
-                        # Validate each task
-                        for task in tasks:
-                            # Check for task title
-                            if not task.get('title'):
-                                discrepancies.append({
-                                    'type': 'missing_task_title',
-                                    'work_item_id': task.get('id'),
-                                    'work_item_type': 'Task',
-                                    'title': '',
-                                    'description': f"Task under user story '{us.get('title', '')}' missing title.",
-                                    'severity': 'high',
-                                    'suggested_agent': 'developer_agent'
-                                })
-                            
-                            # Check for task description
-                            if not task.get('description'):
-                                discrepancies.append({
-                                    'type': 'missing_task_description',
-                                    'work_item_id': task.get('id'),
-                                    'work_item_type': 'Task',
-                                    'title': task.get('title', ''),
-                                    'description': f"Task '{task.get('title', '')}' missing description.",
-                                    'severity': 'medium',
-                                    'suggested_agent': 'developer_agent'
-                                })
-                            else:
-                                # Check if Definition of Done exists and is properly formatted
-                                description = task.get('description', '')
-                                if 'Definition of Done' in description or 'DoD' in description:
-                                    # Check if it's properly formatted (should have line breaks and bullets)
-                                    if 'Definition of Done:' in description and '\n' not in description:
-                                        discrepancies.append({
-                                            'type': 'poorly_formatted_definition_of_done',
-                                            'work_item_id': task.get('id'),
-                                            'work_item_type': 'Task',
-                                            'title': task.get('title', ''),
-                                            'description': f"Task '{task.get('title', '')}' has Definition of Done but needs better formatting with line breaks and bullets.",
-                                            'severity': 'low',
-                                            'suggested_agent': 'developer_agent'
-                                        })
-                            
-                            # Check for effort estimation
-                            if not task.get('estimated_hours') and not task.get('story_points'):
-                                discrepancies.append({
-                                    'type': 'missing_task_estimation',
-                                    'work_item_id': task.get('id'),
-                                    'work_item_type': 'Task',
-                                    'title': task.get('title', ''),
-                                    'description': f"Task '{task.get('title', '')}' missing effort estimation (hours or story points).",
-                                    'severity': 'medium',
-                                    'suggested_agent': 'developer_agent'
-                                })
-                    
                     if us.get('story_points') is None:
                         discrepancies.append({
                             'type': 'missing_story_points',
