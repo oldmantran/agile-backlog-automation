@@ -38,7 +38,21 @@ class Notifier:
         # Generate summary message
         project_name = workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project')
         exec_time = stats.get('execution_time_seconds')
-        exec_time_str = f"{exec_time:.1f} seconds" if exec_time is not None else "N/A"
+        
+        # Format execution time
+        if exec_time is not None:
+            if exec_time < 60:
+                exec_time_str = f"{exec_time:.1f} seconds"
+            elif exec_time < 3600:
+                minutes = int(exec_time // 60)
+                seconds = exec_time % 60
+                exec_time_str = f"{minutes}m {seconds:.1f}s"
+            else:
+                hours = int(exec_time // 3600)
+                minutes = int((exec_time % 3600) // 60)
+                exec_time_str = f"{hours}h {minutes}m"
+        else:
+            exec_time_str = "N/A"
         
         # Add warning if any artifacts are missing
         warning = ""
@@ -54,7 +68,9 @@ class Notifier:
 **Project:** {project_name}
 **Epics Generated:** {stats.get('epics_generated', 0)}
 **Features Generated:** {stats.get('features_generated', 0)}
+**User Stories Generated:** {stats.get('user_stories_generated', 0)}
 **Tasks Generated:** {stats.get('tasks_generated', 0)}
+**Test Cases Generated:** {stats.get('test_cases_generated', 0)}
 **Execution Time:** {exec_time_str}{warning}
 
 ✅ All stages completed. Review above for any warnings.

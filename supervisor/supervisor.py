@@ -263,25 +263,38 @@ class WorkflowSupervisor:
         """
         
         self.execution_metadata['start_time'] = datetime.now()
-        self.logger.info("Starting workflow execution")
+        self.logger.info(f"Starting workflow execution at {self.execution_metadata['start_time']}")
         
         # Progress tracking
         stages_to_run = stages or self._get_default_stages()
         total_stages = len(stages_to_run)
+        # Updated progress mapping based on actual processing time
+        # Most time is spent on detailed work (tasks and QA), not high-level items
         stage_progress_mapping = {
-            0: 30,  # Initial setup complete
-            1: 50,  # Epic generation complete  
-            2: 70,  # Feature decomposition complete
-            3: 90,  # User story decomposition complete
-            4: 95,  # Task generation complete
-            5: 99,  # QA generation complete
+            0: 5,   # Initial setup complete (very fast)
+            1: 15,  # Epic generation complete (fast - high-level work)
+            2: 25,  # Feature decomposition complete (moderate - still high-level)
+            3: 35,  # User story decomposition complete (moderate - getting detailed)
+            4: 50,  # Task generation complete (significant time - detailed technical work)
+            5: 75,  # QA generation complete (most time - complex test case generation)
         }
         
-        # Helper function to update progress
-        def update_progress(stage_index: int, action: str):
+        # Helper function to update progress with optional sub-progress
+        def update_progress(stage_index: int, action: str, sub_progress: float = 0.0):
             if progress_callback:
-                progress = stage_progress_mapping.get(stage_index, 30)
-                progress_callback(progress, action)
+                base_progress = stage_progress_mapping.get(stage_index, 30)
+                
+                # Add sub-progress within the current stage
+                if stage_index < len(stage_progress_mapping) - 1:
+                    next_progress = stage_progress_mapping.get(stage_index + 1, 100)
+                    stage_range = next_progress - base_progress
+                    final_progress = base_progress + (stage_range * sub_progress)
+                else:
+                    # For the last stage, allow sub-progress up to 100%
+                    stage_range = 100 - base_progress
+                    final_progress = base_progress + (stage_range * sub_progress)
+                
+                progress_callback(int(final_progress), action)
         
         try:
             # Initial progress update
@@ -333,10 +346,10 @@ class WorkflowSupervisor:
                             self._execute_user_story_decomposition()
                             self._validate_user_stories()
                         elif stage == 'developer_agent':
-                            self._execute_task_generation()
+                            self._execute_task_generation(update_progress)
                             self._validate_tasks_and_estimates()
                         elif stage == 'qa_tester_agent':
-                            self._execute_qa_generation()
+                            self._execute_qa_generation(update_progress)
                             self._validate_test_cases_and_plans()
                         else:
                             self.logger.warning(f"Unknown stage: {stage}")
@@ -394,9 +407,9 @@ class WorkflowSupervisor:
             
             # Final progress update
             update_progress(total_stages + 2, "Backlog generation completed")
-            
+
             self.execution_metadata['end_time'] = datetime.now()
-            self.logger.info("Workflow execution completed successfully")
+            self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
             
             return self.workflow_data
             
@@ -404,6 +417,7 @@ class WorkflowSupervisor:
             self.logger.error(f"Workflow execution failed: {e}")
             self.execution_metadata['errors'].append(str(e))
             self.execution_metadata['end_time'] = datetime.now()
+            self.logger.info(f"Workflow execution failed at {self.execution_metadata['end_time']}")
             
             # Send error notifications
             self._send_error_notifications(e)
@@ -487,7 +501,7 @@ class WorkflowSupervisor:
             self.logger.error(f"User story decomposition failed: {e}")
             raise
     
-    def _execute_task_generation(self):
+    def _execute_task_generation(self, update_progress_callback=None):
         """Execute developer task generation stage."""
         self.logger.info("Generating developer tasks")
         
@@ -495,12 +509,20 @@ class WorkflowSupervisor:
             agent = self.agents['developer_agent']
             context = self.project_context.get_context('developer_agent')
             
+            # Count total user stories for progress tracking
+            total_stories = 0
+            for epic in self.workflow_data['epics']:
+                for feature in epic.get('features', []):
+                    total_stories += len(feature.get('user_stories', []))
+            
+            processed_stories = 0
+            
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
                     user_stories = feature.get('user_stories', [])
                     if user_stories:
                         # With updated prompt, user_stories are now structured objects
-                        processed_stories = []
+                        processed_stories_list = []
                         for i, story_item in enumerate(user_stories):
                             if isinstance(story_item, dict):
                                 # New structured format - already has all needed fields
@@ -513,7 +535,7 @@ class WorkflowSupervisor:
                                     'story_points': story_item.get('story_points', 3),
                                     'tags': story_item.get('tags', [])
                                 }
-                                processed_stories.append(story_dict)
+                                processed_stories_list.append(story_dict)
                             elif isinstance(story_item, str):
                                 # Legacy string format - convert to dict format for task generation
                                 story_dict = {
@@ -524,29 +546,46 @@ class WorkflowSupervisor:
                                     'priority': feature.get('priority', 'Medium'),
                                     'story_points': feature.get('estimated_story_points', 5)
                                 }
-                                processed_stories.append(story_dict)
+                                processed_stories_list.append(story_dict)
                         
-                        feature['user_stories'] = processed_stories
+                        feature['user_stories'] = processed_stories_list
                         
-                        for user_story in processed_stories:
+                        for user_story in processed_stories_list:
                             self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
+                            
+                            # Update progress with granular tracking
+                            if update_progress_callback and total_stories > 0:
+                                sub_progress = processed_stories / total_stories
+                                update_progress_callback(4, f"Generating tasks ({processed_stories + 1}/{total_stories})", sub_progress)
                             
                             tasks = agent.generate_tasks(user_story, context)
                             user_story['tasks'] = tasks
                             
+                            processed_stories += 1
                             self.logger.info(f"Generated {len(tasks)} tasks for user story")
                     
         except Exception as e:
             self.logger.error(f"Task generation failed: {e}")
             raise
     
-    def _execute_qa_generation(self):
+    def _execute_qa_generation(self, update_progress_callback=None):
         """Execute QA test case generation stage."""
         self.logger.info("Generating QA test cases and validation")
         
         try:
             agent = self.agents['qa_tester_agent']
             context = self.project_context.get_context('qa_tester_agent')
+            
+            # Count total user stories and features for progress tracking
+            total_features = 0
+            total_stories = 0
+            for epic in self.workflow_data['epics']:
+                total_features += len(epic.get('features', []))
+                for feature in epic.get('features', []):
+                    total_stories += len(feature.get('user_stories', []))
+            
+            total_items = total_stories + total_features  # stories + features for test plans
+            processed_items = 0
             
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
@@ -556,6 +595,12 @@ class WorkflowSupervisor:
                     for user_story in feature.get('user_stories', []):
                         self.logger.info(f"Generating QA artifacts for user story: {user_story.get('title', 'Untitled')}")
                         
+                        # Update progress with granular tracking
+                        if update_progress_callback and total_items > 0:
+                            sub_progress = processed_items / total_items
+                            story_title = user_story.get('title', 'Untitled')[:30] + ('...' if len(user_story.get('title', '')) > 30 else '')
+                            update_progress_callback(5, f"Generating QA for: {story_title}", sub_progress)
+                        
                         # Generate user story test cases (replaces feature-level test generation)
                         test_cases = agent.generate_user_story_test_cases(user_story, context)
                         user_story['test_cases'] = test_cases
@@ -564,12 +609,19 @@ class WorkflowSupervisor:
                         validation = agent.validate_user_story_testability(user_story, context)
                         user_story['qa_validation'] = validation
                         
+                        processed_items += 1
                         self.logger.info(f"Generated QA artifacts for user story: {len(test_cases)} test cases, testability score: {validation.get('testability_score', 'N/A')}")
                     
                     # Create test plan structure for the feature (organizational level)
+                    if update_progress_callback and total_items > 0:
+                        sub_progress = processed_items / total_items
+                        feature_title = feature.get('title', 'Untitled')[:25] + ('...' if len(feature.get('title', '')) > 25 else '')
+                        update_progress_callback(5, f"Creating test plan: {feature_title}", sub_progress)
+                    
                     test_plan_structure = agent.create_test_plan_structure(feature, context)
                     feature['test_plan_structure'] = test_plan_structure
                     
+                    processed_items += 1
                     self.logger.info(f"Created test plan structure for feature: {feature.get('title', 'Untitled')}")
                     
         except Exception as e:
@@ -760,10 +812,27 @@ class WorkflowSupervisor:
         """Calculate workflow execution statistics."""
         epics_count = len(self.workflow_data.get('epics', []))
         features_count = sum(len(epic.get('features', [])) for epic in self.workflow_data.get('epics', []))
+        
+        # Count user stories
+        user_stories_count = sum(
+            len(feature.get('user_stories', []))
+            for epic in self.workflow_data.get('epics', [])
+            for feature in epic.get('features', [])
+        )
+        
+        # Count tasks
         tasks_count = sum(
             len(feature.get('tasks', []))
             for epic in self.workflow_data.get('epics', [])
             for feature in epic.get('features', [])
+        )
+        
+        # Count test cases
+        test_cases_count = sum(
+            len(user_story.get('test_cases', []))
+            for epic in self.workflow_data.get('epics', [])
+            for feature in epic.get('features', [])
+            for user_story in feature.get('user_stories', [])
         )
         
         execution_time = None
@@ -773,7 +842,9 @@ class WorkflowSupervisor:
         return {
             'epics_generated': epics_count,
             'features_generated': features_count,
+            'user_stories_generated': user_stories_count,
             'tasks_generated': tasks_count,
+            'test_cases_generated': test_cases_count,
             'execution_time_seconds': execution_time,
             'stages_completed': len(self.execution_metadata['stages_completed']),
             'errors_encountered': len(self.execution_metadata['errors'])

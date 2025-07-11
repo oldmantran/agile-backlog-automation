@@ -182,7 +182,7 @@ def test_qa_tester_agent_quality():
     }
     
     # Create test cases
-    test_cases = agent.generate_test_cases(test_feature)
+    test_cases = agent.generate_user_story_test_cases(test_feature)
     
     print(f"✅ Created {len(test_cases)} test cases")
     
