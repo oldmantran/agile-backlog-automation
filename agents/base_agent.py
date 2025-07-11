@@ -59,7 +59,7 @@ class Agent:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                response = requests.post(url, headers=headers, json=payload, timeout=120)
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
                 response.raise_for_status()
                 data = response.json()
                 print(f"📥 Response:\n{response.text}")
