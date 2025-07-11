@@ -20,14 +20,18 @@ class QALeadAgent(Agent):
     - TestCaseAgent: Creates individual test cases
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+    def __init__(self, config):
+        super().__init__("qa_lead_agent", config)
         self.logger = logging.getLogger(self.__class__.__name__)
         
-        # Initialize sub-agents
-        self.test_plan_agent = TestPlanAgent(config.get('sub_agents', {}).get('test_plan_agent', {}))
-        self.test_suite_agent = TestSuiteAgent(config.get('sub_agents', {}).get('test_suite_agent', {}))
-        self.test_case_agent = TestCaseAgent(config.get('sub_agents', {}).get('test_case_agent', {}))
+        # Get QA Lead Agent specific configuration
+        qa_config = config.get_setting('agents', 'qa_lead_agent') or {}
+        sub_agents_config = qa_config.get('sub_agents', {})
+        
+        # Initialize sub-agents with their specific configurations
+        self.test_plan_agent = TestPlanAgent(config)
+        self.test_suite_agent = TestSuiteAgent(config)
+        self.test_case_agent = TestCaseAgent(config)
         
         # QA strategy settings
         self.max_retries = 3

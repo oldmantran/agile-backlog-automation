@@ -18,12 +18,16 @@ class TestCaseAgent(Agent):
     - Link test cases to appropriate test suites
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+    def __init__(self, config):
+        super().__init__("test_case_agent", config)
         self.logger = logging.getLogger(self.__class__.__name__)
         
-        # Test case specific settings
-        self.test_case_format = config.get('test_case_format', 'gherkin')
+        # Test case specific settings from configuration
+        qa_config = config.get_setting('agents', 'qa_lead_agent') or {}
+        sub_agents_config = qa_config.get('sub_agents', {})
+        test_case_config = sub_agents_config.get('test_case_agent', {})
+        
+        self.test_case_format = test_case_config.get('test_case_format', 'gherkin')
         self.case_types = ['positive', 'negative', 'boundary', 'integration']
         self.max_cases_per_story = 10
     

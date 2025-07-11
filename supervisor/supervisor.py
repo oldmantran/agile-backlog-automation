@@ -105,7 +105,7 @@ class WorkflowSupervisor:
             agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
             agents['developer_agent'] = DeveloperAgent(self.config)
             agents['qa_tester_agent'] = QATesterAgent(self.config)  # Keep for backward compatibility
-            agents['qa_lead_agent'] = QALeadAgent(self.config.get_agent_config('qa_lead_agent'))
+            agents['qa_lead_agent'] = QALeadAgent(self.config)
             
             # Keep backward compatibility with old decomposition_agent reference
             agents['decomposition_agent'] = agents['feature_decomposer_agent']

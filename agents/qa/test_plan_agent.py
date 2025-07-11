@@ -18,8 +18,8 @@ class TestPlanAgent(Agent):
     - Set area paths and iterations
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+    def __init__(self, config):
+        super().__init__("test_plan_agent", config)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Test plan specific settings

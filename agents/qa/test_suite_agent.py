@@ -18,8 +18,8 @@ class TestSuiteAgent(Agent):
     - Maintain suite hierarchy and relationships
     """
     
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+    def __init__(self, config):
+        super().__init__("test_suite_agent", config)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Test suite specific settings
