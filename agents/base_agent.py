@@ -54,16 +54,39 @@ class Agent:
             ]
         }
         print(f"📤 Sending to {self.llm_provider.capitalize()} (model: {self.model}):\n{json.dumps(payload, indent=2)}")
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-            response.raise_for_status()
-            data = response.json()
-            print(f"📥 Response:\n{response.text}")
-            # OpenAI and Grok both return choices/message structure
-            return data["choices"][0]["message"]["content"].strip()
-        except Exception as e:
-            print(f"❌ Agent '{self.name}' failed: {e}")
-            return ""
+        
+        # Retry logic for timeout and rate limiting
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(url, headers=headers, json=payload, timeout=120)
+                response.raise_for_status()
+                data = response.json()
+                print(f"📥 Response:\n{response.text}")
+                # OpenAI and Grok both return choices/message structure
+                return data["choices"][0]["message"]["content"].strip()
+            except requests.exceptions.Timeout as e:
+                print(f"⏱️ Timeout on attempt {attempt + 1}/{max_retries} for agent '{self.name}': {e}")
+                if attempt == max_retries - 1:
+                    print(f"❌ Agent '{self.name}' failed after {max_retries} attempts: {e}")
+                    return ""
+                # Wait before retrying
+                import time
+                time.sleep(5 * (attempt + 1))  # Exponential backoff
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:  # Rate limit
+                    print(f"🚦 Rate limit on attempt {attempt + 1}/{max_retries} for agent '{self.name}': {e}")
+                    if attempt == max_retries - 1:
+                        print(f"❌ Agent '{self.name}' failed after {max_retries} attempts: {e}")
+                        return ""
+                    import time
+                    time.sleep(10 * (attempt + 1))  # Longer wait for rate limits
+                else:
+                    print(f"❌ Agent '{self.name}' failed: {e}")
+                    return ""
+            except Exception as e:
+                print(f"❌ Agent '{self.name}' failed: {e}")
+                return ""
         
 
     def __repr__(self):

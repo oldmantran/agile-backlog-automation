@@ -116,7 +116,7 @@ class TestPlanAgent(Agent):
             prompt = self._build_test_plan_prompt(feature_context)
             
             # Call LLM to generate test plan
-            response = self.llm_client.generate_response(prompt, max_tokens=2000)
+            response = self.run(prompt)
             
             if not response:
                 self.logger.error("LLM returned empty response for test plan generation")

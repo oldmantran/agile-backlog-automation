@@ -114,7 +114,7 @@ class TestSuiteAgent(Agent):
             prompt = self._build_test_suite_prompt(suite_context)
             
             # Call LLM to generate test suite
-            response = self.llm_client.generate_response(prompt, max_tokens=1500)
+            response = self.run(prompt)
             
             if not response:
                 self.logger.error("LLM returned empty response for test suite generation")

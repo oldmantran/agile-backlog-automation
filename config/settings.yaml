@@ -23,14 +23,18 @@ agents:
     estimation_unit: "hours"
   qa_lead_agent:
     prompt_file: "prompts/qa_lead_agent.txt"
+    timeout_seconds: 180  # Longer timeout for QA operations
     sub_agents:
       test_plan_agent:
         prompt_file: "prompts/test_plan_agent.txt"
+        timeout_seconds: 120
       test_suite_agent:
         prompt_file: "prompts/test_suite_agent.txt"
+        timeout_seconds: 90
       test_case_agent:
         prompt_file: "prompts/test_case_agent.txt"
         test_case_format: "gherkin"
+        timeout_seconds: 180  # Longest timeout for complex test case generation
   backlog_sweeper_agent:
     enabled: true
     
