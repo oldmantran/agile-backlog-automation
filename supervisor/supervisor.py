@@ -735,9 +735,10 @@ class WorkflowSupervisor:
         epics_count = len(self.workflow_data.get('epics', []))
         features_count = sum(len(epic.get('features', [])) for epic in self.workflow_data.get('epics', []))
         tasks_count = sum(
-            len(feature.get('tasks', []))
+            len(user_story.get('tasks', []))
             for epic in self.workflow_data.get('epics', [])
             for feature in epic.get('features', [])
+            for user_story in feature.get('user_stories', [])
         )
         
         execution_time = None

@@ -97,9 +97,11 @@ Generate test cases covering:
 """
         
         print(f"🧪 [QATesterAgent] Generating comprehensive User Story test cases for: {user_story.get('title', 'Unknown')}")
+        print(f"🧪 [QA DEBUG] Starting test case generation...")
         
         try:
             response = self.run(user_input, prompt_context)
+            print(f"🧪 [QA DEBUG] Got AI response, length: {len(response) if response else 0} chars")
             
             if not response:
                 self.logger.warning("Empty response from AI model")
@@ -107,6 +109,11 @@ Generate test cases covering:
             
             # Extract JSON from markdown code blocks if present
             cleaned_response = self._extract_json_from_response(response)
+            
+            # DEBUG: Print what we're trying to parse
+            print(f"🔍 [QA DEBUG] Response length: {len(cleaned_response)} chars")
+            print(f"🔍 [QA DEBUG] Response preview: {cleaned_response[:300]}...")
+            
             test_cases = json.loads(cleaned_response)
             
             if isinstance(test_cases, list):
