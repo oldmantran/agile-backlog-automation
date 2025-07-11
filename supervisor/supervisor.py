@@ -92,6 +92,9 @@ class WorkflowSupervisor:
         self.sweeper_agent = None  # Will be initialized as needed
         self.sweeper_retry_tracker = {}  # {stage: {item_id: retry_count}}
         
+        # Initialize backlog sweeper for validation
+        self.backlog_sweeper = BacklogSweeperAgent(self.config)
+        
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
         agents = {}
@@ -243,7 +246,8 @@ class WorkflowSupervisor:
                         stages: List[str] = None,
                         human_review: bool = False,
                         save_outputs: bool = True,
-                        integrate_azure: bool = False) -> Dict[str, Any]:
+                        integrate_azure: bool = False,
+                        progress_callback: Optional[callable] = None) -> Dict[str, Any]:
         """
         Execute the complete workflow or specific stages.
         
@@ -253,6 +257,7 @@ class WorkflowSupervisor:
             human_review: Whether to pause for human review between stages
             save_outputs: Whether to save intermediate outputs
             integrate_azure: Whether to create Azure DevOps work items
+            progress_callback: Optional callback function to report progress
             
         Returns:
             Complete workflow results including all generated artifacts
@@ -261,7 +266,28 @@ class WorkflowSupervisor:
         self.execution_metadata['start_time'] = datetime.now()
         self.logger.info("Starting workflow execution")
         
+        # Progress tracking
+        stages_to_run = stages or self._get_default_stages()
+        total_stages = len(stages_to_run)
+        stage_progress_mapping = {
+            0: 30,  # Initial setup complete
+            1: 50,  # Epic generation complete  
+            2: 70,  # Feature decomposition complete
+            3: 90,  # User story decomposition complete
+            4: 95,  # Task generation complete
+            5: 99,  # QA generation complete
+        }
+        
+        # Helper function to update progress
+        def update_progress(stage_index: int, action: str):
+            if progress_callback:
+                progress = stage_progress_mapping.get(stage_index, 30)
+                progress_callback(progress, action)
+        
         try:
+            # Initial progress update
+            update_progress(0, "Initializing workflow")
+            
             # Initialize workflow data
             self.workflow_data = {
                 'product_vision': product_vision,
@@ -269,7 +295,7 @@ class WorkflowSupervisor:
                 'metadata': {
                     'project_context': self.project_context.get_context(),
                     'execution_config': {
-                        'stages': stages or self._get_default_stages(),
+                        'stages': stages_to_run,
                         'human_review': human_review,
                         'save_outputs': save_outputs,
                         'integrate_azure': integrate_azure
@@ -279,8 +305,10 @@ class WorkflowSupervisor:
             # Execute stages in sequence
             stages_to_run = stages or self._get_default_stages()
             self.sweeper_retry_tracker = {}
-            for stage in stages_to_run:
+            for stage_index, stage in enumerate(stages_to_run):
                 self.logger.info(f"Executing stage: {stage}")
+                update_progress(stage_index + 1, f"Executing {stage}")
+                
                 self.sweeper_retry_tracker[stage] = {}
                 max_retries = 5
                 completed = False
@@ -352,14 +380,22 @@ class WorkflowSupervisor:
                         completed = True  # Move to next stage even on error
             # Final processing
             self._finalize_workflow_data()
+            
             # Azure DevOps integration
             if integrate_azure:
+                update_progress(total_stages + 1, "Integrating with Azure DevOps")
                 self._integrate_with_azure_devops()
+            
             # Send notifications
             self._send_completion_notifications()
+            
             # Save final output
             if save_outputs:
                 self._save_final_output()
+            
+            # Final progress update
+            update_progress(total_stages + 2, "Backlog generation completed")
+            
             self.execution_metadata['end_time'] = datetime.now()
             self.logger.info("Workflow execution completed successfully")
             
@@ -585,8 +621,8 @@ class WorkflowSupervisor:
         
         # Check if Azure integration is enabled
         if self.azure_integrator is None:
-            self.logger.info("🚫 Azure DevOps integration disabled (no Azure config provided)")
-            self.logger.info("✅ Content generation completed - skipping Azure upload")
+            self.logger.info("Azure DevOps integration disabled (no Azure config provided)")
+            self.logger.info("Content generation completed - skipping Azure upload")
             
             # Store integration results as skipped
             self.workflow_data['azure_integration'] = {
@@ -598,7 +634,7 @@ class WorkflowSupervisor:
         
         try:
             # Perform pre-integration quality check using backlog sweeper
-            self.logger.info("🔍 Running pre-integration validation...")
+            self.logger.info("Running pre-integration validation...")
             validation_report = self.backlog_sweeper.validate_pre_integration(self.workflow_data)
             
             # Store validation results
@@ -607,7 +643,7 @@ class WorkflowSupervisor:
             # Check validation status
             if validation_report['status'] == 'failed':
                 critical_count = validation_report['summary']['critical_issues']
-                self.logger.error(f"❌ Pre-integration validation failed with {critical_count} critical issues")
+                self.logger.error(f"Pre-integration validation failed with {critical_count} critical issues")
                 
                 # Store failed integration attempt
                 self.workflow_data['azure_integration'] = {
@@ -634,7 +670,7 @@ class WorkflowSupervisor:
                         self.logger.warning(f"WARNING: {issue.get('description')}")
             
             else:
-                self.logger.info("✅ Pre-integration validation passed successfully")
+                self.logger.info("Pre-integration validation passed successfully")
             
             # Proceed with ADO integration
             self.logger.info("🚀 Starting Azure DevOps work item creation...")

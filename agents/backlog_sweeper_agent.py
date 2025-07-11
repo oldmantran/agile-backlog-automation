@@ -966,7 +966,7 @@ class BacklogSweeperAgent:
             Validation report with issues found and recommendations
         """
         validation_start = datetime.now()
-        self.logger.info("🔍 Starting pre-integration validation for ADO upload")
+        self.logger.info("Starting pre-integration validation for ADO upload")
         
         validation_report = {
             'timestamp': validation_start.isoformat(),
@@ -1056,16 +1056,16 @@ class BacklogSweeperAgent:
             validation_end = datetime.now()
             validation_duration = (validation_end - validation_start).total_seconds()
             
-            self.logger.info(f"✅ Pre-integration validation completed in {validation_duration:.2f}s")
-            self.logger.info(f"📊 Status: {validation_report['status']}")
-            self.logger.info(f"🔍 Issues found: {validation_report['summary']['total_issues']} "
+            self.logger.info(f"Pre-integration validation completed in {validation_duration:.2f}s")
+            self.logger.info(f"Status: {validation_report['status']}")
+            self.logger.info(f"Issues found: {validation_report['summary']['total_issues']} "
                            f"(Critical: {validation_report['summary']['critical_issues']}, "
                            f"Warning: {validation_report['summary']['warning_issues']})")
             
             return validation_report
             
         except Exception as e:
-            self.logger.error(f"❌ Pre-integration validation failed: {e}")
+            self.logger.error(f"Pre-integration validation failed: {e}")
             validation_report['status'] = 'error'
             validation_report['issues'].append({
                 'severity': 'critical',

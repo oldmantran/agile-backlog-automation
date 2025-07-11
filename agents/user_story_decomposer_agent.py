@@ -44,7 +44,9 @@ Edge Cases: {feature.get('edge_cases', [])}
         response = self.run_with_template(user_input, prompt_context, template_name="user_story_decomposer")
 
         try:
-            user_stories = json.loads(response)
+            # Extract JSON with improved parsing
+            cleaned_response = self._extract_json_from_response(response)
+            user_stories = json.loads(cleaned_response)
             
             # Handle different response formats
             if isinstance(user_stories, list) and len(user_stories) > 0:
@@ -273,3 +275,119 @@ Edge Cases: {feature.get('edge_cases', [])}
             print(f"⚠️ Template {template_to_use} failed: {e}")
             print("🔄 Falling back to default prompt...")
             return self.run(user_input, context)
+
+    def _extract_json_from_response(self, response: str) -> str:
+        """
+        Extract JSON content from AI response with improved bracket counting and validation.
+        
+        Args:
+            response: Raw response from AI model
+            
+        Returns:
+            Cleaned JSON string
+        """
+        if not response:
+            return "[]"
+        
+        import re
+        
+        # Look for JSON inside ```json blocks
+        json_pattern = r'```json\s*([\s\S]*?)\s*```'
+        json_match = re.search(json_pattern, response, re.IGNORECASE)
+        
+        if json_match:
+            return json_match.group(1).strip()
+        
+        # Look for JSON inside ``` blocks (without language specifier)
+        code_pattern = r'```\s*([\s\S]*?)\s*```'
+        code_match = re.search(code_pattern, response)
+        
+        if code_match:
+            content = code_match.group(1).strip()
+            # Check if it looks like JSON (starts with { or [)
+            if content.startswith(('{', '[')):
+                return content
+        
+        # Enhanced JSON extraction with proper bracket counting
+        # Find the start of JSON array
+        start_idx = response.find('[')
+        if start_idx == -1:
+            start_idx = response.find('{')
+            if start_idx == -1:
+                return "[]"
+        
+        # Count brackets/braces to find the complete JSON structure
+        if response[start_idx] == '[':
+            bracket_count = 0
+            brace_count = 0
+            in_string = False
+            escape_next = False
+            
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if escape_next:
+                    escape_next = False
+                    continue
+                    
+                if char == '\\' and in_string:
+                    escape_next = True
+                    continue
+                    
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                
+                if char == "'" and not escape_next:
+                    in_string = not in_string
+                    continue
+                    
+                if not in_string:
+                    if char == '[':
+                        bracket_count += 1
+                    elif char == ']':
+                        bracket_count -= 1
+                        if bracket_count == 0:
+                            # Found the end of the JSON array
+                            return response[start_idx:i+1]
+                    elif char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+        
+        else:  # Starting with '{'
+            brace_count = 0
+            bracket_count = 0
+            in_string = False
+            escape_next = False
+            
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if escape_next:
+                    escape_next = False
+                    continue
+                    
+                if char == '\\' and in_string:
+                    escape_next = True
+                    continue
+                    
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                
+                if char == "'" and not escape_next:
+                    in_string = not in_string
+                    continue
+                    
+                if not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            # Found the end of the JSON object
+                            return response[start_idx:i+1]
+                    elif char == '[':
+                        bracket_count += 1
+                    elif char == ']':
+                        bracket_count -= 1
+        
+        # Fallback: return everything from start to end of response
+        return response[start_idx:].strip()

@@ -37,14 +37,9 @@ class EpicStrategist(Agent):
                 return []
             
             # Check for markdown code blocks
-            if "```json" in response:
-                print("🔍 Extracting JSON from markdown...")
-                start = response.find("```json") + 7
-                end = response.find("```", start)
-                if end > start:
-                    response = response[start:end].strip()
-            
-            epics = json.loads(response)
+            # Extract JSON with improved parsing
+            cleaned_response = self._extract_json_from_response(response)
+            epics = json.loads(cleaned_response)
             if isinstance(epics, list):
                 # Apply the epic limit constraint if specified
                 if epic_limit:
@@ -62,3 +57,81 @@ class EpicStrategist(Agent):
             print("🔎 Raw response:")
             print(response)
             return []
+
+    def _extract_json_from_response(self, response: str) -> str:
+        """Extract JSON content from AI response with improved bracket counting and validation."""
+        if not response:
+            return "[]"
+        
+        import re
+        
+        # Look for JSON inside ```json blocks
+        json_pattern = r'```json\s*([\s\S]*?)\s*```'
+        json_match = re.search(json_pattern, response, re.IGNORECASE)
+        
+        if json_match:
+            return json_match.group(1).strip()
+        
+        # Look for JSON inside ``` blocks (without language specifier)
+        code_pattern = r'```\s*([\s\S]*?)\s*```'
+        code_match = re.search(code_pattern, response)
+        
+        if code_match:
+            content = code_match.group(1).strip()
+            if content.startswith(('{', '[')):
+                return content
+        
+        # Enhanced JSON extraction with proper bracket counting
+        start_idx = response.find('[')
+        if start_idx == -1:
+            start_idx = response.find('{')
+            if start_idx == -1:
+                return "[]"
+        
+        # Count brackets/braces to find the complete JSON structure
+        if response[start_idx] == '[':
+            bracket_count = 0
+            in_string = False
+            escape_next = False
+            
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if escape_next:
+                    escape_next = False
+                    continue
+                if char == '\\' and in_string:
+                    escape_next = True
+                    continue
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                if not in_string:
+                    if char == '[':
+                        bracket_count += 1
+                    elif char == ']':
+                        bracket_count -= 1
+                        if bracket_count == 0:
+                            return response[start_idx:i+1]
+        else:  # Starting with '{'
+            brace_count = 0
+            in_string = False
+            escape_next = False
+            
+            for i, char in enumerate(response[start_idx:], start_idx):
+                if escape_next:
+                    escape_next = False
+                    continue
+                if char == '\\' and in_string:
+                    escape_next = True
+                    continue
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    continue
+                if not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            return response[start_idx:i+1]
+        
+        return response[start_idx:].strip()

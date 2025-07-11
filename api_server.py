@@ -361,10 +361,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             # Content-only mode (no Azure integration)
             supervisor = WorkflowSupervisor(job_id=job_id)
         
-        # Update progress
-        active_jobs[job_id]["currentAgent"] = "supervisor"
-        active_jobs[job_id]["currentAction"] = "Running epic strategist"
-        active_jobs[job_id]["progress"] = 30
+        # Define progress callback function
+        def progress_callback(progress: int, action: str):
+            """Update job progress in real-time."""
+            if job_id in active_jobs:
+                active_jobs[job_id]["progress"] = progress
+                active_jobs[job_id]["currentAction"] = action
+                logger.info(f"Job {job_id} progress: {progress}% - {action}")
         
         # Run the workflow with project context
         context = {
@@ -376,10 +379,6 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "target_audience": project_data["vision"]["targetAudience"],
             "azure_config": project_data["azureConfig"]
         }
-        
-        # Update progress
-        active_jobs[job_id]["currentAction"] = "Generating backlog items"
-        active_jobs[job_id]["progress"] = 60
         
         # Set up the project context for the supervisor
         supervisor.configure_project_context(project_domain, context)
@@ -395,12 +394,17 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
         """
         
-        # Run the supervisor workflow
-        results = await asyncio.to_thread(supervisor.execute_workflow, product_vision, save_outputs=True, integrate_azure=True)
+        # Run the supervisor workflow with progress callback
+        results = await asyncio.to_thread(
+            supervisor.execute_workflow, 
+            product_vision, 
+            save_outputs=True, 
+            integrate_azure=azure_integration_enabled,
+            progress_callback=progress_callback
+        )
         
         # Update final progress
         active_jobs[job_id]["status"] = "completed"
-        active_jobs[job_id]["currentAction"] = "Backlog generation completed"
         active_jobs[job_id]["progress"] = 100
         active_jobs[job_id]["endTime"] = datetime.now()
         
