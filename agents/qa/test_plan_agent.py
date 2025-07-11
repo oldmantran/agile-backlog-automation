@@ -4,10 +4,10 @@ Test Plan Agent - Specialized agent for creating test plans at the feature level
 
 import logging
 from typing import Dict, List, Any, Optional
-from agents.base_agent import BaseAgent
+from agents.base_agent import Agent
 
 
-class TestPlanAgent(BaseAgent):
+class TestPlanAgent(Agent):
     """
     Specialized agent for creating test plans for features.
     

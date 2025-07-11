@@ -4,13 +4,13 @@ QA Lead Agent - Orchestrates test planning, suite creation, and test case genera
 
 import logging
 from typing import Dict, List, Any, Optional
-from agents.base_agent import BaseAgent
+from agents.base_agent import Agent
 from agents.qa.test_plan_agent import TestPlanAgent
 from agents.qa.test_suite_agent import TestSuiteAgent
 from agents.qa.test_case_agent import TestCaseAgent
 
 
-class QALeadAgent(BaseAgent):
+class QALeadAgent(Agent):
     """
     QA Lead Agent that orchestrates the quality assurance process.
     

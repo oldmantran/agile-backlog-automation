@@ -4,10 +4,10 @@ Test Case Agent - Specialized agent for creating individual test cases
 
 import logging
 from typing import Dict, List, Any, Optional
-from agents.base_agent import BaseAgent
+from agents.base_agent import Agent
 
 
-class TestCaseAgent(BaseAgent):
+class TestCaseAgent(Agent):
     """
     Specialized agent for creating individual test cases.
     

@@ -4,10 +4,10 @@ Test Suite Agent - Specialized agent for creating test suites at the user story 
 
 import logging
 from typing import Dict, List, Any, Optional
-from agents.base_agent import BaseAgent
+from agents.base_agent import Agent
 
 
-class TestSuiteAgent(BaseAgent):
+class TestSuiteAgent(Agent):
     """
     Specialized agent for creating test suites for user stories.
     
