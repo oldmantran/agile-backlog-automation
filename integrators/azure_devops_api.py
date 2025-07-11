@@ -204,20 +204,28 @@ class AzureDevOpsIntegrator:
                         # Create test suite and test cases for this user story (improved organization)
                         if user_story_data.get('test_cases') and test_plan:
                             test_suite = self._create_test_suite(user_story_data, test_plan['id'], user_story_item['id'])
-                            created_items.append(test_suite)
-                            
-                            for test_case_data in user_story_data.get('test_cases', []):
-                                test_item = self._create_test_case(test_case_data, user_story_item['id'], test_suite['id'])
-                                created_items.append(test_item)
+                            if test_suite:  # Only proceed if test suite was created successfully
+                                created_items.append(test_suite)
+                                
+                                for test_case_data in user_story_data.get('test_cases', []):
+                                    test_item = self._create_test_case(test_case_data, user_story_item['id'], test_suite['id'])
+                                    if test_item:  # Only add if test case was created successfully
+                                        created_items.append(test_item)
+                            else:
+                                self.logger.warning(f"Failed to create test suite for user story: {user_story_data.get('title', 'Unknown')}")
                     
                     # Handle feature-level test cases (create default suite if needed)
                     if feature_data.get('test_cases') and test_plan:
                         default_suite = self._create_default_test_suite(feature_data, test_plan['id'], feature_item['id'])
-                        created_items.append(default_suite)
-                        
-                        for test_case_data in feature_data.get('test_cases', []):
-                            test_item = self._create_test_case(test_case_data, feature_item['id'], default_suite['id'])
-                            created_items.append(test_item)
+                        if default_suite:  # Only proceed if default suite was created successfully
+                            created_items.append(default_suite)
+                            
+                            for test_case_data in feature_data.get('test_cases', []):
+                                test_item = self._create_test_case(test_case_data, feature_item['id'], default_suite['id'])
+                                if test_item:  # Only add if test case was created successfully
+                                    created_items.append(test_item)
+                        else:
+                            self.logger.warning(f"Failed to create default test suite for feature: {feature_data.get('title', 'Unknown')}")
             
             self.logger.info(f"Successfully created {len(created_items)} work items with organized test plans")
             return created_items

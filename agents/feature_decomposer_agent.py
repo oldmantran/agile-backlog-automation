@@ -1,4 +1,5 @@
 import json
+import re
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
@@ -48,8 +49,8 @@ Dependencies: {epic.get('dependencies', [])}
         try:
             # Handle empty response
             if not response or not response.strip():
-                print("⚠️ Empty response from LLM")
-                return self._create_fallback_features(epic)
+                self.logger.warning("Empty response from LLM")
+                return self._extract_features_from_any_format("", epic, feature_limit)
             
             # Check for markdown code blocks
             # Extract JSON with improved parsing
@@ -66,65 +67,77 @@ Dependencies: {epic.get('dependencies', [])}
                     enhanced_features = self._validate_and_enhance_features(features)
                 return enhanced_features
             else:
-                print("⚠️ LLM response was not a valid list.")
-                return self._create_fallback_features(epic, feature_limit)
+                self.logger.warning("LLM response was not a valid list")
+                return self._extract_features_from_any_format(response, epic, feature_limit)
                 
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
-            print("🔄 Using fallback feature generation...")
-            return self._create_fallback_features(epic, feature_limit)
+            self.logger.error(f"Failed to parse JSON: {e}")
+            self.logger.debug(f"Raw response: {response}")
+            return self._extract_features_from_any_format(response, epic, feature_limit)
 
-    def _create_fallback_features(self, epic: dict, max_features: int = None) -> list[dict]:
-        """Create fallback features when LLM processing fails."""
-        epic_title = epic.get('title', 'Unknown Epic')
-        epic_description = epic.get('description', 'No description')
+    def _extract_features_from_any_format(self, response: str, epic: dict, max_features: int = None) -> list[dict]:
+        """Extract features from LLM response in any format using intelligent parsing."""
+        if not response or not response.strip():
+            self.logger.error("Empty response received")
+            return []
         
-        fallback_features = [
-            {
-                "title": f"Core {epic_title} Foundation",
-                "description": f"Establish the fundamental infrastructure and basic functionality for {epic_description}",
-                "priority": "High",
-                "estimated_story_points": 13,
-                "dependencies": [],
-                "ui_ux_requirements": ["Responsive design", "Accessibility compliance"],
-                "technical_considerations": ["Scalable architecture", "Performance optimization"],
-                "business_value": "Provides essential foundation for all other features",
-                "edge_cases": ["System overload scenarios", "Data validation failures"]
-            },
-            {
-                "title": f"{epic_title} User Interface",
-                "description": f"Design and implement the user interface components for {epic_description}",
-                "priority": "High", 
-                "estimated_story_points": 8,
-                "dependencies": [f"Core {epic_title} Foundation"],
-                "ui_ux_requirements": ["Intuitive navigation", "Mobile-first design"],
-                "technical_considerations": ["Cross-browser compatibility", "Responsive layouts"],
-                "business_value": "Enables user interaction and engagement",
-                "edge_cases": ["Browser compatibility issues", "Screen size variations"]
-            },
-            {
-                "title": f"{epic_title} Data Management",
-                "description": f"Implement data storage, retrieval, and management capabilities for {epic_description}",
-                "priority": "Medium",
-                "estimated_story_points": 8,
-                "dependencies": [f"Core {epic_title} Foundation"],
-                "ui_ux_requirements": ["Clear data visualization", "Export capabilities"],
-                "technical_considerations": ["Data integrity", "Backup strategies"],
-                "business_value": "Ensures reliable data handling and persistence",
-                "edge_cases": ["Data corruption scenarios", "Large dataset handling"]
-            }
+        # Try to extract features from text format
+        extracted_features = self._extract_features_from_text(response, epic)
+        
+        # Apply limit if specified
+        if max_features and len(extracted_features) > max_features:
+            extracted_features = extracted_features[:max_features]
+            self.logger.info(f"Limited features to {max_features} for testing")
+        
+        if extracted_features:
+            self.logger.info(f"Successfully extracted {len(extracted_features)} features from response")
+            return self._validate_and_enhance_features(extracted_features)
+        else:
+            self.logger.error("Failed to extract any features from response")
+            return []
+
+    def _extract_features_from_text(self, text: str, epic: dict) -> list[dict]:
+        """Extract features from unstructured text using pattern matching."""
+        features = []
+        epic_title = epic.get('title', 'Epic')
+        
+        # Common patterns that indicate feature titles
+        feature_patterns = [
+            r"(?:Feature|FEATURE)\s*\d*[:\-\s]*(.+?)(?=\n|$)",
+            r"##\s*(.+?)(?=\n|$)",
+            r"\d+\.\s*(.+?)(?=\n|$)",
+            r"\*\s*(.+?)(?=\n|$)",
+            r"\-\s*(.+?)(?=\n|$)"
         ]
         
-        # Apply the constraint to fallback features if specified
-        if max_features:
-            limited_fallback = fallback_features[:max_features]
-            print(f"🔄 Generated {len(limited_fallback)} fallback features for epic (limited to {max_features})")
-            return limited_fallback
-        else:
-            print(f"🔄 Generated {len(fallback_features)} fallback features for epic")
-            return fallback_features
+        for pattern in feature_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                title = match.strip()
+                if len(title) > 5 and len(title) < 100:  # Reasonable title length
+                    feature = {
+                        "title": title,
+                        "description": f"Feature extracted from LLM response: {title}",
+                        "priority": "Medium",
+                        "estimated_story_points": 5,
+                        "dependencies": [],
+                        "ui_ux_requirements": ["User-friendly interface"],
+                        "technical_considerations": ["Performance optimization"],
+                        "business_value": f"Supports {epic_title} objectives",
+                        "edge_cases": ["Input validation", "Error handling"]
+                    }
+                    
+                    # Avoid duplicates
+                    if not any(f['title'].lower() == title.lower() for f in features):
+                        features.append(feature)
+                        
+                    if len(features) >= 5:  # Reasonable limit
+                        break
+            
+            if features:
+                break
+        
+        return features
 
     def _validate_and_enhance_features(self, features: list) -> list[dict]:
         """Validate and enhance features to meet quality standards."""

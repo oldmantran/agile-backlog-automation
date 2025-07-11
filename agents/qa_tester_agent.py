@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
@@ -256,7 +257,7 @@ Provide detailed analysis including:
             
             if not response:
                 self.logger.warning("Empty response from AI model")
-                return self._generate_fallback_analysis(user_story, criteria_analysis)
+                return self._extract_analysis_from_any_format("", user_story, criteria_analysis)
                 
             analysis = json.loads(response)
             
@@ -280,10 +281,10 @@ Provide detailed analysis including:
             self.logger.error(f"Failed to parse JSON: {e}")
             if 'response' in locals():
                 self.logger.debug(f"Raw response: {response}")
-            return self._generate_fallback_analysis(user_story, criteria_analysis)
+            return self._extract_analysis_from_any_format(response, user_story, criteria_analysis)
         except Exception as e:
             self.logger.error(f"Error performing testability analysis: {e}")
-            return self._generate_fallback_analysis(user_story, criteria_analysis)
+            return self._extract_analysis_from_any_format(response if 'response' in locals() else "", user_story, criteria_analysis)
 
     def create_test_plan_structure(self, feature: dict, context: dict = None) -> dict:
         """Create a recommended test plan structure for a feature with its user stories - USER STORY FOCUSED."""
@@ -1276,33 +1277,136 @@ Provide detailed analysis including:
 
         return coverage_validation
     
-    def _generate_fallback_analysis(self, user_story: dict, criteria_analysis: dict) -> dict:
-        """
-        Generate a fallback testability analysis when AI response fails.
-        """
-        story_points = user_story.get('story_points', 0)
-        if isinstance(story_points, str) and story_points.isdigit():
-            story_points = int(story_points)
-        elif not isinstance(story_points, int):
-            story_points = 3
-            
-        base_score = criteria_analysis.get('testability_score', 5)
+    def _extract_analysis_from_any_format(self, response: str, user_story: dict, criteria_analysis: dict) -> dict:
+        """Extract testability analysis from LLM response in any format using intelligent parsing."""
+        if not response or not response.strip():
+            self.logger.error("Empty response received for testability analysis")
+            return self._create_minimal_analysis(user_story, criteria_analysis)
+        
+        # Try to extract analysis from text format
+        extracted_analysis = self._extract_analysis_from_text(response, user_story, criteria_analysis)
+        
+        if extracted_analysis:
+            self.logger.info("Successfully extracted testability analysis from response")
+            return self._enhance_testability_analysis(extracted_analysis, user_story)
+        else:
+            self.logger.warning("Could not extract analysis from response, creating minimal analysis")
+            return self._create_minimal_analysis(user_story, criteria_analysis)
+
+    def _extract_analysis_from_text(self, text: str, user_story: dict, criteria_analysis: dict) -> dict:
+        """Extract testability analysis from unstructured text using pattern matching."""
+        analysis = {}
+        
+        # Extract testability score
+        score_patterns = [
+            r"testability[_\s]*score[:\s]*(\d+)",
+            r"score[:\s]*(\d+)",
+            r"rating[:\s]*(\d+)"
+        ]
+        
+        for pattern in score_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                analysis['testability_score'] = min(10, max(1, int(match.group(1))))
+                break
+        else:
+            # Default score based on story complexity
+            story_points = user_story.get('story_points', 3)
+            analysis['testability_score'] = max(1, min(10, 8 - (story_points // 2)))
+        
+        # Extract recommendations
+        analysis['improvement_recommendations'] = self._extract_recommendations_from_text(text)
+        analysis['missing_scenarios'] = self._extract_scenarios_from_text(text)
+        
+        # Add metadata
+        analysis.update({
+            'enhanced_criteria': criteria_analysis.get('enhanced_criteria', user_story.get('acceptance_criteria', [])),
+            'risk_assessment': f"Medium - Extracted from AI response, score: {analysis['testability_score']}",
+            'user_story_id': user_story.get('id'),
+            'user_story_title': user_story.get('title', 'Unknown'),
+            'criteria_analysis': criteria_analysis,
+            'story_points': user_story.get('story_points'),
+            'story_priority': user_story.get('priority', 'Medium'),
+            'automation_opportunities': ["Review extracted analysis"],
+            'boundary_scenarios': ["Validate extracted scenarios"],
+            'failure_scenarios': ["Include error handling tests"]
+        })
+        
+        return analysis
+
+    def _extract_recommendations_from_text(self, text: str) -> list:
+        """Extract improvement recommendations from text."""
+        recommendations = []
+        
+        # Common recommendation patterns
+        rec_patterns = [
+            r"recommend(?:ation)?[s]?[:\s]*(.+?)(?=\n|$)",
+            r"suggest(?:ion)?[s]?[:\s]*(.+?)(?=\n|$)",
+            r"improve[:\s]*(.+?)(?=\n|$)",
+            r"consider[:\s]*(.+?)(?=\n|$)"
+        ]
+        
+        for pattern in rec_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                rec = match.strip()
+                if len(rec) > 10 and len(rec) < 200:
+                    recommendations.append(rec)
+        
+        if not recommendations:
+            recommendations = [
+                "Review acceptance criteria for completeness",
+                "Add boundary condition tests",
+                "Include error handling scenarios"
+            ]
+        
+        return recommendations[:5]  # Limit to 5 recommendations
+
+    def _extract_scenarios_from_text(self, text: str) -> list:
+        """Extract missing scenarios from text."""
+        scenarios = []
+        
+        # Common scenario patterns
+        scenario_patterns = [
+            r"missing[:\s]*(.+?)(?=\n|$)",
+            r"scenario[s]?[:\s]*(.+?)(?=\n|$)",
+            r"test[:\s]*(.+?)(?=\n|$)"
+        ]
+        
+        for pattern in scenario_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                scenario = match.strip()
+                if len(scenario) > 5 and len(scenario) < 100:
+                    scenarios.append(scenario)
+        
+        if not scenarios:
+            scenarios = [
+                "Boundary condition testing",
+                "Error handling scenarios",
+                "Integration testing"
+            ]
+        
+        return scenarios[:5]  # Limit to 5 scenarios
+
+    def _create_minimal_analysis(self, user_story: dict, criteria_analysis: dict) -> dict:
+        """Create a minimal testability analysis when extraction fails."""
+        story_points = user_story.get('story_points', 3)
         
         return {
-            "testability_score": base_score,
+            "testability_score": max(1, min(10, 8 - (story_points // 2))),
             "improvement_recommendations": [
-                "Manual review required due to AI parsing error",
-                "Validate acceptance criteria for clarity and completeness",
-                "Consider adding boundary condition tests",
-                "Include negative test scenarios for error handling"
+                "Review acceptance criteria for completeness",
+                "Add boundary condition tests", 
+                "Include error handling scenarios"
             ],
             "missing_scenarios": [
                 "Boundary condition testing",
-                "Error handling scenarios", 
-                "Integration failure testing"
+                "Error handling scenarios",
+                "Integration testing"
             ],
             "enhanced_criteria": criteria_analysis.get('enhanced_criteria', user_story.get('acceptance_criteria', [])),
-            "risk_assessment": f"Medium - Story complexity: {story_points} points, requires manual validation",
+            "risk_assessment": f"Medium - Story complexity: {story_points} points",
             "user_story_id": user_story.get('id'),
             "user_story_title": user_story.get('title', 'Unknown'),
             "criteria_analysis": criteria_analysis,
@@ -1533,15 +1637,8 @@ Provide detailed analysis including:
             
         except Exception as e:
             self.logger.error(f"Failed to parse markdown test cases: {e}")
-            # Return minimal fallback
-            test_cases = [{
-                "title": "Fallback Test Case",
-                "description": "Generated due to parsing error",
-                "test_steps": ["Review and update test case manually"],
-                "expected_result": "Test case needs manual review",
-                "coverage_type": "functional",
-                "priority": "Medium"
-            }]
+            # Return empty list instead of fallback content
+            test_cases = []
         
         return json.dumps(test_cases)
     

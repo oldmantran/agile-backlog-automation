@@ -69,11 +69,11 @@ workflow:
     max_retries_per_stage: 3   # How many times to retry a stage if issues found
     fail_fast: false          # Stop workflow on first stage failure
   
-  # Output limits (set to null for unlimited production use)
+  # Output limits (testing mode for quick validation)
   limits:
-    max_epics: null           # null = unlimited (production mode)
-    max_features_per_epic: null  # null = unlimited (production mode)  
-    max_user_stories_per_feature: null  # null = unlimited
+    max_epics: 2              # Limited for testing
+    max_features_per_epic: 2   # Limited for testing
+    max_user_stories_per_feature: 2  # Limited for testing
   
   output_format: "azure_devops"
 

@@ -136,25 +136,35 @@ class AzureDevOpsTestClient:
             # Get root suite for parent reference
             root_suite = None
             for suite in existing_suites.get('value', []):
-                if suite.get('suiteType') == 'StaticTestSuite' and suite.get('parentSuite') is None:
+                # Look for root suite - it has no parent suite or is the first suite
+                if (suite.get('suiteType') == 'StaticTestSuite' and 
+                    (suite.get('parentSuite') is None or not suite.get('parentSuite'))):
                     root_suite = suite
                     break
+            
+            # If no root suite found, try the first suite as fallback
+            if not root_suite and existing_suites.get('value'):
+                root_suite = existing_suites['value'][0]
+                self.logger.warning(f"No proper root suite found, using first suite as parent: {root_suite.get('name', 'Unknown')}")
+            
+            # If still no suite, we cannot create a child suite
+            if not root_suite:
+                self.logger.error(f"No parent suite available for test plan {test_plan_id}. Cannot create test suite.")
+                return None
             
             # Create new test suite
             suite_config = TestSuiteConfig(
                 name=suite_name,
                 description=f'Test suite for user story: {user_story_name} (ID: {user_story_id})',
-                parent_suite_id=root_suite['id'] if root_suite else None
+                parent_suite_id=root_suite['id']
             )
             
             suite_data = {
                 'name': suite_config.name,
                 'description': suite_config.description,
-                'suiteType': suite_config.suite_type
+                'suiteType': suite_config.suite_type,
+                'parentSuite': {'id': suite_config.parent_suite_id}  # Always include parent suite
             }
-            
-            if suite_config.parent_suite_id:
-                suite_data['parentSuite'] = {'id': suite_config.parent_suite_id}
             
             response = requests.post(
                 f"{self.base_url}/testplan/Plans/{test_plan_id}/suites?api-version=7.1-preview.1",

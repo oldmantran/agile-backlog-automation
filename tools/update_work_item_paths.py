@@ -235,7 +235,7 @@ class WorkItemPathUpdater:
                     'old_iteration': current_iteration,
                     'new_iteration': self.new_iteration_path
                 })
-                self.logger.info(f"  ✅ Successfully updated")
+                self.logger.info(f"  Successfully updated")
             else:
                 results['failed'] += 1
                 results['details'].append({
@@ -244,7 +244,7 @@ class WorkItemPathUpdater:
                     'title': title,
                     'status': 'failed'
                 })
-                self.logger.error(f"  ❌ Failed to update")
+                self.logger.error(f"  Failed to update")
         
         return results
 

@@ -16,7 +16,6 @@ import re
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
-from agents.decomposition_agent import DecompositionAgent
 from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
@@ -469,14 +468,20 @@ class WorkflowSupervisor:
             agent = self.agents['user_story_decomposer_agent']
             context = self.project_context.get_context('user_story_decomposer_agent')
             
+            # Get limits from configuration (null = unlimited)
+            max_user_stories = self.config.settings.get('workflow', {}).get('limits', {}).get('max_user_stories_per_feature')
+            
             for epic in self.workflow_data['epics']:
                 for feature in epic.get('features', []):
                     self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
                     
-                    user_stories = agent.decompose_feature_to_user_stories(feature, context)
+                    user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
                     feature['user_stories'] = user_stories
                     
-                    self.logger.info(f"Generated {len(user_stories)} user stories for feature")
+                    if max_user_stories:
+                        self.logger.info(f"Generated {len(user_stories)} user stories for feature (limited to {max_user_stories} for testing)")
+                    else:
+                        self.logger.info(f"Generated {len(user_stories)} user stories for feature")
                     
         except Exception as e:
             self.logger.error(f"User story decomposition failed: {e}")
@@ -662,7 +667,7 @@ class WorkflowSupervisor:
             
             elif validation_report['status'] == 'warning':
                 warning_count = validation_report['summary']['warning_issues']
-                self.logger.warning(f"⚠️ Pre-integration validation passed with {warning_count} warnings")
+                self.logger.warning(f"Pre-integration validation passed with {warning_count} warnings")
                 
                 # Log warnings but continue
                 for issue in validation_report['issues']:
@@ -673,16 +678,24 @@ class WorkflowSupervisor:
                 self.logger.info("Pre-integration validation passed successfully")
             
             # Proceed with ADO integration
-            self.logger.info("🚀 Starting Azure DevOps work item creation...")
+            self.logger.info("Starting Azure DevOps work item creation...")
             results = self.azure_integrator.create_work_items(self.workflow_data)
             
+            # Check if results are valid
+            if results is None:
+                raise ValueError("Azure DevOps integration returned None - check Azure DevOps configuration and permissions")
+            
+            if not isinstance(results, (list, dict)):
+                raise ValueError(f"Azure DevOps integration returned unexpected type: {type(results)}")
+            
             # Store integration results
+            results_count = len(results) if hasattr(results, '__len__') else 0
             self.workflow_data['azure_integration'] = {
                 'status': 'success',
                 'work_items_created': results,
                 'timestamp': datetime.now().isoformat()
             }
-            self.logger.info(f"Successfully created {len(results)} work items in Azure DevOps")
+            self.logger.info(f"Successfully created {results_count} work items in Azure DevOps")
 
             # --- BEGIN WORKFLOW CHECKS ---
             # Check for missing artifacts
