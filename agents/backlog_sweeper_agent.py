@@ -46,6 +46,10 @@ class BacklogSweeperAgent:
             severity_config = sweeper_config.get('severity_thresholds', {})
             self.critical_notification_count = severity_config.get('critical_notification_count', 5)
             self.max_discrepancies_per_run = severity_config.get('max_discrepancies_per_run', 100)
+            
+            # QA-specific validation settings
+            self.qa_validation_enabled = sweeper_config.get('qa_validation_enabled', True)
+            self.test_organization_validation = sweeper_config.get('test_organization_validation', True)
         else:
             # Default values if no config provided
             self.min_criteria_count = 3
@@ -54,6 +58,10 @@ class BacklogSweeperAgent:
             self.require_functional_and_nonfunctional = True
             self.critical_notification_count = 5
             self.max_discrepancies_per_run = 100
+            
+            # QA-specific validation defaults
+            self.qa_validation_enabled = True
+            self.test_organization_validation = True
         
         # Agent assignment mappings for different discrepancy types
         self.agent_assignments = {
@@ -97,10 +105,6 @@ class BacklogSweeperAgent:
             'decomposition_agent': 'feature_decomposer_agent'
         }
 
-        # QA-specific validation settings
-        self.qa_validation_enabled = sweeper_config.get('qa_validation_enabled', True)
-        self.test_organization_validation = sweeper_config.get('test_organization_validation', True)
-        
         # Initialize QA completeness validator if available
         if self.qa_validation_enabled:
             try:

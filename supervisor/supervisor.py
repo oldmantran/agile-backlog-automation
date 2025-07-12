@@ -1073,13 +1073,21 @@ class WorkflowSupervisor:
             # Calculate summary statistics
             stats = self._calculate_workflow_stats()
             
-            # Send notifications
+            # Add Azure DevOps integration info if available
+            azure_integration = self.workflow_data.get('azure_integration', {})
+            if azure_integration:
+                self.logger.info(f"Adding Azure DevOps integration info to notifications: {azure_integration}")
+            
+            # Send notifications with enhanced debugging
+            self.logger.info(f"Sending notifications with stats: {stats}")
             self.notifier.send_completion_notification(self.workflow_data, stats)
             
             self.logger.info("Completion notifications sent")
             
         except Exception as e:
             self.logger.error(f"Failed to send completion notifications: {e}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
     
     def _send_error_notifications(self, error: Exception):
         """Send error notifications."""
@@ -1102,11 +1110,12 @@ class WorkflowSupervisor:
             for feature in epic.get('features', [])
         )
         
-        # Count tasks
+        # Count tasks (FIXED: tasks are stored in user_stories, not features)
         tasks_count = sum(
-            len(feature.get('tasks', []))
+            len(user_story.get('tasks', []))
             for epic in self.workflow_data.get('epics', [])
             for feature in epic.get('features', [])
+            for user_story in feature.get('user_stories', [])
         )
         
         # Count test cases

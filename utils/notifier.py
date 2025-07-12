@@ -33,7 +33,12 @@ class Notifier:
     def send_completion_notification(self, workflow_data: Dict[str, Any], stats: Dict[str, Any]):
         """Send workflow completion notification."""
         if not self.enabled:
+            print("🔇 Notifications disabled in configuration")
             return
+        
+        print(f"📢 Sending completion notification - enabled channels: {self.channels}")
+        print(f"📊 Statistics received: {stats}")
+        print(f"📋 Workflow data keys: {list(workflow_data.keys())}")
         
         # Generate summary message
         project_name = workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project')
@@ -62,6 +67,11 @@ class Notifier:
         elif azure_integration.get('warning'):
             warning = f"\n\n⚠️ {azure_integration['warning']}"
         
+        # Add Azure DevOps integration info if available
+        ado_summary = ""
+        if azure_integration.get('work_items_created'):
+            ado_summary = f"\n**Azure DevOps Work Items Created:** {azure_integration['work_items_created']}"
+        
         message = f"""
 🎉 **Agile Backlog Automation Complete**
 
@@ -71,15 +81,37 @@ class Notifier:
 **User Stories Generated:** {stats.get('user_stories_generated', 0)}
 **Tasks Generated:** {stats.get('tasks_generated', 0)}
 **Test Cases Generated:** {stats.get('test_cases_generated', 0)}
-**Execution Time:** {exec_time_str}{warning}
+**Execution Time:** {exec_time_str}{ado_summary}{warning}
 
 ✅ All stages completed. Review above for any warnings.
         """.strip()
         
+        success_count = 0
         if 'teams' in self.channels:
-            self.send_teams(message)
+            print("📤 Sending Teams notification...")
+            try:
+                if self.send_teams(message):
+                    success_count += 1
+                    print("✅ Teams notification sent successfully")
+                else:
+                    print("❌ Teams notification failed")
+            except Exception as e:
+                print(f"❌ Teams notification error: {e}")
+                
         if 'email' in self.channels:
-            self.send_email("Backlog Automation Complete", message)
+            print("📧 Sending email notification...")
+            try:
+                if self.send_email("Backlog Automation Complete", message):
+                    success_count += 1
+                    print("✅ Email notification sent successfully")
+                else:
+                    print("❌ Email notification failed")
+            except Exception as e:
+                print(f"❌ Email notification error: {e}")
+                import traceback
+                print(f"Email error traceback: {traceback.format_exc()}")
+        
+        print(f"📊 Notification summary: {success_count}/{len(self.channels)} channels successful")
     
     def send_error_notification(self, error: Exception, metadata: Dict[str, Any]):
         """Send error notification."""
@@ -156,7 +188,13 @@ Check the application logs for detailed issue descriptions and remediation steps
 
     def send_email(self, subject: str, body: str):
         if not all([self.smtp_server, self.username, self.password, self.email_from, self.email_to]):
-            print("⚠️ Email settings incomplete.")
+            missing_vars = []
+            if not self.smtp_server: missing_vars.append("EMAIL_SMTP_SERVER")
+            if not self.username: missing_vars.append("EMAIL_USERNAME") 
+            if not self.password: missing_vars.append("EMAIL_PASSWORD")
+            if not self.email_from: missing_vars.append("EMAIL_FROM")
+            if not self.email_to: missing_vars.append("EMAIL_TO")
+            print(f"⚠️ Email settings incomplete. Missing: {', '.join(missing_vars)}")
             return False
 
         msg = MIMEText(body)
@@ -165,13 +203,21 @@ Check the application logs for detailed issue descriptions and remediation steps
         msg["To"] = self.email_to
 
         try:
+            print(f"📧 Attempting to send email via {self.smtp_server}:{self.smtp_port} to {self.email_to}")
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 if self.use_tls:
+                    print("🔒 Starting TLS encryption")
                     server.starttls()
+                print("🔐 Logging in to SMTP server")
                 server.login(self.username, self.password)
+                print("📤 Sending email message")
                 server.sendmail(self.email_from, [self.email_to], msg.as_string())
-                print("✅ Email notification sent.")
+                print("✅ Email notification sent successfully.")
                 return True
         except Exception as e:
             print(f"❌ Email exception: {e}")
+            print(f"   SMTP Server: {self.smtp_server}:{self.smtp_port}")
+            print(f"   TLS Enabled: {self.use_tls}")
+            print(f"   From: {self.email_from}")
+            print(f"   To: {self.email_to}")
             return False
