@@ -8,6 +8,7 @@ from agents.base_agent import Agent
 from agents.qa.test_plan_agent import TestPlanAgent
 from agents.qa.test_suite_agent import TestSuiteAgent
 from agents.qa.test_case_agent import TestCaseAgent
+from utils.qa_completeness_validator import QACompletenessValidator
 
 
 class QALeadAgent(Agent):
@@ -33,9 +34,18 @@ class QALeadAgent(Agent):
         self.test_suite_agent = TestSuiteAgent(config)
         self.test_case_agent = TestCaseAgent(config)
         
+        # Initialize completeness validator
+        self.completeness_validator = QACompletenessValidator(config)
+        
         # QA strategy settings
         self.max_retries = 3
         self.area_path_strategy = "feature_based"  # Options: feature_based, epic_based, global
+        
+        # Test organization requirements
+        self.test_organization_config = qa_config.get('test_organization', {})
+        self.enforce_completeness = self.test_organization_config.get('enforce_completeness', True)
+        self.ado_integration_config = qa_config.get('ado_integration', {})
+        self.auto_remediate = self.ado_integration_config.get('auto_create_test_plans', True)
         
     def generate_quality_assurance(self, 
                                  epics: List[Dict[str, Any]], 
@@ -81,6 +91,26 @@ class QALeadAgent(Agent):
                     qa_summary['test_suites_created'] += feature_result.get('test_suites_created', 0)
                     qa_summary['test_cases_created'] += feature_result.get('test_cases_created', 0)
                     qa_summary['errors'].extend(feature_result.get('errors', []))
+            
+            # Post-processing: Validate completeness and auto-remediate if needed
+            if self.enforce_completeness:
+                self.logger.info("Validating test organization completeness")
+                completeness_report = self.completeness_validator.validate_test_organization(epics)
+                
+                # Add completeness info to summary
+                qa_summary['completeness_score'] = completeness_report.completeness_score
+                qa_summary['completeness_report'] = self.completeness_validator.generate_completeness_report(completeness_report)
+                
+                # Auto-remediate if configured and completeness is low
+                if (self.auto_remediate and completeness_report.completeness_score < 0.8 and 
+                    hasattr(self, 'ado_client') and self.ado_client):
+                    self.logger.info("Auto-remediating test organization gaps")
+                    remediation_result = self.completeness_validator.auto_remediate_test_organization(epics, self.ado_client)
+                    qa_summary['remediation_result'] = remediation_result
+                    
+                    # Re-validate after remediation
+                    updated_report = self.completeness_validator.validate_test_organization(epics)
+                    qa_summary['final_completeness_score'] = updated_report.completeness_score
             
             self.logger.info(f"QA orchestration completed. Summary: {qa_summary}")
             return {'epics': epics, 'qa_summary': qa_summary}

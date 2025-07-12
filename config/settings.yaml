@@ -24,17 +24,37 @@ agents:
   qa_lead_agent:
     prompt_file: "prompts/qa_lead_agent.txt"
     timeout_seconds: 180  # Longer timeout for QA operations
+    
+    # Test organization requirements
+    test_organization:
+      enforce_completeness: true  # Ensure all features have plans, all stories have suites
+      require_test_plan_per_feature: true
+      require_test_suite_per_story: true
+      require_test_case_linking: true
+      validate_ado_integration: true
+    
+    # Azure DevOps Test Management integration
+    ado_integration:
+      enabled: true
+      auto_create_test_plans: true
+      auto_create_test_suites: true
+      auto_link_test_cases: true
+      update_test_results: true
+    
     sub_agents:
       test_plan_agent:
         prompt_file: "prompts/test_plan_agent.txt"
         timeout_seconds: 120
+        min_test_plans_per_feature: 1
       test_suite_agent:
         prompt_file: "prompts/test_suite_agent.txt"
         timeout_seconds: 90
+        min_test_suites_per_story: 1
       test_case_agent:
         prompt_file: "prompts/test_case_agent.txt"
         test_case_format: "gherkin"
         timeout_seconds: 180  # Longest timeout for complex test case generation
+        min_test_cases_per_story: 3  # Minimum test cases per user story
   backlog_sweeper_agent:
     enabled: true
     

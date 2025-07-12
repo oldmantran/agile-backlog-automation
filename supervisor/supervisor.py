@@ -808,12 +808,16 @@ class WorkflowSupervisor:
             raise
     
     def _execute_qa_generation(self, update_progress_callback=None):
-        """Execute QA generation using hierarchical QA Lead Agent."""
+        """Execute QA generation using hierarchical QA Lead Agent with completeness validation."""
         self.logger.info("Generating QA artifacts using QA Lead Agent")
         
         try:
             agent = self.agents['qa_lead_agent']
             context = self.project_context.get_context('qa_lead_agent')
+            
+            # Set up Azure DevOps client for QA agent if available
+            if hasattr(self, 'ado_client') and self.ado_client:
+                agent.ado_client = self.ado_client
             
             # Determine area path for test artifacts
             area_path = self._determine_qa_area_path(context)
@@ -845,6 +849,27 @@ class WorkflowSupervisor:
             # Log QA generation summary
             qa_summary = qa_result.get('qa_summary', {})
             self.logger.info(f"QA generation completed: {qa_summary}")
+            
+            # Log completeness score if available
+            if 'completeness_score' in qa_summary:
+                completeness_score = qa_summary['completeness_score']
+                self.logger.info(f"Test organization completeness: {completeness_score:.1%}")
+                
+                # Send critical notification if completeness is low
+                if completeness_score < 0.5:
+                    self._send_critical_issue_notification(
+                        f"QA Test Organization Completeness Low",
+                        f"Test organization completeness is {completeness_score:.1%}. "
+                        f"Many features may be missing test plans or user stories missing test suites. "
+                        f"Review the QA completeness report for details."
+                    )
+                
+                # Log completeness report
+                if 'completeness_report' in qa_summary:
+                    self.logger.info(f"QA Completeness Report:\n{qa_summary['completeness_report']}")
+                    
+                    # Write completeness report to file
+                    self._write_completeness_report(qa_summary['completeness_report'])
             
             # Final progress update
             if update_progress_callback:
@@ -1657,7 +1682,7 @@ class WorkflowSupervisor:
                     if hasattr(self, 'azure_integrator'):
                         test_item = self.azure_integrator._create_test_case(test_case, user_story_id)
                         test_cases_created.append(test_item)
-                        self.logger.info(f"Created Test Case {test_item['id']}: {test_case.get('title', '')}")
+                        self.logger.info(f"Created Test Case {test_item['id']}: {test_case.get('title', 'Untitled')}")
                     else:
                         # For testing, simulate test case creation
                         test_item = {
@@ -1797,3 +1822,29 @@ class WorkflowSupervisor:
             # Use legacy validation method
             incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
             return len(incomplete_items) == 0
+
+    def _write_completeness_report(self, completeness_report: str):
+        """Write QA completeness report to output file."""
+        try:
+            import os
+            from datetime import datetime
+            
+            # Ensure output directory exists
+            os.makedirs('output', exist_ok=True)
+            
+            # Generate filename with timestamp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"output/qa_completeness_report_{timestamp}.txt"
+            
+            # Write report to file
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(f"QA Test Organization Completeness Report\n")
+                f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Project: {self.project_context.get_context('project_context', {}).get('project_name', 'Unknown')}\n")
+                f.write("=" * 80 + "\n\n")
+                f.write(completeness_report)
+            
+            self.logger.info(f"QA completeness report written to: {filename}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to write completeness report: {e}")

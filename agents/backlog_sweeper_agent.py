@@ -97,6 +97,18 @@ class BacklogSweeperAgent:
             'decomposition_agent': 'feature_decomposer_agent'
         }
 
+        # QA-specific validation settings
+        self.qa_validation_enabled = sweeper_config.get('qa_validation_enabled', True)
+        self.test_organization_validation = sweeper_config.get('test_organization_validation', True)
+        
+        # Initialize QA completeness validator if available
+        if self.qa_validation_enabled:
+            try:
+                from utils.qa_completeness_validator import QACompletenessValidator
+                self.qa_validator = QACompletenessValidator(config)
+            except ImportError:
+                self.qa_validator = None
+
     def report_to_supervisor(self, report):
         """Send structured report to supervisor with agent assignment suggestions."""
         if self.supervisor_callback:
