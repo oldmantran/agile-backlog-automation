@@ -13,6 +13,10 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
 import re
+import threading
+import time
+from dataclasses import dataclass, asdict
+from enum import Enum
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
@@ -27,6 +31,223 @@ from utils.logger import setup_logger
 from utils.notifier import Notifier
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 
+
+class WorkflowStatus(Enum):
+    IDLE = "idle"
+    RUNNING = "running"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+@dataclass
+class AgentMetrics:
+    name: str
+    executions: int = 0
+    success_rate: float = 0.0
+    avg_duration: float = 0.0
+    last_execution: Optional[str] = None
+    current_status: str = "idle"
+    error_count: int = 0
+
+@dataclass
+class WorkflowMetrics:
+    workflow_id: str
+    status: WorkflowStatus
+    start_time: datetime
+    current_stage: str
+    progress_percentage: float = 0.0
+    agents_metrics: Dict[str, AgentMetrics] = None
+    quality_score: float = 0.0
+    artifacts_created: Dict[str, int] = None
+    errors: List[str] = None
+    
+    def __post_init__(self):
+        if self.agents_metrics is None:
+            self.agents_metrics = {}
+        if self.artifacts_created is None:
+            self.artifacts_created = {}
+        if self.errors is None:
+            self.errors = []
+
+class WorkflowMonitor:
+    """Real-time workflow monitoring and dashboard system"""
+    
+    def __init__(self, supervisor_instance):
+        self.supervisor = supervisor_instance
+        self.workflow_metrics = {}
+        self.monitoring_active = False
+        self.monitor_thread = None
+        self.dashboard_callbacks = []
+        self.metrics_history = []
+        
+    def start_monitoring(self, workflow_id: str):
+        """Start monitoring a workflow execution"""
+        self.workflow_metrics[workflow_id] = WorkflowMetrics(
+            workflow_id=workflow_id,
+            status=WorkflowStatus.RUNNING,
+            start_time=datetime.now(),
+            current_stage="initialization"
+        )
+        
+        self.monitoring_active = True
+        self.monitor_thread = threading.Thread(
+            target=self._monitor_loop,
+            args=(workflow_id,),
+            daemon=True
+        )
+        self.monitor_thread.start()
+        
+    def stop_monitoring(self, workflow_id: str):
+        """Stop monitoring a workflow"""
+        if workflow_id in self.workflow_metrics:
+            self.workflow_metrics[workflow_id].status = WorkflowStatus.COMPLETED
+            self.monitoring_active = False
+            
+    def update_stage_progress(self, workflow_id: str, stage: str, progress: float):
+        """Update current stage progress"""
+        if workflow_id in self.workflow_metrics:
+            metrics = self.workflow_metrics[workflow_id]
+            metrics.current_stage = stage
+            metrics.progress_percentage = progress
+            self._notify_dashboard_update(workflow_id, metrics)
+            
+    def update_agent_metrics(self, workflow_id: str, agent_name: str, 
+                           duration: float, success: bool, error: str = None):
+        """Update individual agent performance metrics"""
+        if workflow_id not in self.workflow_metrics:
+            return
+            
+        metrics = self.workflow_metrics[workflow_id]
+        if agent_name not in metrics.agents_metrics:
+            metrics.agents_metrics[agent_name] = AgentMetrics(name=agent_name)
+            
+        agent_metrics = metrics.agents_metrics[agent_name]
+        agent_metrics.executions += 1
+        agent_metrics.last_execution = datetime.now().isoformat()
+        
+        # Update success rate
+        if success:
+            agent_metrics.success_rate = (
+                (agent_metrics.success_rate * (agent_metrics.executions - 1) + 1.0) / 
+                agent_metrics.executions
+            )
+        else:
+            agent_metrics.error_count += 1
+            agent_metrics.success_rate = (
+                (agent_metrics.success_rate * (agent_metrics.executions - 1)) / 
+                agent_metrics.executions
+            )
+            if error:
+                metrics.errors.append(f"{agent_name}: {error}")
+                
+        # Update average duration
+        agent_metrics.avg_duration = (
+            (agent_metrics.avg_duration * (agent_metrics.executions - 1) + duration) / 
+            agent_metrics.executions
+        )
+        
+    def calculate_quality_score(self, workflow_id: str, validation_results: Dict):
+        """Calculate overall workflow quality score"""
+        if workflow_id not in self.workflow_metrics:
+            return
+            
+        metrics = self.workflow_metrics[workflow_id]
+        
+        # Calculate quality score based on validation results
+        total_items = validation_results.get('total_items', 1)
+        critical_issues = validation_results.get('critical_issues', 0)
+        warning_issues = validation_results.get('warning_issues', 0)
+        
+        # Quality score formula: 100 - (critical_weight * critical_issues + warning_weight * warning_issues) / total_items
+        critical_weight = 10
+        warning_weight = 2
+        
+        quality_penalty = (critical_weight * critical_issues + warning_weight * warning_issues) / total_items
+        metrics.quality_score = max(0, 100 - quality_penalty)
+        
+    def get_dashboard_data(self, workflow_id: str) -> Dict[str, Any]:
+        """Get comprehensive dashboard data for a workflow"""
+        if workflow_id not in self.workflow_metrics:
+            return {}
+            
+        metrics = self.workflow_metrics[workflow_id]
+        
+        return {
+            'workflow_id': workflow_id,
+            'status': metrics.status.value,
+            'start_time': metrics.start_time.isoformat(),
+            'current_stage': metrics.current_stage,
+            'progress_percentage': metrics.progress_percentage,
+            'quality_score': metrics.quality_score,
+            'agents_metrics': {
+                name: asdict(agent_metrics) 
+                for name, agent_metrics in metrics.agents_metrics.items()
+            },
+            'artifacts_created': metrics.artifacts_created,
+            'errors': metrics.errors[-10:],  # Last 10 errors
+            'execution_time': (datetime.now() - metrics.start_time).total_seconds()
+        }
+        
+    def register_dashboard_callback(self, callback):
+        """Register a callback for dashboard updates"""
+        self.dashboard_callbacks.append(callback)
+        
+    def _monitor_loop(self, workflow_id: str):
+        """Main monitoring loop"""
+        while self.monitoring_active:
+            try:
+                # Update artifacts count
+                if hasattr(self.supervisor, 'workflow_data') and self.supervisor.workflow_data:
+                    self._update_artifacts_count(workflow_id)
+                    
+                # Store metrics snapshot for historical analysis
+                if workflow_id in self.workflow_metrics:
+                    snapshot = self.get_dashboard_data(workflow_id)
+                    snapshot['timestamp'] = datetime.now().isoformat()
+                    self.metrics_history.append(snapshot)
+                    
+                    # Keep only last 1000 snapshots
+                    if len(self.metrics_history) > 1000:
+                        self.metrics_history = self.metrics_history[-1000:]
+                        
+                time.sleep(1)  # Update every second
+                
+            except Exception as e:
+                self.supervisor.logger.error(f"Monitoring error: {e}")
+                
+    def _update_artifacts_count(self, workflow_id: str):
+        """Update artifacts count from workflow data"""
+        if workflow_id not in self.workflow_metrics:
+            return
+            
+        metrics = self.workflow_metrics[workflow_id]
+        workflow_data = self.supervisor.workflow_data
+        
+        metrics.artifacts_created = {
+            'epics': len(workflow_data.get('epics', [])),
+            'features': sum(len(e.get('features', [])) for e in workflow_data.get('epics', [])),
+            'user_stories': sum(len(f.get('user_stories', [])) 
+                               for e in workflow_data.get('epics', []) 
+                               for f in e.get('features', [])),
+            'tasks': sum(len(s.get('tasks', [])) 
+                        for e in workflow_data.get('epics', []) 
+                        for f in e.get('features', []) 
+                        for s in f.get('user_stories', [])),
+            'test_cases': sum(len(s.get('test_cases', [])) 
+                             for e in workflow_data.get('epics', []) 
+                             for f in e.get('features', []) 
+                             for s in f.get('user_stories', []))
+        }
+        
+    def _notify_dashboard_update(self, workflow_id: str, metrics: WorkflowMetrics):
+        """Notify registered dashboard callbacks of updates"""
+        dashboard_data = self.get_dashboard_data(workflow_id)
+        for callback in self.dashboard_callbacks:
+            try:
+                callback(dashboard_data)
+            except Exception as e:
+                self.supervisor.logger.error(f"Dashboard callback error: {e}")
 
 class WorkflowSupervisor:
     """
@@ -94,6 +315,10 @@ class WorkflowSupervisor:
         
         # Initialize backlog sweeper for validation
         self.backlog_sweeper = BacklogSweeperAgent(self.config)
+        
+        # Initialize workflow monitor
+        self.workflow_monitor = WorkflowMonitor(self)
+        self.current_workflow_id = None
         
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
@@ -248,7 +473,8 @@ class WorkflowSupervisor:
                         human_review: bool = False,
                         save_outputs: bool = True,
                         integrate_azure: bool = False,
-                        progress_callback: Optional[callable] = None) -> Dict[str, Any]:
+                        progress_callback: Optional[callable] = None,
+                        enable_monitoring: bool = True) -> Dict[str, Any]:
         """
         Execute the complete workflow or specific stages.
         
@@ -298,6 +524,14 @@ class WorkflowSupervisor:
                 
                 progress_callback(int(final_progress), action)
         
+        # Generate unique workflow ID
+        workflow_id = f"workflow_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self.current_workflow_id = workflow_id
+        
+        # Start monitoring if enabled
+        if enable_monitoring:
+            self.workflow_monitor.start_monitoring(workflow_id)
+            
         try:
             # Initial progress update
             update_progress(0, "Initializing workflow")
