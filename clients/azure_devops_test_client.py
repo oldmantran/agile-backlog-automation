@@ -55,13 +55,14 @@ class AzureDevOpsTestClient:
         
         self.logger = logging.getLogger(self.__class__.__name__)
         
-    def ensure_test_plan_exists(self, feature_id: int, feature_name: str) -> Optional[Dict]:
+    def ensure_test_plan_exists(self, feature_id: int, feature_name: str, area_path: str = None) -> Optional[Dict]:
         """
         Create or find test plan for a feature using Test Management API
         
         Args:
             feature_id: Feature work item ID
             feature_name: Feature name for test plan naming
+            area_path: Area path for the test plan (optional)
             
         Returns:
             Test plan dictionary or None if creation fails
@@ -76,13 +77,18 @@ class AzureDevOpsTestClient:
                     self.logger.info(f"Found existing test plan: {plan_name}")
                     return plan
             
+            # Use provided area path or default to project
+            effective_area_path = area_path or self.project
+            
             # Create new test plan
             plan_config = TestPlanConfig(
                 name=plan_name,
                 description=f'Test plan for feature: {feature_name} (ID: {feature_id})',
-                area_path=self.project,
+                area_path=effective_area_path,
                 iteration_path=self.project
             )
+            
+            self.logger.info(f"Creating test plan '{plan_name}' with area path: {effective_area_path}")
             
             plan_data = {
                 'name': plan_config.name,

@@ -869,7 +869,7 @@ Provide detailed analysis including:
             'enhanced_criteria': self.quality_validator.enhance_acceptance_criteria(acceptance_criteria, story_context) if not is_valid else acceptance_criteria
         }
 
-    def ensure_test_organization(self, user_story: dict, required: bool = True) -> dict:
+    def ensure_test_organization(self, user_story: dict, required: bool = True, area_path: str = None) -> dict:
         """Ensure proper test organization exists for a user story."""
         
         if not self.ado_client:
@@ -902,7 +902,8 @@ Provide detailed analysis including:
             # Try to ensure test plan exists for the feature
             test_plan = self.ado_client.ensure_test_plan_exists(
                 feature_id=feature_id,
-                feature_name=feature.get('fields', {}).get('System.Title', 'Unknown Feature')
+                feature_name=feature.get('fields', {}).get('System.Title', 'Unknown Feature'),
+                area_path=area_path  # Use provided area path or client default
             )
             
             if not test_plan:

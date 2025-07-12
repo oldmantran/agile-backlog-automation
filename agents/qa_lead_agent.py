@@ -265,18 +265,29 @@ class QALeadAgent(Agent):
         if 'area_path' in project_context:
             return project_context['area_path']
         
-        # Try to derive from project name or domain
+        # Try to derive from project name, domain, or description
         project_name = project_context.get('project_name', '')
         domain = project_context.get('domain', '')
+        description = project_context.get('description', '')
+        vision = project_context.get('vision', {}).get('visionStatement', '')
         
-        # Default area path logic
-        if 'ride' in project_name.lower() or 'transport' in domain.lower():
+        # Check all text fields for ride sharing indicators
+        all_text = f"{project_name} {domain} {description} {vision}".lower()
+        
+        # Enhanced area path logic with better pattern matching
+        if any(keyword in all_text for keyword in ['ride', 'ridesharing', 'ride-sharing', 'transport', 'mobility', 'vehicle', 'autonomous']):
             return "Ride Sharing"
-        elif 'oil' in domain.lower() or 'gas' in domain.lower():
+        elif any(keyword in all_text for keyword in ['oil', 'gas', 'petroleum', 'drilling', 'refinery']):
             return "Oil and Gas Operations"
+        elif any(keyword in all_text for keyword in ['fintech', 'banking', 'finance', 'payment']):
+            return "Financial Services"
+        elif any(keyword in all_text for keyword in ['ecommerce', 'e-commerce', 'retail', 'shopping']):
+            return "E-Commerce"
+        elif any(keyword in all_text for keyword in ['healthcare', 'medical', 'health', 'patient']):
+            return "Healthcare"
         else:
-            # Use project name as area path
-            return project_name or "Backlog Automation"
+            # Use project name as area path, fallback to "Project"
+            return project_name or "Project"
     
     def validate_qa_output(self, epics: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Validate the QA output for completeness and consistency."""
