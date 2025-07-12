@@ -1001,7 +1001,6 @@ class WorkflowSupervisor:
                 
         except Exception as e:
             self.logger.error(f"Error processing sweeper report: {e}")
-            import json
             self.logger.debug(f"Report content: {json.dumps(report, indent=2)}")
     
     def _route_discrepancies_to_agent(self, agent_name: str, discrepancies: List[Dict[str, Any]]):

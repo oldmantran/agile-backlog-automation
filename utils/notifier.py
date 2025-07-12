@@ -103,6 +103,39 @@ Please check the logs for more details.
         if 'email' in self.channels:
             self.send_email("Backlog Automation Failed", message)
 
+    def send_critical_notification(self, notification_data: Dict[str, Any]):
+        """Send critical issue notification for high-priority backlog discrepancies."""
+        if not self.enabled:
+            return
+        high_priority_count = notification_data.get('high_priority_count', 0)
+        total_discrepancies = notification_data.get('total_discrepancies', 0)
+        timestamp = notification_data.get('timestamp', 'Unknown')
+        report_summary = notification_data.get('report_summary', {})
+        details = ""
+        if report_summary:
+            details = f"\n\nSummary: {report_summary}"
+        message = f"""
+🚨 **Critical Backlog Issues Detected**
+
+**High Priority Issues:** {high_priority_count}
+**Total Discrepancies:** {total_discrepancies}
+**Detection Time:** {timestamp}{details}
+
+**Action Required:** Please review the backlog validation report and address critical issues immediately.
+
+Critical issues may include:
+- Missing required work items
+- Incomplete hierarchies
+- Quality validation failures
+- Integration compliance issues
+
+Check the application logs for detailed issue descriptions and remediation steps.
+        """.strip()
+        if 'teams' in self.channels:
+            self.send_teams(message)
+        if 'email' in self.channels:
+            self.send_email("Critical Backlog Issues Detected", message)
+
     def send_teams(self, message: str):
         if not self.teams_webhook:
             print("⚠️ Teams webhook not configured.")
