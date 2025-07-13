@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Tron-inspired color palette - Softer light mode */
+    --background: 220 27% 12%;
+    --foreground: 180 100% 85%;
+
+    --card: 220 27% 15%;
+    --card-foreground: 180 100% 85%;
+
+    --popover: 220 27% 15%;
+    --popover-foreground: 180 100% 85%;
+
+    --primary: 180 100% 50%;
+    --primary-foreground: 220 27% 4%;
+
+    --secondary: 200 100% 8%;
+    --secondary-foreground: 180 100% 80%;
+
+    --muted: 200 50% 92%;
+    --muted-foreground: 200 20% 40%;
+
+    --accent: 200 100% 8%;
+    --accent-foreground: 180 100% 80%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 200 50% 18%;
+    --input: 200 50% 18%;
+    --ring: 180 100% 50%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar colors */
+    --sidebar-background: 220 27% 12%;
+    --sidebar-foreground: 180 100% 85%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 220 27% 4%;
+    --sidebar-accent: 200 100% 8%;
+    --sidebar-accent-foreground: 180 100% 80%;
+    --sidebar-border: 200 50% 18%;
+    --sidebar-ring: 180 100% 50%;
+
+    /* Tron-specific neon colors */
+    --neon-cyan: 180 100% 50%;
+    --neon-blue: 195 100% 60%;
+    --neon-orange: 30 100% 55%;
+    --electric-purple: 270 100% 70%;
+    --grid-line: 200 50% 18%;
+  }
+
+  .dark {
+    /* Dark mode keeps the same Tron theme - it's already dark */
+    --background: 220 27% 12%;
+    --foreground: 180 100% 85%;
+
+    --card: 220 27% 15%;
+    --card-foreground: 180 100% 85%;
+
+    --popover: 220 27% 15%;
+    --popover-foreground: 180 100% 85%;
+
+    --primary: 180 100% 50%;
+    --primary-foreground: 220 27% 4%;
+
+    --secondary: 200 100% 8%;
+    --secondary-foreground: 180 100% 80%;
+
+    --muted: 200 50% 92%;
+    --muted-foreground: 200 20% 40%;
+
+    --accent: 200 100% 8%;
+    --accent-foreground: 180 100% 80%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 200 50% 18%;
+    --input: 200 50% 18%;
+    --ring: 180 100% 50%;
+
+    /* Sidebar colors for dark mode */
+    --sidebar-background: 220 27% 12%;
+    --sidebar-foreground: 180 100% 85%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 220 27% 4%;
+    --sidebar-accent: 200 100% 8%;
+    --sidebar-accent-foreground: 180 100% 80%;
+    --sidebar-border: 200 50% 18%;
+    --sidebar-ring: 180 100% 50%;
+
+    /* Tron-specific neon colors remain the same */
+    --neon-cyan: 180 100% 50%;
+    --neon-blue: 195 100% 60%;
+    --neon-orange: 30 100% 55%;
+    --electric-purple: 270 100% 70%;
+    --grid-line: 200 50% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Tron-inspired custom styles */
+@layer components {
+  .border-glow {
+    @apply border border-primary/30 shadow-[0_0_10px_rgba(0,255,255,0.3)];
+  }
+
+  .glow-cyan {
+    filter: drop-shadow(0 0 5px hsl(var(--neon-cyan)));
+  }
+
+  .glow-blue {
+    filter: drop-shadow(0 0 5px hsl(var(--neon-blue)));
+  }
+
+  .glow-strong {
+    filter: drop-shadow(0 0 10px hsl(var(--primary))) drop-shadow(0 0 20px hsl(var(--primary)));
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .grid-pattern {
+    background-image: 
+      linear-gradient(hsl(var(--grid-line)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line)) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+}
+
+@layer utilities {
+  .hover\:glow-cyan:hover {
+    filter: drop-shadow(0 0 5px hsl(var(--neon-cyan)));
+  }
+
+  .hover\:glow-blue:hover {
+    filter: drop-shadow(0 0 5px hsl(var(--neon-blue)));
+  }
+
+  .hover\:glow-strong:hover {
+    filter: drop-shadow(0 0 10px hsl(var(--primary))) drop-shadow(0 0 20px hsl(var(--primary)));
+  }
+}
