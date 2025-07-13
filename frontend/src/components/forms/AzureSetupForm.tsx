@@ -6,7 +6,9 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
-import { LoaderIcon } from 'lucide-react';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
+import { LoaderIcon, InfoIcon, CheckCircle, XCircle } from 'lucide-react';
 
 interface AzureSetupFormProps {
   onNext: (data: any) => void;
@@ -40,72 +42,47 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
   const [availableAreaPaths, setAvailableAreaPaths] = useState<string[]>([]);
   const [availableIterations, setAvailableIterations] = useState<string[]>([]);
   
-  // Temporary placeholder for Chakra UI migration - replace later
-  const useColorModeValue = (light: string, dark: string) => dark;
-  
   const useExistingConfig = watch('useExistingConfig');
-  const bgColor = useColorModeValue('white', 'gray.700');
   
   // Function to toggle token visibility
   const toggleTokenVisibility = () => setShowToken(!showToken);
   
-  // Function to validate Azure DevOps connection
+  // Validation function (placeholder - replace with actual API call)
   const validateConnection = async () => {
-    try {
-      setValidating(true);
-      setValidationResult({});
-      
-      // This would be an actual API call in production
-      // For now just simulating a call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate success
+    setValidating(true);
+    // Simulate API call
+    setTimeout(() => {
       setValidationResult({
         success: true,
-        message: 'Connection successful!'
+        message: 'Connection validated successfully!'
       });
-      
-      // Mock data
-      setAvailableProjects(['Project1', 'Project2', 'Project3']);
-      
-    } catch (error) {
-      setValidationResult({
-        success: false,
-        message: 'Failed to connect to Azure DevOps'
-      });
-    } finally {
+      setAvailableProjects(['Project 1', 'Project 2', 'Backlog Automation']);
       setValidating(false);
-    }
+    }, 2000);
   };
-  
-  // Function to load area paths
+
   const loadAreaPaths = async () => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setAvailableAreaPaths(['Area1', 'Area1/SubArea1', 'Area2', 'Area3/SubArea1/SubArea2']);
+    // Placeholder for loading area paths
+    setAvailableAreaPaths(['Area\\Path1', 'Area\\Path2']);
   };
-  
-  // Function to load iterations
+
   const loadIterations = async () => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setAvailableIterations(['Iteration1', 'Iteration2', 'Iteration2/Sprint1', 'Iteration2/Sprint2']);
+    // Placeholder for loading iterations
+    setAvailableIterations(['Sprint 1', 'Sprint 2']);
   };
-  
+
   const onSubmit = (data: any) => {
-    // If using existing config, populate with environment data
-    if (data.useExistingConfig) {
+    if (useExistingConfig) {
       const envConfig = {
-        organizationUrl: 'https://dev.azure.com/c4workx', // From .env AZURE_DEVOPS_ORG
-        personalAccessToken: 'ENVIRONMENT_CONFIG', // Indicate it's from environment
-        project: 'Backlog Automation', // From .env AZURE_DEVOPS_PROJECT
-        areaPath: '', // Use default
-        iterationPath: '', // Use default
+        organizationUrl: 'ENVIRONMENT_CONFIG',
+        personalAccessToken: 'ENVIRONMENT_CONFIG',
+        project: 'Backlog Automation',
+        areaPath: '',
+        iterationPath: '',
         useExistingConfig: true
       };
       onNext(envConfig);
     } else {
-      // Require areaPath and iterationPath
       if (!data.areaPath || !data.iterationPath) {
         alert('Both Area Path and Iteration Path are required.');
         return;
@@ -115,38 +92,36 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
   };
   
   return (
-    <Box
-      bg={bgColor}
-      p={6}
-      borderRadius="lg"
-      boxShadow="md"
-      width="full"
-    >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <VStack spacing={6} align="stretch">
-          <FormControl display="flex" alignItems="center">
-            <FormLabel htmlFor="use-existing" mb="0">
-              Use existing Azure DevOps configuration
-            </FormLabel>
+    <Card className="w-full max-w-2xl mx-auto shadow-lg border-cyan-500/20">
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Switch for existing config */}
+          <div className="flex items-center space-x-2">
             <Switch 
-              id="use-existing" 
-              colorScheme="brand"
+              id="use-existing"
               {...register('useExistingConfig')}
             />
-          </FormControl>
+            <Label htmlFor="use-existing" className="text-cyan-100">
+              Use existing Azure DevOps configuration
+            </Label>
+          </div>
           
           {useExistingConfig ? (
-            <Alert status="info">
-              <AlertIcon />
-              <AlertDescription>
+            <Alert className="border-cyan-500/30 bg-cyan-950/30">
+              <InfoIcon className="h-4 w-4" />
+              <AlertDescription className="text-cyan-100">
                 Using existing Azure DevOps configuration from your settings.
               </AlertDescription>
             </Alert>
           ) : (
-            <>
-              <FormControl isRequired isInvalid={!!errors.organizationUrl}>
-                <FormLabel>Azure DevOps Organization URL</FormLabel>
+            <div className="space-y-6">
+              {/* Organization URL */}
+              <div className="space-y-2">
+                <Label htmlFor="organizationUrl" className="text-cyan-100">
+                  Azure DevOps Organization URL *
+                </Label>
                 <Input 
+                  id="organizationUrl"
                   {...register('organizationUrl', { 
                     required: 'Organization URL is required',
                     pattern: {
@@ -155,73 +130,100 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                     }
                   })} 
                   placeholder="https://dev.azure.com/organization"
-                  size="lg"
+                  className="bg-slate-800/50 border-cyan-500/30 text-cyan-100 placeholder:text-cyan-400/50"
                 />
                 {errors.organizationUrl && (
-                  <FormHelperText color="red.500">
+                  <p className="text-red-400 text-sm">
                     {errors.organizationUrl.message as string}
-                  </FormHelperText>
+                  </p>
                 )}
-              </FormControl>
+              </div>
               
-              <FormControl isRequired isInvalid={!!errors.personalAccessToken}>
-                <FormLabel>Personal Access Token (PAT)</FormLabel>
-                <InputGroup size="lg">
+              {/* Personal Access Token */}
+              <div className="space-y-2">
+                <Label htmlFor="personalAccessToken" className="text-cyan-100">
+                  Personal Access Token (PAT) *
+                </Label>
+                <div className="relative">
                   <Input 
+                    id="personalAccessToken"
                     {...register('personalAccessToken', { 
                       required: 'Personal Access Token is required' 
                     })} 
                     type={showToken ? 'text' : 'password'}
                     placeholder="Personal Access Token"
+                    className="bg-slate-800/50 border-cyan-500/30 text-cyan-100 placeholder:text-cyan-400/50 pr-12"
                   />
-                  <InputRightElement width="4.5rem">
-                    <Button h="1.75rem" size="sm" onClick={toggleTokenVisibility}>
-                      {showToken ? <FiEyeOff /> : <FiEye />}
-                    </Button>
-                  </InputRightElement>
-                </InputGroup>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 text-cyan-400 hover:text-cyan-300"
+                    onClick={toggleTokenVisibility}
+                  >
+                    {showToken ? <FiEyeOff /> : <FiEye />}
+                  </Button>
+                </div>
                 {errors.personalAccessToken && (
-                  <FormHelperText color="red.500">
+                  <p className="text-red-400 text-sm">
                     {errors.personalAccessToken.message as string}
-                  </FormHelperText>
+                  </p>
                 )}
-                <FormHelperText>
+                <p className="text-cyan-400/70 text-sm">
                   Create a PAT with 'Work Items (Read & Write)' scope
-                </FormHelperText>
-              </FormControl>
+                </p>
+              </div>
               
+              {/* Validate Connection Button */}
               <Button 
+                type="button"
                 onClick={validateConnection}
-                colorScheme="blue"
-                isLoading={validating}
-                loadingText="Validating..."
+                disabled={validating}
+                className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
               >
-                Validate Connection
+                {validating ? (
+                  <>
+                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Validating...
+                  </>
+                ) : (
+                  'Validate Connection'
+                )}
               </Button>
               
+              {/* Validation Result */}
               {validationResult.message && (
-                <Alert 
-                  status={validationResult.success ? 'success' : 'error'}
-                  borderRadius="md"
-                >
-                  <AlertIcon />
-                  <AlertDescription>
+                <Alert className={`border-2 ${
+                  validationResult.success 
+                    ? 'border-green-500/30 bg-green-950/30' 
+                    : 'border-red-500/30 bg-red-950/30'
+                }`}>
+                  {validationResult.success ? (
+                    <CheckCircle className="h-4 w-4 text-green-400" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-red-400" />
+                  )}
+                  <AlertDescription className={validationResult.success ? 'text-green-100' : 'text-red-100'}>
                     {validationResult.message}
                   </AlertDescription>
                 </Alert>
               )}
               
+              {/* Project field - only show after successful validation */}
               {validationResult.success && (
                 <>
-                  <FormControl isRequired isInvalid={!!errors.project}>
-                    <FormLabel>Project</FormLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="project" className="text-cyan-100">
+                      Project *
+                    </Label>
                     <Input 
+                      id="project"
                       {...register('project', { 
                         required: 'Project is required' 
                       })} 
                       list="projects"
                       placeholder="Select or enter project name"
-                      size="lg"
+                      className="bg-slate-800/50 border-cyan-500/30 text-cyan-100 placeholder:text-cyan-400/50"
                     />
                     <datalist id="projects">
                       {availableProjects.map((project, idx) => (
@@ -229,19 +231,25 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                       ))}
                     </datalist>
                     {errors.project && (
-                      <FormHelperText color="red.500">
+                      <p className="text-red-400 text-sm">
                         {errors.project.message as string}
-                      </FormHelperText>
+                      </p>
                     )}
-                  </FormControl>
+                  </div>
                   
-                  <FormControl isRequired isInvalid={!!errors.areaPath}>
-                    <FormLabel>Area Path</FormLabel>
+                  {/* Area Path */}
+                  <div className="space-y-2">
+                    <Label htmlFor="areaPath" className="text-cyan-100">
+                      Area Path *
+                    </Label>
                     <Input 
-                      {...register('areaPath', { required: 'Area Path is required', validate: v => !!v || 'Area Path is required' })} 
+                      id="areaPath"
+                      {...register('areaPath', { 
+                        required: 'Area Path is required'
+                      })} 
                       list="areaPaths"
                       placeholder="Select or enter area path"
-                      size="lg"
+                      className="bg-slate-800/50 border-cyan-500/30 text-cyan-100 placeholder:text-cyan-400/50"
                       onFocus={loadAreaPaths}
                     />
                     <datalist id="areaPaths">
@@ -250,22 +258,25 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                       ))}
                     </datalist>
                     {errors.areaPath && (
-                      <FormHelperText color="red.500">
+                      <p className="text-red-400 text-sm">
                         {errors.areaPath.message as string}
-                      </FormHelperText>
+                      </p>
                     )}
-                    <FormHelperText>
-                      Leave empty to use the root area
-                    </FormHelperText>
-                  </FormControl>
+                  </div>
                   
-                  <FormControl isRequired isInvalid={!!errors.iterationPath}>
-                    <FormLabel>Iteration Path</FormLabel>
+                  {/* Iteration Path */}
+                  <div className="space-y-2">
+                    <Label htmlFor="iterationPath" className="text-cyan-100">
+                      Iteration Path *
+                    </Label>
                     <Input 
-                      {...register('iterationPath', { required: 'Iteration Path is required', validate: v => !!v || 'Iteration Path is required' })} 
+                      id="iterationPath"
+                      {...register('iterationPath', { 
+                        required: 'Iteration Path is required'
+                      })} 
                       list="iterations"
                       placeholder="Select or enter iteration path"
-                      size="lg"
+                      className="bg-slate-800/50 border-cyan-500/30 text-cyan-100 placeholder:text-cyan-400/50"
                       onFocus={loadIterations}
                     />
                     <datalist id="iterations">
@@ -274,42 +285,41 @@ const AzureSetupForm: React.FC<AzureSetupFormProps> = ({
                       ))}
                     </datalist>
                     {errors.iterationPath && (
-                      <FormHelperText color="red.500">
+                      <p className="text-red-400 text-sm">
                         {errors.iterationPath.message as string}
-                      </FormHelperText>
+                      </p>
                     )}
-                    <FormHelperText>
-                      Leave empty to use the current iteration
-                    </FormHelperText>
-                  </FormControl>
+                  </div>
                 </>
               )}
-            </>
+            </div>
           )}
           
-          <HStack justify="space-between" pt={4}>
+          {/* Form buttons */}
+          <div className="flex justify-between pt-6">
             {onPrevious && (
-              <Button 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onPrevious}
-                size="lg"
+                className="border-cyan-500/30 text-cyan-100 hover:bg-cyan-500/10"
               >
                 Previous
               </Button>
             )}
-            <Button 
-              colorScheme="brand" 
-              size="lg" 
+            <Button
               type="submit"
-              ml="auto"
-              minW="150px"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white ml-auto"
             >
               Next
             </Button>
-          </HStack>
-        </VStack>
-      </form>
-    </Box>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
 export default AzureSetupForm;
+
+export {};
