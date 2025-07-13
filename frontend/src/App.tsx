@@ -11,7 +11,7 @@ import TronExecutableScreen from './screens/TronExecutableScreen';
 
 // Legacy screens (kept for compatibility)
 import TestScreen from './screens/TestScreen';
-import NewProjectScreen from './screens/project/NewProjectScreen';
+import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
 
 // Layout imports
 import MainLayout from './components/layout/MainLayout';
@@ -40,7 +40,7 @@ function App() {
           {/* New Project (reuse existing) */}
           <Route path="/new-project" element={
             <MainLayout>
-              <NewProjectScreen />
+              <SimpleProjectWizard />
             </MainLayout>
           } />
           

@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { 
-  FiSettings, 
-  FiPlus, 
-  FiRefreshCw, 
-  FiTrash2, 
-  FiCheckSquare,
-  FiZap,
-  FiGrid,
-  FiCpu,
-  FiActivity
-} from 'react-icons/fi';
+  Settings, 
+  Plus, 
+  RefreshCw, 
+  Trash2, 
+  CheckSquare,
+  Zap,
+  Grid3X3,
+  Cpu,
+  Activity
+} from 'lucide-react';
 
 const TronWelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -30,42 +30,42 @@ const TronWelcomeScreen: React.FC = () => {
     {
       title: "Configure Environment",
       description: "Set up Azure DevOps credentials and AI providers",
-      icon: FiSettings,
+      icon: Settings,
       route: "/configure",
-      color: "tron-cyan",
-      glowColor: "cyan"
+      color: "primary",
+      glowColor: "primary"
     },
     {
       title: "Create New Backlog",
       description: "Generate backlog from vision statement using AI",
-      icon: FiPlus,
+      icon: Plus,
       route: "/new-project",
-      color: "tron-blue",
-      glowColor: "blue"
+      color: "primary",
+      glowColor: "primary"
     },
     {
       title: "Backlog Sweeper",
       description: "Validate and enhance existing backlog items",
-      icon: FiRefreshCw,
+      icon: RefreshCw,
       route: "/sweeper",
-      color: "tron-orange",
-      glowColor: "orange"
+      color: "accent",
+      glowColor: "accent"
     },
     {
       title: "Cleanup Work Items",
       description: "Delete selected Azure DevOps work items",
-      icon: FiTrash2,
+      icon: Trash2,
       route: "/cleanup-workitems",
-      color: "tron-cyan",
-      glowColor: "cyan"
+      color: "primary",
+      glowColor: "primary"
     },
     {
       title: "Cleanup Test Cases",
       description: "Remove test cases, suites, and plans",
-      icon: FiCheckSquare,
+      icon: CheckSquare,
       route: "/cleanup-tests",
-      color: "tron-blue",
-      glowColor: "blue"
+      color: "primary",
+      glowColor: "primary"
     }
   ];
 
@@ -96,7 +96,7 @@ const TronWelcomeScreen: React.FC = () => {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
-              <FiGrid className="w-16 h-16 text-primary pulse-glow" />
+              <Grid3X3 className="w-16 h-16 text-primary pulse-glow" />
               <div className="absolute inset-0 w-16 h-16 border-2 border-primary/30 rounded-lg rotate-45 animate-pulse"></div>
             </div>
           </div>
@@ -121,15 +121,15 @@ const TronWelcomeScreen: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
-                <FiCpu className="w-5 h-5 text-primary" />
+                <Cpu className="w-5 h-5 text-primary" />
                 <span className="text-sm font-mono text-foreground">CPU: ONLINE</span>
               </div>
               <div className="flex items-center space-x-2">
-                <FiActivity className="w-5 h-5 text-accent" />
+                <Activity className="w-5 h-5 text-accent" />
                 <span className="text-sm font-mono text-foreground">AI: READY</span>
               </div>
               <div className="flex items-center space-x-2">
-                <FiZap className="w-5 h-5 text-primary" />
+                <Zap className="w-5 h-5 text-primary" />
                 <span className="text-sm font-mono text-foreground">DEVOPS: CONNECTED</span>
               </div>
             </div>

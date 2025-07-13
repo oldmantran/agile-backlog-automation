@@ -170,30 +170,30 @@ All colors MUST be HSL.
   /* Tron-specific CSS classes and animations */
   .tron-grid {
     background-image: 
-      linear-gradient(hsl(var(--tron-grid)) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--tron-grid)) 1px, transparent 1px);
+      linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.1) 1px, transparent 1px);
     background-size: 20px 20px;
   }
 
   .tron-border {
-    border: 1px solid hsl(var(--tron-cyan));
+    border: 1px solid hsl(var(--primary));
     box-shadow: 
-      0 0 5px hsl(var(--tron-cyan) / 0.3),
-      inset 0 0 5px hsl(var(--tron-cyan) / 0.1);
+      0 0 5px hsl(var(--primary) / 0.3),
+      inset 0 0 5px hsl(var(--primary) / 0.1);
   }
 
   .tron-glow {
     box-shadow: 
-      0 0 10px hsl(var(--tron-cyan) / 0.5),
-      0 0 20px hsl(var(--tron-cyan) / 0.3),
-      0 0 30px hsl(var(--tron-cyan) / 0.1);
+      0 0 10px hsl(var(--primary) / 0.5),
+      0 0 20px hsl(var(--primary) / 0.3),
+      0 0 30px hsl(var(--primary) / 0.1);
   }
 
   .tron-glow-orange {
     box-shadow: 
-      0 0 10px hsl(var(--tron-orange) / 0.5),
-      0 0 20px hsl(var(--tron-orange) / 0.3),
-      0 0 30px hsl(var(--tron-orange) / 0.1);
+      0 0 10px hsl(var(--accent) / 0.5),
+      0 0 20px hsl(var(--accent) / 0.3),
+      0 0 30px hsl(var(--accent) / 0.1);
   }
 
   .tron-button {
@@ -228,6 +228,53 @@ All colors MUST be HSL.
 
   .matrix-rain {
     animation: matrixRain 20s linear infinite;
+  }
+
+  /* Animation keyframes */
+  @keyframes scanLine {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
+  }
+
+  @keyframes pulseGlow {
+    from {
+      box-shadow: 
+        0 0 10px hsl(var(--primary) / 0.3),
+        0 0 20px hsl(var(--primary) / 0.2),
+        0 0 30px hsl(var(--primary) / 0.1);
+    }
+    to {
+      box-shadow: 
+        0 0 20px hsl(var(--primary) / 0.6),
+        0 0 30px hsl(var(--primary) / 0.4),
+        0 0 40px hsl(var(--primary) / 0.2);
+    }
+  }
+
+  @keyframes matrixRain {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
   }
 }
 
@@ -274,5 +321,3 @@ All colors MUST be HSL.
   background: hsl(var(--primary) / 0.3);
   color: hsl(var(--foreground));
 }
-
-  body {
