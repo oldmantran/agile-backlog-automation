@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
@@ -160,13 +160,13 @@ def test_developer_agent_quality():
     return total_issues == 0, tasks
 
 
-def test_qa_tester_agent_quality():
+def test_qa_lead_agent_quality():
     """Test that QA Tester Agent creates compliant test cases and enhances criteria."""
     print("\n🧪 Testing QA Tester Agent Quality Compliance")
     print("=" * 60)
     
     config = Config()
-    agent = QATesterAgent(config)
+    agent = QALeadAgent(config)
     validator = WorkItemQualityValidator(config.settings)
     
     # Test feature to create test cases for
@@ -315,7 +315,7 @@ if __name__ == "__main__":
         # Run all tests
         decomp_pass, user_stories = test_user_story_decomposer_quality()
         dev_pass, tasks = test_developer_agent_quality()
-        qa_pass, test_cases = test_qa_tester_agent_quality()
+        qa_pass, test_cases = test_qa_lead_agent_quality()
         integration_pass = test_integration_compliance()
         
         # Final results
@@ -336,7 +336,7 @@ if __name__ == "__main__":
             'test_results': {
                 'feature_decomposer_agent': decomp_pass,
                 'developer_agent': dev_pass,
-                'qa_tester_agent': qa_pass,
+                'qa_lead_agent': qa_pass,
                 'integration_test': integration_pass
             },
             'sample_outputs': {

@@ -7,7 +7,7 @@ import sys
 sys.path.append('.')
 
 from clients.azure_devops_test_client import AzureDevOpsTestClient, TestSuiteConfig
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from config.config_loader import Config
 
 def test_autonomous_testing_structure():
@@ -25,7 +25,7 @@ def test_autonomous_testing_structure():
     # Test 1: Area Path Consistency
     print('1. 🗺️ Testing Area Path Consistency...')
     config = Config()
-    qa_agent = QATesterAgent(config)
+    qa_agent = QALeadAgent(config)
     
     # Simulate ride sharing project context
     test_context = {

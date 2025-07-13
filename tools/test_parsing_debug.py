@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from config.config_loader import Config
 
 # Sample markdown response from AI - more realistic format
@@ -59,7 +59,7 @@ sample_markdown = """
 def test_parsing():
     try:
         config = Config(settings_path="../config/settings.yaml")
-        qa_agent = QATesterAgent(config)
+        qa_agent = QALeadAgent(config)
         
         print("Testing JSON extraction...")
         result = qa_agent._extract_json_from_response(sample_markdown)

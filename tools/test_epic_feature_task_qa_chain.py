@@ -6,7 +6,7 @@ from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
 from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.developer_agent import DeveloperAgent
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 
 def test_epic_feature_task_qa_chain():
     """Test the full chain: Epic → Features → Tasks → QA Test Cases"""
@@ -19,7 +19,7 @@ def test_epic_feature_task_qa_chain():
     epic_agent = EpicStrategist(config)
     feature_agent = FeatureDecomposerAgent(config)
     dev_agent = DeveloperAgent(config)
-    qa_agent = QATesterAgent(config)
+    qa_agent = QALeadAgent(config)
     
     # Sample product vision
     product_vision = "Build a personal finance management app that helps college students track expenses, create budgets, and save money through intelligent insights and goal setting."

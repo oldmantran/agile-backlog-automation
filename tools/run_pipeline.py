@@ -9,7 +9,7 @@ from agents.epic_strategist import EpicStrategist
 from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from utils.project_context import ProjectContext
 
 # Run full pipeline interactively
@@ -59,7 +59,7 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
     feature_agent = FeatureDecomposerAgent(config)
     story_agent = UserStoryDecomposerAgent(config)
     dev_agent = DeveloperAgent(config)
-    qa_agent = QATesterAgent(config)
+    qa_agent = QALeadAgent(config)
 
     product_vision = data.get("product_vision", "")
     epics = data.get("epics", [])
@@ -98,7 +98,7 @@ def run_pipeline(data: dict, run_stage: str, project_type: str = None, custom_co
 
             if run_stage in ["all", "qa"]:
                 print(f"🧪 Generating QA deliverables for feature: {feature.get('title', 'Untitled Feature')}")
-                context = project_context.get_context('qa_tester_agent')
+                context = project_context.get_context('qa_lead_agent')
                 test_cases = qa_agent.generate_test_cases(feature, context)
                 edge_cases = qa_agent.generate_edge_cases(feature, context)
                 validation = qa_agent.validate_acceptance_criteria(feature, context)

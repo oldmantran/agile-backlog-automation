@@ -68,7 +68,7 @@ class ProjectContext:
                 'focus': 'technical implementation and architecture',
                 'scope': 'development tasks and technical debt'
             })
-        elif agent_type == 'qa_tester_agent' or agent_type == 'qa_lead_agent':
+        elif agent_type == 'qa_lead_agent':
             base_context.update({
                 'focus': 'quality assurance and risk mitigation',
                 'scope': 'comprehensive test coverage'

@@ -223,7 +223,7 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
                     'title': title,
                     'description': 'User Story missing or insufficient acceptance criteria.',
                     'severity': 'high',
-                    'suggested_agent': 'qa_tester_agent'
+                    'suggested_agent': 'qa_lead_agent'
                 })
         
         return discrepancies
@@ -295,7 +295,7 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
                         'title': story_title,
                         'description': 'User Story has no child test cases.',
                         'severity': 'high',
-                        'suggested_agent': self.agent_assignments.get('user_story_missing_test_cases', 'qa_tester_agent')
+                        'suggested_agent': self.agent_assignments.get('user_story_missing_test_cases', 'qa_lead_agent')
                     })
                     
             except Exception as e:

@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 from config.config_loader import Config
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 def test_qa_tester_test_plan_creation():
@@ -27,7 +27,7 @@ def test_qa_tester_test_plan_creation():
         print(f"🔍 Available prompt templates: {list(prompt_manager.templates.keys())}")
         print(f"🔍 QA Tester template exists: {'qa_tester_agent' in prompt_manager.templates}")
         
-        qa_agent = QATesterAgent(config)
+        qa_agent = QALeadAgent(config)
         print("✅ QA Tester Agent initialized")
         
         # Check if Azure DevOps integration is available
