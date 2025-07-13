@@ -2,12 +2,15 @@ import json
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
+from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 class DeveloperAgent(Agent):
     def __init__(self, config: Config):
         super().__init__("developer_agent", config)
         # Initialize quality validator
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
+        # Initialize Azure DevOps integration
+        self.azure_api = AzureDevOpsIntegrator(config)
 
     def generate_tasks(self, feature: dict, context: dict = None) -> list[dict]:
         """Generate technical tasks from a feature description with contextual information."""
@@ -215,3 +218,76 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             base_points = min(base_points + 1, 8)   # Add 1 but cap at 8
         
         return base_points
+
+    def update_story_points(self, work_item_id: int, estimated_points: int) -> bool:
+        """
+        Update story points for a work item in Azure DevOps.
+        Used when supervisor assigns story point estimation tasks.
+        """
+        try:
+            fields = {'/fields/Microsoft.VSTS.Scheduling.StoryPoints': estimated_points}
+            self.azure_api.update_work_item(work_item_id, fields)
+            print(f"✅ Updated work item {work_item_id} with {estimated_points} story points")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to update story points for work item {work_item_id}: {e}")
+            return False
+
+    def estimate_and_update_story_points(self, work_item_id: int, user_story: dict, context: dict = None) -> bool:
+        """
+        Estimate and update story points for a user story in one operation.
+        This method combines estimation logic with Azure DevOps updates.
+        """
+        estimated_points = self.estimate_story_points(user_story, context)
+        print(f"📊 Estimated {estimated_points} story points for user story: {user_story.get('title', 'Unknown')}")
+        return self.update_story_points(work_item_id, estimated_points)
+
+    def decompose_user_story(self, work_item_id: int, user_story: dict, context: dict = None) -> list:
+        """
+        Decompose a user story into tasks and create them in Azure DevOps.
+        Used when supervisor assigns decomposition tasks from Backlog Sweeper findings.
+        """
+        try:
+            # Generate tasks using existing method
+            tasks = self.generate_tasks(user_story, context)
+            
+            created_tasks = []
+            for task in tasks:
+                # Create task in Azure DevOps
+                task_data = {
+                    'title': task.get('title', 'Implementation Task'),
+                    'description': task.get('description', ''),
+                    'work_item_type': 'Task',
+                    'parent_id': work_item_id,
+                    'estimated_hours': task.get('estimated_hours', 4),
+                    'priority': task.get('priority', 'Medium'),
+                    'category': task.get('category', 'development')
+                }
+                
+                created_task = self.azure_api.create_task(task_data)
+                if created_task:
+                    created_tasks.append(created_task)
+                    print(f"✅ Created task: {task_data['title']}")
+                else:
+                    print(f"❌ Failed to create task: {task_data['title']}")
+            
+            print(f"📋 Decomposed user story {work_item_id} into {len(created_tasks)} tasks")
+            return created_tasks
+            
+        except Exception as e:
+            print(f"❌ Failed to decompose user story {work_item_id}: {e}")
+            return []
+
+    def update_work_item_field(self, work_item_id: int, field_path: str, value: any) -> bool:
+        """
+        Generic method to update any field in a work item.
+        Used for various work item modifications as directed by supervisor.
+        """
+        try:
+            fields = {field_path: value}
+            self.azure_api.update_work_item(work_item_id, fields)
+            print(f"✅ Updated work item {work_item_id} field {field_path}")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to update work item {work_item_id} field {field_path}: {e}")
+            return False
