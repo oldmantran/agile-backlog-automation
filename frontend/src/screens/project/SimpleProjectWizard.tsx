@@ -54,8 +54,8 @@ const SimpleProjectWizard: React.FC = () => {
           existingJobs.push(jobInfo);
           localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
           
-          // Step 3: Start polling for progress
-          await pollJobProgress(backlogResponse.jobId);
+          // Step 3: Start polling for progress updates
+          pollJobProgress(backlogResponse.jobId);
         } else {
           throw new Error('Failed to start backlog generation');
         }
