@@ -1,31 +1,14 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  useToast,
-  Badge,
-  Divider,
-  Progress,
-  Icon,
-  Checkbox,
-  useColorModeValue,
-  Code,
-} from '@chakra-ui/react';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
+import { Progress } from '../../components/ui/progress';
+import { Checkbox } from '../../components/ui/checkbox';
 import { FiClipboard, FiAlertTriangle, FiArrowLeft, FiPlay, FiInfo } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,8 +20,8 @@ interface TestCaseStats {
 
 const TestCasesCleanupScreen: React.FC = () => {
   const navigate = useNavigate();
-  const toast = useToast();
-  const cardBg = useColorModeValue('white', 'gray.800');
+  // TODO: Add proper toast notification
+  // const toast = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isDryRun, setIsDryRun] = useState(true);
@@ -57,19 +40,11 @@ const TestCasesCleanupScreen: React.FC = () => {
     try {
       await simulateTestCaseCleanup();
       setIsComplete(true);
-      toast({
-        title: 'Test Case Cleanup Complete',
-        description: `Successfully ${isDryRun ? 'simulated cleanup of' : 'cleaned'} test cases using Test Management API`,
-        status: 'success',
-        duration: 5000,
-      });
+      // TODO: Add proper toast notification
+      console.log(`Test Case Cleanup Complete: Successfully ${isDryRun ? 'simulated cleanup of' : 'cleaned'} test cases using Test Management API`);
     } catch (error) {
-      toast({
-        title: 'Cleanup Failed',
-        description: 'An error occurred during the test case cleanup process',
-        status: 'error',
-        duration: 5000,
-      });
+      // TODO: Add proper toast notification
+      console.error('Cleanup Failed: An error occurred during the test case cleanup process');
     } finally {
       setIsLoading(false);
     }
@@ -101,28 +76,29 @@ const TestCasesCleanupScreen: React.FC = () => {
   };
 
   return (
-    <Box p={6}>
-      <VStack spacing={6} align="stretch">
+    <div className="p-6">
+      <div className="space-y-6">
         {/* Header */}
-        <HStack>
+        <div className="flex items-center">
           <Button
-            leftIcon={<Icon as={FiArrowLeft} />}
             variant="ghost"
             onClick={() => navigate('/dashboard')}
+            className="flex items-center"
           >
+            <FiArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
-        </HStack>
+        </div>
 
-        <Box>
-          <Heading size="lg" mb={2} color="orange.500">
-            <Icon as={FiClipboard} mr={3} />
+        <div>
+          <h1 className="text-2xl font-bold text-orange-500 mb-2 flex items-center">
+            <FiClipboard className="mr-3 h-6 w-6" />
             Test Cases Cleanup
-          </Heading>
-          <Text color="gray.600">
+          </h1>
+          <p className="text-muted-foreground">
             Delete test cases using the Azure DevOps Test Management API
-          </Text>
-        </Box>
+          </p>
+        </div>
 
         {/* Warning Alert */}
         <Alert status="warning" borderRadius="md">
@@ -154,7 +130,7 @@ const TestCasesCleanupScreen: React.FC = () => {
           <CardHeader>
             <Heading size="md">Test Case Cleanup Configuration</Heading>
           </CardHeader>
-          <CardBody>
+          <CardContent>
             <VStack spacing={4} align="stretch">
               <FormControl>
                 <FormLabel>Azure DevOps Project</FormLabel>
@@ -191,7 +167,7 @@ const TestCasesCleanupScreen: React.FC = () => {
                 </Checkbox>
               </FormControl>
             </VStack>
-          </CardBody>
+          </CardContent>
         </Card>
 
         {/* Previous Success Stats */}
@@ -202,7 +178,7 @@ const TestCasesCleanupScreen: React.FC = () => {
               <Badge colorScheme="green">SUCCESS</Badge>
             </HStack>
           </CardHeader>
-          <CardBody>
+          <CardContent>
             <VStack spacing={3} align="stretch">
               <Text fontSize="sm" color="gray.600">
                 Previous test case cleanup on 2025-07-13 completed successfully:
@@ -225,7 +201,7 @@ const TestCasesCleanupScreen: React.FC = () => {
                 Used Test Management API endpoint: <Code fontSize="xs">/test/testcases</Code>
               </Text>
             </VStack>
-          </CardBody>
+          </CardContent>
         </Card>
 
         {/* Technical Details */}
@@ -233,7 +209,7 @@ const TestCasesCleanupScreen: React.FC = () => {
           <CardHeader>
             <Heading size="sm" color="blue.600">Technical Details</Heading>
           </CardHeader>
-          <CardBody>
+          <CardContent>
             <VStack spacing={2} align="stretch" fontSize="sm">
               <Text>
                 <strong>API Endpoint:</strong> <Code>DELETE /test/testcases/&#123;id&#125;</Code>
@@ -246,7 +222,7 @@ const TestCasesCleanupScreen: React.FC = () => {
                 and test plans that require proper cleanup through the Test Management API.
               </Text>
             </VStack>
-          </CardBody>
+          </CardContent>
         </Card>
 
         {/* Action Buttons */}
@@ -279,7 +255,7 @@ const TestCasesCleanupScreen: React.FC = () => {
                 {isLoading ? 'Test Case Cleanup in Progress' : 'Test Case Cleanup Complete'}
               </Heading>
             </CardHeader>
-            <CardBody>
+            <CardContent>
               <VStack spacing={4} align="stretch">
                 {isLoading && (
                   <>
@@ -311,11 +287,11 @@ const TestCasesCleanupScreen: React.FC = () => {
                   </>
                 )}
               </VStack>
-            </CardBody>
+            </CardContent>
           </Card>
         )}
-      </VStack>
-    </Box>
+      </div>
+    </div>
   );
 };
 

@@ -1,20 +1,9 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  Textarea,
-  VStack,
-  HStack,
-  Input,
-  FormHelperText,
-  Tag,
-  TagLabel,
-  TagCloseButton,
-  Flex,
-  useColorModeValue,
-} from '@chakra-ui/react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
 import { useForm } from 'react-hook-form';
 
 interface VisionFormProps {

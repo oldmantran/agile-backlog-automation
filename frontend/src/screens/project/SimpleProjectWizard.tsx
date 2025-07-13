@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  VStack,
-  Heading,
-  useToast,
-  Container,
-  Text,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react';
+import { Alert, AlertDescription } from '../../components/ui/alert';
 import SimplifiedProjectForm from '../../components/forms/SimplifiedProjectForm';
 import { Project } from '../../types/project';
 import { projectApi } from '../../services/api/projectApi';
@@ -16,18 +7,13 @@ import { backlogApi } from '../../services/api/backlogApi';
 
 const SimpleProjectWizard: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const toast = useToast();
 
   const handleSubmit = async (projectData: Partial<Project>) => {
     try {
       setIsSubmitting(true);
       
-      toast({
-        title: 'Creating Project',
-        description: 'Setting up your project and generating backlog...',
-        status: 'info',
-        duration: 3000,
-      });
+      // TODO: Add proper toast notification
+      console.log('Creating Project: Setting up your project and generating backlog...');
 
       // Create the project
       const projectResponse = await projectApi.createProject(projectData);
@@ -35,12 +21,8 @@ const SimpleProjectWizard: React.FC = () => {
       if (projectResponse.projectId) {
         const { projectId } = projectResponse;
         
-        toast({
-          title: 'Project Created',
-          description: 'Starting backlog generation...',
-          status: 'success',
-          duration: 3000,
-        });
+        // TODO: Add proper toast notification
+        console.log('Project Created: Starting backlog generation...');
 
         // Start backlog generation
         const backlogResponse = await backlogApi.generateBacklog(projectId);
@@ -59,12 +41,8 @@ const SimpleProjectWizard: React.FC = () => {
           existingJobs.push(jobInfo);
           localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
           
-          toast({
-            title: 'Backlog Generation Started',
-            description: `Your backlog is being generated. Job ID: ${backlogResponse.jobId}. Check the dashboard for progress.`,
-            status: 'success',
-            duration: 5000,
-          });
+          // TODO: Add proper toast notification
+          console.log(`Backlog Generation Started: Job ID: ${backlogResponse.jobId}. Check the dashboard for progress.`);
           
           // Redirect to dashboard with job ID
           window.location.href = `/dashboard?job=${backlogResponse.jobId}`;
@@ -77,46 +55,43 @@ const SimpleProjectWizard: React.FC = () => {
     } catch (error) {
       console.error('Project creation error:', error);
       
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create project',
-        status: 'error',
-        duration: 5000,
-      });
+      // TODO: Add proper toast notification
+      console.error('Error:', error instanceof Error ? error.message : 'Failed to create project');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Container maxWidth="900px" py={8}>
-      <VStack spacing={8} align="stretch">
-        <Box textAlign="center">
-          <Heading size="xl" mb={4}>
+    <div className="container max-w-4xl mx-auto py-8">
+      <div className="space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">
             Agile Backlog Automation
-          </Heading>
-          <Text fontSize="lg" color="gray.600">
+          </h1>
+          <p className="text-lg text-muted-foreground">
             Transform your product vision into a comprehensive backlog with AI-powered automation
-          </Text>
-        </Box>
+          </p>
+        </div>
 
-        <Alert status="info" borderRadius="md">
-          <AlertIcon />
-          <Box>
-            <Text fontWeight="bold">Simplified Setup</Text>
-            <Text>
-              Only 4 fields required: Vision Statement, Azure DevOps Project, Area Path, and Iteration Path. 
-              Everything else is automatically extracted by AI or set to sensible defaults.
-            </Text>
-          </Box>
+        <Alert className="rounded-md">
+          <AlertDescription>
+            <div>
+              <h4 className="font-bold mb-1">Simplified Setup</h4>
+              <p>
+                Only 4 fields required: Vision Statement, Azure DevOps Project, Area Path, and Iteration Path. 
+                Everything else is automatically extracted by AI or set to sensible defaults.
+              </p>
+            </div>
+          </AlertDescription>
         </Alert>
 
         <SimplifiedProjectForm 
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />
-      </VStack>
-    </Container>
+      </div>
+    </div>
   );
 };
 

@@ -1,19 +1,9 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
-  VStack,
-  HStack,
-  FormHelperText,
-  useColorModeValue,
-  Text,
-  Heading,
-  Divider,
-} from '@chakra-ui/react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Separator } from '../ui/separator';
 import { useForm } from 'react-hook-form';
 
 interface SimplifiedProjectFormProps {
@@ -33,11 +23,8 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       adoProject: initialData.adoProject || '',
       areaPath: initialData.areaPath || '',
       iterationPath: initialData.iterationPath || '',
-    }
-  });
-  
-  const bgColor = useColorModeValue('white', 'gray.700');
-  
+    }  });
+
   const onFormSubmit = (data: any) => {
     // Transform data to match backend expectations
     // Extract organization and project from input (handles both "org/project" and "project" formats)
@@ -70,35 +57,28 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   };
   
   return (
-    <Box
-      bg={bgColor}
-      p={8}
-      borderRadius="xl"
-      boxShadow="lg"
-      width="full"
-      maxWidth="800px"
-      mx="auto"
-    >
-      <VStack spacing={6} align="stretch">
-        <Box textAlign="center">
-          <Heading size="lg" mb={2}>
+    <div className="bg-card p-8 rounded-xl shadow-lg w-full max-w-3xl mx-auto">
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">
             Create Agile Backlog
-          </Heading>
-          <Text color="gray.500">
+          </h2>
+          <p className="text-muted-foreground">
             Enter your product vision and Azure DevOps details to generate a comprehensive backlog
-          </Text>
-        </Box>
+          </p>
+        </div>
         
-        <Divider />
+        <Separator />
         
         <form onSubmit={handleSubmit(onFormSubmit)}>
-          <VStack spacing={6} align="stretch">
+          <div className="space-y-6">
             {/* Vision Statement - The core input */}
-            <FormControl isRequired isInvalid={!!errors.visionStatement}>
-              <FormLabel fontSize="lg" fontWeight="semibold">
-                Product Vision & Requirements
-              </FormLabel>
+            <div className="space-y-2">
+              <Label htmlFor="visionStatement" className="text-lg font-semibold text-foreground">
+                Product Vision & Requirements <span className="text-destructive">*</span>
+              </Label>
               <Textarea 
+                id="visionStatement"
                 {...register('visionStatement', { 
                   required: 'Product vision is required',
                   minLength: { value: 50, message: 'Vision must be at least 50 characters' }
@@ -106,105 +86,108 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
                 placeholder="Describe your product vision, including goals, objectives, target audience, success metrics, and key features. Be as comprehensive as possible - this will drive the entire backlog generation.
 
 Example: Create a comprehensive ride-sharing platform that connects drivers and passengers with real-time matching, secure payments, and intelligent routing. Target urban commuters and part-time drivers seeking flexible income. Success measured by: 50K+ active users in 6 months, 90%+ ride completion rate, $2M+ annual revenue. Key features include driver background checks, real-time GPS tracking, in-app payments, surge pricing, and customer ratings."
-                size="lg"
-                rows={8}
-                resize="vertical"
+                className="min-h-[200px] resize-y"
               />
               {errors.visionStatement && (
-                <FormHelperText color="red.500">
+                <p className="text-sm text-destructive">
                   {errors.visionStatement.message as string}
-                </FormHelperText>
+                </p>
               )}
-              <FormHelperText>
+              <p className="text-sm text-muted-foreground">
                 Include your vision, goals, target audience, success metrics, and key requirements. The AI will extract objectives, metrics, and target audience from this comprehensive description.
-              </FormHelperText>
-            </FormControl>
+              </p>
+            </div>
             
-            <Divider />
+            <Separator />
             
             {/* Azure DevOps Configuration */}
-            <Box>
-              <Heading size="md" mb={4}>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">
                 Azure DevOps Configuration
-              </Heading>
+              </h3>
               
-              <VStack spacing={4} align="stretch">
-                  <FormControl isRequired isInvalid={!!errors.adoProject}>
-                    <FormLabel>Azure DevOps Project</FormLabel>
+              <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="adoProject">
+                      Azure DevOps Project <span className="text-destructive">*</span>
+                    </Label>
                     <Input 
+                      id="adoProject"
                       {...register('adoProject', { 
                         required: 'Azure DevOps project is required'
                       })} 
                       placeholder="organization/project or project-name"
-                      size="lg"
+                      className="h-12"
                     />
                     {errors.adoProject && (
-                      <FormHelperText color="red.500">
+                      <p className="text-sm text-destructive">
                         {errors.adoProject.message as string}
-                      </FormHelperText>
+                      </p>
                     )}
-                    <FormHelperText>
+                    <p className="text-sm text-muted-foreground">
                       Enter your Azure DevOps project name (e.g., "myorg/myproject" or "myproject")
-                    </FormHelperText>
-                  </FormControl>
+                    </p>
+                  </div>
                 
-                <HStack spacing={4}>
-                  <FormControl isRequired isInvalid={!!errors.areaPath}>
-                    <FormLabel>Area Path</FormLabel>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="areaPath">
+                      Area Path <span className="text-destructive">*</span>
+                    </Label>
                     <Input 
+                      id="areaPath"
                       {...register('areaPath', { required: 'Area path is required' })} 
                       placeholder="e.g., Grit, Data Visualization"
-                      size="lg"
+                      className="h-12"
                     />
                     {errors.areaPath && (
-                      <FormHelperText color="red.500">
+                      <p className="text-sm text-destructive">
                         {errors.areaPath.message as string}
-                      </FormHelperText>
+                      </p>
                     )}
-                  </FormControl>
+                  </div>
                   
-                  <FormControl isRequired isInvalid={!!errors.iterationPath}>
-                    <FormLabel>Iteration Path</FormLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="iterationPath">
+                      Iteration Path <span className="text-destructive">*</span>
+                    </Label>
                     <Input 
+                      id="iterationPath"
                       {...register('iterationPath', { required: 'Iteration path is required' })} 
                       placeholder="e.g., Sprint 1, Backlog"
-                      size="lg"
+                      className="h-12"
                     />
                     {errors.iterationPath && (
-                      <FormHelperText color="red.500">
+                      <p className="text-sm text-destructive">
                         {errors.iterationPath.message as string}
-                      </FormHelperText>
+                      </p>
                     )}
-                  </FormControl>
-                </HStack>
-              </VStack>
-            </Box>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <Divider />
+            <Separator />
             
             {/* Submit Button */}
             <Button
               type="submit"
-              colorScheme="blue"
-              size="lg"
-              isLoading={isSubmitting}
-              loadingText="Generating Backlog..."
-              height="60px"
-              fontSize="lg"
+              className="w-full h-15 text-lg"
+              disabled={isSubmitting}
             >
-              Generate Agile Backlog
+              {isSubmitting ? "Generating Backlog..." : "Generate Agile Backlog"}
             </Button>
-          </VStack>
+          </div>
         </form>
         
-        <Box bg="blue.50" p={4} borderRadius="md" mt={4}>
-          <Text fontSize="sm" color="blue.700">
+        <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md mt-4">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
             <strong>Note:</strong> The Personal Access Token will be loaded from your environment configuration. 
             Ensure your .env file is properly configured with AZURE_DEVOPS_PAT.
-          </Text>
-        </Box>
-      </VStack>
-    </Box>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 
