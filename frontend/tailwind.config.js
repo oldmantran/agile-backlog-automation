@@ -17,6 +17,13 @@ module.exports = {
       },
     },
     extend: {
+      spacing: {
+        // Enhanced spacing scale for consistent design
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem',
+        '144': '36rem',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

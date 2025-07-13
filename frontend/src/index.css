@@ -39,6 +39,21 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Spacing & Layout Design Tokens */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    --spacing-3xl: 4rem;
+
+    /* Layout tokens */
+    --content-width: 1200px;
+    --sidebar-width: 280px;
+    --sidebar-width-collapsed: 60px;
+    --header-height: 64px;
+
     /* Sidebar colors */
     --sidebar-background: 220 27% 12%;
     --sidebar-foreground: 180 100% 85%;
