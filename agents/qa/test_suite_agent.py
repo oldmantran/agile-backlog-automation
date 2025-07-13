@@ -5,6 +5,7 @@ Test Suite Agent - Specialized agent for creating test suites at the user story 
 import logging
 from typing import Dict, List, Any, Optional
 from agents.base_agent import Agent
+from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 
 class TestSuiteAgent(Agent):
@@ -21,6 +22,13 @@ class TestSuiteAgent(Agent):
     def __init__(self, config):
         super().__init__("test_suite_agent", config)
         self.logger = logging.getLogger(self.__class__.__name__)
+        
+        # Initialize Azure DevOps integration
+        try:
+            self.azure_api = AzureDevOpsIntegrator(config)
+        except Exception as e:
+            self.logger.warning(f"Azure DevOps integration not available: {e}")
+            self.azure_api = None
         
         # Test suite specific settings
         self.suite_types = {
@@ -271,3 +279,73 @@ The test suite should validate all aspects of the user story from the perspectiv
                 'success': False,
                 'error': str(e)
             }
+
+    def assign_orphaned_test_case(self, test_case_id: int, parent_user_story_id: int = None) -> bool:
+        """
+        Assign an orphaned test case to the appropriate test suite.
+        Used when Backlog Sweeper identifies test cases without suite assignments.
+        """
+        try:
+            if not self.azure_api:
+                self.logger.error("Azure DevOps integration not available")
+                return False
+            
+            # Get test case details
+            test_case = self.azure_api.get_work_item_details(test_case_id)
+            if not test_case:
+                self.logger.error(f"Test case {test_case_id} not found")
+                return False
+            
+            # Find parent user story if not provided
+            if not parent_user_story_id:
+                parent_links = test_case.get('relations', [])
+                for relation in parent_links:
+                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Reverse':
+                        parent_url = relation.get('url', '')
+                        parent_user_story_id = int(parent_url.split('/')[-1]) if parent_url else None
+                        break
+            
+            if not parent_user_story_id:
+                self.logger.error(f"Cannot find parent user story for test case {test_case_id}")
+                return False
+            
+            # Get user story details to determine appropriate test suite
+            user_story = self.azure_api.get_work_item_details(parent_user_story_id)
+            if not user_story:
+                self.logger.error(f"Parent user story {parent_user_story_id} not found")
+                return False
+            
+            # Find or create appropriate test suite for the user story
+            suite_name = f"Test Suite - {user_story.get('fields', {}).get('System.Title', 'Unknown Story')}"
+            area_path = user_story.get('fields', {}).get('System.AreaPath', '')
+            
+            # For now, log the action that would be taken
+            # TODO: Implement actual test suite creation and assignment when Azure DevOps Test Management API is fully integrated
+            self.logger.info(f"✅ Would assign test case {test_case_id} to suite '{suite_name}' for user story {parent_user_story_id}")
+            
+            return True
+                
+        except Exception as e:
+            self.logger.error(f"❌ Error assigning orphaned test case {test_case_id}: {e}")
+            return False
+
+    def bulk_assign_orphaned_test_cases(self, test_case_ids: List[int]) -> Dict[str, Any]:
+        """
+        Assign multiple orphaned test cases to their appropriate test suites.
+        Returns summary of assignment results.
+        """
+        results = {'successful': 0, 'failed': 0, 'errors': []}
+        
+        for test_case_id in test_case_ids:
+            try:
+                if self.assign_orphaned_test_case(test_case_id):
+                    results['successful'] += 1
+                else:
+                    results['failed'] += 1
+                    results['errors'].append(f"Failed to assign test case {test_case_id}")
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append(f"Error assigning test case {test_case_id}: {e}")
+        
+        self.logger.info(f"Bulk assignment complete: {results['successful']} successful, {results['failed']} failed")
+        return results

@@ -39,7 +39,11 @@ class QALeadAgent(Agent):
         self.completeness_validator = QACompletenessValidator(config)
         
         # Initialize Azure DevOps integration
-        self.azure_api = AzureDevOpsIntegrator(config)
+        try:
+            self.azure_api = AzureDevOpsIntegrator(config)
+        except Exception as e:
+            self.logger.warning(f"Azure DevOps integration not available: {e}")
+            self.azure_api = None
         
         # QA strategy settings
         self.max_retries = 3

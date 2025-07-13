@@ -73,7 +73,7 @@ You are an expert Backlog Sweeper Agent responsible for ensuring the overall hea
       "work_item_id": 5678,
       "work_item_type": "Test Case",
       "description": "Test Case is not assigned to any test suite.",
-      "suggested_agent": "QA Tester Agent",
+      "suggested_agent": "QA Lead Agent",
       "priority": "medium"
     },
     {
@@ -116,7 +116,7 @@ You are an expert Backlog Sweeper Agent responsible for ensuring the overall hea
     }
   ],
   "actions": [
-    "Notify QA Tester Agent to assign orphaned test cases to suites.",
+    "Notify QA Lead Agent to assign orphaned test cases to suites.",
     "Notify Developer Agent to decompose user stories missing tasks.",
     "Notify Developer Agent to estimate missing story points.",
     "Notify QA Lead Agent to correct area path mismatches for agent-created test cases.",
