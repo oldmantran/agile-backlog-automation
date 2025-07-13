@@ -9,6 +9,7 @@ from agents.qa.test_plan_agent import TestPlanAgent
 from agents.qa.test_suite_agent import TestSuiteAgent
 from agents.qa.test_case_agent import TestCaseAgent
 from utils.qa_completeness_validator import QACompletenessValidator
+from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 
 class QALeadAgent(Agent):
@@ -36,6 +37,9 @@ class QALeadAgent(Agent):
         
         # Initialize completeness validator
         self.completeness_validator = QACompletenessValidator(config)
+        
+        # Initialize Azure DevOps integration
+        self.azure_api = AzureDevOpsIntegrator(config)
         
         # QA strategy settings
         self.max_retries = 3
@@ -333,3 +337,74 @@ class QALeadAgent(Agent):
                         validation_result['valid'] = False
         
         return validation_result
+
+    def correct_area_path_mismatch(self, test_case_id: int, correct_area_path: str, parent_user_story_id: int = None) -> bool:
+        """
+        Correct area path mismatch for a test case as identified by Backlog Sweeper.
+        Used when agent-created test cases have incorrect area paths that don't match parent user stories.
+        """
+        try:
+            # Get current test case details to verify the issue
+            test_case = self.azure_api.get_work_item_details(test_case_id)
+            if not test_case:
+                self.logger.error(f"Test case {test_case_id} not found")
+                return False
+            
+            current_area_path = test_case.get('fields', {}).get('System.AreaPath', '')
+            
+            # Verify this is actually a mismatch that needs correction
+            if current_area_path == correct_area_path:
+                self.logger.info(f"Test case {test_case_id} already has correct area path: {correct_area_path}")
+                return True
+            
+            # Update the area path
+            fields = {'/fields/System.AreaPath': correct_area_path}
+            self.azure_api.update_work_item(test_case_id, fields)
+            
+            self.logger.info(f"✅ Corrected area path for test case {test_case_id}: '{current_area_path}' → '{correct_area_path}'")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to correct area path for test case {test_case_id}: {e}")
+            return False
+
+    def bulk_correct_area_path_mismatches(self, area_path_corrections: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Correct multiple area path mismatches in bulk.
+        
+        Args:
+            area_path_corrections: List of dicts with keys: test_case_id, correct_area_path, parent_user_story_id
+            
+        Returns:
+            Summary of correction results
+        """
+        results = {'successful': 0, 'failed': 0, 'errors': []}
+        
+        for correction in area_path_corrections:
+            test_case_id = correction.get('test_case_id')
+            correct_area_path = correction.get('correct_area_path')
+            parent_user_story_id = correction.get('parent_user_story_id')
+            
+            try:
+                if self.correct_area_path_mismatch(test_case_id, correct_area_path, parent_user_story_id):
+                    results['successful'] += 1
+                else:
+                    results['failed'] += 1
+                    results['errors'].append(f"Failed to correct area path for test case {test_case_id}")
+            except Exception as e:
+                results['failed'] += 1
+                results['errors'].append(f"Error correcting test case {test_case_id}: {e}")
+        
+        self.logger.info(f"Bulk area path correction complete: {results['successful']} successful, {results['failed']} failed")
+        return results
+
+    def assign_orphaned_test_case_to_suite(self, test_case_id: int, parent_user_story_id: int = None) -> bool:
+        """
+        Assign an orphaned test case to the appropriate test suite.
+        Delegates to TestSuiteAgent for proper suite organization.
+        """
+        try:
+            return self.test_suite_agent.assign_orphaned_test_case(test_case_id, parent_user_story_id)
+        except Exception as e:
+            self.logger.error(f"❌ Failed to assign orphaned test case {test_case_id}: {e}")
+            return False
