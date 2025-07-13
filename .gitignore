@@ -182,3 +182,22 @@ cython_debug/
 
 # Ignore all files in the output directory to prevent secrets from being committed
 output/
+
+# Temporary development files
+*_SUMMARY.md
+*_PLAN.md
+*_COMPLETE.md
+*_NOTES.md
+*_IMPLEMENTATION*.md
+*_WORKSTREAMS*.md
+cleanup_test_cases*.py
+debug_*.py
+find_*.py
+test_*.py
+SIMPLIFIED_*.md
+TEMP_*.md
+
+# Temporary prompts and tools
+prompts/*.txt
+tools/test_*.py
+tools/quick_*.py
