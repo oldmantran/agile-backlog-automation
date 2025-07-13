@@ -1,24 +1,12 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  VStack,
-  HStack,
-  Text,
-  Divider,
-  useColorModeValue,
-  Checkbox,
-  Select,
-  FormHelperText,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
-} from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Separator } from '../ui/separator';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { useForm, Controller } from 'react-hook-form';
 
 interface AiConfigFormProps {
   onNext: (data: any) => void;
@@ -31,7 +19,7 @@ const AiConfigForm: React.FC<AiConfigFormProps> = ({
   onPrevious,
   initialData = {},
 }) => {
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm({
     defaultValues: {
       modelType: initialData.modelType || 'gpt4o',
       enableAdvancedFeatures: initialData.enableAdvancedFeatures || false,
@@ -48,172 +36,201 @@ const AiConfigForm: React.FC<AiConfigFormProps> = ({
   });
   
   const enableAdvancedFeatures = watch('enableAdvancedFeatures');
-  const bgColor = useColorModeValue('white', 'gray.700');
   
   const onSubmit = (data: any) => {
     onNext(data);
   };
   
   return (
-    <Box
-      bg={bgColor}
-      p={6}
-      borderRadius="lg"
-      boxShadow="md"
-      width="full"
-    >
+    <div className="bg-card p-6 rounded-lg shadow-md w-full">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <VStack spacing={6} align="stretch">
-          <FormControl>
-            <FormLabel>AI Model</FormLabel>
-            <Select 
-              {...register('modelType')} 
-              size="lg"
-            >
-              <option value="gpt4o">GPT-4o (Recommended)</option>
-              <option value="gpt35turbo">GPT-3.5 Turbo (Faster)</option>
-              <option value="gpt4">GPT-4 (Legacy)</option>
-              <option value="phi3">Phi-3 (Local)</option>
-            </Select>
-            <FormHelperText>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="modelType" className="text-foreground">AI Model</Label>
+            <Controller
+              name="modelType"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Select AI Model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt4o">GPT-4o (Recommended)</SelectItem>
+                    <SelectItem value="gpt35turbo">GPT-3.5 Turbo (Faster)</SelectItem>
+                    <SelectItem value="gpt4">GPT-4 (Legacy)</SelectItem>
+                    <SelectItem value="phi3">Phi-3 (Local)</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-sm text-muted-foreground">
               Select the AI model to use for backlog generation
-            </FormHelperText>
-          </FormControl>
+            </p>
+          </div>
           
-          <FormControl>
-            <FormLabel>Content Generation Features</FormLabel>
-            <VStack align="start" spacing={3} pl={4}>
-              <Checkbox 
-                {...register('enableWorkItemLinking')} 
-                defaultChecked 
-                colorScheme="brand"
-              >
-                Link work items based on dependencies
-              </Checkbox>
+          <div className="space-y-2">
+            <Label className="text-foreground">Content Generation Features</Label>
+            <div className="space-y-3 pl-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="enableWorkItemLinking"
+                  {...register('enableWorkItemLinking')} 
+                  defaultChecked
+                />
+                <Label htmlFor="enableWorkItemLinking" className="text-sm font-normal">
+                  Link work items based on dependencies
+                </Label>
+              </div>
               
-              <Checkbox 
-                {...register('enhanceRequirements')} 
-                defaultChecked 
-                colorScheme="brand"
-              >
-                Enhance requirements with additional context
-              </Checkbox>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="enhanceRequirements"
+                  {...register('enhanceRequirements')} 
+                  defaultChecked
+                />
+                <Label htmlFor="enhanceRequirements" className="text-sm font-normal">
+                  Enhance requirements with additional context
+                </Label>
+              </div>
               
-              <Checkbox 
-                {...register('generateTestCases')} 
-                defaultChecked 
-                colorScheme="brand"
-              >
-                Generate test cases for user stories
-              </Checkbox>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="generateTestCases"
+                  {...register('generateTestCases')} 
+                  defaultChecked
+                />
+                <Label htmlFor="generateTestCases" className="text-sm font-normal">
+                  Generate test cases for user stories
+                </Label>
+              </div>
               
-              <Checkbox 
-                {...register('generateAcceptanceCriteria')} 
-                defaultChecked 
-                colorScheme="brand"
-              >
-                Generate acceptance criteria
-              </Checkbox>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="generateAcceptanceCriteria"
+                  {...register('generateAcceptanceCriteria')} 
+                  defaultChecked
+                />
+                <Label htmlFor="generateAcceptanceCriteria" className="text-sm font-normal">
+                  Generate acceptance criteria
+                </Label>
+              </div>
               
-              <Checkbox 
-                {...register('estimateComplexity')} 
-                defaultChecked 
-                colorScheme="brand"
-              >
-                Estimate complexity (story points)
-              </Checkbox>
-            </VStack>
-          </FormControl>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="estimateComplexity"
+                  {...register('estimateComplexity')} 
+                  defaultChecked
+                />
+                <Label htmlFor="estimateComplexity" className="text-sm font-normal">
+                  Estimate complexity (story points)
+                </Label>
+              </div>
+            </div>
+          </div>
           
-          <Divider />
+          <Separator />
           
-          <FormControl>
-            <FormLabel>Advanced Configuration</FormLabel>
-            <Checkbox 
-              {...register('enableAdvancedFeatures')} 
-              colorScheme="brand"
-              mb={4}
-            >
-              Enable advanced configuration
-            </Checkbox>
+          <div className="space-y-2">
+            <Label className="text-foreground">Advanced Configuration</Label>
+            <div className="flex items-center space-x-2 mb-4">
+              <Checkbox 
+                id="enableAdvancedFeatures"
+                {...register('enableAdvancedFeatures')}
+              />
+              <Label htmlFor="enableAdvancedFeatures" className="text-sm font-normal">
+                Enable advanced configuration
+              </Label>
+            </div>
             
             {enableAdvancedFeatures && (
-              <VStack spacing={4} align="stretch" pl={4}>
-                <FormControl>
-                  <FormLabel>Backlog Size Limits</FormLabel>
-                  <HStack spacing={4}>
-                    <FormControl>
-                      <FormLabel fontSize="sm">Minimum Items</FormLabel>
-                      <NumberInput 
-                        min={5} 
-                        max={100} 
-                        defaultValue={20}
-                        onChange={(valueString) => setValue('minBacklogItems', parseInt(valueString))}
-                      >
-                        <NumberInputField {...register('minBacklogItems')} />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                    
-                    <FormControl>
-                      <FormLabel fontSize="sm">Maximum Items</FormLabel>
-                      <NumberInput 
-                        min={10} 
-                        max={200} 
-                        defaultValue={50}
-                        onChange={(valueString) => setValue('maxBacklogItems', parseInt(valueString))}
-                      >
-                        <NumberInputField {...register('maxBacklogItems')} />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                  </HStack>
-                </FormControl>
+              <div className="space-y-4 pl-4">
+                <div className="space-y-2">
+                  <Label htmlFor="backlogSizeLimits" className="text-foreground">Backlog Size Limits</Label>
+                  <div className="flex space-x-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="minItems" className="text-sm">Minimum Items</Label>
+                      <Controller
+                        name="minBacklogItems"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            id="minItems"
+                            type="number"
+                            min={5}
+                            value={field.value || 20}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            className="w-24"
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="maxItems" className="text-sm">Maximum Items</Label>
+                      <Controller
+                        name="maxBacklogItems"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            id="maxItems"
+                            type="number"
+                            min={10}
+                            max={200}
+                            value={field.value || 50}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            className="w-24"
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
                 
-                <FormControl>
-                  <FormLabel>Creativity Level</FormLabel>
-                  <Select 
-                    {...register('creativityLevel')} 
-                    defaultValue="balanced"
-                  >
-                    <option value="conservative">Conservative (Focus on core requirements)</option>
-                    <option value="balanced">Balanced (Recommended)</option>
-                    <option value="creative">Creative (Generate more innovative ideas)</option>
-                    <option value="highly_creative">Highly Creative (Maximum innovation)</option>
-                  </Select>
-                </FormControl>
-              </VStack>
+                <div className="space-y-2">
+                  <Label htmlFor="creativityLevel" className="text-foreground">Creativity Level</Label>
+                  <Controller
+                    name="creativityLevel"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value || "balanced"} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select creativity level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="conservative">Conservative (Focus on core requirements)</SelectItem>
+                          <SelectItem value="balanced">Balanced (Recommended)</SelectItem>
+                          <SelectItem value="creative">Creative (Generate more innovative ideas)</SelectItem>
+                          <SelectItem value="highly_creative">Highly Creative (Maximum innovation)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
             )}
-          </FormControl>
+          </div>
           
-          <HStack justify="space-between" pt={4}>
+          <div className="flex justify-between pt-4">
             {onPrevious && (
               <Button 
                 onClick={onPrevious}
                 size="lg"
+                variant="outline"
               >
                 Previous
               </Button>
             )}
             <Button 
-              colorScheme="brand" 
               size="lg" 
               type="submit"
-              ml="auto"
-              minW="150px"
+              className="ml-auto min-w-[150px]"
             >
               Next
             </Button>
-          </HStack>
-        </VStack>
+          </div>
+        </div>
       </form>
-    </Box>
+    </div>
   );
 };
 

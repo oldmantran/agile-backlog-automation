@@ -68,42 +68,36 @@ const VisionForm: React.FC<VisionFormProps> = ({
     onNext(data);
   };
   
-  const bgColor = useColorModeValue('white', 'gray.700');
-  
   return (
-    <Box
-      bg={bgColor}
-      p={6}
-      borderRadius="lg"
-      boxShadow="md"
-      width="full"
-    >
+    <div className="bg-card p-6 rounded-lg shadow-md w-full">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <VStack spacing={6} align="stretch">
-          <FormControl isRequired isInvalid={!!errors.visionStatement}>
-            <FormLabel>Vision Statement</FormLabel>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="visionStatement" className="text-foreground">
+              Vision Statement <span className="text-destructive">*</span>
+            </Label>
             <Textarea 
+              id="visionStatement"
               {...register('visionStatement', { 
                 required: 'Vision statement is required',
                 minLength: { value: 20, message: 'Vision statement should be at least 20 characters' } 
               })} 
               placeholder="Our vision is to..."
-              size="lg"
-              rows={4}
+              className="min-h-[100px]"
             />
             {errors.visionStatement && (
-              <FormHelperText color="red.500">
+              <p className="text-sm text-destructive">
                 {errors.visionStatement.message as string}
-              </FormHelperText>
+              </p>
             )}
-            <FormHelperText>
+            <p className="text-sm text-muted-foreground">
               A clear statement of what the project aims to achieve
-            </FormHelperText>
-          </FormControl>
+            </p>
+          </div>
           
-          <FormControl>
-            <FormLabel>Business Objectives</FormLabel>
-            <HStack mb={2}>
+          <div className="space-y-2">
+            <Label className="text-foreground">Business Objectives</Label>
+            <div className="flex gap-2 mb-2">
               <Input 
                 value={newObjective}
                 onChange={(e) => setNewObjective(e.target.value)}
@@ -115,21 +109,27 @@ const VisionForm: React.FC<VisionFormProps> = ({
                   }
                 }}
               />
-              <Button onClick={addObjective}>Add</Button>
-            </HStack>
-            <Flex wrap="wrap" gap={2} mt={2}>
+              <Button onClick={addObjective} type="button">Add</Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
               {businessObjectives.map((objective: string, index: number) => (
-                <Tag key={index} size="lg" borderRadius="full" variant="solid" colorScheme="brand">
-                  <TagLabel>{objective}</TagLabel>
-                  <TagCloseButton onClick={() => removeObjective(index)} />
-                </Tag>
+                <Badge key={index} variant="default" className="bg-primary text-primary-foreground">
+                  {objective}
+                  <button 
+                    type="button"
+                    onClick={() => removeObjective(index)}
+                    className="ml-2 hover:bg-primary-foreground hover:text-primary rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                </Badge>
               ))}
-            </Flex>
-          </FormControl>
+            </div>
+          </div>
           
-          <FormControl>
-            <FormLabel>Success Metrics</FormLabel>
-            <HStack mb={2}>
+          <div className="space-y-2">
+            <Label className="text-foreground">Success Metrics</Label>
+            <div className="flex gap-2 mb-2">
               <Input 
                 value={newMetric}
                 onChange={(e) => setNewMetric(e.target.value)}
@@ -141,53 +141,60 @@ const VisionForm: React.FC<VisionFormProps> = ({
                   }
                 }}
               />
-              <Button onClick={addMetric}>Add</Button>
-            </HStack>
-            <Flex wrap="wrap" gap={2} mt={2}>
+              <Button onClick={addMetric} type="button">Add</Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
               {successMetrics.map((metric: string, index: number) => (
-                <Tag key={index} size="lg" borderRadius="full" variant="solid" colorScheme="green">
-                  <TagLabel>{metric}</TagLabel>
-                  <TagCloseButton onClick={() => removeMetric(index)} />
-                </Tag>
+                <Badge key={index} variant="secondary" className="bg-secondary text-secondary-foreground">
+                  {metric}
+                  <button 
+                    type="button"
+                    onClick={() => removeMetric(index)}
+                    className="ml-2 hover:bg-secondary-foreground hover:text-secondary rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                </Badge>
               ))}
-            </Flex>
-          </FormControl>
+            </div>
+          </div>
           
-          <FormControl>
-            <FormLabel>Target Audience</FormLabel>
+          <div className="space-y-2">
+            <Label htmlFor="targetAudience" className="text-foreground">Target Audience</Label>
             <Textarea 
+              id="targetAudience"
               {...register('targetAudience')} 
               placeholder="Describe your target audience..."
-              size="lg"
-              rows={3}
+              className="min-h-[75px]"
             />
-            <FormHelperText>
+            <p className="text-sm text-muted-foreground">
               Who will use or benefit from this project
-            </FormHelperText>
-          </FormControl>
+            </p>
+          </div>
           
-          <HStack justify="space-between" pt={4}>
+          <div className="flex justify-between pt-4">
             {onPrevious && (
               <Button 
                 onClick={onPrevious}
+                variant="outline"
                 size="lg"
+                type="button"
               >
                 Previous
               </Button>
             )}
             <Button 
-              colorScheme="brand" 
+              variant="default"
               size="lg" 
               type="submit"
-              ml="auto"
-              minW="150px"
+              className="ml-auto min-w-[150px]"
             >
               Next
             </Button>
-          </HStack>
-        </VStack>
+          </div>
+        </div>
       </form>
-    </Box>
+    </div>
   );
 };
 
