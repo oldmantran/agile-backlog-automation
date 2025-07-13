@@ -21,8 +21,9 @@ class TestSuiteConfig:
     """Configuration for Azure DevOps Test Suites"""
     name: str
     description: str
-    suite_type: str = 'StaticTestSuite'
+    suite_type: str = 'RequirementTestSuite'  # Changed to requirement-based for autonomous testing
     parent_suite_id: Optional[int] = None
+    requirement_id: Optional[int] = None  # User story work item ID for linking
 
 
 class AzureDevOpsTestClient:
@@ -119,57 +120,44 @@ class AzureDevOpsTestClient:
     
     def ensure_test_suite_exists(self, test_plan_id: int, user_story_id: int, user_story_name: str) -> Optional[Dict]:
         """
-        Create or find test suite for a user story using Test Management API
+        Create or find requirement-based test suite for a user story using Test Management API
         
         Args:
             test_plan_id: Test plan ID
-            user_story_id: User story work item ID
-            user_story_name: User story name for test suite naming
+            user_story_id: User story work item ID for requirement linking
+            user_story_name: User story name for suite naming
             
         Returns:
             Test suite dictionary or None if creation fails
         """
         try:
-            # Check if test suite exists
+            # Check if requirement-based test suite exists for this user story
             existing_suites = self._get_test_suites(test_plan_id)
             suite_name = f"User Story: {user_story_name}"
             
+            # Look for existing requirement-based suite linked to this user story
             for suite in existing_suites.get('value', []):
-                if suite['name'] == suite_name:
-                    self.logger.info(f"Found existing test suite: {suite_name}")
+                if (suite.get('name') == suite_name and 
+                    suite.get('suiteType') == 'RequirementTestSuite' and
+                    suite.get('requirementId') == user_story_id):
+                    self.logger.info(f"Found existing requirement-based test suite: {suite_name}")
                     return suite
             
-            # Get root suite for parent reference
-            root_suite = None
-            for suite in existing_suites.get('value', []):
-                # Look for root suite - it has no parent suite or is the first suite
-                if (suite.get('suiteType') == 'StaticTestSuite' and 
-                    (suite.get('parentSuite') is None or not suite.get('parentSuite'))):
-                    root_suite = suite
-                    break
-            
-            # If no root suite found, try the first suite as fallback
-            if not root_suite and existing_suites.get('value'):
-                root_suite = existing_suites['value'][0]
-                self.logger.warning(f"No proper root suite found, using first suite as parent: {root_suite.get('name', 'Unknown')}")
-            
-            # If still no suite, we cannot create a child suite
-            if not root_suite:
-                self.logger.error(f"No parent suite available for test plan {test_plan_id}. Cannot create test suite.")
-                return None
-            
-            # Create new test suite
+            # Create new requirement-based test suite
             suite_config = TestSuiteConfig(
                 name=suite_name,
-                description=f'Test suite for user story: {user_story_name} (ID: {user_story_id})',
-                parent_suite_id=root_suite['id']
+                description=f'Requirement-based test suite for user story: {user_story_name} (ID: {user_story_id})',
+                suite_type='RequirementTestSuite',
+                requirement_id=user_story_id
             )
+            
+            self.logger.info(f"Creating requirement-based test suite '{suite_name}' linked to user story {user_story_id}")
             
             suite_data = {
                 'name': suite_config.name,
                 'description': suite_config.description,
                 'suiteType': suite_config.suite_type,
-                'parentSuite': {'id': suite_config.parent_suite_id}  # Always include parent suite
+                'requirementId': suite_config.requirement_id  # Link to user story for autonomous discovery
             }
             
             response = requests.post(
@@ -181,11 +169,15 @@ class AzureDevOpsTestClient:
             
             if response.status_code == 200:
                 test_suite = response.json()
-                self.logger.info(f"Created test suite: {suite_name} (ID: {test_suite['id']})")
+                self.logger.info(f"Created requirement-based test suite: {suite_name} (ID: {test_suite['id']}) linked to user story {user_story_id}")
                 return test_suite
             else:
-                self.logger.error(f"Failed to create test suite: {response.status_code} - {response.text}")
+                self.logger.error(f"Failed to create requirement-based test suite: {response.status_code} - {response.text}")
                 return None
+                
+        except Exception as e:
+            self.logger.error(f"Error ensuring requirement-based test suite exists: {e}")
+            return None
                 
         except Exception as e:
             self.logger.error(f"Error ensuring test suite exists: {e}")
@@ -221,14 +213,22 @@ class AzureDevOpsTestClient:
             self.logger.error(f"Error adding test case to suite: {e}")
             return False
     
-    def create_test_case_work_item(self, title: str, description: str, steps: List[Dict]) -> Optional[Dict]:
+    def create_test_case_work_item(self, title: str, description: str, steps: List[Dict], 
+                                   tags: List[str] = None, priority: int = 2, 
+                                   component: str = None, preconditions: str = None,
+                                   automation_status: str = "Not Automated") -> Optional[Dict]:
         """
-        Create test case work item using Work Items API
+        Create test case work item with comprehensive metadata for autonomous testing
         
         Args:
-            title: Test case title
+            title: Test case title with descriptive verb and expected result
             description: Test case description
             steps: List of test steps with action and expectedResult
+            tags: List of tags (e.g., Regression, UI, API) for filtering
+            priority: Test case priority (1=High, 2=Normal, 3=Low)
+            component: Component or feature area being tested
+            preconditions: Clear preconditions for test execution
+            automation_status: Automation readiness status
             
         Returns:
             Test case work item dictionary or None if creation fails
@@ -237,7 +237,10 @@ class AzureDevOpsTestClient:
             # Format steps for Azure DevOps
             formatted_steps = self._format_test_steps_for_ado(steps)
             
-            # Create work item fields
+            # Prepare tags for Azure DevOps format
+            tag_string = ";".join(tags) if tags else ""
+            
+            # Create work item fields with comprehensive metadata
             fields = [
                 {
                     "op": "add",
@@ -245,7 +248,7 @@ class AzureDevOpsTestClient:
                     "value": title
                 },
                 {
-                    "op": "add",
+                    "op": "add", 
                     "path": "/fields/System.Description",
                     "value": description
                 },
@@ -253,8 +256,52 @@ class AzureDevOpsTestClient:
                     "op": "add",
                     "path": "/fields/Microsoft.VSTS.TCM.Steps",
                     "value": formatted_steps
+                },
+                {
+                    "op": "add",
+                    "path": "/fields/System.Tags",
+                    "value": tag_string
+                },
+                {
+                    "op": "add",
+                    "path": "/fields/Microsoft.VSTS.Common.Priority",
+                    "value": priority
+                },
+                {
+                    "op": "add",
+                    "path": "/fields/Microsoft.VSTS.TCM.AutomationStatus", 
+                    "value": automation_status
                 }
             ]
+            
+            # Add optional fields if provided
+            if preconditions:
+                fields.append({
+                    "op": "add",
+                    "path": "/fields/Microsoft.VSTS.TCM.LocalDataSource",
+                    "value": f"Preconditions: {preconditions}"
+                })
+            
+            self.logger.info(f"Creating autonomous test case: {title} with tags: {tag_string}")
+            
+            response = requests.post(
+                f"{self.base_url}/wit/workitems/$Test%20Case?api-version=7.1-preview.3",
+                headers={**self.headers, 'Content-Type': 'application/json-patch+json'},
+                json=fields,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                test_case = response.json()
+                self.logger.info(f"Created autonomous test case work item: {title} (ID: {test_case['id']})")
+                return test_case
+            else:
+                self.logger.error(f"Failed to create test case work item: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error creating test case work item: {e}")
+            return None
             
             response = requests.post(
                 f"{self.base_url}/wit/workitems/$Test%20Case?api-version=7.1-preview.3",
@@ -356,3 +403,54 @@ class AzureDevOpsTestClient:
         except Exception as e:
             self.logger.error(f"Error getting test suite by name: {e}")
             return None
+    
+    def create_test_case(self, title: str, description: str, steps: List[Dict], 
+                        tags: List[str] = None, priority: int = 2) -> Optional[Dict]:
+        """
+        Convenience method for creating test cases with autonomous testing metadata.
+        Automatically generates appropriate tags and metadata based on test case content.
+        """
+        # Auto-generate tags based on test case content
+        auto_tags = []
+        title_lower = title.lower()
+        description_lower = description.lower()
+        
+        # Determine test type tags
+        if any(keyword in title_lower for keyword in ['ui', 'interface', 'button', 'screen', 'page']):
+            auto_tags.append('UI')
+        if any(keyword in title_lower for keyword in ['api', 'endpoint', 'service', 'request']):
+            auto_tags.append('API')
+        if any(keyword in title_lower for keyword in ['verify', 'validate', 'check', 'ensure']):
+            auto_tags.append('Functional')
+        if any(keyword in description_lower for keyword in ['regression', 'existing', 'previous']):
+            auto_tags.append('Regression')
+        if any(keyword in title_lower for keyword in ['invalid', 'error', 'fail', 'negative']):
+            auto_tags.append('Negative')
+        else:
+            auto_tags.append('Positive')
+        
+        # Combine auto-generated and provided tags
+        all_tags = list(set((tags or []) + auto_tags))
+        
+        # Extract preconditions from description if present
+        preconditions = None
+        if 'precondition' in description_lower or 'given' in description_lower:
+            # Try to extract preconditions from Gherkin-style scenarios
+            lines = description.split('\n')
+            for line in lines:
+                if line.strip().lower().startswith(('given', 'precondition')):
+                    preconditions = line.strip()
+                    break
+        
+        # Determine automation status
+        automation_status = "Planned" if any(tag in ['API', 'Functional'] for tag in all_tags) else "Not Automated"
+        
+        return self.create_test_case_work_item(
+            title=title,
+            description=description, 
+            steps=steps,
+            tags=all_tags,
+            priority=priority,
+            preconditions=preconditions,
+            automation_status=automation_status
+        )

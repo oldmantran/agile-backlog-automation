@@ -41,6 +41,14 @@ agents:
       auto_create_test_suites: true
       auto_link_test_cases: true
       update_test_results: true
+      
+      # Autonomous testing configuration
+      autonomous_testing:
+        use_requirement_based_suites: true  # Use requirement-based instead of static suites
+        auto_generate_tags: true            # Automatically tag test cases for filtering
+        enable_automation_metadata: true    # Add automation readiness fields
+        intelligent_test_distribution: true # Add metadata for AI/human agent distribution
+        enforce_clear_preconditions: true   # Require clear preconditions for autonomous execution
     
     sub_agents:
       test_plan_agent:
