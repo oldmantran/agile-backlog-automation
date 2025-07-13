@@ -925,6 +925,39 @@ class AzureDevOpsIntegrator:
             self.logger.error(f"Failed to update work item {work_item_id}: {e}")
             raise
     
+    def delete_work_item(self, work_item_id: int) -> bool:
+        """
+        Delete a work item by ID.
+        
+        Args:
+            work_item_id: The ID of the work item to delete
+            
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        url = f"{self.project_base_url}/wit/workitems/{work_item_id}?api-version=7.0"
+        
+        try:
+            response = requests.delete(url, auth=self.auth)
+            
+            # Azure DevOps returns 200 for successful deletion
+            if response.status_code == 200:
+                self.logger.info(f"Successfully deleted work item {work_item_id}")
+                return True
+            else:
+                self.logger.warning(f"Unexpected response code {response.status_code} when deleting work item {work_item_id}")
+                self.logger.warning(f"Response: {response.text}")
+                return False
+                
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to delete work item {work_item_id}: {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            return False
+    
     def test_connection(self) -> bool:
         """Test the Azure DevOps connection."""
         if not self.enabled:

@@ -33,6 +33,128 @@ from integrators.azure_devops_api import AzureDevOpsIntegrator
 from utils.logger import setup_logger
 
 
+class MockAzureDevOpsIntegrator:
+    """Mock ADO client for testing purposes."""
+    
+    def __init__(self):
+        # Mock work items for testing
+        self.mock_work_items = [
+            {
+                'id': 1001,
+                'fields': {
+                    'System.WorkItemType': 'User Story',
+                    'System.Title': 'User Authentication System',
+                    'System.Description': 'As a user, I want to log into the system so that I can access my personalized dashboard.',
+                    'Microsoft.VSTS.Common.AcceptanceCriteria': '''
+                        • User can enter valid credentials and access the dashboard
+                        • System displays appropriate error messages for invalid credentials
+                        • User remains logged in for 24 hours unless explicitly logged out
+                        • Password strength requirements are enforced
+                        • Two-factor authentication is supported for enhanced security
+                    ''',
+                    'Microsoft.VSTS.Scheduling.StoryPoints': 8,
+                    'System.AreaPath': 'Test Project\\Authentication',
+                    'System.IterationPath': 'Test Project\\Sprint 1'
+                }
+            },
+            {
+                'id': 1002,
+                'fields': {
+                    'System.WorkItemType': 'User Story',
+                    'System.Title': 'Poor Quality Story Example',
+                    'System.Description': 'As a user, I want better stuff.',
+                    'Microsoft.VSTS.Common.AcceptanceCriteria': '''
+                        • Make it better
+                        • Improve things
+                    ''',
+                    'Microsoft.VSTS.Scheduling.StoryPoints': None,
+                    'System.AreaPath': 'Test Project',
+                    'System.IterationPath': 'Test Project'
+                }
+            },
+            {
+                'id': 1003,
+                'fields': {
+                    'System.WorkItemType': 'User Story',
+                    'System.Title': 'Data Visualization Dashboard',
+                    'System.Description': 'As a business analyst, I want to view key metrics in a dashboard so that I can make informed decisions.',
+                    'Microsoft.VSTS.Common.AcceptanceCriteria': '''
+                        • Given a logged-in business analyst
+                        • When they navigate to the dashboard
+                        • Then they should see real-time sales metrics
+                        • And they should see customer engagement data
+                        • And charts should load within 3 seconds
+                        • And data should refresh automatically every 5 minutes
+                        • The dashboard should be accessible on mobile devices
+                        • Export functionality should be available for all charts
+                    ''',
+                    'Microsoft.VSTS.Scheduling.StoryPoints': 13,
+                    'System.AreaPath': 'Test Project\\Analytics',
+                    'System.IterationPath': 'Test Project\\Sprint 2'
+                }
+            },
+            {
+                'id': 1004,
+                'fields': {
+                    'System.WorkItemType': 'User Story',
+                    'System.Title': 'Missing Acceptance Criteria Story',
+                    'System.Description': 'As a user, I want functionality without clear requirements.',
+                    'Microsoft.VSTS.Common.AcceptanceCriteria': '',
+                    'Microsoft.VSTS.Scheduling.StoryPoints': None,
+                    'System.AreaPath': 'Test Project',
+                    'System.IterationPath': 'Test Project'
+                }
+            },
+            {
+                'id': 2001,
+                'fields': {
+                    'System.WorkItemType': 'Epic',
+                    'System.Title': 'Customer Management System',
+                    'System.Description': 'Comprehensive customer relationship management capabilities including contact management, interaction tracking, and analytics.',
+                    'System.AreaPath': 'Test Project\\CRM',
+                    'System.IterationPath': 'Test Project'
+                }
+            },
+            {
+                'id': 3001,
+                'fields': {
+                    'System.WorkItemType': 'Feature',
+                    'System.Title': 'User Profile Management',
+                    'System.Description': 'Allow users to manage their personal information, preferences, and account settings.',
+                    'System.AreaPath': 'Test Project\\User Management',
+                    'System.IterationPath': 'Test Project\\Sprint 1'
+                }
+            }
+        ]
+    
+    def query_work_items(self, work_item_type=None, max_results=None):
+        """Return mock work item IDs for the given type."""
+        if work_item_type:
+            results = [wi['id'] for wi in self.mock_work_items 
+                      if wi['fields'].get('System.WorkItemType') == work_item_type]
+        else:
+            results = [wi['id'] for wi in self.mock_work_items]
+        
+        if max_results:
+            results = results[:max_results]
+        return results
+    
+    def get_work_item_details(self, work_item_ids):
+        """Return mock work item details."""
+        if isinstance(work_item_ids, int):
+            work_item_ids = [work_item_ids]
+        return [wi for wi in self.mock_work_items if wi['id'] in work_item_ids]
+    
+    def get_work_item_relations(self, work_item_id):
+        """Return mock relations (simplified for demo)."""
+        # Mock some basic parent-child relationships
+        if work_item_id == 1001:  # User Story
+            return [{'rel': 'System.LinkTypes.Hierarchy-Reverse', 'url': 'mock_feature_3001'}]
+        elif work_item_id == 3001:  # Feature
+            return [{'rel': 'System.LinkTypes.Hierarchy-Reverse', 'url': 'mock_epic_2001'}]
+        return []
+
+
 class SupervisorReportHandler:
     """Handles supervisor reports for demonstration purposes."""
     
@@ -89,35 +211,73 @@ def run_manual_backlog_sweep():
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
+    # Ask user if they want to use real Azure DevOps or mock data
+    print("Choose sweep mode:")
+    print("1. 🔗 Real Azure DevOps (requires .env configuration)")
+    print("2. 🧪 Mock data demo (shows functionality without ADO connection)")
+    print()
+    
+    try:
+        mode = input("Enter choice (1 or 2): ").strip()
+        if mode not in ['1', '2']:
+            print("Invalid choice. Using mock data demo.")
+            mode = '2'
+    except (EOFError, KeyboardInterrupt):
+        print("Using mock data demo.")
+        mode = '2'
+    
+    use_real_ado = (mode == '1')
+    
     try:
         # 1. Load configuration
-        print("📋 Step 1: Loading configuration...")
+        print(f"\n📋 Step 1: Loading configuration...")
         config = Config()
-        config_data = config.get_config()
         print(f"   ✅ Configuration loaded")
-        print(f"   📁 Project: {config_data.get('azure_devops', {}).get('project', 'Not configured')}")
-        print(f"   🏢 Organization: {config_data.get('azure_devops', {}).get('organization_url', 'Not configured')}")
         
-        # 2. Initialize Azure DevOps connection
-        print("\n🔗 Step 2: Connecting to Azure DevOps...")
-        try:
-            ado_client = AzureDevOpsIntegrator(
-                organization_url=config_data.get('azure_devops', {}).get('organization_url'),
-                personal_access_token=config_data.get('azure_devops', {}).get('personal_access_token'),
-                project_name=config_data.get('azure_devops', {}).get('project')
-            )
-            
-            # Test connection
-            test_query = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project"
-            test_results = ado_client.query_work_items(test_query, max_results=1)
-            
-            print(f"   ✅ Connected to Azure DevOps successfully")
-            print(f"   📊 Project has work items (test query returned {len(test_results)} items)")
-            
-        except Exception as e:
-            print(f"   ❌ Failed to connect to Azure DevOps: {e}")
-            print("   💡 Make sure your .env file has correct AZURE_DEVOPS_* settings")
-            return
+        if use_real_ado:
+            print(f"   📁 Project: {config.env.get('AZURE_DEVOPS_PROJECT', 'Not configured')}")
+            print(f"   🏢 Organization: {config.env.get('AZURE_DEVOPS_ORG', 'Not configured')}")
+        else:
+            print(f"   🧪 Using mock data for demonstration")
+        
+        # 2. Initialize client (real or mock)
+        if use_real_ado:
+            print("\n🔗 Step 2: Connecting to Azure DevOps...")
+            try:
+                # Construct organization URL if needed
+                org = config.env.get('AZURE_DEVOPS_ORG')
+                if org and not org.startswith('https://'):
+                    org_url = f"https://dev.azure.com/{org}"
+                else:
+                    org_url = org
+                    
+                ado_client = AzureDevOpsIntegrator(
+                    organization_url=org_url,
+                    personal_access_token=config.env.get('AZURE_DEVOPS_PAT'),
+                    project=config.env.get('AZURE_DEVOPS_PROJECT'),
+                    area_path=config.env.get('AZURE_DEVOPS_PROJECT', 'Backlog Automation'),
+                    iteration_path=config.env.get('AZURE_DEVOPS_PROJECT', 'Backlog Automation')
+                )
+                
+                # Test connection
+                test_query = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project"
+                test_results = ado_client.query_work_items(test_query, max_results=1)
+                
+                print(f"   ✅ Connected to Azure DevOps successfully")
+                print(f"   📊 Project has work items (test query returned {len(test_results)} items)")
+                
+            except Exception as e:
+                print(f"   ❌ Failed to connect to Azure DevOps: {e}")
+                print("   💡 Make sure your .env file has correct AZURE_DEVOPS_* settings")
+                print("   🔄 Falling back to mock data demo...")
+                use_real_ado = False
+        
+        if not use_real_ado:
+            print("\n🧪 Step 2: Setting up mock Azure DevOps client...")
+            # Use the mock client from the test file
+            ado_client = MockAzureDevOpsIntegrator()
+            print(f"   ✅ Mock client ready with sample work items")
+            print(f"   📊 Mock data includes {len(ado_client.mock_work_items)} test work items")
         
         # 3. Initialize supervisor report handler
         print("\n🎯 Step 3: Setting up supervisor coordination...")
@@ -129,7 +289,7 @@ def run_manual_backlog_sweep():
         sweeper = BacklogSweeperAgent(
             ado_client=ado_client,
             supervisor_callback=report_handler.handle_sweeper_report,
-            config=config_data
+            config=config.settings
         )
         print("   ✅ Backlog Sweeper Agent initialized")
         
