@@ -1,35 +1,55 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Screen imports
+// Tron-themed screens
+import TronWelcomeScreen from './screens/TronWelcomeScreen';
+import TronConfigScreen from './screens/TronConfigScreen';
+import TronCleanupWorkItemsScreen from './screens/TronCleanupWorkItemsScreen';
+import TronCleanupTestCasesScreen from './screens/TronCleanupTestCasesScreen';
+import TronBacklogSweeperScreen from './screens/TronBacklogSweeperScreen';
+import TronExecutableScreen from './screens/TronExecutableScreen';
+
+// Legacy screens (kept for compatibility)
 import TestScreen from './screens/TestScreen';
-// import MainDashboard from './screens/dashboard/MainDashboard';
-// import ProjectWizard from './screens/project/ProjectWizard';
-// import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
-// import NewProjectScreen from './screens/project/NewProjectScreen';
-// import WelcomeScreen from './screens/onboarding/WelcomeScreen';
-// import WorkItemsCleanupScreen from './screens/cleanup/WorkItemsCleanupScreen';
-// import TestCasesCleanupScreen from './screens/cleanup/TestCasesCleanupScreen';
-// import BacklogSweeperScreen from './screens/sweeper/BacklogSweeperScreen';
-// import SearchDocumentationScreen from './screens/search/SearchDocumentationScreen';
+import NewProjectScreen from './screens/project/NewProjectScreen';
 
 // Layout imports
 import MainLayout from './components/layout/MainLayout';
-// import WizardLayout from './components/layout/WizardLayout';
 
 function App() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Router>
         <Routes>
-          {/* Test route for migration */}
-          <Route path="/" element={
+          {/* Main Tron Interface */}
+          <Route path="/" element={<TronWelcomeScreen />} />
+          
+          {/* Configuration Screen */}
+          <Route path="/configure" element={<TronConfigScreen />} />
+          
+          {/* Cleanup Screens */}
+          <Route path="/cleanup-workitems" element={<TronCleanupWorkItemsScreen />} />
+          <Route path="/cleanup-tests" element={<TronCleanupTestCasesScreen />} />
+          
+          {/* Backlog Sweeper */}
+          <Route path="/sweeper" element={<TronBacklogSweeperScreen />} />
+          
+          {/* Executable Launcher */}
+          <Route path="/launcher" element={<TronExecutableScreen />} />
+          
+          {/* New Project (reuse existing) */}
+          <Route path="/new-project" element={
+            <MainLayout>
+              <NewProjectScreen />
+            </MainLayout>
+          } />
+          
+          {/* Legacy test route */}
+          <Route path="/test" element={
             <MainLayout>
               <TestScreen />
             </MainLayout>
           } />
-          
-          {/* All other routes temporarily commented out for migration testing */}
         </Routes>
       </Router>
     </div>
