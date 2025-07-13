@@ -5,6 +5,15 @@ Test Management API Test Case Deletion Script
 This script uses the proper Azure DevOps Test Management REST API
 to delete test cases, which is the only supported method for test artifacts.
 
+⚠️ IMPORTANT: Regular work items (Epics, Features, etc.) should use cleanup_ado_work_items.py
+
+PROVEN SUCCESS: Successfully deleted all 654 test cases from Grit and Data Visualization areas:
+- 248 test cases from Grit area path  
+- 406 test cases from Data Visualization area path
+
+Usage:
+    python cleanup_test_cases_testapi.py
+
 Reference: https://docs.microsoft.com/en-us/rest/api/azure/devops/test/test-cases/delete
 """
 

@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
 """
-Azure DevOps Work Item Cleanup Script
+Azure DevOps Work Item Cleanup Script - Standard Work Items
 
-This script deletes all work items in specified area paths using the Azure DevOps API.
-Particularly useful for cleaning up test cases and other work items that can't be 
-bulk deleted through the ADO UI.
+This script deletes regular work items (Epics, Features, User Stories, Tasks) 
+in specified area paths using the standard Azure DevOps Work Item API.
+
+⚠️ NOTE: This script does NOT delete test cases. Use cleanup_test_cases_testapi.py for test cases.
+
+PROVEN SUCCESS: Successfully deleted 1,141 work items from Grit and Data Visualization areas:
+- 13 Epics, 54 Features, 111 User Stories, 963 Tasks
 
 Usage:
     python cleanup_ado_work_items.py
 
 Features:
-- Queries work items by area path
+- Queries work items by area path using WIQL
 - Shows preview of items to be deleted
 - Supports dry-run mode for safety
-- Handles all work item types (including test cases)
+- Handles regular work item types (excludes test cases)
 - Provides detailed logging and progress tracking
 - Respects API rate limits
 """
