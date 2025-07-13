@@ -1,35 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  FormControl,
-  FormLabel,
-  Input,
-  InputGroup,
-  InputLeftElement,
-  InputRightElement,
-  Badge,
-  useToast,
-  SimpleGrid,
-  Icon,
-  Divider,
-  Link,
-  Code,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Tooltip,
-  Spinner,
-  useColorModeValue,
-} from '@chakra-ui/react';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Badge } from '../../components/ui/badge';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Separator } from '../../components/ui/separator';
 import { 
   FiSearch, 
   FiArrowLeft, 
@@ -64,8 +41,8 @@ interface SearchStats {
 
 const SearchDocumentationScreen: React.FC = () => {
   const navigate = useNavigate();
-  const toast = useToast();
-  const cardBg = useColorModeValue('white', 'gray.800');
+  // Toast functionality can be added with react-hot-toast or shadcn/ui toast
+  // const toast = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -171,12 +148,8 @@ const SearchDocumentationScreen: React.FC = () => {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      toast({
-        title: 'Search Required',
-        description: 'Please enter a search term',
-        status: 'warning',
-        duration: 3000,
-      });
+      // TODO: Add proper toast notification
+      console.warn('Search Required: Please enter a search term');
       return;
     }
 
@@ -224,19 +197,11 @@ const SearchDocumentationScreen: React.FC = () => {
     setIsSearching(false);
 
     if (searchResults.length === 0) {
-      toast({
-        title: 'No Results',
-        description: `No documents found matching "${searchQuery}"`,
-        status: 'info',
-        duration: 3000,
-      });
+      // TODO: Add proper toast notification
+      console.info(`No Results: No documents found matching "${searchQuery}"`);
     } else {
-      toast({
-        title: 'Search Complete',
-        description: `Found ${searchResults.length} document(s) matching "${searchQuery}"`,
-        status: 'success',
-        duration: 3000,
-      });
+      // TODO: Add proper toast notification
+      console.info(`Search Complete: Found ${searchResults.length} document(s) matching "${searchQuery}"`);
     }
   };
 
@@ -251,157 +216,153 @@ const SearchDocumentationScreen: React.FC = () => {
     : results.filter(doc => doc.category === selectedCategory);
 
   const openDocument = (path: string) => {
-    toast({
-      title: 'Opening Document',
-      description: `Would open ${path} in editor`,
-      status: 'info',
-      duration: 2000,
-    });
+    // TODO: Add proper toast notification
+    console.info(`Opening Document: Would open ${path} in editor`);
   };
 
   return (
-    <Box p={6}>
-      <VStack spacing={6} align="stretch">
+    <div className="p-6">
+      <div className="space-y-6">
         {/* Header */}
-        <HStack>
+        <div className="flex items-center">
           <Button
-            leftIcon={<Icon as={FiArrowLeft} />}
             variant="ghost"
             onClick={() => navigate('/dashboard')}
+            className="flex items-center"
           >
+            <FiArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
-        </HStack>
+        </div>
 
-        <Box>
-          <Heading size="lg" mb={2} color="blue.500">
-            <Icon as={FiBookOpen} mr={3} />
+        <div>
+          <h1 className="text-2xl font-bold text-primary mb-2 flex items-center">
+            <FiBookOpen className="mr-3 h-6 w-6" />
             Search Documentation
-          </Heading>
-          <Text color="gray.600">
+          </h1>
+          <p className="text-muted-foreground">
             Search through all project documentation and guides
-          </Text>
-        </Box>
+          </p>
+        </div>
 
         {/* Search Section */}
-        <Card bg={cardBg}>
+        <Card>
           <CardHeader>
-            <Heading size="md">Document Search</Heading>
+            <CardTitle>Document Search</CardTitle>
           </CardHeader>
-          <CardBody>
-            <VStack spacing={4} align="stretch">
-              <FormControl>
-                <FormLabel>Search Query</FormLabel>
-                <InputGroup size="lg">
-                  <InputLeftElement>
-                    <Icon as={FiSearch} color="gray.400" />
-                  </InputLeftElement>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="search-query">Search Query</Label>
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="search-query"
                     placeholder="Search documentation (e.g., 'agent', 'backlog', 'integration', 'API')"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="pl-10 text-lg h-12"
                   />
-                  <InputRightElement width="4.5rem">
-                    {isSearching && <Spinner size="sm" />}
-                  </InputRightElement>
-                </InputGroup>
-              </FormControl>
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              <HStack>
+              <div className="flex items-center space-x-4">
                 <Button
-                  leftIcon={<Icon as={FiSearch} />}
-                  colorScheme="blue"
                   onClick={handleSearch}
-                  isLoading={isSearching}
-                  loadingText="Searching..."
+                  disabled={isSearching}
+                  className="flex items-center"
                 >
-                  Search
+                  <FiSearch className="mr-2 h-4 w-4" />
+                  {isSearching ? 'Searching...' : 'Search'}
                 </Button>
                 <Button
-                  leftIcon={<Icon as={FiRefreshCw} />}
                   variant="outline"
                   onClick={handleClearSearch}
+                  className="flex items-center"
                 >
+                  <FiRefreshCw className="mr-2 h-4 w-4" />
                   Clear
                 </Button>
-              </HStack>
-            </VStack>
-          </CardBody>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Statistics and Filters */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          <Card bg={cardBg}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
             <CardHeader>
-              <Heading size="sm">Documentation Stats</Heading>
+              <CardTitle className="text-base">Documentation Stats</CardTitle>
             </CardHeader>
-            <CardBody>
-              <VStack spacing={3} align="stretch">
-                <HStack justify="space-between">
-                  <Text fontSize="sm">Total Documents:</Text>
-                  <Badge colorScheme="blue">{stats.totalDocuments}</Badge>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text fontSize="sm">Last Indexed:</Text>
-                  <Text fontSize="sm" color="gray.600">{stats.lastIndexed}</Text>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text fontSize="sm">Search Results:</Text>
-                  <Badge colorScheme="green">{filteredResults.length}</Badge>
-                </HStack>
-              </VStack>
-            </CardBody>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Documents:</span>
+                  <Badge variant="secondary">{stats.totalDocuments}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Last Indexed:</span>
+                  <span className="text-sm text-muted-foreground">{stats.lastIndexed}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Search Results:</span>
+                  <Badge>{filteredResults.length}</Badge>
+                </div>
+              </div>
+            </CardContent>
           </Card>
 
-          <Card bg={cardBg}>
+          <Card>
             <CardHeader>
-              <Heading size="sm">
-                <Icon as={FiFilter} mr={2} />
+              <CardTitle className="text-base flex items-center">
+                <FiFilter className="mr-2 h-4 w-4" />
                 Filter by Category
-              </Heading>
+              </CardTitle>
             </CardHeader>
-            <CardBody>
-              <VStack spacing={2} align="stretch">
+            <CardContent>
+              <div className="space-y-2">
                 <Button
                   size="sm"
-                  variant={selectedCategory === 'all' ? 'solid' : 'ghost'}
-                  colorScheme="blue"
+                  variant={selectedCategory === 'all' ? 'default' : 'ghost'}
                   onClick={() => setSelectedCategory('all')}
-                  justifyContent="space-between"
+                  className="w-full justify-between"
                 >
-                  <Text>All Categories</Text>
-                  <Badge>{stats.totalDocuments}</Badge>
+                  <span>All Categories</span>
+                  <Badge variant="outline">{stats.totalDocuments}</Badge>
                 </Button>
                 {Object.entries(stats.categories).map(([category, count]) => (
                   <Button
                     key={category}
                     size="sm"
-                    variant={selectedCategory === category ? 'solid' : 'ghost'}
-                    colorScheme="gray"
+                    variant={selectedCategory === category ? 'default' : 'ghost'}
                     onClick={() => setSelectedCategory(category)}
-                    justifyContent="space-between"
+                    className="w-full justify-between"
                   >
-                    <Text>{category}</Text>
-                    <Badge>{count}</Badge>
+                    <span>{category}</span>
+                    <Badge variant="outline">{count}</Badge>
                   </Button>
                 ))}
-              </VStack>
-            </CardBody>
+              </div>
+            </CardContent>
           </Card>
-        </SimpleGrid>
+        </div>
 
         {/* Quick Search Suggestions */}
-        <Alert status="info" borderRadius="md">
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Popular Searches:</AlertTitle>
+        <Alert className="rounded-md">
+          <div>
+            <h4 className="font-medium mb-2">Popular Searches:</h4>
             <AlertDescription>
-              <HStack spacing={2} mt={2} wrap="wrap">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {['agent', 'backlog sweeper', 'integration', 'QA', 'implementation', 'planning'].map((term) => (
                   <Button
                     key={term}
-                    size="xs"
+                    size="sm"
                     variant="outline"
                     onClick={() => {
                       setSearchQuery(term);
@@ -411,111 +372,109 @@ const SearchDocumentationScreen: React.FC = () => {
                     {term}
                   </Button>
                 ))}
-              </HStack>
+              </div>
             </AlertDescription>
-          </Box>
+          </div>
         </Alert>
 
         {/* Search Results */}
-        <Card bg={cardBg}>
+        <Card>
           <CardHeader>
-            <HStack justify="space-between">
-              <Heading size="md">
-                Documentation Results
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                <CardTitle>Documentation Results</CardTitle>
                 {filteredResults.length > 0 && (
-                  <Badge ml={2} colorScheme="blue">
+                  <Badge className="ml-2">
                     {filteredResults.length} found
                   </Badge>
                 )}
-              </Heading>
+              </div>
               {searchQuery && (
-                <Text fontSize="sm" color="gray.600">
-                  Results for: <Code>"{searchQuery}"</Code>
-                </Text>
+                <span className="text-sm text-muted-foreground">
+                  Results for: <code className="bg-muted px-1 py-0.5 rounded text-xs">"{searchQuery}"</code>
+                </span>
               )}
-            </HStack>
+            </div>
           </CardHeader>
-          <CardBody>
-            <VStack spacing={4} align="stretch">
+          <CardContent>
+            <div className="space-y-4">
               {filteredResults.length === 0 ? (
-                <Box textAlign="center" py={8}>
-                  <Icon as={FiFileText} size="48px" color="gray.400" mb={4} />
-                  <Text color="gray.600" mb={2}>
+                <div className="text-center py-8">
+                  <FiFileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">
                     {searchQuery ? 'No documents found matching your search' : 'Enter a search term to find documentation'}
-                  </Text>
-                  <Text fontSize="sm" color="gray.500">
+                  </p>
+                  <p className="text-sm text-muted-foreground">
                     Try searching for terms like "agent", "backlog", or "implementation"
-                  </Text>
-                </Box>
+                  </p>
+                </div>
               ) : (
                 filteredResults.map((doc, index) => (
-                  <Card key={index} variant="outline" _hover={{ bg: 'gray.50' }}>
-                    <CardBody>
-                      <VStack spacing={3} align="stretch">
-                        <HStack justify="space-between">
-                          <VStack align="start" spacing={1}>
-                            <HStack>
-                              <Heading size="sm" color="blue.600">
+                  <Card key={index} className="border hover:bg-muted/50">
+                    <CardContent className="pt-6">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <h3 className="text-sm font-medium text-primary">
                                 {doc.title}
-                              </Heading>
+                              </h3>
                               {doc.matchCount > 0 && (
-                                <Tooltip label={`Relevance Score: ${doc.relevanceScore}`}>
-                                  <Badge colorScheme="green">
-                                    {doc.matchCount} match{doc.matchCount !== 1 ? 'es' : ''}
-                                  </Badge>
-                                </Tooltip>
+                                <Badge variant="secondary" title={`Relevance Score: ${doc.relevanceScore}`}>
+                                  {doc.matchCount} match{doc.matchCount !== 1 ? 'es' : ''}
+                                </Badge>
                               )}
-                            </HStack>
-                            <Code fontSize="xs" colorScheme="gray">
+                            </div>
+                            <code className="text-xs bg-muted px-1 py-0.5 rounded">
                               {doc.fileName}
-                            </Code>
-                          </VStack>
-                          <VStack align="end" spacing={1}>
-                            <Badge colorScheme="purple">{doc.category}</Badge>
-                            <HStack spacing={2}>
-                              <Icon as={FiClock} size="12px" color="gray.400" />
-                              <Text fontSize="xs" color="gray.500">
+                            </code>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <Badge variant="outline">{doc.category}</Badge>
+                            <div className="flex items-center space-x-1">
+                              <FiClock className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
                                 {doc.lastModified}
-                              </Text>
-                            </HStack>
-                          </VStack>
-                        </HStack>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                         
-                        <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {doc.excerpt}
-                        </Text>
+                        </p>
                         
-                        <Divider />
+                        <Separator />
                         
-                        <HStack justify="space-between">
-                          <HStack spacing={4}>
-                            <HStack>
-                              <Icon as={FiTag} size="12px" color="gray.400" />
-                              <Text fontSize="xs" color="gray.500">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <FiTag className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
                                 {doc.size}
-                              </Text>
-                            </HStack>
-                          </HStack>
+                              </span>
+                            </div>
+                          </div>
                           <Button
                             size="sm"
-                            leftIcon={<Icon as={FiExternalLink} />}
                             onClick={() => openDocument(doc.path)}
-                            colorScheme="blue"
                             variant="outline"
+                            className="flex items-center"
                           >
+                            <FiExternalLink className="mr-2 h-3 w-3" />
                             Open
                           </Button>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
+                        </div>
+                      </div>
+                    </CardContent>
                   </Card>
                 ))
               )}
-            </VStack>
-          </CardBody>
+            </div>
+          </CardContent>
         </Card>
-      </VStack>
-    </Box>
+      </div>
+    </div>
   );
 };
 

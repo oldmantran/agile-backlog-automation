@@ -1,47 +1,15 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
-  Select,
-  useToast,
-  Badge,
-  Divider,
-  Progress,
-  Icon,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  SimpleGrid,
-  List,
-  ListItem,
-  ListIcon,
-  useColorModeValue,
-  Stepper,
-  Step,
-  StepIndicator,
-  StepStatus,
-  StepIcon,
-  StepNumber,
-  StepTitle,
-  StepDescription,
-  StepSeparator,
-  useSteps,
-  CheckboxGroup,
-  Checkbox,
-  Stack,
-} from '@chakra-ui/react';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Textarea } from '../../components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { Separator } from '../../components/ui/separator';
+import { Progress } from '../../components/ui/progress';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Checkbox } from '../../components/ui/checkbox';
 import { 
   FiPlus, 
   FiArrowLeft, 
@@ -79,12 +47,9 @@ const steps = [
 
 const NewProjectScreen: React.FC = () => {
   const navigate = useNavigate();
-  const toast = useToast();
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const { activeStep, setActiveStep } = useSteps({
-    index: 0,
-    count: steps.length,
-  });
+  // TODO: Add proper toast notification
+  // const toast = useToast();
+  const [activeStep, setActiveStep] = useState(0);
 
   const [isCreating, setIsCreating] = useState(false);
   const [config, setConfig] = useState<ProjectConfig>({
@@ -144,20 +109,12 @@ const NewProjectScreen: React.FC = () => {
 
     try {
       await simulateProjectCreation();
-      toast({
-        title: 'Project Created Successfully',
-        description: `${config.name} has been set up with all selected features`,
-        status: 'success',
-        duration: 5000,
-      });
+      // TODO: Add proper toast notification
+      console.log(`Project Created Successfully: ${config.name} has been set up with all selected features`);
       navigate('/dashboard');
     } catch (error) {
-      toast({
-        title: 'Project Creation Failed',
-        description: 'An error occurred while creating the project',
-        status: 'error',
-        duration: 5000,
-      });
+      // TODO: Add proper toast notification
+      console.error('Project Creation Failed: An error occurred while creating the project', error);
     } finally {
       setIsCreating(false);
     }
@@ -196,353 +153,405 @@ const NewProjectScreen: React.FC = () => {
   };
 
   return (
-    <Box p={6}>
-      <VStack spacing={6} align="stretch">
+    <div className="p-6">
+      <div className="space-y-6">
         {/* Header */}
-        <HStack>
+        <div className="flex items-center">
           <Button
-            leftIcon={<Icon as={FiArrowLeft} />}
             variant="ghost"
             onClick={() => navigate('/dashboard')}
+            className="flex items-center"
           >
+            <FiArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
-        </HStack>
+        </div>
 
-        <Box>
-          <Heading size="lg" mb={2} color="blue.500">
-            <Icon as={FiPlus} mr={3} />
+        <div>
+          <h1 className="text-2xl font-bold text-primary mb-2 flex items-center">
+            <FiPlus className="mr-3 h-6 w-6" />
             Create New Project
-          </Heading>
-          <Text color="gray.600">
+          </h1>
+          <p className="text-muted-foreground">
             Set up a new agile project with AI-powered automation
-          </Text>
-        </Box>
+          </p>
+        </div>
 
         {/* Progress Stepper */}
-        <Card bg={cardBg}>
-          <CardBody>
-            <Stepper index={activeStep}>
+        <Card>
+          <CardContent className="pt-6">
+            {/* Custom Stepper Implementation */}
+            <div className="flex items-center justify-between mb-8">
               {steps.map((step, index) => (
-                <Step key={index}>
-                  <StepIndicator>
-                    <StepStatus
-                      complete={<StepIcon />}
-                      incomplete={<StepNumber />}
-                      active={<StepNumber />}
-                    />
-                  </StepIndicator>
-
-                  <Box flexShrink="0">
-                    <StepTitle>{step.title}</StepTitle>
-                    <StepDescription>{step.description}</StepDescription>
-                  </Box>
-
-                  <StepSeparator />
-                </Step>
+                <div key={index} className="flex items-center">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                    index < activeStep 
+                      ? 'bg-primary text-primary-foreground' 
+                      : index === activeStep 
+                        ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' 
+                        : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {index < activeStep ? (
+                      <FiCheckCircle className="h-4 w-4" />
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div className={`w-16 h-px ml-4 ${
+                      index < activeStep ? 'bg-primary' : 'bg-muted'
+                    }`} />
+                  )}
+                </div>
               ))}
-            </Stepper>
-          </CardBody>
+            </div>
+            
+            {/* Step Content */}
+            <div className="space-y-4">
+              <div className="text-center">
+                <h3 className="text-lg font-medium">{steps[activeStep].title}</h3>
+                <p className="text-sm text-muted-foreground">{steps[activeStep].description}</p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Step Content */}
-        <Card bg={cardBg} minH="400px">
-          <CardBody>
+        <Card className="min-h-[400px]">
+          <CardContent className="pt-6">
             {activeStep === 0 && (
-              <VStack spacing={6} align="stretch">
-                <Heading size="md">Project Details</Heading>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <FormControl isRequired>
-                    <FormLabel>Project Name</FormLabel>
+              <div className="space-y-6">
+                <h2 className="text-lg font-medium">Project Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="project-name">Project Name *</Label>
                     <Input
+                      id="project-name"
                       placeholder="e.g., Customer Portal Enhancement"
                       value={config.name}
                       onChange={(e) => setConfig(prev => ({ ...prev, name: e.target.value }))}
                     />
-                  </FormControl>
+                  </div>
 
-                  <FormControl isRequired>
-                    <FormLabel>Project Type</FormLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="project-type">Project Type *</Label>
                     <Select
                       value={config.projectType}
-                      onChange={(e) => setConfig(prev => ({ ...prev, projectType: e.target.value }))}
+                      onValueChange={(value) => setConfig(prev => ({ ...prev, projectType: value }))}
                     >
-                      {projectTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
+                      <SelectTrigger id="project-type">
+                        <SelectValue placeholder="Select project type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projectTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
-                  </FormControl>
-                </SimpleGrid>
+                  </div>
+                </div>
 
-                <FormControl isRequired>
-                  <FormLabel>Project Description</FormLabel>
+                <div className="space-y-2">
+                  <Label htmlFor="project-description">Project Description *</Label>
                   <Textarea
+                    id="project-description"
                     placeholder="Describe the goals and scope of your project..."
                     value={config.description}
                     onChange={(e) => setConfig(prev => ({ ...prev, description: e.target.value }))}
                     rows={4}
                   />
-                </FormControl>
+                </div>
 
                 {config.projectType && (
-                  <Alert status="info" borderRadius="md">
-                    <AlertIcon />
-                    <Box>
-                      <AlertTitle>{projectTypes.find(t => t.value === config.projectType)?.label}</AlertTitle>
-                      <AlertDescription>
-                        {projectTypes.find(t => t.value === config.projectType)?.description}
-                      </AlertDescription>
-                    </Box>
+                  <Alert className="rounded-md">
+                    <AlertDescription>
+                      <div>
+                        <h4 className="font-medium mb-1">
+                          {projectTypes.find(t => t.value === config.projectType)?.label}
+                        </h4>
+                        <p className="text-sm">
+                          {projectTypes.find(t => t.value === config.projectType)?.description}
+                        </p>
+                      </div>
+                    </AlertDescription>
                   </Alert>
                 )}
-              </VStack>
+              </div>
             )}
 
             {activeStep === 1 && (
-              <VStack spacing={6} align="stretch">
-                <Heading size="md">Azure DevOps Configuration</Heading>
-                <Alert status="warning" borderRadius="md">
-                  <AlertIcon />
-                  <Box>
-                    <AlertTitle>Azure DevOps Integration</AlertTitle>
-                    <AlertDescription>
-                      Ensure you have proper permissions to create work items in the target project.
-                    </AlertDescription>
-                  </Box>
+              <div className="space-y-6">
+                <h2 className="text-lg font-medium">Azure DevOps Configuration</h2>
+                <Alert variant="destructive" className="rounded-md">
+                  <AlertDescription>
+                    <div>
+                      <h4 className="font-medium mb-1">Azure DevOps Integration</h4>
+                      <p className="text-sm">
+                        Ensure you have proper permissions to create work items in the target project.
+                      </p>
+                    </div>
+                  </AlertDescription>
                 </Alert>
 
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <FormControl isRequired>
-                    <FormLabel>Organization</FormLabel>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="organization">Organization *</Label>
                     <Input
+                      id="organization"
                       placeholder="e.g., mycompany"
                       value={config.organization}
                       onChange={(e) => setConfig(prev => ({ ...prev, organization: e.target.value }))}
                     />
-                  </FormControl>
+                  </div>
 
-                  <FormControl isRequired>
-                    <FormLabel>Team Project</FormLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="team-project">Team Project *</Label>
                     <Input
+                      id="team-project"
                       placeholder="e.g., MyTeamProject"
                       value={config.teamProject}
                       onChange={(e) => setConfig(prev => ({ ...prev, teamProject: e.target.value }))}
                     />
-                  </FormControl>
+                  </div>
 
-                  <FormControl>
-                    <FormLabel>Area Path</FormLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="area-path">Area Path</Label>
                     <Input
+                      id="area-path"
                       placeholder="e.g., MyTeamProject\\MyFeature"
                       value={config.areaPath}
                       onChange={(e) => setConfig(prev => ({ ...prev, areaPath: e.target.value }))}
                     />
-                  </FormControl>
+                  </div>
 
-                  <FormControl>
-                    <FormLabel>Iteration Path</FormLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="iteration-path">Iteration Path</Label>
                     <Input
+                      id="iteration-path"
                       placeholder="e.g., MyTeamProject\\Sprint 1"
                       value={config.iterationPath}
                       onChange={(e) => setConfig(prev => ({ ...prev, iterationPath: e.target.value }))}
                     />
-                  </FormControl>
-                </SimpleGrid>
-              </VStack>
+                  </div>
+                </div>
+              </div>
             )}
 
             {activeStep === 2 && (
-              <VStack spacing={6} align="stretch">
-                <Heading size="md">Features & AI Agents</Heading>
+              <div className="space-y-6">
+                <h2 className="text-lg font-medium">Features & AI Agents</h2>
                 
-                <Box>
-                  <Text fontWeight="medium" mb={3}>Select Automation Features:</Text>
-                  <CheckboxGroup
-                    value={config.features}
-                    onChange={(values) => setConfig(prev => ({ ...prev, features: values as string[] }))}
-                  >
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                      {availableFeatures.map((feature) => (
-                        <Checkbox key={feature.value} value={feature.value}>
-                          <VStack align="start" spacing={0}>
-                            <Text fontWeight="medium">{feature.label}</Text>
-                            <Text fontSize="sm" color="gray.600">{feature.description}</Text>
-                          </VStack>
-                        </Checkbox>
-                      ))}
-                    </SimpleGrid>
-                  </CheckboxGroup>
-                </Box>
+                <div>
+                  <h3 className="font-medium mb-3">Select Automation Features:</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {availableFeatures.map((feature) => (
+                      <div key={feature.value} className="flex items-start space-x-2">
+                        <Checkbox
+                          id={`feature-${feature.value}`}
+                          checked={config.features.includes(feature.value)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setConfig(prev => ({ ...prev, features: [...prev.features, feature.value] }));
+                            } else {
+                              setConfig(prev => ({ ...prev, features: prev.features.filter(f => f !== feature.value) }));
+                            }
+                          }}
+                        />
+                        <div className="space-y-0.5">
+                          <Label htmlFor={`feature-${feature.value}`} className="font-medium">
+                            {feature.label}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">{feature.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                <Divider />
+                <Separator />
 
-                <Box>
-                  <Text fontWeight="medium" mb={3}>Select AI Agents:</Text>
-                  <CheckboxGroup
-                    value={config.agents}
-                    onChange={(values) => setConfig(prev => ({ ...prev, agents: values as string[] }))}
-                  >
-                    <VStack spacing={3} align="stretch">
-                      {availableAgents.map((agent) => (
-                        <Checkbox key={agent.value} value={agent.value}>
-                          <HStack>
-                            <Icon as={agent.icon} color="blue.500" />
-                            <VStack align="start" spacing={0}>
-                              <Text fontWeight="medium">{agent.label}</Text>
-                              <Text fontSize="sm" color="gray.600">{agent.description}</Text>
-                            </VStack>
-                          </HStack>
-                        </Checkbox>
-                      ))}
-                    </VStack>
-                  </CheckboxGroup>
-                </Box>
-              </VStack>
+                <div>
+                  <h3 className="font-medium mb-3">Select AI Agents:</h3>
+                  <div className="space-y-3">
+                    {availableAgents.map((agent) => (
+                      <div key={agent.value} className="flex items-start space-x-2">
+                        <Checkbox
+                          id={`agent-${agent.value}`}
+                          checked={config.agents.includes(agent.value)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setConfig(prev => ({ ...prev, agents: [...prev.agents, agent.value] }));
+                            } else {
+                              setConfig(prev => ({ ...prev, agents: prev.agents.filter(a => a !== agent.value) }));
+                            }
+                          }}
+                        />
+                        <div className="flex items-start space-x-2">
+                          <agent.icon className="h-5 w-5 text-primary mt-0.5" />
+                          <div className="space-y-0.5">
+                            <Label htmlFor={`agent-${agent.value}`} className="font-medium">
+                              {agent.label}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">{agent.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
 
             {activeStep === 3 && (
-              <VStack spacing={6} align="stretch">
-                <Heading size="md">Review & Create Project</Heading>
+              <div className="space-y-6">
+                <h2 className="text-lg font-medium">Review & Create Project</h2>
                 
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <Card variant="outline">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border">
                     <CardHeader>
-                      <Heading size="sm">Project Information</Heading>
+                      <CardTitle className="text-base">Project Information</CardTitle>
                     </CardHeader>
-                    <CardBody>
-                      <VStack spacing={3} align="stretch">
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium">Name:</Text>
-                          <Text fontSize="sm">{config.name}</Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium">Type:</Text>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Name:</span>
+                          <span className="text-sm">{config.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Type:</span>
                           <Badge>{projectTypes.find(t => t.value === config.projectType)?.label}</Badge>
-                        </HStack>
-                        <Box>
-                          <Text fontSize="sm" fontWeight="medium" mb={1}>Description:</Text>
-                          <Text fontSize="sm" color="gray.600">{config.description}</Text>
-                        </Box>
-                      </VStack>
-                    </CardBody>
+                        </div>
+                        <div>
+                          <span className="text-sm font-medium mb-1 block">Description:</span>
+                          <p className="text-sm text-muted-foreground">{config.description}</p>
+                        </div>
+                      </div>
+                    </CardContent>
                   </Card>
 
-                  <Card variant="outline">
+                  <Card className="border">
                     <CardHeader>
-                      <Heading size="sm">Azure DevOps</Heading>
+                      <CardTitle className="text-base">Azure DevOps</CardTitle>
                     </CardHeader>
-                    <CardBody>
-                      <VStack spacing={3} align="stretch">
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium">Organization:</Text>
-                          <Text fontSize="sm">{config.organization}</Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium">Project:</Text>
-                          <Text fontSize="sm">{config.teamProject}</Text>
-                        </HStack>
-                        <HStack justify="space-between">
-                          <Text fontSize="sm" fontWeight="medium">Area Path:</Text>
-                          <Text fontSize="sm">{config.areaPath || 'Root'}</Text>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Organization:</span>
+                          <span className="text-sm">{config.organization}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Project:</span>
+                          <span className="text-sm">{config.teamProject}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Area Path:</span>
+                          <span className="text-sm">{config.areaPath || 'Root'}</span>
+                        </div>
+                      </div>
+                    </CardContent>
                   </Card>
 
-                  <Card variant="outline">
+                  <Card className="border">
                     <CardHeader>
-                      <Heading size="sm">Selected Features</Heading>
+                      <CardTitle className="text-base">Selected Features</CardTitle>
                     </CardHeader>
-                    <CardBody>
-                      <Stack spacing={2}>
+                    <CardContent>
+                      <div className="space-y-2">
                         {config.features.map((featureValue) => {
                           const feature = availableFeatures.find(f => f.value === featureValue);
                           return (
-                            <HStack key={featureValue}>
-                              <Icon as={FiCheckCircle} color="green.500" size="12px" />
-                              <Text fontSize="sm">{feature?.label}</Text>
-                            </HStack>
+                            <div key={featureValue} className="flex items-center space-x-2">
+                              <FiCheckCircle className="h-3 w-3 text-green-500" />
+                              <span className="text-sm">{feature?.label}</span>
+                            </div>
                           );
                         })}
-                      </Stack>
-                    </CardBody>
+                      </div>
+                    </CardContent>
                   </Card>
 
-                  <Card variant="outline">
+                  <Card className="border">
                     <CardHeader>
-                      <Heading size="sm">AI Agents</Heading>
+                      <CardTitle className="text-base">AI Agents</CardTitle>
                     </CardHeader>
-                    <CardBody>
-                      <Stack spacing={2}>
+                    <CardContent>
+                      <div className="space-y-2">
                         {config.agents.map((agentValue) => {
                           const agent = availableAgents.find(a => a.value === agentValue);
                           return (
-                            <HStack key={agentValue}>
-                              <Icon as={agent?.icon || FiUsers} color="blue.500" size="12px" />
-                              <Text fontSize="sm">{agent?.label}</Text>
-                            </HStack>
+                            <div key={agentValue} className="flex items-center space-x-2">
+                              {agent?.icon && <agent.icon className="h-3 w-3 text-primary" />}
+                              <span className="text-sm">{agent?.label}</span>
+                            </div>
                           );
                         })}
-                      </Stack>
-                    </CardBody>
+                      </div>
+                    </CardContent>
                   </Card>
-                </SimpleGrid>
+                </div>
 
                 {isCreating && (
-                  <Card bg="blue.50" borderColor="blue.200">
-                    <CardBody>
-                      <VStack spacing={4} align="stretch">
-                        <Text fontWeight="bold" color="blue.700">Creating Project...</Text>
-                        <Progress value={progress} colorScheme="blue" size="lg" borderRadius="md" />
-                        <Text fontSize="sm" color="blue.600">{currentOperation}</Text>
-                      </VStack>
-                    </CardBody>
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <h4 className="font-bold text-blue-700">Creating Project...</h4>
+                        <Progress value={progress} className="h-3" />
+                        <p className="text-sm text-blue-600">{currentOperation}</p>
+                      </div>
+                    </CardContent>
                   </Card>
                 )}
-              </VStack>
+              </div>
             )}
-          </CardBody>
+          </CardContent>
         </Card>
 
         {/* Navigation Buttons */}
-        <HStack justify="space-between">
+        <div className="flex justify-between">
           <Button
             onClick={handlePrevious}
-            isDisabled={activeStep === 0 || isCreating}
+            disabled={activeStep === 0 || isCreating}
             variant="outline"
           >
             Previous
           </Button>
 
-          <HStack>
+          <div className="flex items-center space-x-4">
             {activeStep < steps.length - 1 ? (
               <Button
-                rightIcon={<Icon as={FiArrowRight} />}
-                colorScheme="blue"
                 onClick={handleNext}
-                isDisabled={!isStepValid() || isCreating}
+                disabled={!isStepValid() || isCreating}
+                className="flex items-center"
               >
                 Next
+                <FiArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
               <Button
-                leftIcon={<Icon as={FiPlus} />}
-                colorScheme="green"
                 onClick={handleCreateProject}
-                isLoading={isCreating}
-                loadingText="Creating Project..."
-                isDisabled={!isStepValid()}
+                disabled={!isStepValid() || isCreating}
                 size="lg"
+                className="flex items-center"
               >
-                Create Project
+                {isCreating ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                    Creating Project...
+                  </>
+                ) : (
+                  <>
+                    <FiPlus className="mr-2 h-4 w-4" />
+                    Create Project
+                  </>
+                )}
               </Button>
             )}
-          </HStack>
-        </HStack>
-      </VStack>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
