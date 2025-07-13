@@ -1105,3 +1105,151 @@ class AzureDevOpsIntegrator:
         
         # Extract work item IDs
         return [int(item['id']) for item in result.get('workItems', [])]
+    
+    def get_work_item_revisions(self, work_item_id: int) -> List[Dict[str, Any]]:
+        """Get all revisions/activity history for a work item to analyze changes."""
+        url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/wit/workItems/{work_item_id}/revisions"
+        
+        try:
+            response = requests.get(url, auth=self.auth, params={'api-version': '7.0'})
+            response.raise_for_status()
+            
+            data = response.json()
+            revisions = data.get('value', [])
+            
+            # Extract relevant change information
+            revision_details = []
+            for revision in revisions:
+                revision_info = {
+                    'rev': revision.get('rev'),
+                    'id': revision.get('id'),
+                    'changedDate': revision.get('fields', {}).get('System.ChangedDate'),
+                    'changedBy': revision.get('fields', {}).get('System.ChangedBy', {}).get('displayName'),
+                    'changedByEmail': revision.get('fields', {}).get('System.ChangedBy', {}).get('uniqueName'),
+                    'areaPath': revision.get('fields', {}).get('System.AreaPath'),
+                    'iterationPath': revision.get('fields', {}).get('System.IterationPath'),
+                    'state': revision.get('fields', {}).get('System.State'),
+                    'title': revision.get('fields', {}).get('System.Title'),
+                    'workItemType': revision.get('fields', {}).get('System.WorkItemType')
+                }
+                revision_details.append(revision_info)
+            
+            return revision_details
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to get work item revisions for {work_item_id}: {e}")
+            return []
+
+    def get_work_item_updates(self, work_item_id: int) -> List[Dict[str, Any]]:
+        """Get work item updates showing field changes with old/new values."""
+        url = f"https://dev.azure.com/{self.organization}/{self.project}/_apis/wit/workItems/{work_item_id}/updates"
+        
+        try:
+            response = requests.get(url, auth=self.auth, params={'api-version': '7.0'})
+            response.raise_for_status()
+            
+            data = response.json()
+            updates = data.get('value', [])
+            
+            # Extract change details
+            update_details = []
+            for update in updates:
+                fields = update.get('fields', {})
+                update_info = {
+                    'id': update.get('id'),
+                    'rev': update.get('rev'),
+                    'revisedDate': update.get('revisedDate'),
+                    'revisedBy': update.get('revisedBy', {}).get('displayName'),
+                    'revisedByEmail': update.get('revisedBy', {}).get('uniqueName'),
+                    'fields_changed': {}
+                }
+                
+                # Capture specific field changes we care about
+                for field_name, field_data in fields.items():
+                    if field_name in ['System.AreaPath', 'System.IterationPath', 'System.State', 'System.Title']:
+                        update_info['fields_changed'][field_name] = {
+                            'oldValue': field_data.get('oldValue'),
+                            'newValue': field_data.get('newValue')
+                        }
+                
+                if update_info['fields_changed']:  # Only include updates with relevant field changes
+                    update_details.append(update_info)
+            
+            return update_details
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to get work item updates for {work_item_id}: {e}")
+            return []
+
+    def analyze_work_item_change_attribution(self, work_item_id: int, field_name: str = 'System.AreaPath') -> Dict[str, Any]:
+        """
+        Analyze who made changes to a specific field to determine if it was human or automated.
+        Returns attribution analysis for the most recent change to the specified field.
+        """
+        updates = self.get_work_item_updates(work_item_id)
+        
+        # Find the most recent change to the specified field
+        for update in reversed(updates):  # Start from most recent
+            if field_name in update.get('fields_changed', {}):
+                change_info = update['fields_changed'][field_name]
+                changed_by = update.get('revisedByEmail', '').lower()
+                
+                # Determine if this was an automated change
+                automated_indicators = [
+                    'system', 'service', 'automation', 'bot', 'agent',
+                    'noreply', 'devops', 'pipeline', 'build'
+                ]
+                
+                is_automated = any(indicator in changed_by for indicator in automated_indicators)
+                
+                return {
+                    'work_item_id': work_item_id,
+                    'field_name': field_name,
+                    'old_value': change_info.get('oldValue'),
+                    'new_value': change_info.get('newValue'),
+                    'changed_by': update.get('revisedBy'),
+                    'changed_by_email': update.get('revisedByEmail'),
+                    'change_date': update.get('revisedDate'),
+                    'is_automated': is_automated,
+                    'attribution': 'agent_automated' if is_automated else 'human_override'
+                }
+        
+        return {
+            'work_item_id': work_item_id,
+            'field_name': field_name,
+            'attribution': 'unknown',
+            'message': f'No changes found for field {field_name}'
+        }
+    
+    def get_work_items_by_type(self, work_item_type: str) -> List[Dict[str, Any]]:
+        """Retrieve all work items of a specific type."""
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Use WIQL (Work Item Query Language) to query work items by type
+        wiql_query = {
+            "query": f"SELECT [System.Id], [System.Title], [System.AreaPath], [System.WorkItemType] FROM workitems WHERE [System.TeamProject] = '{self.project}' AND [System.WorkItemType] = '{work_item_type}'"
+        }
+        
+        url = f"{self.project_base_url}/wit/wiql?api-version=7.0"
+        
+        try:
+            # Execute the query
+            response = requests.post(url, json=wiql_query, auth=self.auth, headers=self.headers)
+            response.raise_for_status()
+            query_result = response.json()
+            
+            work_items = []
+            if 'workItems' in query_result:
+                # Extract work item IDs
+                work_item_ids = [item['id'] for item in query_result['workItems']]
+                
+                if work_item_ids:
+                    # Get detailed work item information
+                    work_items = self.get_work_item_details(work_item_ids)
+            
+            return work_items
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to retrieve work items of type {work_item_type}: {e}")
+            raise
