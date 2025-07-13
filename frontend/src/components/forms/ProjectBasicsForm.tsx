@@ -1,18 +1,10 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Textarea,
-  VStack,
-  HStack,
-  FormHelperText,
-  useColorModeValue,
-} from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Card, CardContent } from '../ui/card';
 import { domains } from '../../utils/constants/domains';
 
 interface ProjectBasicsFormProps {
@@ -25,7 +17,7 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
   onNext,
   initialData = {},
 }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: {
       name: initialData.name || '',
       description: initialData.description || '',
@@ -33,87 +25,88 @@ const ProjectBasicsForm: React.FC<ProjectBasicsFormProps> = ({
     }
   });
   
-  const bgColor = useColorModeValue('white', 'gray.700');
+  const watchedDomain = watch('domain');
   
   const onSubmit = (data: any) => {
     onNext(data);
   };
   
   return (
-    <Box
-      bg={bgColor}
-      p={6}
-      borderRadius="lg"
-      boxShadow="md"
-      width="full"
-    >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <VStack spacing={4} align="stretch">
-          <FormControl isRequired isInvalid={!!errors.name}>
-            <FormLabel>Project Name</FormLabel>
+    <Card className="w-full">
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Project Name *
+            </label>
             <Input 
+              id="name"
               {...register('name', { 
                 required: 'Project name is required',
                 minLength: { value: 3, message: 'Name must be at least 3 characters' } 
               })} 
               placeholder="Enter project name"
-              size="lg"
+              className={errors.name ? 'border-destructive' : ''}
             />
             {errors.name && (
-              <FormHelperText color="red.500">
+              <p className="text-sm text-destructive">
                 {errors.name.message as string}
-              </FormHelperText>
+              </p>
             )}
-          </FormControl>
+          </div>
           
-          <FormControl isRequired isInvalid={!!errors.description}>
-            <FormLabel>Description</FormLabel>
+          <div className="space-y-2">
+            <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Description *
+            </label>
             <Textarea 
+              id="description"
               {...register('description', { required: 'Description is required' })} 
               placeholder="Brief description of the project"
-              size="lg"
               rows={3}
+              className={errors.description ? 'border-destructive' : ''}
             />
             {errors.description && (
-              <FormHelperText color="red.500">
+              <p className="text-sm text-destructive">
                 {errors.description.message as string}
-              </FormHelperText>
+              </p>
             )}
-          </FormControl>
+          </div>
           
-          <FormControl isRequired isInvalid={!!errors.domain}>
-            <FormLabel>Domain</FormLabel>
-            <Select 
-              {...register('domain', { required: 'Domain is required' })}
-              placeholder="Select domain"
-              size="lg"
-            >
-              {domains.map(domain => (
-                <option key={domain.value} value={domain.value}>
-                  {domain.label}
-                </option>
-              ))}
+          <div className="space-y-2">
+            <label htmlFor="domain" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Domain *
+            </label>
+            <Select onValueChange={(value) => setValue('domain', value)} value={watchedDomain}>
+              <SelectTrigger className={errors.domain ? 'border-destructive' : ''}>
+                <SelectValue placeholder="Select domain" />
+              </SelectTrigger>
+              <SelectContent>
+                {domains.map(domain => (
+                  <SelectItem key={domain.value} value={domain.value}>
+                    {domain.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             {errors.domain && (
-              <FormHelperText color="red.500">
+              <p className="text-sm text-destructive">
                 {errors.domain.message as string}
-              </FormHelperText>
+              </p>
             )}
-          </FormControl>
+          </div>
           
-          <HStack mt={8} justify="flex-end">
+          <div className="flex justify-end mt-8">
             <Button 
-              colorScheme="brand" 
-              size="lg" 
               type="submit"
-              minW="150px"
+              className="min-w-[150px]"
             >
               Next
             </Button>
-          </HStack>
-        </VStack>
-      </form>
-    </Box>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

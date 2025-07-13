@@ -1,5 +1,4 @@
 import React from 'react';
-import { Box, Container } from '@chakra-ui/react';
 
 interface WizardLayoutProps {
   children: React.ReactNode;
@@ -7,18 +6,11 @@ interface WizardLayoutProps {
 
 const WizardLayout: React.FC<WizardLayoutProps> = ({ children }) => {
   return (
-    <Box 
-      minH="100vh" 
-      bgGradient="linear(to-r, blue.50, purple.50)" 
-      py={8}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-    >
-      <Container maxW="container.md">
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 py-8 flex items-center justify-center">
+      <div className="container mx-auto max-w-4xl px-4">
         {children}
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 };
 

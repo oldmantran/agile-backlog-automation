@@ -1,16 +1,5 @@
 import React from 'react';
 import {
-  Box,
-  Flex,
-  VStack,
-  HStack,
-  Button,
-  Text,
-  useColorModeValue,
-  Divider,
-  Icon,
-} from '@chakra-ui/react';
-import {
   FiHome,
   FiPlus,
   FiList,
@@ -19,6 +8,9 @@ import {
   FiLogOut,
 } from 'react-icons/fi';
 import { NavLink as RouterLink, useLocation } from 'react-router-dom';
+import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
+import { cn } from '../../lib/utils';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,61 +23,40 @@ interface NavItemProps {
   children: React.ReactNode;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, to, children }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon: Icon, to, children }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
-  const activeBg = useColorModeValue('brand.50', 'whiteAlpha.200');
-  const hoverBg = useColorModeValue('gray.100', 'whiteAlpha.100');
   
   return (
     <Button
-      as={RouterLink}
-      to={to}
+      asChild
       variant="ghost"
-      justifyContent="start"
-      w="full"
-      h="auto"
-      py={3}
-      pl={4}
-      leftIcon={<Icon as={icon} boxSize={5} />}
-      bg={isActive ? activeBg : 'transparent'}
-      color={isActive ? 'brand.600' : undefined}
-      borderLeftWidth={isActive ? 4 : 0}
-      borderLeftColor="brand.500"
-      _hover={{ bg: hoverBg }}
-      borderRadius={0}
+      className={cn(
+        "w-full justify-start h-auto py-3 pl-4 border-l-4 border-l-transparent rounded-none",
+        isActive && "bg-primary/10 border-l-primary text-primary font-semibold"
+      )}
     >
-      <Text fontWeight={isActive ? 'semibold' : 'normal'}>{children}</Text>
+      <RouterLink to={to}>
+        <Icon className="mr-3 h-5 w-5" />
+        {children}
+      </RouterLink>
     </Button>
   );
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  
   return (
-    <Box
-      position="fixed"
-      left={0}
-      h="full"
-      w={{ base: 'full', lg: '250px' }}
-      bg={bgColor}
-      borderRightWidth="1px"
-      borderRightColor={borderColor}
-      transform={{ base: isOpen ? 'translateX(0)' : 'translateX(-100%)', lg: 'translateX(0)' }}
-      transition="transform 0.3s ease"
-      zIndex={20}
-      overflowY="auto"
-      display={{ base: isOpen ? 'block' : 'none', lg: 'block' }}
+    <div
+      className={cn(
+        "fixed left-0 h-full w-full lg:w-[250px] bg-card border-r border-border z-20 overflow-y-auto",
+        "transform transition-transform duration-300 ease-in-out",
+        "lg:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full",
+        "block lg:block"
+      )}
     >
-      <Flex
-        h="full"
-        direction="column"
-        pt="70px" // Space for header
-        pb={6}
-      >
-        <VStack align="stretch" spacing={1} flex="1">
+      <div className="flex h-full flex-col pt-[70px] pb-6">
+        <div className="flex-1 space-y-1">
           <NavItem icon={FiHome} to="/dashboard">
             Dashboard
           </NavItem>
@@ -96,9 +67,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             My Projects
           </NavItem>
           
-          <Box pt={4} pb={2}>
-            <Divider />
-          </Box>
+          <div className="pt-4 pb-2">
+            <Separator />
+          </div>
           
           <NavItem icon={FiSettings} to="/settings">
             Settings
@@ -106,21 +77,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem icon={FiHelpCircle} to="/help">
             Help & Support
           </NavItem>
-        </VStack>
+        </div>
         
         <Button
           variant="ghost"
-          justifyContent="start"
-          w="full"
-          pl={4}
-          leftIcon={<Icon as={FiLogOut} boxSize={5} />}
-          _hover={{ bg: useColorModeValue('gray.100', 'whiteAlpha.100') }}
-          borderRadius={0}
+          className="w-full justify-start pl-4 rounded-none"
         >
+          <FiLogOut className="mr-3 h-5 w-5" />
           Sign Out
         </Button>
-      </Flex>
-    </Box>
+      </div>
+    </div>
   );
 };
 

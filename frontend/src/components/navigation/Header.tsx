@@ -1,94 +1,49 @@
 import React from 'react';
-import {
-  Box,
-  Container,
-  Flex,
-  HStack,
-  IconButton,
-  useColorMode,
-  useColorModeValue,
-  Image,
-  Text,
-} from '@chakra-ui/react';
-import { FiMenu, FiMoon, FiSun } from 'react-icons/fi';
+import { FiMenu } from 'react-icons/fi';
 import { Link as RouterLink } from 'react-router-dom';
+import { Button } from '../ui/button';
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
-  const { colorMode, toggleColorMode } = useColorMode();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  
   return (
-    <Box 
-      as="header" 
-      position="fixed" 
-      top={0} 
-      width="full" 
-      zIndex={10}
-      bg={bgColor}
-      boxShadow="sm"
-      borderBottomWidth="1px"
-      borderBottomColor={borderColor}
-    >
-      <Container maxW="container.xl" px={4}>
-        <Flex h={16} alignItems="center" justifyContent="space-between">
+    <header className="fixed top-0 w-full z-10 bg-background/95 backdrop-blur-sm shadow-sm border-b border-border">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
           {/* Left side: Menu button and Logo */}
-          <HStack spacing={4}>
+          <div className="flex items-center space-x-4">
             {onMenuClick && (
-              <IconButton
-                aria-label="Open menu"
+              <Button
                 variant="ghost"
-                icon={<FiMenu fontSize="1.25rem" />}
+                size="icon"
+                className="flex lg:hidden"
                 onClick={onMenuClick}
-                display={{ base: 'flex', lg: 'none' }}
-              />
+                aria-label="Open menu"
+              >
+                <FiMenu className="h-5 w-5" />
+              </Button>
             )}
             
-            <RouterLink to="/">
-              <HStack spacing={2}>
-                {/* Logo placeholder - replace with your actual logo */}
-                <Box 
-                  bg="brand.500" 
-                  color="white" 
-                  fontWeight="bold" 
-                  fontSize="lg"
-                  p={1}
-                  borderRadius="md"
-                  width="36px"
-                  height="36px"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  BA
-                </Box>
-                <Text 
-                  fontWeight="bold" 
-                  fontSize="lg" 
-                  display={{ base: 'none', md: 'flex' }}
-                >
-                  Backlog Automation
-                </Text>
-              </HStack>
+            <RouterLink to="/" className="flex items-center space-x-2">
+              {/* Logo */}
+              <div className="bg-primary text-primary-foreground font-bold text-lg p-1 rounded-md w-9 h-9 flex items-center justify-center border-glow glow-cyan">
+                BA
+              </div>
+              <span className="font-bold text-lg hidden md:flex text-primary">
+                Backlog Automation
+              </span>
             </RouterLink>
-          </HStack>
+          </div>
           
-          {/* Right side: Color mode toggle */}
-          <HStack spacing={4}>
-            <IconButton
-              aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-              variant="ghost"
-              icon={colorMode === 'light' ? <FiMoon /> : <FiSun />}
-              onClick={toggleColorMode}
-            />
-          </HStack>
-        </Flex>
-      </Container>
-    </Box>
+          {/* Right side: Additional controls can be added here */}
+          <div className="flex items-center space-x-4">
+            {/* Future: Add user menu, notifications, etc. */}
+          </div>
+        </div>
+      </div>
+    </header>
   );
 };
 

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Box, useDisclosure } from '@chakra-ui/react';
 import Header from '../navigation/Header';
 import Sidebar from '../navigation/Sidebar';
 
@@ -8,21 +7,17 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   return (
-    <Box minH="100vh">
-      <Header onMenuClick={onOpen} />
-      <Sidebar isOpen={isOpen} onClose={onClose} />
+    <div className="min-h-screen">
+      <Header onMenuClick={() => setSidebarOpen(true)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <Box
-        ml={{ base: 0, lg: '250px' }}
-        pt="70px"
-        transition="margin-left 0.3s ease"
-      >
+      <div className="ml-0 lg:ml-[250px] pt-[70px] transition-all duration-300 ease-in-out">
         {children}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 
