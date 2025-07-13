@@ -1035,3 +1035,106 @@ class BacklogSweeperAgent:
             return int(url.split('/')[-1])
         except (ValueError, IndexError):
             return None
+
+    def validate_pre_integration(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate the generated backlog before Azure DevOps integration.
+        
+        Args:
+            workflow_data: Complete workflow data with epics, features, user stories, etc.
+            
+        Returns:
+            Dict containing validation report with status, issues, and recommendations
+        """
+        try:
+            validation_report = {
+                'status': 'passed',
+                'timestamp': datetime.now().isoformat(),
+                'summary': {
+                    'total_issues': 0,
+                    'critical_issues': 0,
+                    'warnings': 0,
+                    'recommendations': 0
+                },
+                'issues': [],
+                'recommendations': []
+            }
+            
+            # Extract epics from workflow data
+            epics = workflow_data.get('epics', [])
+            if not epics:
+                validation_report['issues'].append({
+                    'type': 'critical',
+                    'category': 'structure',
+                    'message': 'No epics found in workflow data',
+                    'recommendation': 'Ensure Epic Strategist generated at least one epic'
+                })
+                validation_report['summary']['critical_issues'] += 1
+                validation_report['summary']['total_issues'] += 1
+                validation_report['status'] = 'failed'
+                return validation_report
+            
+            # Validate epics structure
+            epic_issues = self.validate_epics(epics)
+            validation_report['issues'].extend(epic_issues)
+            
+            # Validate epic-feature relationships
+            relationship_issues = self.validate_epic_feature_relationships(epics)
+            validation_report['issues'].extend(relationship_issues)
+            
+            # Validate feature-user story relationships
+            user_story_issues = self.validate_feature_user_story_relationships(epics)
+            validation_report['issues'].extend(user_story_issues)
+            
+            # Validate user story tasks
+            task_issues = self.validate_user_story_tasks(epics)
+            validation_report['issues'].extend(task_issues)
+            
+            # Validate test artifacts
+            test_issues = self.validate_test_artifacts(epics)
+            validation_report['issues'].extend(test_issues)
+            
+            # Count issues by severity
+            critical_count = len([i for i in validation_report['issues'] if i.get('type') == 'critical'])
+            warning_count = len([i for i in validation_report['issues'] if i.get('type') == 'warning'])
+            
+            validation_report['summary']['critical_issues'] = critical_count
+            validation_report['summary']['warnings'] = warning_count
+            validation_report['summary']['total_issues'] = len(validation_report['issues'])
+            
+            # Determine overall status
+            if critical_count > 0:
+                validation_report['status'] = 'failed'
+            elif warning_count > 10:  # Too many warnings
+                validation_report['status'] = 'warning'
+            else:
+                validation_report['status'] = 'passed'
+            
+            # Add general recommendations
+            if critical_count == 0 and warning_count < 5:
+                validation_report['recommendations'].append(
+                    'Backlog structure is well-formed and ready for Azure DevOps integration'
+                )
+            
+            validation_report['summary']['recommendations'] = len(validation_report['recommendations'])
+            
+            return validation_report
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'timestamp': datetime.now().isoformat(),
+                'summary': {
+                    'total_issues': 1,
+                    'critical_issues': 1,
+                    'warnings': 0,
+                    'recommendations': 0
+                },
+                'issues': [{
+                    'type': 'critical',
+                    'category': 'validation_error',
+                    'message': f'Pre-integration validation failed: {str(e)}',
+                    'recommendation': 'Check validation logic and workflow data structure'
+                }],
+                'recommendations': []
+            }

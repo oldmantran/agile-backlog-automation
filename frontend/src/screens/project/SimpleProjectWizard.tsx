@@ -1,34 +1,47 @@
 import React, { useState } from 'react';
 import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Card, CardContent } from '../../components/ui/card';
+import { Progress } from '../../components/ui/progress';
+import { Button } from '../../components/ui/button';
 import SimplifiedProjectForm from '../../components/forms/SimplifiedProjectForm';
 import { Project } from '../../types/project';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
+import { FiArrowLeft, FiCheckCircle, FiX } from 'react-icons/fi';
 
 const SimpleProjectWizard: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentOperation, setCurrentOperation] = useState('');
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (projectData: Partial<Project>) => {
     try {
       setIsSubmitting(true);
+      setProgress(0);
+      setCurrentOperation('Setting up your project and generating backlog...');
       
-      // TODO: Add proper toast notification
-      console.log('Creating Project: Setting up your project and generating backlog...');
-
-      // Create the project
+      // Step 1: Create the project
+      setProgress(20);
+      setCurrentOperation('Creating project structure...');
       const projectResponse = await projectApi.createProject(projectData);
       
       if (projectResponse.projectId) {
         const { projectId } = projectResponse;
         
-        // TODO: Add proper toast notification
-        console.log('Project Created: Starting backlog generation...');
-
-        // Start backlog generation
+        // Step 2: Start backlog generation
+        setProgress(40);
+        setCurrentOperation('Starting AI backlog generation...');
         const backlogResponse = await backlogApi.generateBacklog(projectId);
         
         if (backlogResponse.jobId) {
-          // Store job info in localStorage for dashboard
+          setJobId(backlogResponse.jobId);
+          setProgress(60);
+          setCurrentOperation('Epic Strategist initializing - transforming vision into business epics...');
+          
+          // Store job info in localStorage
           const jobInfo = {
             jobId: backlogResponse.jobId,
             projectId: projectId,
@@ -41,11 +54,8 @@ const SimpleProjectWizard: React.FC = () => {
           existingJobs.push(jobInfo);
           localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
           
-          // TODO: Add proper toast notification
-          console.log(`Backlog Generation Started: Job ID: ${backlogResponse.jobId}. Check the dashboard for progress.`);
-          
-          // Redirect to dashboard with job ID
-          window.location.href = `/dashboard?job=${backlogResponse.jobId}`;
+          // Step 3: Start polling for progress
+          await pollJobProgress(backlogResponse.jobId);
         } else {
           throw new Error('Failed to start backlog generation');
         }
@@ -54,12 +64,68 @@ const SimpleProjectWizard: React.FC = () => {
       }
     } catch (error) {
       console.error('Project creation error:', error);
-      
-      // TODO: Add proper toast notification
-      console.error('Error:', error instanceof Error ? error.message : 'Failed to create project');
+      setError(error instanceof Error ? error.message : 'Failed to create project');
+      setCurrentOperation(`Error: ${error instanceof Error ? error.message : 'Failed to create project'}`);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const pollJobProgress = async (jobId: string) => {
+    const maxAttempts = 60; // 5 minutes max
+    let attempts = 0;
+    
+    const poll = async () => {
+      try {
+        const status = await backlogApi.getGenerationStatus(jobId);
+        
+        setProgress(Math.max(60, status.progress || 0));
+        setCurrentOperation(status.currentAction || `${status.currentAgent} working...`);
+        
+        if (status.status === 'completed') {
+          setProgress(100);
+          setCurrentOperation('Backlog generation completed successfully!');
+          setIsCompleted(true);
+          return;
+        } else if (status.status === 'failed') {
+          setError(status.error || 'Unknown error');
+          setCurrentOperation(`Generation failed: ${status.error || 'Unknown error'}`);
+          return;
+        }
+        
+        attempts++;
+        if (attempts < maxAttempts && (status.status === 'queued' || status.status === 'running')) {
+          setTimeout(poll, 5000); // Poll every 5 seconds
+        }
+      } catch (error) {
+        console.error('Error polling job status:', error);
+        setError('Error checking generation status');
+        setCurrentOperation('Error checking generation status');
+      }
+    };
+    
+    poll();
+  };
+
+  const handleBackToHome = () => {
+    window.location.href = '/dashboard';
+  };
+
+  const handleCancel = () => {
+    setIsSubmitting(false);
+    setProgress(0);
+    setCurrentOperation('');
+    setJobId(null);
+    setError(null);
+  };
+
+  const handleRestart = () => {
+    setIsSubmitting(false);
+    setProgress(0);
+    setCurrentOperation('');
+    setJobId(null);
+    setError(null);
+    setIsCompleted(false);
   };
 
   return (
@@ -74,22 +140,136 @@ const SimpleProjectWizard: React.FC = () => {
           </p>
         </div>
 
-        <Alert className="rounded-md">
-          <AlertDescription>
-            <div>
-              <h4 className="font-bold mb-1">Simplified Setup</h4>
-              <p>
-                Only 4 fields required: Vision Statement, Azure DevOps Project, Area Path, and Iteration Path. 
-                Everything else is automatically extracted by AI or set to sensible defaults.
-              </p>
-            </div>
-          </AlertDescription>
-        </Alert>
+        {!isSubmitting && !isCompleted && !error && (
+          <>
+            <Alert className="rounded-md">
+              <AlertDescription>
+                <div>
+                  <h4 className="font-bold mb-1">Simplified Setup</h4>
+                  <p>
+                    Only 4 fields required: Vision Statement, Azure DevOps Project, Area Path, and Iteration Path. 
+                    Everything else is automatically extracted by AI or set to sensible defaults.
+                  </p>
+                </div>
+              </AlertDescription>
+            </Alert>
 
-        <SimplifiedProjectForm 
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
+            <SimplifiedProjectForm 
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+            />
+          </>
+        )}
+
+        {isSubmitting && (
+          <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-blue-700 dark:text-blue-300 mb-2">
+                    Generating Your Backlog
+                  </h2>
+                  <p className="text-blue-600 dark:text-blue-400">
+                    AI agents are working on your project...
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <Progress value={progress} className="h-4" />
+                  <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
+                    {currentOperation}
+                  </p>
+                  {jobId && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Job ID: {jobId}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={handleCancel}
+                    variant="outline"
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    <FiX className="mr-2 h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {error && (
+          <Card className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
+            <CardContent className="pt-6">
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <FiX className="h-16 w-16 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-red-700 dark:text-red-300 mb-2">
+                    Generation Failed
+                  </h2>
+                  <p className="text-red-600 dark:text-red-400">
+                    {error}
+                  </p>
+                </div>
+                
+                <div className="flex justify-center space-x-3">
+                  <Button 
+                    onClick={handleRestart}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Try Again
+                  </Button>
+                  <Button 
+                    onClick={handleBackToHome}
+                    variant="outline"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isCompleted && (
+          <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+            <CardContent className="pt-6">
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <FiCheckCircle className="h-16 w-16 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-green-700 dark:text-green-300 mb-2">
+                    Backlog Generation Complete!
+                  </h2>
+                  <p className="text-green-600 dark:text-green-400">
+                    Your comprehensive backlog has been successfully generated and is ready for use.
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <Button 
+                    onClick={handleBackToHome}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <FiArrowLeft className="mr-2 h-4 w-4" />
+                    View Dashboard
+                  </Button>
+                  {jobId && (
+                    <p className="text-xs text-muted-foreground">
+                      Job ID: {jobId} - Check your Azure DevOps project for the generated work items
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

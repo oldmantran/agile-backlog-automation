@@ -419,7 +419,9 @@ class WorkflowSupervisor:
         errors = []
         for epic in epics:
             for feature in epic.get('features', []):
-                if 'test_plan_structure' not in feature or not feature['test_plan_structure']:
+                # Check for either test_plan or test_plan_structure
+                test_plan = feature.get('test_plan') or feature.get('test_plan_structure')
+                if not test_plan:
                     self.logger.error(f"QA Tester Agent did not generate a test plan for feature '{feature.get('title', 'Untitled')}'. Skipping invalid test plan.")
                     errors.append(f"Feature '{feature.get('title', 'Untitled')}' missing test plan structure.")
                 for user_story in feature.get('user_stories', []):
@@ -1836,7 +1838,8 @@ class WorkflowSupervisor:
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(f"QA Test Organization Completeness Report\n")
                 f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Project: {self.project_context.get_context('project_context', {}).get('project_name', 'Unknown')}\n")
+                context = self.project_context.get_context() if hasattr(self, 'project_context') else {}
+                f.write(f"Project: {context.get('project_name', 'Unknown')}\n")
                 f.write("=" * 80 + "\n\n")
                 f.write(completeness_report)
             

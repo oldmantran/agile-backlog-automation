@@ -12,6 +12,7 @@ import TronExecutableScreen from './screens/TronExecutableScreen';
 // Legacy screens (kept for compatibility)
 import TestScreen from './screens/TestScreen';
 import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
+import MainDashboard from './screens/dashboard/MainDashboard';
 
 // Layout imports
 import MainLayout from './components/layout/MainLayout';
@@ -41,6 +42,13 @@ function App() {
           <Route path="/new-project" element={
             <MainLayout>
               <SimpleProjectWizard />
+            </MainLayout>
+          } />
+          
+          {/* Dashboard */}
+          <Route path="/dashboard" element={
+            <MainLayout>
+              <MainDashboard />
             </MainLayout>
           } />
           
