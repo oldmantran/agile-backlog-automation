@@ -36,7 +36,7 @@ agents:
     # Azure DevOps Test Management integration
     ado_integration:
       enabled: true
-      area_path: "Ride Sharing"  # Override default area path detection
+      area_path: "Grit"  # Override default area path detection
       auto_create_test_plans: true
       auto_create_test_suites: true
       auto_link_test_cases: true

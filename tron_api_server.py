@@ -10,20 +10,30 @@ import json
 import subprocess
 import threading
 import time
+import asyncio
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 import uvicorn
-from pydantic import BaseModel
 
 # Add the project root to Python path
 project_root = Path(__file__).parent
 sys.path.append(str(project_root))
+
+# Import supervisor and config
+from supervisor.supervisor import WorkflowSupervisor
+from config.config_loader import Config
+from utils.logger import setup_logger
+
+# Initialize logging
+logger = setup_logger(__name__)
 
 app = FastAPI(title="Backlog Automation API", version="2.0.0")
 
@@ -68,18 +78,54 @@ class SweeperConfig(BaseModel):
     iterationPath: str = ""
     includeAcceptanceCriteria: bool = True
     includeTaskDecomposition: bool = True
-    includeQualityCheck: bool = True
-    enhanceRequirements: bool = True
-    maxItemsPerRun: int = 50
 
+# Project and backlog generation models
+class ProjectBasics(BaseModel):
+    name: str = Field(..., description="Project name")
+    description: str = Field(..., description="Project description")
+    domain: str = Field(..., description="Business domain")
+
+class ProductVision(BaseModel):
+    visionStatement: str = Field(..., description="Product vision statement")
+    businessObjectives: List[str] = Field(default=[], description="Business objectives (extracted from vision if empty)")
+    successMetrics: List[str] = Field(default=[], description="Success metrics (extracted from vision if empty)")
+    targetAudience: str = Field(default="end users", description="Target audience (extracted from vision if default)")
+
+class AzureConfig(BaseModel):
+    organizationUrl: str = Field(default="", description="Azure DevOps organization URL")
+    personalAccessToken: str = Field(default="", description="Personal access token (loaded from .env if empty)")
+    project: str = Field(default="", description="Azure DevOps project name")
+    areaPath: str = Field(default="", description="Area path")
+    iterationPath: str = Field(default="", description="Iteration path")
+
+class CreateProjectRequest(BaseModel):
+    basics: ProjectBasics
+    vision: ProductVision
+    azureConfig: AzureConfig = Field(default_factory=AzureConfig, description="Azure DevOps configuration (optional for content-only mode)")
+
+class GenerationStatus(BaseModel):
+    jobId: str
+    projectId: str
+    status: str = Field(..., description="queued|running|completed|failed")
+    progress: int = Field(..., ge=0, le=100)
+    currentAgent: str = ""
+    currentAction: str = ""
+    startTime: datetime
+    endTime: Optional[datetime] = None
+    error: Optional[str] = None
+
+# Global storage for active jobs
+active_jobs: Dict[str, Dict[str, Any]] = {}
+
+# WorkItem model for mock data
 @dataclass
 class WorkItem:
     id: int
     title: str
-    type: str
+    work_item_type: str
     state: str
-    areaPath: str
-    assignedTo: Optional[str] = None
+    area_path: str
+    assigned_to: Optional[str] = None
 
 # Utility functions
 def load_env_config() -> Dict[str, str]:
@@ -199,6 +245,143 @@ async def save_config(config: ConfigData):
     else:
         raise HTTPException(status_code=500, detail="Failed to save configuration")
 
+# Project and Backlog Generation Endpoints
+
+@app.post("/api/projects")
+async def create_project(project_data: CreateProjectRequest, background_tasks: BackgroundTasks):
+    """Create a new project and return project ID."""
+    try:
+        project_id = f"proj_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Store project data
+        project_info = {
+            "id": project_id,
+            "data": project_data.dict(),
+            "status": "created",
+            "createdAt": datetime.now().isoformat(),
+            "updatedAt": datetime.now().isoformat()
+        }
+        
+        # Save project to file for persistence
+        output_dir = Path("output")
+        output_dir.mkdir(exist_ok=True)
+        
+        project_file = output_dir / f"project_{project_id}.json"
+        with open(project_file, 'w') as f:
+            json.dump(project_info, f, indent=2)
+        
+        logger.info(f"Created project {project_id}")
+        
+        return {
+            "success": True,
+            "data": {
+                "projectId": project_id,
+                "status": "created"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating project: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create project: {str(e)}")
+
+@app.post("/api/backlog/generate/{project_id}")
+async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
+    """Start backlog generation for a project."""
+    try:
+        # Check if project exists
+        project_file = Path("output") / f"project_{project_id}.json"
+        if not project_file.exists():
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Load project data
+        with open(project_file, 'r') as f:
+            project_info = json.load(f)
+        
+        job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Initialize job status
+        job_status = {
+            "jobId": job_id,
+            "projectId": project_id,
+            "status": "queued",
+            "progress": 0,
+            "currentAgent": "",
+            "currentAction": "Initializing workflow",
+            "startTime": datetime.now(),
+            "endTime": None,
+            "error": None
+        }
+        
+        active_jobs[job_id] = job_status
+        
+        # Start background task for backlog generation
+        background_tasks.add_task(run_backlog_generation, job_id, project_info)
+        
+        logger.info(f"Started backlog generation job {job_id} for project {project_id}")
+        
+        return {
+            "success": True,
+            "data": {"jobId": job_id}
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting backlog generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start generation: {str(e)}")
+
+@app.get("/api/backlog/status/{job_id}")
+async def get_generation_status(job_id: str):
+    """Get the status of a backlog generation job."""
+    if job_id not in active_jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    job_status = active_jobs[job_id]
+    
+    return {
+        "success": True,
+        "data": GenerationStatus(**job_status).dict()
+    }
+
+@app.get("/api/jobs")
+async def get_all_jobs():
+    """Get all active and recent jobs."""
+    return {
+        "success": True,
+        "data": [
+            {
+                **job_data,
+                "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
+                "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
+            }
+            for job_data in active_jobs.values()
+        ]
+    }
+
+@app.get("/api/projects/{project_id}")
+async def get_project(project_id: str):
+    """Get project details by ID."""
+    project_file = Path("output") / f"project_{project_id}.json"
+    if not project_file.exists():
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    with open(project_file, 'r') as f:
+        project_info = json.load(f)
+    
+    return {"success": True, "data": project_info}
+
+@app.get("/api/projects/{project_id}/backlog")
+async def get_project_backlog(project_id: str):
+    """Get generated backlog for a project."""
+    backlog_file = Path("output") / f"backlog_{project_id}.json"
+    if not backlog_file.exists():
+        raise HTTPException(status_code=404, detail="Backlog not found")
+    
+    with open(backlog_file, 'r') as f:
+        backlog_data = json.load(f)
+    
+    return {"success": True, "data": backlog_data}
+
 @app.post("/api/validate-azure")
 async def validate_azure_connection(data: dict):
     """Validate Azure DevOps connection"""
@@ -309,8 +492,6 @@ async def get_sweeper_config():
         "iterationPath": "",
         "includeAcceptanceCriteria": True,
         "includeTaskDecomposition": True,
-        "includeQualityCheck": True,
-        "enhanceRequirements": True,
         "maxItemsPerRun": 50
     }
 
@@ -393,6 +574,122 @@ async def run_sweeper_background(config: SweeperConfig):
     except Exception as e:
         sweeper_status["isRunning"] = False
         sweeper_status["errors"].append(f"Sweeper failed: {str(e)}")
+
+# Background task functions
+async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
+    """Background task to run the actual backlog generation."""
+    try:
+        logger.info(f"Starting backlog generation for job {job_id}")
+        
+        # Update job status
+        active_jobs[job_id]["status"] = "running"
+        active_jobs[job_id]["currentAction"] = "Initializing workflow"
+        active_jobs[job_id]["progress"] = 10
+        
+        # Extract project data
+        project_data = project_info["data"]
+        project_name = project_data["basics"]["name"]
+        project_domain = project_data["basics"]["domain"]
+        
+        # Extract area/iteration path and Azure DevOps credentials from Azure config
+        azure_config = project_data.get("azureConfig", {})
+        organization_url = azure_config.get("organizationUrl")
+        project_name_ado = azure_config.get("project")
+        area_path = azure_config.get("areaPath")
+        iteration_path = azure_config.get("iterationPath")
+        
+        # Only get PAT from environment if explicitly provided in config
+        personal_access_token = azure_config.get("personalAccessToken")
+        if not personal_access_token:
+            # Only use environment PAT if other config is provided
+            if organization_url or project_name_ado or area_path or iteration_path:
+                personal_access_token = os.getenv("AZURE_DEVOPS_PAT")
+        
+        # Check if Azure integration is enabled (if any meaningful Azure config is provided)
+        azure_integration_enabled = bool(
+            (organization_url and organization_url.strip()) or
+            (personal_access_token and personal_access_token.strip()) or
+            (project_name_ado and project_name_ado.strip()) or
+            (area_path and area_path.strip()) or
+            (iteration_path and iteration_path.strip())
+        )
+        
+        if azure_integration_enabled and not all([organization_url, personal_access_token, project_name_ado, area_path, iteration_path]):
+            error_msg = "organizationUrl, personalAccessToken (or AZURE_DEVOPS_PAT in .env), project, areaPath, and iterationPath must all be provided in the Azure DevOps configuration."
+            logger.error(error_msg)
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = error_msg
+            active_jobs[job_id]["endTime"] = datetime.now()
+            return
+
+        # Initialize the workflow supervisor with Azure DevOps config (if enabled) and job_id
+        if azure_integration_enabled:
+            supervisor = WorkflowSupervisor(
+                organization_url=organization_url,
+                project=project_name_ado,
+                personal_access_token=personal_access_token,
+                area_path=area_path,
+                iteration_path=iteration_path,
+                job_id=job_id
+            )
+        else:
+            # Content-only mode (no Azure integration)
+            supervisor = WorkflowSupervisor(job_id=job_id)
+        
+        # Define progress callback function
+        def progress_callback(progress: int, action: str):
+            """Update job progress in real-time."""
+            if job_id in active_jobs:
+                active_jobs[job_id]["progress"] = progress
+                active_jobs[job_id]["currentAction"] = action
+                logger.info(f"Job {job_id} progress: {progress}% - {action}")
+        
+        # Run the workflow with project context
+        context = {
+            "project_type": project_domain,
+            "project_name": project_name,
+            "project_description": project_data["basics"]["description"],
+            "vision_statement": project_data["vision"]["visionStatement"],
+            "business_objectives": project_data["vision"]["businessObjectives"],
+            "target_audience": project_data["vision"]["targetAudience"],
+            "azure_config": project_data["azureConfig"]
+        }
+        
+        # Set up the project context for the supervisor
+        supervisor.configure_project_context(project_domain, context)
+        
+        # Create the product vision string
+        product_vision = f"""
+        Project: {project_name}
+        Domain: {project_domain}
+        Description: {project_data["basics"]["description"]}
+        Vision Statement: {project_data["vision"]["visionStatement"]}
+        Business Objectives: {', '.join(project_data["vision"]["businessObjectives"])}
+        Target Audience: {project_data["vision"]["targetAudience"]}
+        Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
+        """
+        
+        # Run the supervisor workflow with progress callback
+        results = await asyncio.to_thread(
+            supervisor.execute_workflow, 
+            product_vision, 
+            save_outputs=True, 
+            integrate_azure=azure_integration_enabled,
+            progress_callback=progress_callback
+        )
+        
+        # Update final progress
+        active_jobs[job_id]["status"] = "completed"
+        active_jobs[job_id]["progress"] = 100
+        active_jobs[job_id]["endTime"] = datetime.now()
+        
+        logger.info(f"Completed backlog generation for job {job_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in backlog generation job {job_id}: {str(e)}")
+        active_jobs[job_id]["status"] = "failed"
+        active_jobs[job_id]["error"] = str(e)
+        active_jobs[job_id]["endTime"] = datetime.now()
 
 @app.post("/api/start-application")
 async def start_application():
