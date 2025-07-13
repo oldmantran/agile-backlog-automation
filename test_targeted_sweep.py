@@ -198,7 +198,7 @@ class TargetedSweeperAgent(BacklogSweeperAgent):
                     'title': title,
                     'description': f'{wi_type} has no parent work item.',
                     'severity': 'high',
-                    'suggested_agent': self.agent_assignments.get('orphaned_work_item', 'decomposition_agent')
+                    'suggested_agent': self.agent_assignments.get('orphaned_work_item', 'feature_decomposer_agent')
                 })
         
         return discrepancies

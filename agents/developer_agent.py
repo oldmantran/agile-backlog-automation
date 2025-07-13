@@ -7,10 +7,26 @@ from integrators.azure_devops_api import AzureDevOpsIntegrator
 class DeveloperAgent(Agent):
     def __init__(self, config: Config):
         super().__init__("developer_agent", config)
+        
         # Initialize quality validator
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
-        # Initialize Azure DevOps integration
-        self.azure_api = AzureDevOpsIntegrator(config)
+        
+        # Initialize Azure DevOps integration (optional)
+        try:
+            if hasattr(config, 'env') and config.env.get("AZURE_DEVOPS_ORG"):
+                paths = config.get_project_paths()
+                self.azure_api = AzureDevOpsIntegrator(
+                    organization_url=config.env.get("AZURE_DEVOPS_ORG", ""),
+                    project=config.env.get("AZURE_DEVOPS_PROJECT", ""),
+                    personal_access_token=config.env.get("AZURE_DEVOPS_PAT", ""),
+                    area_path=paths.get("area", ""),
+                    iteration_path=paths.get("iteration", "")
+                )
+            else:
+                self.azure_api = None
+        except Exception as e:
+            print(f"Azure DevOps integration disabled: {e}")
+            self.azure_api = None
 
     def generate_tasks(self, feature: dict, context: dict = None) -> list[dict]:
         """Generate technical tasks from a feature description with contextual information."""

@@ -23,7 +23,7 @@ from agents.epic_strategist import EpicStrategist
 from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
-from agents.qa_tester_agent import QATesterAgent
+from agents.qa_lead_agent import QALeadAgent
 from agents.qa_lead_agent import QALeadAgent
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
 from utils.project_context import ProjectContext
@@ -329,11 +329,10 @@ class WorkflowSupervisor:
             agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
             agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
             agents['developer_agent'] = DeveloperAgent(self.config)
-            agents['qa_tester_agent'] = QATesterAgent(self.config)  # Keep for backward compatibility
+            agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
             agents['qa_lead_agent'] = QALeadAgent(self.config)
             
-            # Keep backward compatibility with old decomposition_agent reference
-            agents['decomposition_agent'] = agents['feature_decomposer_agent']
+
             
             self.logger.info(f"Initialized {len(agents)} agents successfully")
             return agents
@@ -455,14 +454,12 @@ class WorkflowSupervisor:
             return sweeper.validate_epic_feature_relationships(epics)
         elif stage == 'user_story_decomposer_agent':
             return sweeper.validate_feature_user_story_relationships(epics)
-        elif stage == 'decomposition_agent':
-            # Backward compatibility - validate both epic-feature and feature-user story relationships
-            return sweeper.validate_epic_feature_relationships(epics) + sweeper.validate_feature_user_story_relationships(epics)
+
         elif stage == 'user_story_decomposer':
             return sweeper.validate_feature_user_story_relationships(epics)
         elif stage == 'developer_agent':
             return sweeper.validate_user_story_tasks(epics)
-        elif stage == 'qa_tester_agent':
+        elif stage == 'qa_lead_agent':
             return sweeper.validate_test_artifacts(epics)
         else:
             return []
@@ -572,21 +569,13 @@ class WorkflowSupervisor:
                         elif stage == 'user_story_decomposer_agent':
                             self._execute_user_story_decomposition()
                             self._validate_user_stories()
-                        elif stage == 'decomposition_agent':
-                            # Backward compatibility - run both feature and user story decomposition
-                            self._execute_feature_decomposition()
-                            self._validate_features()
-                            self._execute_user_story_decomposition()
-                            self._validate_user_stories()
+
                         elif stage == 'user_story_decomposer':
                             self._execute_user_story_decomposition()
                             self._validate_user_stories()
                         elif stage == 'developer_agent':
                             self._execute_task_generation(update_progress)
                             self._validate_tasks_and_estimates()
-                        elif stage == 'qa_tester_agent':
-                            self._execute_qa_generation(update_progress)
-                            self._validate_test_cases_and_plans()
                         elif stage == 'qa_lead_agent':
                             self._execute_qa_generation(update_progress)
                             self._validate_test_cases_and_plans()
@@ -1188,7 +1177,7 @@ class WorkflowSupervisor:
             'feature_decomposer_agent',
             'user_story_decomposer_agent',
             'developer_agent',
-            'qa_tester_agent'
+            'qa_lead_agent'
         ])
     
     def get_execution_status(self) -> Dict[str, Any]:
@@ -1291,12 +1280,10 @@ class WorkflowSupervisor:
             self._handle_feature_decomposer_discrepancies(work_item_groups)
         elif agent_name == 'user_story_decomposer_agent' and hasattr(self, 'agents'):
             self._handle_user_story_decomposer_discrepancies(work_item_groups)
-        elif agent_name == 'decomposition_agent' and hasattr(self, 'agents'):
-            # Backward compatibility - handle as feature decomposer
-            self._handle_feature_decomposer_discrepancies(work_item_groups)
+
         elif agent_name == 'developer_agent' and hasattr(self, 'agents'):
             self._handle_developer_discrepancies(work_item_groups)
-        elif agent_name == 'qa_tester_agent' and hasattr(self, 'agents'):
+        elif agent_name == 'qa_lead_agent' and hasattr(self, 'agents'):
             self._handle_qa_tester_discrepancies(work_item_groups)
         else:
             self.logger.warning(f"Unknown agent '{agent_name}' or agent not available. Logging discrepancies for manual review.")
@@ -1466,9 +1453,11 @@ class WorkflowSupervisor:
             'story_points': story_fields.get('Microsoft.VSTS.Scheduling.StoryPoints', 0)
         }
         
-        # Generate test cases using QA tester agent
+        # Generate test cases using QA Lead Agent
         context = self.project_context.get_context()
-        test_cases = self.agents['qa_tester_agent'].generate_user_story_test_cases(user_story_data, context)
+        # Use QA Lead Agent's test case generation via sub-agents
+        test_case_agent = self.agents['qa_lead_agent'].test_case_agent
+        test_cases = test_case_agent.create_test_cases(None, user_story_data, context, user_story_data.get('area_path', ''))
         
         if test_cases:
             self.logger.info(f"Generated {len(test_cases)} test cases for User Story {user_story_id}")
@@ -1541,9 +1530,10 @@ class WorkflowSupervisor:
             'priority': story_fields.get('Microsoft.VSTS.Common.Priority', 2)
         }
         
-        # Enhance acceptance criteria using QA tester agent
+        # Enhance acceptance criteria using QA Lead Agent
         context = self.project_context.get_context()
-        enhanced_criteria = self.agents['qa_tester_agent'].enhance_acceptance_criteria(user_story_data, context)
+        # For now, skip acceptance criteria enhancement as this is typically done during initial story creation
+        enhanced_criteria = None
         
         if enhanced_criteria:
             try:
@@ -1607,9 +1597,9 @@ class WorkflowSupervisor:
         self.logger.info(f"Creating complete user story with children: {user_story_data.get('title', 'Unknown')}")
         
         try:
-            # Step 1: Validate and enhance user story using quality validator
-            if hasattr(self.agents['decomposition_agent'], 'quality_validator'):
-                validator = self.agents['decomposition_agent'].quality_validator
+            # Use quality validator from user_story_decomposer_agent
+            if hasattr(self.agents['user_story_decomposer_agent'], 'quality_validator'):
+                validator = self.agents['user_story_decomposer_agent'].quality_validator
                 enhanced_story = validator.generate_quality_compliant_user_story(
                     title=user_story_data.get('title', ''),
                     user_type=user_story_data.get('user_type', 'user'),
@@ -1670,9 +1660,9 @@ class WorkflowSupervisor:
                         tasks_created.append(task_item)
                         self.logger.info(f"Mock created Task {task_item['id']}: {task.get('title', '')}")
             
-            # Step 4: Generate and create child test cases using QA Tester Agent
+            # Step 4: Generate and create child test cases using QA Lead Agent
             test_cases_created = []
-            if hasattr(self.agents, 'qa_tester_agent') and 'qa_tester_agent' in self.agents:
+            if hasattr(self.agents, 'qa_lead_agent') and 'qa_lead_agent' in self.agents:
                 context = self.project_context.get_context() if hasattr(self, 'project_context') else {}
                 
                 # Prepare user story data for test case generation
@@ -1685,7 +1675,9 @@ class WorkflowSupervisor:
                     'story_points': user_story_data.get('story_points', 3)
                 }
                 
-                test_cases = self.agents['qa_tester_agent'].generate_user_story_test_cases(story_for_testing, context)
+                test_case_agent = self.agents['qa_lead_agent'].test_case_agent
+                test_result = test_case_agent.create_test_cases(None, story_for_testing, context, story_for_testing.get('area_path', ''))
+                test_cases = test_result.get('test_cases', []) if test_result.get('success') else []
                 
                 for test_case in test_cases:
                     if hasattr(self, 'azure_integrator'):
@@ -1791,19 +1783,14 @@ class WorkflowSupervisor:
         elif stage == 'user_story_decomposer_agent':
             self._execute_user_story_decomposition()
             self._validate_user_stories()
-        elif stage == 'decomposition_agent':
-            # Backward compatibility - run both feature and user story decomposition
-            self._execute_feature_decomposition()
-            self._validate_features()
-            self._execute_user_story_decomposition()
-            self._validate_user_stories()
+
         elif stage == 'user_story_decomposer':
             self._execute_user_story_decomposition()
             self._validate_user_stories()
         elif stage == 'developer_agent':
             self._execute_task_generation()
             self._validate_tasks_and_estimates()
-        elif stage == 'qa_tester_agent':
+        elif stage == 'qa_lead_agent':
             self._execute_qa_generation()
             self._validate_test_cases_and_plans()
         else:

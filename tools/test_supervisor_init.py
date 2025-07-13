@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-"""
-Test supervisor initialization with new agents
+"""        expected_agents = [
+            'epic_strategist', 
+            'feature_decomposer_agent', 
+            'user_story_decomposer_agent',
+            'developer_agent', 
+            'qa_lead_agent'
+        ]supervisor initialization with new agents
 """
 
 import sys
@@ -30,7 +35,7 @@ def test_supervisor_initialization():
             'feature_decomposer_agent', 
             'user_story_decomposer_agent',
             'developer_agent',
-            'qa_tester_agent'
+            'qa_lead_agent'
         ]
         
         for agent_name in expected_agents:
@@ -38,8 +43,10 @@ def test_supervisor_initialization():
             print(f"✅ {agent_name} present")
         
         # Check backward compatibility
-        if 'decomposition_agent' in supervisor.agents:
-            print("✅ decomposition_agent backward compatibility present")
+        if 'feature_decomposer_agent' in supervisor.agents:
+            print("✅ feature_decomposer_agent present")
+        if 'user_story_decomposer_agent' in supervisor.agents:
+            print("✅ user_story_decomposer_agent present")
         
         # Test default workflow stages
         default_stages = supervisor._get_default_stages()

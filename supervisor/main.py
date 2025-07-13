@@ -35,7 +35,7 @@ Examples:
   python supervisor/main.py --project-type fintech --project-name "CryptoWallet"
 
   # Run specific stages only
-  python supervisor/main.py --stages epic_strategist decomposition_agent
+  python supervisor/main.py --stages epic_strategist feature_decomposer_agent user_story_decomposer_agent
 
   # Resume from existing output
   python supervisor/main.py --resume-from output/intermediate_epic_strategist_20250630_120000.json
@@ -64,7 +64,7 @@ Examples:
     parser.add_argument(
         '--stages',
         nargs='+',
-        choices=['epic_strategist', 'decomposition_agent', 'developer_agent', 'qa_tester_agent'],
+        choices=['epic_strategist', 'feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_lead_agent'],
         help='Specific stages to execute (default: all)'
     )
     parser.add_argument(
@@ -246,14 +246,14 @@ def execute_resume_mode(supervisor: WorkflowSupervisor, args, logger):
         # Determine which stage to resume from based on filename
         filename = os.path.basename(args.resume_from)
         if 'epic_strategist' in filename:
-            resume_stage = 'decomposition_agent'
-        elif 'decomposition_agent' in filename:
+            resume_stage = 'feature_decomposer_agent'
+        elif 'feature_decomposer_agent' in filename:
             resume_stage = 'developer_agent'
         elif 'developer_agent' in filename:
-            resume_stage = 'qa_tester_agent'
+            resume_stage = 'qa_lead_agent'
         else:
             # If can't determine, ask user
-            all_stages = ['epic_strategist', 'decomposition_agent', 'developer_agent', 'qa_tester_agent']
+            all_stages = ['epic_strategist', 'feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_lead_agent']
             print("Available stages:")
             for i, stage in enumerate(all_stages, 1):
                 print(f"{i}. {stage}")

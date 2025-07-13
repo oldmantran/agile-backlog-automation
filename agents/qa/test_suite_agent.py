@@ -25,7 +25,17 @@ class TestSuiteAgent(Agent):
         
         # Initialize Azure DevOps integration
         try:
-            self.azure_api = AzureDevOpsIntegrator(config)
+            if hasattr(config, 'env') and config.env.get("AZURE_DEVOPS_ORG"):
+                paths = config.get_project_paths()
+                self.azure_api = AzureDevOpsIntegrator(
+                    organization_url=config.env.get("AZURE_DEVOPS_ORG", ""),
+                    project=config.env.get("AZURE_DEVOPS_PROJECT", ""),
+                    personal_access_token=config.env.get("AZURE_DEVOPS_PAT", ""),
+                    area_path=paths.get("area", ""),
+                    iteration_path=paths.get("iteration", "")
+                )
+            else:
+                self.azure_api = None
         except Exception as e:
             self.logger.warning(f"Azure DevOps integration not available: {e}")
             self.azure_api = None

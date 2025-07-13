@@ -334,7 +334,7 @@ if __name__ == "__main__":
         results = {
             'timestamp': datetime.now().isoformat(),
             'test_results': {
-                'decomposition_agent': decomp_pass,
+                'feature_decomposer_agent': decomp_pass,
                 'developer_agent': dev_pass,
                 'qa_tester_agent': qa_pass,
                 'integration_test': integration_pass
