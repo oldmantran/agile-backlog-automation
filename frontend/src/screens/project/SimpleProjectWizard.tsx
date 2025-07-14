@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Card, CardContent } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
@@ -10,6 +11,7 @@ import { backlogApi } from '../../services/api/backlogApi';
 import { FiArrowLeft, FiCheckCircle, FiX } from 'react-icons/fi';
 
 const SimpleProjectWizard: React.FC = () => {
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentOperation, setCurrentOperation] = useState('');
@@ -19,14 +21,19 @@ const SimpleProjectWizard: React.FC = () => {
 
   const handleSubmit = async (projectData: Partial<Project>) => {
     try {
+      console.log('Starting project submission with data:', projectData);
       setIsSubmitting(true);
       setProgress(0);
+      setError(null);
       setCurrentOperation('Setting up your project and generating backlog...');
       
       // Step 1: Create the project
       setProgress(20);
       setCurrentOperation('Creating project structure...');
+      console.log('Calling createProject API...');
+      
       const projectResponse = await projectApi.createProject(projectData);
+      console.log('Project creation response:', projectResponse);
       
       if (projectResponse.projectId) {
         const { projectId } = projectResponse;
@@ -34,7 +41,10 @@ const SimpleProjectWizard: React.FC = () => {
         // Step 2: Start backlog generation
         setProgress(40);
         setCurrentOperation('Starting AI backlog generation...');
+        console.log('Calling generateBacklog API for project:', projectId);
+        
         const backlogResponse = await backlogApi.generateBacklog(projectId);
+        console.log('Backlog generation response:', backlogResponse);
         
         if (backlogResponse.jobId) {
           setJobId(backlogResponse.jobId);
@@ -54,53 +64,70 @@ const SimpleProjectWizard: React.FC = () => {
           existingJobs.push(jobInfo);
           localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
           
+          console.log('Starting progress polling...');
           // Step 3: Start polling for progress updates
           pollJobProgress(backlogResponse.jobId);
         } else {
-          throw new Error('Failed to start backlog generation');
+          console.error('No jobId in backlog response:', backlogResponse);
+          throw new Error('Failed to start backlog generation - no job ID returned');
         }
       } else {
-        throw new Error('Failed to create project');
+        console.error('No projectId in project response:', projectResponse);
+        throw new Error('Failed to create project - no project ID returned');
       }
     } catch (error) {
       console.error('Project creation error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create project');
-      setCurrentOperation(`Error: ${error instanceof Error ? error.message : 'Failed to create project'}`);
-    } finally {
-      setIsSubmitting(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create project';
+      setError(errorMessage);
+      setCurrentOperation(`Error: ${errorMessage}`);
+      setIsSubmitting(false); // Only set to false on error
     }
   };
 
   const pollJobProgress = async (jobId: string) => {
+    console.log(`Starting progress polling for job: ${jobId}`);
     const maxAttempts = 60; // 5 minutes max
     let attempts = 0;
     
     const poll = async () => {
       try {
+        console.log(`Polling attempt ${attempts + 1}/${maxAttempts} for job ${jobId}`);
         const status = await backlogApi.getGenerationStatus(jobId);
+        console.log('Status response:', status);
         
         setProgress(Math.max(60, status.progress || 0));
         setCurrentOperation(status.currentAction || `${status.currentAgent} working...`);
         
         if (status.status === 'completed') {
+          console.log('Job completed successfully');
           setProgress(100);
           setCurrentOperation('Backlog generation completed successfully!');
           setIsCompleted(true);
+          setIsSubmitting(false); // Job completed
           return;
         } else if (status.status === 'failed') {
+          console.log('Job failed:', status.error);
           setError(status.error || 'Unknown error');
           setCurrentOperation(`Generation failed: ${status.error || 'Unknown error'}`);
+          setIsSubmitting(false); // Job failed
           return;
         }
         
         attempts++;
         if (attempts < maxAttempts && (status.status === 'queued' || status.status === 'running')) {
+          console.log(`Job still ${status.status}, scheduling next poll in 5 seconds`);
           setTimeout(poll, 5000); // Poll every 5 seconds
+        } else if (attempts >= maxAttempts) {
+          console.log('Max polling attempts reached');
+          setError('Generation timeout - check your Azure DevOps project for results');
+          setCurrentOperation('Polling timeout - generation may still be running');
+          setIsSubmitting(false); // Timeout
         }
       } catch (error) {
         console.error('Error polling job status:', error);
         setError('Error checking generation status');
         setCurrentOperation('Error checking generation status');
+        setIsSubmitting(false); // Error
       }
     };
     
@@ -108,7 +135,14 @@ const SimpleProjectWizard: React.FC = () => {
   };
 
   const handleBackToHome = () => {
-    window.location.href = '/dashboard';
+    console.log('Navigating back to dashboard...');
+    try {
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('React Router navigation failed:', error);
+      // Fallback to direct navigation
+      window.location.href = '/dashboard';
+    }
   };
 
   const handleCancel = () => {

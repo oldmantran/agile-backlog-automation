@@ -86,47 +86,51 @@ def main():
     print(f"Project: {project}")
     print()
     
-    # Area paths to clean - targeting incorrectly created test cases
-    area_paths = [
-        "Backlog Automation"
-    ]
+    # Target specific test case ID range 3299-3367
+    start_id = 3299
+    end_id = 3367
+    print(f"🎯 Target range: Test cases {start_id}-{end_id}")
+    print()
     
-    all_test_case_ids = []
+    # Generate list of IDs to check
+    all_test_case_ids = list(range(start_id, end_id + 1))
     
-    # Find test cases in each area path
-    for area_path in area_paths:
-        print(f"📁 Searching for test cases in: {area_path}")
-        
-        wiql_query = {
-            "query": f"""
-            SELECT [System.Id]
-            FROM WorkItems
-            WHERE [System.WorkItemType] = 'Test Case'
-            AND [System.AreaPath] UNDER '{area_path}'
-            ORDER BY [System.Id]
-            """
-        }
-        
-        response = requests.post(
-            f"{base_url}/{project}/_apis/wit/wiql",
-            json=wiql_query,
-            auth=auth,
-            headers=headers,
-            params={"api-version": "7.1-preview.2"}
-        )
-        
-        if response.status_code != 200:
-            print(f"❌ Error searching for test cases: {response.status_code}")
-            continue
-        
+    # Verify these are actually test cases by checking a few
+    print(f"� Verifying test case IDs in range {start_id}-{end_id}...")
+    
+    wiql_query = {
+        "query": f"""
+        SELECT [System.Id], [System.Title], [System.AreaPath]
+        FROM WorkItems
+        WHERE [System.WorkItemType] = 'Test Case'
+        AND [System.Id] >= {start_id} 
+        AND [System.Id] <= {end_id}
+        ORDER BY [System.Id]
+        """
+    }
+    
+    response = requests.post(
+        f"{base_url}/{project}/_apis/wit/wiql",
+        json=wiql_query,
+        auth=auth,
+        headers=headers,
+        params={"api-version": "7.1-preview.2"}
+    )
+    
+    if response.status_code == 200:
         result = response.json()
-        test_case_ids = [item['id'] for item in result.get('workItems', [])]
+        verified_test_case_ids = [item['id'] for item in result.get('workItems', [])]
         
-        print(f"   ✅ Found {len(test_case_ids)} test cases")
-        if test_case_ids:
-            print(f"   📊 ID range: {min(test_case_ids)} to {max(test_case_ids)}")
+        print(f"   ✅ Verified {len(verified_test_case_ids)} test cases in range")
+        if verified_test_case_ids:
+            print(f"   📊 Actual test case IDs: {min(verified_test_case_ids)} to {max(verified_test_case_ids)}")
         
-        all_test_case_ids.extend(test_case_ids)
+        # Use only verified test case IDs
+        all_test_case_ids = verified_test_case_ids
+    else:
+        print(f"   ⚠️ Could not verify test cases via WIQL (status: {response.status_code})")
+        print(f"   Will attempt to process all IDs in range {start_id}-{end_id}")
+        all_test_case_ids = list(range(start_id, end_id + 1))
     
     print(f"\n🎯 Total test cases found: {len(all_test_case_ids)}")
     
@@ -150,11 +154,12 @@ def main():
         print(f"   ❌ Test Management API error: {test_response.text[:200]}")
     
     # Confirm deletion
-    print(f"\n⚠️  About to delete {len(all_test_case_ids)} test cases using Test Management API.")
+    print(f"\n⚠️  About to delete test cases {start_id}-{end_id} using Test Management API.")
+    print(f"Total IDs to process: {len(all_test_case_ids)}")
     print("This will permanently delete the test cases!")
     
-    confirm = input("Do you want to proceed? (type 'TESTAPI' to confirm): ").strip()
-    if confirm != 'TESTAPI':
+    confirm = input("Do you want to proceed? (type 'DELETE-3299-3367' to confirm): ").strip()
+    if confirm != 'DELETE-3299-3367':
         print("❌ Operation cancelled.")
         return 0
     
