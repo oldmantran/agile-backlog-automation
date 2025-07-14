@@ -189,8 +189,8 @@ const TronWelcomeScreen: React.FC = () => {
           </div>
 
           <div className="relative z-10 container mx-auto px-6 py-8">
-            {/* Header - positioned to avoid Edge Copilot panel and sidebar */}
-            <div className="text-center mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+            {/* Header - positioned right next to sidebar */}
+            <div className="text-center mb-12">
               <div className="flex items-center justify-center mb-6">
                 <div className="relative">
                   <div className="absolute inset-0 w-20 h-20 bg-primary/20 rounded-lg blur-xl animate-pulse glow-cyan"></div>
@@ -201,13 +201,13 @@ const TronWelcomeScreen: React.FC = () => {
               </div>
               
               <h1 className="text-6xl font-bold text-foreground mb-4 tracking-wider glow-cyan">
-                <span className="text-primary glow-cyan">TRON</span>
+                <span className="text-primary glow-cyan">AGILE</span>
                 <span className="text-accent mx-2 glow-cyan">•</span>
                 <span className="text-primary glow-cyan">DASHBOARD</span>
               </h1>
               
               <div className="text-2xl font-light text-muted-foreground tracking-widest mb-2 glow-cyan">
-                AGILE AUTOMATION SYSTEM
+                BACKLOG AUTOMATION SYSTEM
               </div>
               
               <div className="text-sm text-primary font-mono glow-cyan">
@@ -216,16 +216,16 @@ const TronWelcomeScreen: React.FC = () => {
             </div>
 
             {/* Welcome Alert */}
-            <Alert className="tron-card mb-8 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+            <Alert className="tron-card mb-8">
               <FiInfo className="w-4 h-4" />
               <AlertDescription>
-                Welcome to the TRON Dashboard! Choose from the actions below to initialize 
+                Welcome to the Agile Dashboard! Choose from the actions below to initialize 
                 your project management protocols.
               </AlertDescription>
             </Alert>
 
             {/* System Status Bar */}
-            <div className="tron-card mb-8 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+            <div className="tron-card mb-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center space-x-2">
@@ -248,7 +248,7 @@ const TronWelcomeScreen: React.FC = () => {
             </div>
 
             {/* Quick Actions Grid */}
-            <div className="mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+            <div className="mb-12">
               <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">SYSTEM OPERATIONS</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {quickActions.map((action, index) => {
@@ -302,7 +302,7 @@ const TronWelcomeScreen: React.FC = () => {
             </div>
 
             {/* Recent Activity */}
-            <div className="mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+            <div className="mb-12">
               <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">RECENT ACTIVITY</h2>
               <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
                 <CardHeader>
@@ -329,7 +329,7 @@ const TronWelcomeScreen: React.FC = () => {
             </div>
 
             {/* System Status */}
-            <div className="mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+            <div className="mb-12">
               <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">SYSTEM STATUS</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/50 transition-all duration-300">
