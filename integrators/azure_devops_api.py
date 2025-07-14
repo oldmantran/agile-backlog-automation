@@ -606,111 +606,111 @@ class AzureDevOpsIntegrator:
             # Don't raise here, as the work item was created successfully
     
     def _format_epic_description(self, epic_data: Dict[str, Any]) -> str:
-        """Format epic description with all relevant details."""
+        """Format epic description with all relevant details using proper HTML formatting."""
         description = epic_data.get('description', '')
         
         # Add business value
         if epic_data.get('business_value'):
-            description += f"\n\n**Business Value:**\n{epic_data['business_value']}"
+            description += f"<p><strong>Business Value:</strong><br>{epic_data['business_value']}</p>"
         
         # Add success criteria
         if epic_data.get('success_criteria'):
-            description += "\n\n**Success Criteria:**"
+            description += "<p><strong>Success Criteria:</strong></p>"
             for criterion in epic_data['success_criteria']:
-                description += f"\n\n- {criterion}"
+                description += f"<p>• {criterion}</p>"
         
         # Add dependencies
         if epic_data.get('dependencies'):
-            description += "\n\n**Dependencies:**"
+            description += "<p><strong>Dependencies:</strong></p>"
             for dependency in epic_data['dependencies']:
-                description += f"\n\n- {dependency}"
+                description += f"<p>• {dependency}</p>"
         
         # Add risks
         if epic_data.get('risks'):
-            description += "\n\n**Risks:**"
+            description += "<p><strong>Risks:</strong></p>"
             for risk in epic_data['risks']:
-                description += f"\n\n- {risk}"
+                description += f"<p>• {risk}</p>"
         
         return description
     
     def _format_feature_description(self, feature_data: Dict[str, Any]) -> str:
-        """Format feature description focusing on business value and high-level functionality."""
+        """Format feature description focusing on business value and high-level functionality using proper HTML formatting."""
         description = feature_data.get('description', '')
         
         # Add business value if available
         if feature_data.get('business_value'):
-            description += f"\n\n**Business Value:**\n{feature_data['business_value']}"
+            description += f"<p><strong>Business Value:</strong><br>{feature_data['business_value']}</p>"
         
         # Add UI/UX requirements if available
         if feature_data.get('ui_ux_requirements'):
-            description += "\n\n**UI/UX Requirements:**"
+            description += "<p><strong>UI/UX Requirements:</strong></p>"
             for requirement in feature_data['ui_ux_requirements']:
-                description += f"\n\n- {requirement}"
+                description += f"<p>• {requirement}</p>"
         
         # Add technical considerations if available
         if feature_data.get('technical_considerations'):
-            description += "\n\n**Technical Considerations:**"
+            description += "<p><strong>Technical Considerations:</strong></p>"
             for consideration in feature_data['technical_considerations']:
-                description += f"\n\n- {consideration}"
+                description += f"<p>• {consideration}</p>"
         
         # Add dependencies if available
         if feature_data.get('dependencies'):
-            description += "\n\n**Dependencies:**"
+            description += "<p><strong>Dependencies:</strong></p>"
             for dependency in feature_data['dependencies']:
-                description += f"\n\n- {dependency}"
+                description += f"<p>• {dependency}</p>"
         
         return description
     
     def _format_task_description(self, task_data: Dict[str, Any]) -> str:
-        """Format task description with technical details."""
+        """Format task description with technical details using proper HTML formatting."""
         description = task_data.get('description', '')
         
         # Add technical requirements
         if task_data.get('technical_requirements'):
-            description += "\n\n**Technical Requirements:**"
+            description += "<p><strong>Technical Requirements:</strong></p>"
             for req in task_data['technical_requirements']:
-                description += f"\n\n- {req}"
+                description += f"<p>• {req}</p>"
         
         # Add definition of done
         if task_data.get('definition_of_done'):
-            description += "\n\n**Definition of Done:**"
+            description += "<p><strong>Definition of Done:</strong></p>"
             for item in task_data['definition_of_done']:
-                description += f"\n\n- {item}"
+                description += f"<p>• {item}</p>"
         
         return description
     
     def _format_acceptance_criteria_for_ado(self, acceptance_criteria: List[str]) -> str:
-        """Format acceptance criteria for Azure DevOps Acceptance Criteria field."""
+        """Format acceptance criteria for Azure DevOps Acceptance Criteria field with proper HTML formatting."""
         if not acceptance_criteria:
             return ""
         
-        # Format as a numbered list with double line spacing for readability
+        # Format as a numbered list with HTML formatting for better readability
         formatted_criteria = []
         for i, criterion in enumerate(acceptance_criteria, 1):
-            formatted_criteria.append(f"{i}. {criterion}")
+            formatted_criteria.append(f"<p>{i}. {criterion}</p>")
         
-        # Use double line spacing between criteria for better readability
-        return "\n\n".join(formatted_criteria)
+        # Join with empty line for proper HTML spacing
+        return "".join(formatted_criteria)
 
     def _format_user_story_description(self, story_data: Dict[str, Any]) -> str:
-        """Format user story description without acceptance criteria (they go in dedicated field)."""
+        """Format user story description without acceptance criteria (they go in dedicated field) using proper HTML formatting."""
         description = story_data.get('description', '')
         
         # Add user story format if available
         if story_data.get('user_story'):
-            description = f"**User Story:**\n{story_data['user_story']}\n\n{description}"
+            description = f"<p><strong>User Story:</strong><br>{story_data['user_story']}</p>{description}"
         
         # Add definition of ready if available
         if story_data.get('definition_of_ready'):
-            description += "\n\n**Definition of Ready:**"
+            description += "<p><strong>Definition of Ready:</strong></p>"
             for item in story_data['definition_of_ready']:
-                description += f"\n\n- {item}"
+                description += f"<p>• {item}</p>"
         
         # Add definition of done if available
         if story_data.get('definition_of_done'):
-            description += "\n\n**Definition of Done:**"
+            description += "<p><strong>Definition of Done:</strong></p>"
             for item in story_data['definition_of_done']:
-                description += f"\n\n- {item}"
+                description += f"<p>• {item}</p>"
         
         # Note: Acceptance criteria are now stored in the dedicated ADO field
         

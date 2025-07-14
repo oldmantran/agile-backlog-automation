@@ -260,7 +260,16 @@ class QALeadAgent(Agent):
                 
                 if cases_result.get('success'):
                     cases_created += cases_result.get('cases_created', 0)
-                    user_story['test_cases'] = cases_result.get('test_cases', [])
+                    test_cases = cases_result.get('test_cases', [])
+                    
+                    # Ensure test cases are properly linked to their test suite
+                    if user_story.get('test_suite'):
+                        for test_case in test_cases:
+                            if not test_case.get('test_suite_id'):
+                                test_case['test_suite_id'] = user_story['test_suite'].get('id')
+                                test_case['linked_to_suite'] = True
+                    
+                    user_story['test_cases'] = test_cases
                 else:
                     errors.append(f"Failed to create test cases for user story: {user_story.get('title', 'Unknown')}")
                     

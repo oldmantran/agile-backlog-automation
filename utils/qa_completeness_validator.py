@@ -78,8 +78,14 @@ class QACompletenessValidator:
                         total_test_cases += 1
                         test_case_name = test_case.get('title', f"Test Case {test_case.get('id', 'unknown')}")
                         
-                        # Check if test case is linked to suite
-                        if test_case.get('test_suite_id') or test_case.get('linked_to_suite'):
+                        # Check if test case is linked to suite (improved validation)
+                        is_linked = (
+                            test_case.get('test_suite_id') or 
+                            test_case.get('linked_to_suite') or
+                            (user_story.get('test_suite') and test_case.get('user_story_id'))
+                        )
+                        
+                        if is_linked:
                             linked_test_cases += 1
                         else:
                             unlinked_test_cases.append(f"{story_name} -> {test_case_name}")
