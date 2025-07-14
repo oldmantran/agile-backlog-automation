@@ -9,6 +9,7 @@ import TronCleanupTestCasesScreen from './screens/TronCleanupTestCasesScreen';
 import TronBacklogSweeperScreen from './screens/TronBacklogSweeperScreen';
 import TronExecutableScreen from './screens/TronExecutableScreen';
 import TronSettingsScreen from './screens/settings/TronSettingsScreen';
+import MyProjectsScreen from './screens/project/MyProjectsScreen';
 
 // Legacy screens (kept for compatibility)
 import TestScreen from './screens/TestScreen';
@@ -42,8 +43,8 @@ function App() {
           {/* Settings Screen */}
           <Route path="/settings" element={<TronSettingsScreen />} />
           
-          {/* Projects and Backlog Generator placeholders */}
-          <Route path="/projects" element={<TronWelcomeScreen />} />
+          {/* Projects and Backlog Generator */}
+          <Route path="/projects" element={<MyProjectsScreen />} />
           <Route path="/backlog-generator" element={<TronBacklogSweeperScreen />} />
           <Route path="/search" element={<TronWelcomeScreen />} />
           
