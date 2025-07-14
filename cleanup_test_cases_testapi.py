@@ -86,10 +86,9 @@ def main():
     print(f"Project: {project}")
     print()
     
-    # Area paths to clean
+    # Area paths to clean - targeting incorrectly created test cases
     area_paths = [
-        f"{project}\\Grit",
-        f"{project}\\Data Visualization"
+        "Backlog Automation"
     ]
     
     all_test_case_ids = []

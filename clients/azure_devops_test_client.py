@@ -30,6 +30,7 @@ class AzureDevOpsTestClient:
     """
     Azure DevOps Test Management API Client
     Handles Test Plans, Test Suites, and Test Case organization
+    Fixed for proper parent suite handling
     """
     
     def __init__(self, organization: str, project: str, personal_access_token: str):
@@ -143,21 +144,62 @@ class AzureDevOpsTestClient:
                     self.logger.info(f"Found existing requirement-based test suite: {suite_name}")
                     return suite
             
+            # Find the root test suite (required as parent for requirement-based suites)
+            # Azure DevOps creates a default root suite for every test plan
+            root_suite = None
+            
+            # Strategy 1: Look for a StaticTestSuite with no parent
+            for suite in existing_suites.get('value', []):
+                if (suite.get('suiteType') == 'StaticTestSuite' and 
+                    suite.get('parentSuite') is None):
+                    root_suite = suite
+                    self.logger.info(f"Found root suite via parentSuite=None: {suite.get('name')} (ID: {suite.get('id')})")
+                    break
+            
+            # Strategy 2: If no luck, look for suite with no parent attribute or parent=None
+            if not root_suite:
+                for suite in existing_suites.get('value', []):
+                    parent_suite = suite.get('parentSuite')
+                    if parent_suite is None or (isinstance(parent_suite, dict) and not parent_suite):
+                        root_suite = suite
+                        self.logger.info(f"Found root suite via empty parent: {suite.get('name')} (ID: {suite.get('id')})")
+                        break
+            
+            # Strategy 3: Fall back to the first StaticTestSuite
+            if not root_suite:
+                for suite in existing_suites.get('value', []):
+                    if suite.get('suiteType') == 'StaticTestSuite':
+                        root_suite = suite
+                        self.logger.info(f"Found root suite via first StaticTestSuite: {suite.get('name')} (ID: {suite.get('id')})")
+                        break
+            
+            # Strategy 4: Last resort - use the first suite
+            if not root_suite and existing_suites.get('value'):
+                root_suite = existing_suites['value'][0]
+                self.logger.warning(f"Using first suite as root (last resort): {root_suite.get('name')} (ID: {root_suite.get('id')})")
+            
+            if not root_suite:
+                self.logger.error(f"Could not find any test suite to use as parent for test plan {test_plan_id}")
+                self.logger.debug(f"Available suites: {[s.get('name') + ' (' + s.get('suiteType', 'Unknown') + ')' for s in existing_suites.get('value', [])]}")
+                return None
+            
             # Create new requirement-based test suite
             suite_config = TestSuiteConfig(
                 name=suite_name,
                 description=f'Requirement-based test suite for user story: {user_story_name} (ID: {user_story_id})',
                 suite_type='RequirementTestSuite',
+                parent_suite_id=root_suite['id'],
                 requirement_id=user_story_id
             )
             
-            self.logger.info(f"Creating requirement-based test suite '{suite_name}' linked to user story {user_story_id}")
+            self.logger.info(f"Creating requirement-based test suite '{suite_name}' linked to user story {user_story_id} under root suite {root_suite['id']}")
             
             suite_data = {
                 'name': suite_config.name,
                 'description': suite_config.description,
                 'suiteType': suite_config.suite_type,
-                'requirementId': suite_config.requirement_id  # Link to user story for autonomous discovery
+                'requirementId': suite_config.requirement_id,  # Link to user story for autonomous discovery
+                'parentSuite': {'id': suite_config.parent_suite_id}  # Required for requirement-based suites
             }
             
             response = requests.post(
