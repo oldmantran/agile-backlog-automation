@@ -110,10 +110,7 @@ workflow:
     fail_fast: false          # Stop workflow on first stage failure
   
   # Output limits (testing mode for quick validation)
-  limits:
-    # max_epics: 2              # Limited for testing (removed for full backlog)
-    # max_features_per_epic: 2   # Limited for testing (removed for full backlog)
-    # max_user_stories_per_feature: 2  # Limited for testing (removed for full backlog)
+  limits: {}
   
   output_format: "azure_devops"
 
