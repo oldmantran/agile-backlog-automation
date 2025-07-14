@@ -338,7 +338,8 @@ class AzureDevOpsIntegrator:
             test_case_wi = self.test_client.create_test_case_work_item(
                 title=test_case_data.get('title', 'Untitled Test Case'),
                 description=test_case_data.get('description', ''),
-                steps=steps
+                steps=steps,
+                area_path=self.area_path  # Pass the configured area path
             )
             
             if not test_case_wi:
@@ -425,7 +426,8 @@ class AzureDevOpsIntegrator:
             return None
         
         feature_name = feature_data.get('title', 'Unknown Feature')
-        test_plan = self.test_client.ensure_test_plan_exists(feature_id, feature_name)
+        # Pass the configured area path to ensure test plan is created in correct area
+        test_plan = self.test_client.ensure_test_plan_exists(feature_id, feature_name, self.area_path)
         
         if test_plan:
             # Cache the test plan for later use
@@ -780,7 +782,7 @@ class AzureDevOpsIntegrator:
         if not self.test_client:
             raise ValueError("Test client not available - Azure DevOps integration disabled")
         
-        return self.test_client.create_test_case_work_item(title, description, steps)
+        return self.test_client.create_test_case_work_item(title, description, steps, area_path=self.area_path)
 
     # Helper methods for Azure DevOps API operations
     def _get_auth(self) -> HTTPBasicAuth:

@@ -258,7 +258,8 @@ class AzureDevOpsTestClient:
     def create_test_case_work_item(self, title: str, description: str, steps: List[Dict], 
                                    tags: List[str] = None, priority: int = 2, 
                                    component: str = None, preconditions: str = None,
-                                   automation_status: str = "Not Automated") -> Optional[Dict]:
+                                   automation_status: str = "Not Automated",
+                                   area_path: str = None) -> Optional[Dict]:
         """
         Create test case work item with comprehensive metadata for autonomous testing
         
@@ -271,6 +272,7 @@ class AzureDevOpsTestClient:
             component: Component or feature area being tested
             preconditions: Clear preconditions for test execution
             automation_status: Automation readiness status
+            area_path: Area path for the test case (uses configured area if not provided)
             
         Returns:
             Test case work item dictionary or None if creation fails
@@ -315,6 +317,14 @@ class AzureDevOpsTestClient:
                     "value": automation_status
                 }
             ]
+            
+            # Add area path if provided (otherwise uses project default)
+            if area_path:
+                fields.append({
+                    "op": "add",
+                    "path": "/fields/System.AreaPath",
+                    "value": area_path
+                })
             
             # Add optional fields if provided
             if preconditions:
@@ -447,7 +457,7 @@ class AzureDevOpsTestClient:
             return None
     
     def create_test_case(self, title: str, description: str, steps: List[Dict], 
-                        tags: List[str] = None, priority: int = 2) -> Optional[Dict]:
+                        tags: List[str] = None, priority: int = 2, area_path: str = None) -> Optional[Dict]:
         """
         Convenience method for creating test cases with autonomous testing metadata.
         Automatically generates appropriate tags and metadata based on test case content.
@@ -494,5 +504,6 @@ class AzureDevOpsTestClient:
             tags=all_tags,
             priority=priority,
             preconditions=preconditions,
-            automation_status=automation_status
+            automation_status=automation_status,
+            area_path=area_path
         )
