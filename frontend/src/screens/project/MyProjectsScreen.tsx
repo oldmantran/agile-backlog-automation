@@ -42,6 +42,12 @@ const MyProjectsScreen: React.FC = () => {
   useEffect(() => {
     loadActiveJobs();
     loadProjects();
+    
+    // Immediate job update on component mount
+    setTimeout(() => {
+      pollJobUpdates();
+    }, 1000);
+    
     // Poll for job updates every 5 seconds
     const interval = setInterval(pollJobUpdates, 5000);
     return () => clearInterval(interval);
@@ -75,7 +81,9 @@ const MyProjectsScreen: React.FC = () => {
 
     for (const job of jobs) {
       try {
+        console.log(`Polling status for job: ${job.jobId}`);
         const status = await backlogApi.getGenerationStatus(job.jobId);
+        console.log(`Job ${job.jobId} status:`, status);
         
         const updatedJob = {
           ...job,
@@ -85,20 +93,28 @@ const MyProjectsScreen: React.FC = () => {
           error: status.error
         };
 
-        // Only keep jobs that are still running or recently completed
-        if (status.status === 'running' || status.status === 'queued' || 
-            (status.status === 'completed' && Date.now() - new Date(job.startTime).getTime() < 300000) || // 5 minutes
-            (status.status === 'failed' && Date.now() - new Date(job.startTime).getTime() < 300000)) {
+        // Keep jobs based on their actual status, not time-based removal
+        if (status.status === 'running' || status.status === 'queued') {
+          // Always keep running/queued jobs
           updatedJobs.push(updatedJob);
+        } else if (status.status === 'completed' || status.status === 'failed') {
+          // Keep completed/failed jobs for 10 minutes so user can see the result
+          const jobAge = Date.now() - new Date(job.startTime).getTime();
+          if (jobAge < 600000) { // 10 minutes
+            updatedJobs.push(updatedJob);
+          }
         }
       } catch (error) {
+        console.error(`Error polling job ${job.jobId}:`, error);
         // Keep job if we can't check status (might be temporary API issue)
-        if (Date.now() - new Date(job.startTime).getTime() < 300000) { // 5 minutes
+        const jobAge = Date.now() - new Date(job.startTime).getTime();
+        if (jobAge < 600000) { // 10 minutes
           updatedJobs.push(job);
         }
       }
     }
 
+    console.log('Updated jobs:', updatedJobs);
     setActiveJobs(updatedJobs);
     localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
   };
@@ -174,12 +190,23 @@ const MyProjectsScreen: React.FC = () => {
             {activeJobs.length > 0 && (
               <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
                 <CardHeader>
-                  <div className="flex items-center space-x-2">
-                    <FiActivity className="w-5 h-5 text-primary glow-cyan" />
-                    <CardTitle className="text-foreground glow-cyan">Active Generation Jobs</CardTitle>
-                    <Badge variant="outline" className="bg-primary/20 text-primary border-primary/50">
-                      {activeJobs.length}
-                    </Badge>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FiActivity className="w-5 h-5 text-primary glow-cyan" />
+                      <CardTitle className="text-foreground glow-cyan">Active Generation Jobs</CardTitle>
+                      <Badge variant="outline" className="bg-primary/20 text-primary border-primary/50">
+                        {activeJobs.length}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={pollJobUpdates}
+                      className="text-primary border-primary/50 hover:bg-primary/10"
+                    >
+                      <FiRefreshCw className="w-4 h-4 mr-1" />
+                      Refresh
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
