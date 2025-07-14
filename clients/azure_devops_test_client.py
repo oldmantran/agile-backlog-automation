@@ -220,10 +220,6 @@ class AzureDevOpsTestClient:
         except Exception as e:
             self.logger.error(f"Error ensuring requirement-based test suite exists: {e}")
             return None
-                
-        except Exception as e:
-            self.logger.error(f"Error ensuring test suite exists: {e}")
-            return None
     
     def add_test_case_to_suite(self, test_plan_id: int, test_suite_id: int, test_case_id: int) -> bool:
         """
@@ -351,10 +347,6 @@ class AzureDevOpsTestClient:
                 self.logger.error(f"Failed to create test case work item: {response.status_code} - {response.text}")
                 return None
                 
-        except Exception as e:
-            self.logger.error(f"Error creating test case work item: {e}")
-            return None
-            
             response = requests.post(
                 f"{self.base_url}/wit/workitems/$Test%20Case?api-version=7.1-preview.3",
                 headers={**self.headers, 'Content-Type': 'application/json-patch+json'},
