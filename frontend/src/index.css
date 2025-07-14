@@ -46,6 +46,12 @@ All colors MUST be HSL.
     --tron-grid: 180 50% 15%;
     --tron-glow: 180 100% 50%;
 
+    /* Glow effect intensity variables (adjustable via settings) */
+    --glow-intensity: 0.7;
+    --glow-cyan-opacity: 0.56;
+    --glow-strong-opacity: 0.42;
+    --text-glow-opacity: 0.28;
+
     /* Spacing & Layout Design Tokens */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
@@ -145,19 +151,22 @@ All colors MUST be HSL.
   }
 
   .glow-cyan {
-    filter: drop-shadow(0 0 5px hsl(var(--neon-cyan)));
+    filter: drop-shadow(0 0 calc(5px * var(--glow-intensity)) hsl(var(--neon-cyan) / var(--glow-cyan-opacity)));
   }
 
   .glow-blue {
-    filter: drop-shadow(0 0 5px hsl(var(--neon-blue)));
+    filter: drop-shadow(0 0 calc(5px * var(--glow-intensity)) hsl(var(--neon-blue) / var(--glow-cyan-opacity)));
   }
 
   .glow-strong {
-    filter: drop-shadow(0 0 10px hsl(var(--primary))) drop-shadow(0 0 20px hsl(var(--primary)));
+    filter: 
+      drop-shadow(0 0 calc(10px * var(--glow-intensity)) hsl(var(--primary) / var(--glow-strong-opacity))) 
+      drop-shadow(0 0 calc(20px * var(--glow-intensity)) hsl(var(--primary) / var(--glow-strong-opacity)));
   }
 
   .text-glow {
-    text-shadow: 0 0 10px currentColor;
+    text-shadow: 0 0 calc(10px * var(--glow-intensity)) currentColor;
+    opacity: var(--text-glow-opacity);
   }
 
   .grid-pattern {
@@ -216,6 +225,50 @@ All colors MUST be HSL.
 
   .tron-input {
     @apply bg-input/50 border border-primary/30 text-foreground rounded-md px-4 py-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300;
+  }
+
+  /* Tron-style slider */
+  .slider-tron {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .slider-tron::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 
+      0 0 10px hsl(var(--primary) / 0.6),
+      0 0 20px hsl(var(--primary) / 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .slider-tron::-webkit-slider-thumb:hover {
+    box-shadow: 
+      0 0 15px hsl(var(--primary) / 0.8),
+      0 0 30px hsl(var(--primary) / 0.5);
+  }
+
+  .slider-tron::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: 2px solid hsl(var(--background));
+    box-shadow: 
+      0 0 10px hsl(var(--primary) / 0.6),
+      0 0 20px hsl(var(--primary) / 0.3);
   }
 
   .scan-line {

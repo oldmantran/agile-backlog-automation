@@ -25,20 +25,22 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ icon: Icon, to, children }) => {
   const location = useLocation();
-  const isActive = location.pathname === to;
+  const isActive = location.pathname === to || (to === '/dashboard' && location.pathname === '/');
   
   return (
     <Button
       asChild
       variant="ghost"
       className={cn(
-        "w-full justify-start h-auto py-3 pl-4 border-l-4 border-l-transparent rounded-none",
-        isActive && "bg-primary/10 border-l-primary text-primary font-semibold"
+        "w-full justify-start h-auto py-3 pl-4 border-l-4 border-l-transparent rounded-none transition-all duration-300",
+        isActive && "bg-primary/15 border-l-primary text-primary font-semibold glow-cyan shadow-[0_0_15px_rgba(6,182,212,0.3)]"
       )}
     >
       <RouterLink to={to}>
-        <Icon className="mr-3 h-5 w-5" />
-        {children}
+        <Icon className={cn("mr-3 h-5 w-5 transition-all duration-300", isActive && "glow-cyan")} />
+        <span className={cn("transition-all duration-300", isActive && "glow-cyan")}>
+          {children}
+        </span>
       </RouterLink>
     </Button>
   );

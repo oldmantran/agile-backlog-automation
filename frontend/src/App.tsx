@@ -8,11 +8,11 @@ import TronCleanupWorkItemsScreen from './screens/TronCleanupWorkItemsScreen';
 import TronCleanupTestCasesScreen from './screens/TronCleanupTestCasesScreen';
 import TronBacklogSweeperScreen from './screens/TronBacklogSweeperScreen';
 import TronExecutableScreen from './screens/TronExecutableScreen';
+import TronSettingsScreen from './screens/settings/TronSettingsScreen';
 
 // Legacy screens (kept for compatibility)
 import TestScreen from './screens/TestScreen';
 import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
-import MainDashboard from './screens/dashboard/MainDashboard';
 
 // Layout imports
 import MainLayout from './components/layout/MainLayout';
@@ -22,7 +22,8 @@ function App() {
     <div className="min-h-screen bg-background text-foreground">
       <Router>
         <Routes>
-          {/* Main Tron Interface */}
+          {/* Dashboard - Main Tron Interface */}
+          <Route path="/dashboard" element={<TronWelcomeScreen />} />
           <Route path="/" element={<TronWelcomeScreen />} />
           
           {/* Configuration Screen */}
@@ -38,17 +39,18 @@ function App() {
           {/* Executable Launcher */}
           <Route path="/launcher" element={<TronExecutableScreen />} />
           
+          {/* Settings Screen */}
+          <Route path="/settings" element={<TronSettingsScreen />} />
+          
+          {/* Projects and Backlog Generator placeholders */}
+          <Route path="/projects" element={<TronWelcomeScreen />} />
+          <Route path="/backlog-generator" element={<TronBacklogSweeperScreen />} />
+          <Route path="/search" element={<TronWelcomeScreen />} />
+          
           {/* New Project (reuse existing) */}
           <Route path="/new-project" element={
             <MainLayout>
               <SimpleProjectWizard />
-            </MainLayout>
-          } />
-          
-          {/* Dashboard */}
-          <Route path="/dashboard" element={
-            <MainLayout>
-              <MainDashboard />
             </MainLayout>
           } />
           

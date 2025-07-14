@@ -153,17 +153,22 @@ const TronWelcomeScreen: React.FC = () => {
       <Header onMenuClick={() => setSidebarOpen(true)} />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      {/* Main Content with Tron styling */}
+      {/* Main Content with Enhanced Tron styling */}
       <div className="ml-0 lg:ml-[250px] pt-[70px] transition-all duration-300 ease-in-out">
         <div className="min-h-screen bg-background tron-grid relative overflow-hidden">
-          {/* Animated background elements */}
+          {/* Enhanced grid background overlay */}
           <div className="absolute inset-0 opacity-20">
+            <div className="grid-pattern absolute inset-0"></div>
+          </div>
+
+          {/* Animated background elements */}
+          <div className="absolute inset-0 opacity-15">
             <div className="scan-line absolute w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent"></div>
           </div>
 
-          {/* Matrix rain effect */}
+          {/* Enhanced matrix rain effect */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
-            {[...Array(20)].map((_, i) => (
+            {[...Array(30)].map((_, i) => (
               <div
                 key={i}
                 className="absolute w-px h-20 bg-gradient-to-b from-primary to-transparent matrix-rain"
@@ -176,90 +181,100 @@ const TronWelcomeScreen: React.FC = () => {
             ))}
           </div>
 
+          {/* Additional glow orbs - reduced opacity */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/7 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute top-3/4 right-1/4 w-40 h-40 bg-accent/7 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute top-1/2 left-3/4 w-24 h-24 bg-primary/10 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          </div>
+
           <div className="relative z-10 container mx-auto px-6 py-8">
-            {/* Header */}
-            <div className="text-center mb-12">
+            {/* Header - positioned to avoid Edge Copilot panel and sidebar */}
+            <div className="text-center mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
               <div className="flex items-center justify-center mb-6">
                 <div className="relative">
-                  <Grid3X3 className="w-16 h-16 text-primary pulse-glow" />
-                  <div className="absolute inset-0 w-16 h-16 border-2 border-primary/30 rounded-lg rotate-45 animate-pulse"></div>
+                  <div className="absolute inset-0 w-20 h-20 bg-primary/20 rounded-lg blur-xl animate-pulse glow-cyan"></div>
+                  <Grid3X3 className="w-16 h-16 text-primary pulse-glow relative z-10 glow-cyan" />
+                  <div className="absolute inset-0 w-16 h-16 border-2 border-primary/50 rounded-lg rotate-45 animate-pulse glow-cyan"></div>
+                  <div className="absolute inset-0 w-20 h-20 border border-accent/30 rounded-lg rotate-12 animate-pulse glow-cyan" style={{ animationDelay: '0.5s' }}></div>
                 </div>
               </div>
               
-              <h1 className="text-6xl font-bold text-foreground mb-4 tracking-wider">
-                <span className="text-primary">AGILE</span>
-                <span className="text-accent mx-2">•</span>
-                <span className="text-primary">BACKLOG</span>
+              <h1 className="text-6xl font-bold text-foreground mb-4 tracking-wider glow-cyan">
+                <span className="text-primary glow-cyan">TRON</span>
+                <span className="text-accent mx-2 glow-cyan">•</span>
+                <span className="text-primary glow-cyan">DASHBOARD</span>
               </h1>
               
-              <div className="text-2xl font-light text-muted-foreground tracking-widest mb-2">
-                AUTOMATION SYSTEM
+              <div className="text-2xl font-light text-muted-foreground tracking-widest mb-2 glow-cyan">
+                AGILE AUTOMATION SYSTEM
               </div>
               
-              <div className="text-sm text-primary font-mono">
-                SYSTEM TIME: {currentTime.toLocaleTimeString()} | STATUS: ONLINE
+              <div className="text-sm text-primary font-mono glow-cyan">
+                SYSTEM TIME: {currentTime.toLocaleTimeString()} | STATUS: <span className="text-accent glow-cyan">ONLINE</span>
               </div>
             </div>
 
             {/* Welcome Alert */}
-            <Alert className="tron-card mb-8">
+            <Alert className="tron-card mb-8 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
               <FiInfo className="w-4 h-4" />
               <AlertDescription>
-                Welcome to the TRON Automation Interface! Choose from the actions below to initialize 
+                Welcome to the TRON Dashboard! Choose from the actions below to initialize 
                 your project management protocols.
               </AlertDescription>
             </Alert>
 
             {/* System Status Bar */}
-            <div className="tron-card mb-8">
+            <div className="tron-card mb-8 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center space-x-2">
                     <Cpu className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-mono text-foreground">CPU: ONLINE</span>
+                    <span className="text-sm font-mono text-foreground">CPU: <span className="text-green-400">ONLINE</span></span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Activity className="w-5 h-5 text-accent" />
-                    <span className="text-sm font-mono text-foreground">AI: READY</span>
+                    <span className="text-sm font-mono text-foreground">AI: <span className="text-green-400">READY</span></span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Zap className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-mono text-foreground">DEVOPS: CONNECTED</span>
+                    <span className="text-sm font-mono text-foreground">DEVOPS: <span className="text-green-400">CONNECTED</span></span>
                   </div>
                 </div>
                 <div className="text-xs font-mono text-muted-foreground">
-                  BUILD: 2025.07.13
+                  BUILD: <span className="text-primary">2025.07.14</span>
                 </div>
               </div>
             </div>
 
             {/* Quick Actions Grid */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider">SYSTEM OPERATIONS</h2>
+            <div className="mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">SYSTEM OPERATIONS</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {quickActions.map((action, index) => {
                   const IconComponent = action.icon;
                   return (
                     <Card 
                       key={index}
-                      className={`group bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/60 transition-all duration-300 cursor-pointer relative overflow-hidden ${getCardColorClass(action.tronColor)}`}
+                      className={`group bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/60 hover:glow-cyan transition-all duration-300 cursor-pointer relative overflow-hidden tron-card ${getCardColorClass(action.tronColor)}`}
                       onClick={() => navigate(action.route)}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 to-transparent opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
                       
                       <CardHeader className="relative z-10 pb-3">
                         <div className="flex items-center justify-between mb-4">
-                          <IconComponent className="w-8 h-8 text-primary group-hover:text-accent transition-colors duration-300" />
+                          <IconComponent className="w-8 h-8 text-primary group-hover:text-accent group-hover:glow-cyan transition-all duration-300" />
                           <div className="flex items-center space-x-2">
                             {action.isNew && (
-                              <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-400/50">
+                              <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-400/50 glow-cyan">
                                 NEW
                               </Badge>
                             )}
-                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse glow-cyan"></div>
                           </div>
                         </div>
-                        <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
+                        <CardTitle className="text-xl font-semibold text-foreground group-hover:text-primary group-hover:glow-cyan transition-all duration-300">
                           {action.title}
                         </CardTitle>
                       </CardHeader>
@@ -287,8 +302,8 @@ const TronWelcomeScreen: React.FC = () => {
             </div>
 
             {/* Recent Activity */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider">RECENT ACTIVITY</h2>
+            <div className="mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">RECENT ACTIVITY</h2>
               <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
                 <CardHeader>
                   <div className="flex items-center space-x-2">
@@ -314,10 +329,10 @@ const TronWelcomeScreen: React.FC = () => {
             </div>
 
             {/* System Status */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider">SYSTEM STATUS</h2>
+            <div className="mb-12 ml-0 lg:ml-64" style={{ marginRight: 'max(16px, min(20vw, 320px))' }}>
+              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">SYSTEM STATUS</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/50 transition-all duration-300">
                   <CardContent className="pt-6">
                     <div className="text-center space-y-2">
                       <div className="w-3 h-3 bg-green-400 rounded-full mx-auto animate-pulse"></div>
@@ -327,7 +342,7 @@ const TronWelcomeScreen: React.FC = () => {
                   </CardContent>
                 </Card>
                 
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/50 transition-all duration-300">
                   <CardContent className="pt-6">
                     <div className="text-center space-y-2">
                       <div className="w-3 h-3 bg-green-400 rounded-full mx-auto animate-pulse"></div>
@@ -337,7 +352,7 @@ const TronWelcomeScreen: React.FC = () => {
                   </CardContent>
                 </Card>
                 
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-accent/50 transition-all duration-300">
                   <CardContent className="pt-6">
                     <div className="text-center space-y-2">
                       <div className="w-3 h-3 bg-yellow-400 rounded-full mx-auto animate-pulse"></div>
