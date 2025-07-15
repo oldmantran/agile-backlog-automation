@@ -660,6 +660,36 @@ class WorkflowSupervisor:
                 self.execution_metadata['end_time'] = datetime.now()
                 self.logger.info(f"Workflow execution finalized at {self.execution_metadata['end_time']}")
     
+    def _execute_epic_generation(self):
+        """Execute epic generation stage."""
+        self.logger.info("Generating epics from product vision")
+        
+        try:
+            agent = self.agents['epic_strategist']
+            context = self.project_context.get_context('epic_strategist')
+            
+            # Get limits from configuration (null = unlimited)
+            max_epics = self.config.settings.get('workflow', {}).get('limits', {}).get('max_epics')
+            
+            # Generate epics from product vision
+            product_vision = self.workflow_data.get('product_vision', '')
+            if not product_vision:
+                raise ValueError("Product vision is required for epic generation")
+            
+            self.logger.info(f"Generating epics from product vision: {product_vision[:100]}...")
+            
+            epics = agent.generate_epics(product_vision, context, max_epics=max_epics)
+            self.workflow_data['epics'] = epics
+            
+            if max_epics:
+                self.logger.info(f"Generated {len(epics)} epics (limited to {max_epics} for testing)")
+            else:
+                self.logger.info(f"Generated {len(epics)} epics")
+                
+        except Exception as e:
+            self.logger.error(f"Epic generation failed: {e}")
+            raise
+    
     def _execute_feature_decomposition(self):
         """Execute feature decomposition stage."""
         self.logger.info("Decomposing epics into features")
