@@ -894,9 +894,10 @@ class WorkflowSupervisor:
                 if qa_result.get('epics'):
                     self.workflow_data['epics'] = qa_result['epics']
                 
-                # Log QA generation summary
+                # Log QA generation summary (sanitize Unicode for Windows console)
                 qa_summary = qa_result.get('qa_summary', {})
-                self.logger.info(f"QA generation completed: {qa_summary}")
+                sanitized_summary = self._sanitize_unicode_for_logging(str(qa_summary))
+                self.logger.info(f"QA generation completed: {sanitized_summary}")
                 
             finally:
                 # Restore original logger
@@ -926,11 +927,13 @@ class WorkflowSupervisor:
                         f"Review the QA completeness report for details."
                     )
                 
-                # Log completeness report
+                # Log completeness report (sanitize Unicode for Windows console)
                 if 'completeness_report' in qa_summary:
-                    self.logger.info(f"QA Completeness Report:\n{qa_summary['completeness_report']}")
+                    # Sanitize report for logging (remove Unicode emojis)
+                    sanitized_report = self._sanitize_unicode_for_logging(qa_summary['completeness_report'])
+                    self.logger.info(f"QA Completeness Report:\n{sanitized_report}")
                     
-                    # Write completeness report to file
+                    # Write completeness report to file (keep original with emojis)
                     self._write_completeness_report(qa_summary['completeness_report'])
             
             # Final progress update
