@@ -811,7 +811,7 @@ class WorkflowSupervisor:
             raise
     
     def _execute_qa_generation(self, update_progress_callback=None):
-        """Execute QA generation using hierarchical QA Lead Agent with completeness validation."""
+        """Execute QA generation using hierarchical QA Lead Agent with granular progress tracking."""
         self.logger.info("Generating QA artifacts using QA Lead Agent")
         
         try:
@@ -825,7 +825,7 @@ class WorkflowSupervisor:
             # Determine area path for test artifacts
             area_path = self._determine_qa_area_path(context)
             
-            # Count total items for progress tracking
+            # Count total items for granular progress tracking
             total_features = 0
             total_stories = 0
             for epic in self.workflow_data['epics']:
@@ -833,25 +833,84 @@ class WorkflowSupervisor:
                 for feature in epic.get('features', []):
                     total_stories += len(feature.get('user_stories', []))
             
-            total_items = total_features + total_stories
-            processed_items = 0
+            total_qa_items = total_features + total_stories  # Features get test plans, stories get test cases
             
             self.logger.info(f"Starting QA generation for {total_features} features and {total_stories} user stories")
             
-            # Use QA Lead Agent to orchestrate the entire QA process
-            qa_result = agent.generate_quality_assurance(
-                epics=self.workflow_data['epics'],
-                context=context,
-                area_path=area_path
-            )
+            # Create a custom progress callback to track QA generation progress
+            processed_qa_items = 0
             
-            # Update workflow data with QA results
-            if qa_result.get('epics'):
-                self.workflow_data['epics'] = qa_result['epics']
+            def qa_progress_callback(item_type: str, item_name: str, completed: bool = False):
+                nonlocal processed_qa_items
+                if completed:
+                    processed_qa_items += 1
+                
+                if update_progress_callback and total_qa_items > 0:
+                    sub_progress = processed_qa_items / total_qa_items
+                    item_type_text = "test plans" if item_type == "feature" else "test cases"
+                    update_progress_callback(5, f"Generating {item_type_text} ({processed_qa_items}/{total_qa_items})", sub_progress)
+                
+                self.logger.info(f"QA: {item_type} '{item_name}' - {'completed' if completed else 'processing'}")
             
-            # Log QA generation summary
-            qa_summary = qa_result.get('qa_summary', {})
-            self.logger.info(f"QA generation completed: {qa_summary}")
+            # Monkey patch the QA agent to use our progress callback
+            original_logger = agent.logger
+            
+            class ProgressLoggingWrapper:
+                def __init__(self, original_logger, progress_callback):
+                    self.original_logger = original_logger
+                    self.progress_callback = progress_callback
+                
+                def info(self, message):
+                    self.original_logger.info(message)
+                    # Parse progress messages from QA agent
+                    if "Processing QA for feature:" in message:
+                        feature_name = message.split("Processing QA for feature:")[-1].strip()
+                        self.progress_callback("feature", feature_name, False)
+                    elif "Generated test plan for feature:" in message:
+                        feature_name = message.split("Generated test plan for feature:")[-1].strip()
+                        self.progress_callback("feature", feature_name, True)
+                    elif "Processing test cases for user story:" in message:
+                        story_name = message.split("Processing test cases for user story:")[-1].strip()
+                        self.progress_callback("user_story", story_name, False)
+                    elif "Generated" in message and "test cases for user story:" in message:
+                        story_name = message.split("test cases for user story:")[-1].strip()
+                        self.progress_callback("user_story", story_name, True)
+                
+                def __getattr__(self, name):
+                    return getattr(self.original_logger, name)
+            
+            # Temporarily replace the logger
+            agent.logger = ProgressLoggingWrapper(original_logger, qa_progress_callback)
+            
+            try:
+                # Use QA Lead Agent to orchestrate the entire QA process
+                qa_result = agent.generate_quality_assurance(
+                    epics=self.workflow_data['epics'],
+                    context=context,
+                    area_path=area_path
+                )
+                
+                # Update workflow data with QA results
+                if qa_result.get('epics'):
+                    self.workflow_data['epics'] = qa_result['epics']
+                
+                # Log QA generation summary
+                qa_summary = qa_result.get('qa_summary', {})
+                self.logger.info(f"QA generation completed: {qa_summary}")
+                
+            finally:
+                # Restore original logger
+                agent.logger = original_logger
+            
+            # Calculate overall QA completeness
+            self.logger.info("Calculating QA completeness score...")
+            completeness_summary = self._calculate_qa_completeness()
+            
+            # Merge completeness summary with QA summary
+            if qa_summary:
+                qa_summary.update(completeness_summary)
+            else:
+                qa_summary = completeness_summary
             
             # Log completeness score if available
             if 'completeness_score' in qa_summary:
@@ -1813,6 +1872,88 @@ class WorkflowSupervisor:
             # Use legacy validation method
             incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
             return len(incomplete_items) == 0
+
+    def _calculate_qa_completeness(self) -> Dict[str, Any]:
+        """Calculate QA completeness score and generate report."""
+        try:
+            total_features = 0
+            features_with_test_plans = 0
+            total_user_stories = 0
+            stories_with_test_cases = 0
+            total_test_cases = 0
+            total_test_plans = 0
+            
+            issues = []
+            
+            for epic in self.workflow_data.get('epics', []):
+                for feature in epic.get('features', []):
+                    total_features += 1
+                    
+                    # Check for test plan
+                    test_plan = feature.get('test_plan') or feature.get('test_plan_structure')
+                    if test_plan:
+                        features_with_test_plans += 1
+                        total_test_plans += 1
+                    else:
+                        issues.append(f"Feature '{feature.get('title', 'Untitled')}' missing test plan")
+                    
+                    # Check user stories
+                    for user_story in feature.get('user_stories', []):
+                        total_user_stories += 1
+                        
+                        test_cases = user_story.get('test_cases', [])
+                        if test_cases and len(test_cases) > 0:
+                            stories_with_test_cases += 1
+                            total_test_cases += len(test_cases)
+                        else:
+                            issues.append(f"User story '{user_story.get('title', 'Untitled')}' missing test cases")
+            
+            # Calculate completeness scores
+            feature_completeness = features_with_test_plans / total_features if total_features > 0 else 0
+            story_completeness = stories_with_test_cases / total_user_stories if total_user_stories > 0 else 0
+            overall_completeness = (feature_completeness + story_completeness) / 2 if (total_features > 0 and total_user_stories > 0) else 0
+            
+            # Generate report
+            report_lines = [
+                f"QA Test Organization Summary:",
+                f"- Features: {total_features} total, {features_with_test_plans} with test plans ({feature_completeness:.1%})",
+                f"- User Stories: {total_user_stories} total, {stories_with_test_cases} with test cases ({story_completeness:.1%})",
+                f"- Test Artifacts: {total_test_plans} test plans, {total_test_cases} test cases",
+                f"- Overall Completeness: {overall_completeness:.1%}",
+                ""
+            ]
+            
+            if issues:
+                report_lines.append("Issues Found:")
+                for issue in issues[:10]:  # Limit to first 10 issues
+                    report_lines.append(f"  - {issue}")
+                if len(issues) > 10:
+                    report_lines.append(f"  ... and {len(issues) - 10} more issues")
+            else:
+                report_lines.append("✅ All features have test plans and all user stories have test cases")
+            
+            completeness_report = "\n".join(report_lines)
+            
+            return {
+                'completeness_score': overall_completeness,
+                'feature_completeness': feature_completeness,
+                'story_completeness': story_completeness,
+                'total_features': total_features,
+                'features_with_test_plans': features_with_test_plans,
+                'total_user_stories': total_user_stories,
+                'stories_with_test_cases': stories_with_test_cases,
+                'total_test_cases': total_test_cases,
+                'total_test_plans': total_test_plans,
+                'issues_count': len(issues),
+                'completeness_report': completeness_report
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Failed to calculate QA completeness: {e}")
+            return {
+                'completeness_score': 0.0,
+                'completeness_report': f"Error calculating completeness: {e}"
+            }
 
     def _write_completeness_report(self, completeness_report: str):
         """Write QA completeness report to output file."""
