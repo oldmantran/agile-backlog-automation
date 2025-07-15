@@ -587,10 +587,10 @@ class WorkflowSupervisor:
                                 self._execute_user_story_decomposition()
                                 self._validate_user_stories()
                             elif stage == 'developer_agent':
-                                self._execute_task_generation(update_progress)
+                                self._execute_task_generation(update_progress, stage_index + 1)
                                 self._validate_tasks_and_estimates()
                             elif stage == 'qa_lead_agent':
-                                self._execute_qa_generation(update_progress)
+                                self._execute_qa_generation(update_progress, stage_index + 1)
                                 self._validate_test_cases_and_plans()
                             else:
                                 self.logger.warning(f"Unknown stage: {stage}")
@@ -637,6 +637,10 @@ class WorkflowSupervisor:
                 if integrate_azure:
                     update_progress(total_stages + 1, "Integrating with Azure DevOps")
                     self._integrate_with_azure_devops()
+                # Set end time before sending notifications
+                self.execution_metadata['end_time'] = datetime.now()
+                self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
+                
                 # Send notifications
                 self._send_completion_notifications()
                 # Save final output
@@ -644,8 +648,6 @@ class WorkflowSupervisor:
                     self._save_final_output()
                 # Final progress update
                 update_progress(total_stages + 2, "Backlog generation completed")
-                self.execution_metadata['end_time'] = datetime.now()
-                self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
                 return self.workflow_data
             except Exception as e:
                 self.logger.error(f"Workflow execution failed: {e}")
@@ -682,7 +684,7 @@ class WorkflowSupervisor:
             self.workflow_data['epics'] = epics
             
             if max_epics:
-                self.logger.info(f"Generated {len(epics)} epics (limited to {max_epics} for testing)")
+                self.logger.info(f"Generated {len(epics)} epics (limited to {max_epics})")
             else:
                 self.logger.info(f"Generated {len(epics)} epics")
                 
@@ -708,7 +710,7 @@ class WorkflowSupervisor:
                 epic['features'] = features
                 
                 if max_features:
-                    self.logger.info(f"Generated {len(features)} features for epic (limited to {max_features} for testing)")
+                    self.logger.info(f"Generated {len(features)} features for epic (limited to {max_features})")
                 else:
                     self.logger.info(f"Generated {len(features)} features for epic")
                 
@@ -735,7 +737,7 @@ class WorkflowSupervisor:
                     feature['user_stories'] = user_stories
                     
                     if max_user_stories:
-                        self.logger.info(f"Generated {len(user_stories)} user stories for feature (limited to {max_user_stories} for testing)")
+                        self.logger.info(f"Generated {len(user_stories)} user stories for feature (limited to {max_user_stories})")
                     else:
                         self.logger.info(f"Generated {len(user_stories)} user stories for feature")
                     
@@ -743,7 +745,7 @@ class WorkflowSupervisor:
             self.logger.error(f"User story decomposition failed: {e}")
             raise
     
-    def _execute_task_generation(self, update_progress_callback=None):
+    def _execute_task_generation(self, update_progress_callback=None, stage_index=4):
         """Execute developer task generation stage."""
         self.logger.info("Generating developer tasks")
         
@@ -798,7 +800,7 @@ class WorkflowSupervisor:
                             # Update progress with granular tracking
                             if update_progress_callback and total_stories > 0:
                                 sub_progress = processed_stories / total_stories
-                                update_progress_callback(4, f"Generating tasks ({processed_stories + 1}/{total_stories})", sub_progress)
+                                update_progress_callback(stage_index, f"Generating tasks ({processed_stories + 1}/{total_stories})", sub_progress)
                             
                             tasks = agent.generate_tasks(user_story, context)
                             user_story['tasks'] = tasks
@@ -810,7 +812,7 @@ class WorkflowSupervisor:
             self.logger.error(f"Task generation failed: {e}")
             raise
     
-    def _execute_qa_generation(self, update_progress_callback=None):
+    def _execute_qa_generation(self, update_progress_callback=None, stage_index=5):
         """Execute QA generation using hierarchical QA Lead Agent with granular progress tracking."""
         self.logger.info("Generating QA artifacts using QA Lead Agent")
         
@@ -848,7 +850,7 @@ class WorkflowSupervisor:
                 if update_progress_callback and total_qa_items > 0:
                     sub_progress = processed_qa_items / total_qa_items
                     item_type_text = "test plans" if item_type == "feature" else "test cases"
-                    update_progress_callback(5, f"Generating {item_type_text} ({processed_qa_items}/{total_qa_items})", sub_progress)
+                    update_progress_callback(stage_index, f"Generating {item_type_text} ({processed_qa_items}/{total_qa_items})", sub_progress)
                 
                 self.logger.info(f"QA: {item_type} '{item_name}' - {'completed' if completed else 'processing'}")
             

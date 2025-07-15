@@ -14,7 +14,7 @@
 - **🆕 Create New Backlog**: Generate comprehensive backlogs from vision statements using AI
 - **🔄 Backlog Sweeper**: AI-powered validation and enhancement of existing work items
 - **🗑️ Cleanup Work Items**: Bulk delete Azure DevOps work items with search and filter
-- **🧪 Cleanup Test Cases**: Remove test cases, suites, and plans efficiently
+- **🧪 Delete Project Tests**: Remove all test plans, suites, cases, and shared steps efficiently
 
 ### 🎨 **Tron-Themed Interface**
 - **Cyan Glow Effects**: Authentic Tron Legacy visual design

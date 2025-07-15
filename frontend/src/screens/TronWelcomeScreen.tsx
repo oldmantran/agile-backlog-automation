@@ -84,8 +84,8 @@ const TronWelcomeScreen: React.FC = () => {
       tronColor: 'red'
     },
     {
-      title: 'Cleanup Test Cases',
-      description: 'Clean up test cases using Test Management API',
+      title: 'Delete Project Tests',
+      description: 'Delete all test plans, suites, and test cases in area path',
       icon: CheckSquare,
       route: '/cleanup-tests',
       color: 'primary',

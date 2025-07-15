@@ -87,7 +87,7 @@ Dependencies: {epic.get('dependencies', [])}
         # Apply limit if specified
         if max_features and len(extracted_features) > max_features:
             extracted_features = extracted_features[:max_features]
-            self.logger.info(f"Limited features to {max_features} for testing")
+            self.logger.info(f"Limited features to {max_features}")
         
         if extracted_features:
             self.logger.info(f"Successfully extracted {len(extracted_features)} features from response")
