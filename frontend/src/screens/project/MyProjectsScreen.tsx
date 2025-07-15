@@ -10,6 +10,7 @@ import Sidebar from '../../components/navigation/Sidebar';
 import { backlogApi } from '../../services/api/backlogApi';
 import { projectApi } from '../../services/api/projectApi';
 import { Project } from '../../types/project';
+import { BacklogJob } from '../../types/backlogJob';
 import { 
   FiPlus, 
   FiFolder, 
@@ -32,16 +33,20 @@ interface JobInfo {
   error?: string;
 }
 
+const USER_EMAIL = 'kevin.tran@c4workx.com'; // TODO: Replace with dynamic user email if available
+
 const MyProjectsScreen: React.FC = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeJobs, setActiveJobs] = useState<JobInfo[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [backlogJobs, setBacklogJobs] = useState<BacklogJob[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadActiveJobs();
     loadProjects();
+    loadBacklogJobs();
     
     // Immediate job update on component mount
     setTimeout(() => {
@@ -69,6 +74,15 @@ const MyProjectsScreen: React.FC = () => {
       console.error('Failed to load projects:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBacklogJobs = async () => {
+    try {
+      const jobs = await backlogApi.getBacklogJobs(USER_EMAIL);
+      setBacklogJobs(jobs);
+    } catch (error) {
+      console.error('Failed to load backlog jobs:', error);
     }
   };
 
@@ -270,6 +284,52 @@ const MyProjectsScreen: React.FC = () => {
                         <div className="text-xs text-muted-foreground mt-2">
                           Started: {new Date(job.startTime).toLocaleString()}
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Persistent Backlog Job Log */}
+            {backlogJobs.length > 0 && (
+              <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <FiFolder className="w-5 h-5 text-primary glow-cyan" />
+                    <CardTitle className="text-foreground glow-cyan">Backlog Generation History</CardTitle>
+                    <Badge variant="outline" className="bg-primary/20 text-primary border-primary/50">
+                      {backlogJobs.length}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {backlogJobs.map((job) => (
+                      <div key={job.id} className="p-4 rounded-lg bg-background/50 border border-primary/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <h4 className="font-medium text-foreground glow-cyan">{job.project_name}</h4>
+                            <div className="text-xs text-muted-foreground">Job ID: {job.id}</div>
+                          </div>
+                          <Badge className="text-xs bg-primary/10 border-primary/30 text-primary">
+                            {new Date(job.created_at).toLocaleString()}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground mb-2">
+                          <div>Epics: <span className="text-foreground font-semibold">{job.epics_generated}</span></div>
+                          <div>Features: <span className="text-foreground font-semibold">{job.features_generated}</span></div>
+                          <div>User Stories: <span className="text-foreground font-semibold">{job.user_stories_generated}</span></div>
+                          <div>Tasks: <span className="text-foreground font-semibold">{job.tasks_generated}</span></div>
+                          <div>Test Cases: <span className="text-foreground font-semibold">{job.test_cases_generated}</span></div>
+                          <div>Exec Time: <span className="text-foreground font-semibold">{job.execution_time_seconds ? `${job.execution_time_seconds.toFixed(1)}s` : 'N/A'}</span></div>
+                        </div>
+                        {job.raw_summary && (
+                          <details className="text-xs mt-2">
+                            <summary className="cursor-pointer text-primary">Raw Summary</summary>
+                            <pre className="bg-background/80 p-2 rounded text-foreground/80 overflow-x-auto max-h-40">{job.raw_summary}</pre>
+                          </details>
+                        )}
                       </div>
                     ))}
                   </div>
