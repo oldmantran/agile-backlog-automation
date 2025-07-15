@@ -555,128 +555,121 @@ class WorkflowSupervisor:
             for stage_index, stage in enumerate(stages_to_run):
                 self.logger.info(f"Executing stage: {stage}")
                 update_progress(stage_index + 1, f"Executing {stage}")
-                
-                self.sweeper_retry_tracker[stage] = {}
-                max_retries = 5
-                completed = False
-                while not completed:
-                    try:
-                        # Run the agent stage as before
-                        if stage == 'epic_strategist':
-                            self._execute_epic_generation()
-                            self._validate_epics()
-                        elif stage == 'feature_decomposer_agent':
-                            self._execute_feature_decomposition()
-                            self._validate_features()
-                        elif stage == 'user_story_decomposer_agent':
-                            self._execute_user_story_decomposition()
-                            self._validate_user_stories()
-
-                        elif stage == 'user_story_decomposer':
-                            self._execute_user_story_decomposition()
-                            self._validate_user_stories()
-                        elif stage == 'developer_agent':
-                            self._execute_task_generation(update_progress)
-                            self._validate_tasks_and_estimates()
-                        elif stage == 'qa_lead_agent':
-                            self._execute_qa_generation(update_progress)
-                            self._validate_test_cases_and_plans()
-                        else:
-                            self.logger.warning(f"Unknown stage: {stage}")
-                            break
-                        # After agent stage, run sweeper to validate outputs
-                        incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
-                        if not incomplete_items:
-                            completed = True
-                            break
-                        # Targeted retry logic
-                        still_incomplete = []
-                        for item in incomplete_items:
-                            item_id = item.get('work_item_id')
-                            if item_id is None:
-                                continue
-                            retry_count = self.sweeper_retry_tracker[stage].get(item_id, 0)
-                            if retry_count < max_retries:
-                                self.logger.info(f"Retrying incomplete item {item_id} for stage {stage} (attempt {retry_count+1}/{max_retries})")
-                                # Here, you would call the appropriate agent's remediation method if implemented
-                                self.sweeper_retry_tracker[stage][item_id] = retry_count + 1
-                            else:
-                                self.logger.error(f"Item {item_id} in stage {stage} failed after {max_retries} attempts. Logging and notifying.")
-                                self.notifier.send_error_notification(
-                                    Exception(f"Item {item_id} in stage {stage} incomplete after {max_retries} retries: {item.get('description','')}"),
-                                    self.execution_metadata
-                                )
-                                # Log persistent failure
-                                self.execution_metadata['errors'].append(f"Item {item_id} in {stage} failed after {max_retries} retries: {item.get('description','')}")
-                            # Only retry items that have not hit max_retries
-                            if self.sweeper_retry_tracker[stage].get(item_id, 0) < max_retries:
-                                still_incomplete.append(item)
-                        if not still_incomplete:
-                            completed = True
-                        else:
-                            self.logger.info(f"{len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
-                    except Exception as e:
-                        self.logger.error(f"{stage} failed with exception: {e}")
-                        self.execution_metadata['errors'].append(f"{stage} failed: {e}")
-                        self._send_error_notifications(e)
-                        completed = True  # Move to next stage even on error
-            # Final processing
-            self._finalize_workflow_data()
-            
-            # Azure DevOps integration
-            if integrate_azure:
-                update_progress(total_stages + 1, "Integrating with Azure DevOps")
-                self._integrate_with_azure_devops()
-            
-            # Send notifications
-            self._send_completion_notifications()
-            
-            # Save final output
-            if save_outputs:
-                self._save_final_output()
-            
-            # Final progress update
-            update_progress(total_stages + 2, "Backlog generation completed")
-
-            self.execution_metadata['end_time'] = datetime.now()
-            self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
-            
-            return self.workflow_data
-            
-        except Exception as e:
-            self.logger.error(f"Workflow execution failed: {e}")
-            self.execution_metadata['errors'].append(str(e))
-            self.execution_metadata['end_time'] = datetime.now()
-            self.logger.info(f"Workflow execution failed at {self.execution_metadata['end_time']}")
-            
-            # Send error notifications
-            self._send_error_notifications(e)
-            raise
-    
-    def _execute_epic_generation(self):
-        """Execute epic generation stage."""
-        self.logger.info("Generating epics from product vision")
-        
         try:
-            agent = self.agents['epic_strategist']
-            context = self.project_context.get_context('epic_strategist')
-            
-            # Get limits from configuration (null = unlimited)
-            max_epics = self.config.settings.get('workflow', {}).get('limits', {}).get('max_epics')
-            epics = agent.generate_epics(self.workflow_data['product_vision'], context, max_epics=max_epics)
-            
-            if not epics:
-                raise ValueError("Epic generation failed - no epics returned")
-            
-            self.workflow_data['epics'] = epics
-            if max_epics:
-                self.logger.info(f"Generated {len(epics)} epics (limited to {max_epics} for testing)")
-            else:
-                self.logger.info(f"Generated {len(epics)} epics")
-            
-        except Exception as e:
-            self.logger.error(f"Epic generation failed: {e}")
-            raise
+            try:
+                # Initial progress update
+                update_progress(0, "Initializing workflow")
+                # Initialize workflow data
+                self.workflow_data = {
+                    'product_vision': product_vision,
+                    'epics': [],
+                    'metadata': {
+                        'project_context': self.project_context.get_context(),
+                        'execution_config': {
+                            'stages': stages_to_run,
+                            'human_review': human_review,
+                            'save_outputs': save_outputs,
+                            'integrate_azure': integrate_azure
+                        }
+                    }
+                }
+                # Execute stages in sequence
+                stages_to_run = stages or self._get_default_stages()
+                self.sweeper_retry_tracker = {}
+                for stage_index, stage in enumerate(stages_to_run):
+                    self.logger.info(f"Executing stage: {stage}")
+                    update_progress(stage_index + 1, f"Executing {stage}")
+                    self.sweeper_retry_tracker[stage] = {}
+                    max_retries = 5
+                    completed = False
+                    while not completed:
+                        try:
+                            # Run the agent stage as before
+                            if stage == 'epic_strategist':
+                                self._execute_epic_generation()
+                                self._validate_epics()
+                            elif stage == 'feature_decomposer_agent':
+                                self._execute_feature_decomposition()
+                                self._validate_features()
+                            elif stage == 'user_story_decomposer_agent':
+                                self._execute_user_story_decomposition()
+                                self._validate_user_stories()
+                            elif stage == 'user_story_decomposer':
+                                self._execute_user_story_decomposition()
+                                self._validate_user_stories()
+                            elif stage == 'developer_agent':
+                                self._execute_task_generation(update_progress)
+                                self._validate_tasks_and_estimates()
+                            elif stage == 'qa_lead_agent':
+                                self._execute_qa_generation(update_progress)
+                                self._validate_test_cases_and_plans()
+                            else:
+                                self.logger.warning(f"Unknown stage: {stage}")
+                                break
+                            # After agent stage, run sweeper to validate outputs
+                            incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
+                            if not incomplete_items:
+                                completed = True
+                                break
+                            # Targeted retry logic
+                            still_incomplete = []
+                            for item in incomplete_items:
+                                item_id = item.get('work_item_id')
+                                if item_id is None:
+                                    continue
+                                retry_count = self.sweeper_retry_tracker[stage].get(item_id, 0)
+                                if retry_count < max_retries:
+                                    self.logger.info(f"Retrying incomplete item {item_id} for stage {stage} (attempt {retry_count+1}/{max_retries})")
+                                    # Here, you would call the appropriate agent's remediation method if implemented
+                                    self.sweeper_retry_tracker[stage][item_id] = retry_count + 1
+                                else:
+                                    self.logger.error(f"Item {item_id} in stage {stage} failed after {max_retries} attempts. Logging and notifying.")
+                                    self.notifier.send_error_notification(
+                                        Exception(f"Item {item_id} in stage {stage} incomplete after {max_retries} retries: {item.get('description','')}") ,
+                                        self.execution_metadata
+                                    )
+                                    # Log persistent failure
+                                    self.execution_metadata['errors'].append(f"Item {item_id} in {stage} failed after {max_retries} retries: {item.get('description','')}")
+                                # Only retry items that have not hit max_retries
+                                if self.sweeper_retry_tracker[stage].get(item_id, 0) < max_retries:
+                                    still_incomplete.append(item)
+                            if not still_incomplete:
+                                completed = True
+                            else:
+                                self.logger.info(f"{len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
+                        except Exception as e:
+                            self.logger.error(f"{stage} failed with exception: {e}")
+                            self.execution_metadata['errors'].append(f"{stage} failed: {e}")
+                            self._send_error_notifications(e)
+                            completed = True  # Move to next stage even on error
+                # Final processing
+                self._finalize_workflow_data()
+                # Azure DevOps integration
+                if integrate_azure:
+                    update_progress(total_stages + 1, "Integrating with Azure DevOps")
+                    self._integrate_with_azure_devops()
+                # Send notifications
+                self._send_completion_notifications()
+                # Save final output
+                if save_outputs:
+                    self._save_final_output()
+                # Final progress update
+                update_progress(total_stages + 2, "Backlog generation completed")
+                self.execution_metadata['end_time'] = datetime.now()
+                self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
+                return self.workflow_data
+            except Exception as e:
+                self.logger.error(f"Workflow execution failed: {e}")
+                self.execution_metadata['errors'].append(str(e))
+                self.execution_metadata['end_time'] = datetime.now()
+                self.logger.info(f"Workflow execution failed at {self.execution_metadata['end_time']}")
+                # Send error notifications
+                self._send_error_notifications(e)
+                raise
+        finally:
+            if not self.execution_metadata['end_time']:
+                self.execution_metadata['end_time'] = datetime.now()
+                self.logger.info(f"Workflow execution finalized at {self.execution_metadata['end_time']}")
     
     def _execute_feature_decomposition(self):
         """Execute feature decomposition stage."""

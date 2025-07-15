@@ -52,6 +52,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down API Server")
 
 
+
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Agile Backlog Automation API",
@@ -59,6 +60,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Mount job log API router
+from api_server_jobs import router as jobs_router
+app.include_router(jobs_router)
 
 # Add CORS middleware for frontend integration
 app.add_middleware(

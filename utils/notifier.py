@@ -39,6 +39,37 @@ class Notifier:
         print(f"📢 Sending completion notification - enabled channels: {self.channels}")
         print(f"📊 Statistics received: {stats}")
         print(f"📋 Workflow data keys: {list(workflow_data.keys())}")
+
+        # --- Persist job to database ---
+        try:
+            from db import add_backlog_job
+            # Use the first email in the notification list as user ID
+            user_emails = self.config.settings.get('notifications', {}).get('summary_report', {}).get('send_to', [])
+            user_email = user_emails[0] if user_emails else 'unknown@unknown.com'
+            add_backlog_job(
+                user_email=user_email,
+                project_name=workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project'),
+                epics_generated=stats.get('epics_generated', 0),
+                features_generated=stats.get('features_generated', 0),
+                user_stories_generated=stats.get('user_stories_generated', 0),
+                tasks_generated=stats.get('tasks_generated', 0),
+                test_cases_generated=stats.get('test_cases_generated', 0),
+                execution_time_seconds=stats.get('execution_time_seconds'),
+                raw_summary={
+                    'project_name': workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project'),
+                    'epics_generated': stats.get('epics_generated', 0),
+                    'features_generated': stats.get('features_generated', 0),
+                    'user_stories_generated': stats.get('user_stories_generated', 0),
+                    'tasks_generated': stats.get('tasks_generated', 0),
+                    'test_cases_generated': stats.get('test_cases_generated', 0),
+                    'execution_time_seconds': stats.get('execution_time_seconds'),
+                    'ado_summary': workflow_data.get('azure_integration', {}),
+                    'created_at': stats.get('created_at')
+                }
+            )
+            print("✅ Backlog job logged to database.")
+        except Exception as db_exc:
+            print(f"❌ Failed to log backlog job to database: {db_exc}")
         
         # Generate summary message
         project_name = workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project')
