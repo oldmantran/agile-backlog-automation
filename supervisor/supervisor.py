@@ -323,23 +323,14 @@ class WorkflowSupervisor:
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
         agents = {}
-        
-        try:
-            agents['epic_strategist'] = EpicStrategist(self.config)
-            agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
-            agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
-            agents['developer_agent'] = DeveloperAgent(self.config)
-            agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
-            agents['qa_lead_agent'] = QALeadAgent(self.config)
-            
-
-            
-            self.logger.info(f"Initialized {len(agents)} agents successfully")
-            return agents
-            
-        except Exception as e:
-            self.logger.error(f"Failed to initialize agents: {e}")
-            raise
+        agents['epic_strategist'] = EpicStrategist(self.config)
+        agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
+        agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
+        agents['developer_agent'] = DeveloperAgent(self.config)
+        agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
+        agents['qa_lead_agent'] = QALeadAgent(self.config)
+        self.logger.info(f"Initialized {len(agents)} agents successfully")
+        return agents
     
     def configure_project_context(self, project_type: str = None, custom_context: Dict[str, Any] = None):
         """Configure project context for domain-aware prompt generation."""
@@ -531,30 +522,28 @@ class WorkflowSupervisor:
         if enable_monitoring:
             self.workflow_monitor.start_monitoring(workflow_id)
             
-        try:
-            # Initial progress update
-            update_progress(0, "Initializing workflow")
-            
-            # Initialize workflow data
-            self.workflow_data = {
-                'product_vision': product_vision,
-                'epics': [],
-                'metadata': {
-                    'project_context': self.project_context.get_context(),
-                    'execution_config': {
-                        'stages': stages_to_run,
-                        'human_review': human_review,
-                        'save_outputs': save_outputs,
-                        'integrate_azure': integrate_azure
-                    }
+        # Initial progress update
+        update_progress(0, "Initializing workflow")
+        # Initialize workflow data
+        self.workflow_data = {
+            'product_vision': product_vision,
+            'epics': [],
+            'metadata': {
+                'project_context': self.project_context.get_context(),
+                'execution_config': {
+                    'stages': stages_to_run,
+                    'human_review': human_review,
+                    'save_outputs': save_outputs,
+                    'integrate_azure': integrate_azure
                 }
             }
-            # Execute stages in sequence
-            stages_to_run = stages or self._get_default_stages()
-            self.sweeper_retry_tracker = {}
-            for stage_index, stage in enumerate(stages_to_run):
-                self.logger.info(f"Executing stage: {stage}")
-                update_progress(stage_index + 1, f"Executing {stage}")
+        }
+        # Execute stages in sequence
+        stages_to_run = stages or self._get_default_stages()
+        self.sweeper_retry_tracker = {}
+        for stage_index, stage in enumerate(stages_to_run):
+            self.logger.info(f"Executing stage: {stage}")
+            update_progress(stage_index + 1, f"Executing {stage}")
         try:
             try:
                 # Initial progress update
@@ -1492,24 +1481,15 @@ class WorkflowSupervisor:
         estimated_points = self.agents['developer_agent'].estimate_story_points(user_story_data, context)
         
         if estimated_points:
-            try:
-                # Update the work item with estimated story points
-                fields = {
-                    '/fields/Microsoft.VSTS.Scheduling.StoryPoints': estimated_points
-                }
-                self.azure_integrator._update_work_item(user_story_id, fields)
-                self.logger.info(f"Updated User Story {user_story_id} with {estimated_points} story points")
-            except Exception as e:
-                self.logger.error(f"Failed to update story points for User Story {user_story_id}: {e}")
-        else:
-            self.logger.warning(f"Could not estimate story points for User Story {user_story_id}")
-
-    def _auto_enhance_acceptance_criteria(self, user_story_id: int, discrepancy: Dict[str, Any]):
-        """Automatically enhance acceptance criteria for a user story."""
-        self.logger.info(f"Auto-enhancing acceptance criteria for User Story {user_story_id}")
-        
-        # Get user story details
-        user_story_details = self.azure_integrator.get_work_item_details([user_story_id])
+            agents = {}
+            agents['epic_strategist'] = EpicStrategist(self.config)
+            agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
+            agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
+            agents['developer_agent'] = DeveloperAgent(self.config)
+            agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
+            agents['qa_lead_agent'] = QALeadAgent(self.config)
+            self.logger.info(f"Initialized {len(agents)} agents successfully")
+            return agents
         if not user_story_details:
             self.logger.error(f"Could not retrieve details for User Story {user_story_id}")
             return
@@ -1531,27 +1511,17 @@ class WorkflowSupervisor:
         enhanced_criteria = None
         
         if enhanced_criteria:
-            try:
-                # Format criteria for Azure DevOps
-                criteria_text = self._format_acceptance_criteria(enhanced_criteria)
-                
-                # Update the work item with enhanced acceptance criteria
-                fields = {
-                    '/fields/Microsoft.VSTS.Common.AcceptanceCriteria': criteria_text
-                }
-                self.azure_integrator._update_work_item(user_story_id, fields)
-                self.logger.info(f"Updated User Story {user_story_id} with enhanced acceptance criteria ({len(enhanced_criteria)} criteria)")
-            except Exception as e:
-                self.logger.error(f"Failed to update acceptance criteria for User Story {user_story_id}: {e}")
-        else:
-            self.logger.warning(f"Could not enhance acceptance criteria for User Story {user_story_id}")
-
-    def _extract_acceptance_criteria(self, story_fields: Dict[str, Any]) -> List[str]:
-        """Extract acceptance criteria from work item fields."""
-        criteria_text = story_fields.get('Microsoft.VSTS.Common.AcceptanceCriteria', '')
-        if not criteria_text:
-            return []
-        
+            # Format criteria for Azure DevOps
+            criteria_text = self._format_acceptance_criteria(enhanced_criteria)
+            # Update the work item with enhanced acceptance criteria
+        agents['epic_strategist'] = EpicStrategist(self.config)
+        agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
+        agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
+        agents['developer_agent'] = DeveloperAgent(self.config)
+        agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
+        agents['qa_lead_agent'] = QALeadAgent(self.config)
+        self.logger.info(f"Initialized {len(agents)} agents successfully")
+        return agents
         # Split by lines and clean up
         criteria_lines = [line.strip() for line in criteria_text.split('\n') if line.strip()]
         criteria_items = []

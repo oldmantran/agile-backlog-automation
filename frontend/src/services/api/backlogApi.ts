@@ -1,12 +1,7 @@
-import { BacklogJob } from '../../types/backlogJob';
-  // Fetch backlog jobs by user
-  getBacklogJobs: async (user_email: string): Promise<BacklogJob[]> => {
-    const response = await api.get(`/backlog/jobs`, { params: { user_email } });
-    return response.data;
-  },
 import axios from 'axios';
 import { Project, GenerationStatus } from '../../types/project';
 import { ApiResponse } from '../../types/api';
+import { BacklogJob } from '../../types/backlogJob';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -50,6 +45,8 @@ export const backlogApi = {
     });
     return response.data;
   },
+
+  // Fetch backlog jobs by user
   getBacklogJobs: async (user_email: string): Promise<BacklogJob[]> => {
     const response = await api.get(`/backlog/jobs`, { params: { user_email } });
     return response.data;
