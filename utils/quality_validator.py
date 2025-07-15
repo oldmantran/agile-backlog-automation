@@ -324,3 +324,187 @@ class WorkItemQualityValidator:
         issues.extend(title_issues)
         
         return len(issues) == 0, issues
+    
+    def validate_content_specificity(self, content: str, content_type: str) -> Tuple[bool, List[str]]:
+        """
+        Validate content for specificity and actionability.
+        
+        Args:
+            content: Content to validate (description, criteria, etc.)
+            content_type: Type of content (e.g., 'description', 'criteria', 'title')
+        
+        Returns:
+            Tuple of (is_valid, issues_found)
+        """
+        issues = []
+        content_lower = content.lower()
+        
+        # Check for generic phrases that should be more specific
+        generic_phrases = [
+            'implement functionality',
+            'provide capability',
+            'enable feature',
+            'create system',
+            'build solution',
+            'develop application',
+            'make it work',
+            'handle this',
+            'process data',
+            'manage information',
+            'support users',
+            'allow users',
+            'provide interface',
+            'create interface',
+            'implement interface'
+        ]
+        
+        for phrase in generic_phrases:
+            if phrase in content_lower:
+                issues.append(f"{content_type} contains generic phrase '{phrase}' - be more specific about what exactly should be implemented")
+        
+        # Check for missing concrete details
+        if content_type == 'description':
+            # Look for quantifiable metrics or specific behaviors
+            has_specifics = any(indicator in content_lower for indicator in [
+                'exactly', 'within', 'seconds', 'minutes', 'hours', 'days',
+                'percentage', '%', 'number', 'count', 'amount', 'size',
+                'format', 'type', 'method', 'approach', 'algorithm',
+                'database', 'api', 'endpoint', 'service', 'component',
+                'workflow', 'process', 'step', 'action', 'behavior'
+            ])
+            
+            if not has_specifics and len(content) > 20:
+                issues.append(f"{content_type} lacks specific details - include concrete behaviors, formats, or measurable outcomes")
+        
+        # Check for actionable language
+        if content_type in ['criteria', 'task']:
+            # Should contain action words
+            action_words = [
+                'click', 'select', 'enter', 'submit', 'save', 'delete', 'update',
+                'display', 'show', 'hide', 'validate', 'verify', 'check',
+                'calculate', 'process', 'generate', 'create', 'remove',
+                'navigate', 'redirect', 'filter', 'sort', 'search'
+            ]
+            
+            has_action = any(word in content_lower for word in action_words)
+            if not has_action:
+                issues.append(f"{content_type} should contain specific action words (e.g., click, enter, display, validate)")
+        
+        return len(issues) == 0, issues
+
+    def enhance_content_specificity(self, content: str, content_type: str, context: Dict = None) -> str:
+        """
+        Enhance content to be more specific and actionable.
+        
+        Args:
+            content: Original content
+            content_type: Type of content
+            context: Additional context for enhancement
+        
+        Returns:
+            Enhanced content string
+        """
+        enhanced = content
+        
+        # Replace generic phrases with more specific alternatives
+        generic_replacements = {
+            'implement functionality': 'implement specific functionality to',
+            'provide capability': 'provide the capability to',
+            'enable feature': 'enable users to',
+            'create system': 'create a system that',
+            'build solution': 'build a solution that',
+            'develop application': 'develop an application that',
+            'handle this': 'handle the specific requirement to',
+            'process data': 'process the data by',
+            'manage information': 'manage information through',
+            'support users': 'support users by allowing them to',
+            'allow users': 'allow users to specifically',
+            'provide interface': 'provide a user interface that',
+            'create interface': 'create an interface that allows',
+            'implement interface': 'implement an interface that enables'
+        }
+        
+        for generic, specific in generic_replacements.items():
+            enhanced = enhanced.replace(generic, specific)
+        
+        # Add context-specific enhancements
+        if context:
+            domain = context.get('domain', '').lower()
+            if domain and domain in ['web', 'mobile', 'api', 'database']:
+                # Add domain-specific context
+                if 'user interface' in enhanced.lower() and domain in ['web', 'mobile']:
+                    enhanced = enhanced.replace('user interface', f'{domain} user interface')
+                elif 'system' in enhanced.lower() and domain == 'api':
+                    enhanced = enhanced.replace('system', 'API system')
+        
+        return enhanced
+
+    def validate_business_value(self, value_statement: str) -> Tuple[bool, List[str]]:
+        """
+        Validate business value statement for measurability and clarity.
+        
+        Args:
+            value_statement: Business value statement to validate
+        
+        Returns:
+            Tuple of (is_valid, issues_found)
+        """
+        issues = []
+        value_lower = value_statement.lower()
+        
+        # Check for quantifiable metrics
+        has_metrics = any(indicator in value_lower for indicator in [
+            '%', 'percent', 'increase', 'decrease', 'reduce', 'improve',
+            'save', 'cost', 'time', 'efficiency', 'productivity',
+            'revenue', 'profit', 'roi', 'conversion', 'retention',
+            'satisfaction', 'engagement', 'adoption', 'usage'
+        ])
+        
+        if not has_metrics:
+            issues.append("Business value statement should include quantifiable metrics or measurable outcomes")
+        
+        # Check for vague business terms
+        vague_business_terms = [
+            'better experience', 'improved performance', 'enhanced functionality',
+            'increased value', 'optimized process', 'streamlined workflow',
+            'better solution', 'improved system', 'enhanced capabilities'
+        ]
+        
+        for term in vague_business_terms:
+            if term in value_lower:
+                issues.append(f"Business value contains vague term '{term}' - specify exact improvements or metrics")
+        
+        return len(issues) == 0, issues
+
+    def enhance_business_value(self, value_statement: str, context: Dict = None) -> str:
+        """
+        Enhance business value statement to be more specific and measurable.
+        
+        Args:
+            value_statement: Original value statement
+            context: Additional context for enhancement
+        
+        Returns:
+            Enhanced value statement
+        """
+        enhanced = value_statement
+        
+        # Add measurable language if missing
+        if not any(indicator in enhanced.lower() for indicator in ['%', 'percent', 'by', 'up to', 'within']):
+            # Suggest adding measurable outcomes
+            if 'increase' in enhanced.lower() or 'improve' in enhanced.lower():
+                enhanced = enhanced.replace('increase', 'increase by X%').replace('improve', 'improve by X%')
+            elif 'reduce' in enhanced.lower() or 'decrease' in enhanced.lower():
+                enhanced = enhanced.replace('reduce', 'reduce by X%').replace('decrease', 'decrease by X%')
+            elif 'save' in enhanced.lower():
+                enhanced = enhanced.replace('save', 'save X hours/dollars')
+        
+        # Add context-specific business value
+        if context:
+            domain = context.get('domain', '').lower()
+            if domain == 'e-commerce' and 'conversion' not in enhanced.lower():
+                enhanced += ' (potentially improving conversion rates)'
+            elif domain == 'saas' and 'retention' not in enhanced.lower():
+                enhanced += ' (potentially improving user retention)'
+        
+        return enhanced

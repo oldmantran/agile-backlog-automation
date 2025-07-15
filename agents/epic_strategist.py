@@ -1,10 +1,12 @@
 import json
 from agents.base_agent import Agent
 from config.config_loader import Config
+from utils.content_enhancer import ContentEnhancer
 
 class EpicStrategist(Agent):
     def __init__(self, config: Config):
         super().__init__("epic_strategist", config)
+        self.content_enhancer = ContentEnhancer()
 
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
         """Generate epics from a product vision with contextual information."""
