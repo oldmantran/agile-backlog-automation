@@ -11,6 +11,9 @@ class Config:
         with open(settings_path, "r") as f:
             self.settings = yaml.safe_load(f)
 
+        # Check for testing limits and warn if found
+        self._warn_if_testing_limits()
+
         # Load environment variables
         self.env = {
             "AZURE_DEVOPS_PAT": os.getenv("AZURE_DEVOPS_PAT"),
@@ -34,6 +37,20 @@ class Config:
             "EMAIL_FROM": os.getenv("EMAIL_FROM"),
             "EMAIL_TO": os.getenv("EMAIL_TO"),
         }
+
+    def _warn_if_testing_limits(self):
+        """Warn if testing limits are detected in configuration."""
+        limits = self.settings.get('workflow', {}).get('limits', {})
+        max_epics = limits.get('max_epics')
+        max_features = limits.get('max_features_per_epic')
+        
+        if max_epics is not None and max_epics <= 5:
+            print(f"⚠️  WARNING: max_epics is set to {max_epics} - this may be a testing configuration!")
+            print("   For production use, set max_epics to null in config/settings.yaml")
+            
+        if max_features is not None and max_features <= 5:
+            print(f"⚠️  WARNING: max_features_per_epic is set to {max_features} - this may be a testing configuration!")
+            print("   For production use, set max_features_per_epic to null in config/settings.yaml")
 
     def get_agent_prompt_path(self, agent_name):
         return self.settings["agents"][agent_name]["prompt_file"]

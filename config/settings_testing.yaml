@@ -1,17 +1,9 @@
 # Settings for end-to-end testing with limited output
 # Copy this over settings.yaml when running tests, then restore original for production
-
-domains:
-  supported:
-    - "software_development"
-    - "fintech" 
-    - "ecommerce"
-    - "healthcare"
-    - "education"
-    - "shipping_logistics"
-    - "oil_gas"
-    - "ride_sharing"
-  default: "ride_sharing"
+# 
+# *** WARNING: This file contains testing limits that restrict output ***
+# *** DO NOT use this file in production - it limits epics to 2 ***
+# *** Use settings.yaml for production with unlimited limits ***
 
 agents:
   epic_strategist:
