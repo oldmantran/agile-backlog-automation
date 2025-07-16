@@ -11,17 +11,20 @@ import subprocess
 import threading
 import time
 import asyncio
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 import uvicorn
+import logging
+import queue
 
 # Add the project root to Python path
 project_root = Path(__file__).parent
@@ -62,6 +65,70 @@ sweeper_status = {
     "completedActions": [],
     "logs": []
 }
+
+# WebSocket connections for log streaming
+log_connections: List[WebSocket] = []
+log_queue = queue.Queue()
+
+# Custom log handler for streaming logs to WebSocket clients
+class WebSocketLogHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            log_message = {
+                "timestamp": datetime.now().isoformat(),
+                "level": record.levelname,
+                "message": self.format(record),
+                "module": record.module if hasattr(record, 'module') else record.name
+            }
+            log_queue.put(log_message)
+        except Exception:
+            pass
+
+# Set up WebSocket log handler
+websocket_handler = WebSocketLogHandler()
+websocket_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(message)s')
+websocket_handler.setFormatter(formatter)
+
+# Add handler to root logger to capture all logs
+root_logger = logging.getLogger()
+root_logger.addHandler(websocket_handler)
+
+# Also add to uvicorn logger
+uvicorn_logger = logging.getLogger("uvicorn")
+uvicorn_logger.addHandler(websocket_handler)
+
+# Log distribution task
+async def distribute_logs():
+    """Distribute log messages to all connected WebSocket clients"""
+    while True:
+        try:
+            if not log_queue.empty():
+                log_message = log_queue.get_nowait()
+                disconnected_clients = []
+                
+                for websocket in log_connections:
+                    try:
+                        await websocket.send_json(log_message)
+                    except Exception:
+                        disconnected_clients.append(websocket)
+                
+                # Remove disconnected clients
+                for client in disconnected_clients:
+                    if client in log_connections:
+                        log_connections.remove(client)
+            
+            await asyncio.sleep(0.1)  # Small delay to prevent excessive CPU usage
+        except Exception:
+            pass
+
+# Start log distribution task on server startup
+async def startup_event():
+    """Start background tasks on server startup"""
+    asyncio.create_task(distribute_logs())
+
+# Add startup event to app
+app.add_event_handler("startup", startup_event)
 
 # Models
 class ConfigData(BaseModel):
@@ -691,15 +758,58 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["error"] = str(e)
         active_jobs[job_id]["endTime"] = datetime.now()
 
+@app.websocket("/ws/logs")
+async def websocket_logs(websocket: WebSocket):
+    """WebSocket endpoint for streaming server logs to the frontend"""
+    await websocket.accept()
+    log_connections.append(websocket)
+    
+    try:
+        await websocket.send_json({
+            "timestamp": datetime.now().isoformat(),
+            "level": "INFO",
+            "message": "🌐 Connected to server log stream",
+            "module": "websocket"
+        })
+        
+        while True:
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
+            except asyncio.TimeoutError:
+                pass
+            except WebSocketDisconnect:
+                break
+                
+    except WebSocketDisconnect:
+        pass
+    finally:
+        if websocket in log_connections:
+            log_connections.remove(websocket)
+
 @app.post("/api/start-application")
 async def start_application():
     """Start the main application (used by executable launcher)"""
     return {"status": "success", "message": "Application started successfully"}
 
+def open_browser():
+    """Open the browser after a short delay to ensure server is ready"""
+    time.sleep(2)  # Wait 2 seconds for server to start
+    url = "http://localhost:8000"
+    try:
+        webbrowser.open(url)
+        print(f"🌐 Opened browser to: {url}")
+    except Exception as e:
+        print(f"⚠️  Could not open browser automatically: {e}")
+        print(f"🌐 Please manually open: {url}")
+
 if __name__ == "__main__":
     print("🎮 Starting Tron Backlog Automation API Server...")
     print("🌐 Frontend will be available at: http://localhost:8000")
     print("🔧 API documentation at: http://localhost:8000/docs")
+    
+    # Start browser opening in a separate thread
+    browser_thread = threading.Thread(target=open_browser, daemon=True)
+    browser_thread.start()
     
     uvicorn.run(
         "tron_api_server:app",

@@ -7,6 +7,7 @@ import { Progress } from '../../components/ui/progress';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
+import ServerLogs from '../../components/logs/ServerLogs';
 import { backlogApi } from '../../services/api/backlogApi';
 import { projectApi } from '../../services/api/projectApi';
 import { Project } from '../../types/project';
@@ -290,6 +291,9 @@ const MyProjectsScreen: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Server Logs */}
+            <ServerLogs className="mb-8" />
 
             {/* Persistent Backlog Job Log */}
             {backlogJobs.length > 0 && (
