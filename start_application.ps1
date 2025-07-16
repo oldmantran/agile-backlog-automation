@@ -1,76 +1,74 @@
-# Agile Backlog Automation Startup Script (PowerShell)
-# This script helps you start the application components
+# Agile Backlog Automation - PowerShell Startup Script
+# This script starts the unified API server and optionally the frontend
 
-Write-Host "===========================================" -ForegroundColor Cyan
-Write-Host " Agile Backlog Automation Startup Script" -ForegroundColor Cyan
-Write-Host "===========================================" -ForegroundColor Cyan
+param(
+    [switch]$StartFrontend,
+    [switch]$NoBrowser
+)
+
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "Agile Backlog Automation - Startup" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Check if virtual environment exists
-if (!(Test-Path ".venv\Scripts\Activate.ps1")) {
-    Write-Host "ERROR: Virtual environment not found at .venv\Scripts\Activate.ps1" -ForegroundColor Red
-    Write-Host "Please ensure you have set up the Python virtual environment first." -ForegroundColor Red
+# Check if Python is available
+try {
+    $pythonVersion = python --version 2>&1
+    Write-Host "Python found: $pythonVersion" -ForegroundColor Green
+} catch {
+    Write-Host "ERROR: Python is not installed or not in PATH" -ForegroundColor Red
+    Write-Host "Please install Python 3.8+ and try again" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-Write-Host "Activating virtual environment..." -ForegroundColor Yellow
-& .venv\Scripts\Activate.ps1
-
-Write-Host ""
-Write-Host "What would you like to start?" -ForegroundColor Green
-Write-Host "1. Backend Only (Main API Server)" -ForegroundColor White
-Write-Host "2. Backend Only (Tron API Server)" -ForegroundColor White
-Write-Host "3. Frontend Only" -ForegroundColor White
-Write-Host "4. Full Stack (Backend + Frontend)" -ForegroundColor White
-Write-Host ""
-
-$choice = Read-Host "Enter your choice (1-4)"
-
-switch ($choice) {
-    "1" {
-        Write-Host "Starting Main API Server..." -ForegroundColor Green
-        Write-Host "Backend will be available at: http://localhost:8000" -ForegroundColor Cyan
-        Write-Host "API documentation at: http://localhost:8000/docs" -ForegroundColor Cyan
-        python api_server.py
-    }
-    "2" {
-        Write-Host "Starting Tron API Server..." -ForegroundColor Green
-        Write-Host "Backend will be available at: http://localhost:8000" -ForegroundColor Cyan
-        Write-Host "Frontend will be available at: http://localhost:8000" -ForegroundColor Cyan
-        Write-Host "API documentation at: http://localhost:8000/docs" -ForegroundColor Cyan
-        python tron_api_server.py
-    }
-    "3" {
-        Write-Host "Starting Frontend Only..." -ForegroundColor Green
-        Write-Host "Frontend will be available at: http://localhost:3000" -ForegroundColor Cyan
-        Write-Host "Note: Make sure the backend is running separately!" -ForegroundColor Yellow
-        Set-Location frontend
-        npm start
-    }
-    "4" {
-        Write-Host "Starting Full Stack (Backend + Frontend)..." -ForegroundColor Green
-        Write-Host "Backend will be available at: http://localhost:8000" -ForegroundColor Cyan
-        Write-Host "Frontend will be available at: http://localhost:3000" -ForegroundColor Cyan
-        
-        # Start backend in background
-        Write-Host "Starting backend server..." -ForegroundColor Yellow
-        Start-Process powershell -ArgumentList "-Command", "& .venv\Scripts\Activate.ps1; python tron_api_server.py"
-        
-        # Wait a moment for backend to start
-        Start-Sleep -Seconds 3
-        
-        # Start frontend
-        Write-Host "Starting frontend..." -ForegroundColor Yellow
-        Set-Location frontend
-        npm start
-    }
-    default {
-        Write-Host "Invalid choice. Starting Tron API Server by default..." -ForegroundColor Yellow
-        python tron_api_server.py
+# Check if virtual environment exists
+if (-not (Test-Path "venv")) {
+    Write-Host "Creating virtual environment..." -ForegroundColor Yellow
+    python -m venv venv
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Failed to create virtual environment" -ForegroundColor Red
+        Read-Host "Press Enter to exit"
+        exit 1
     }
 }
 
+# Activate virtual environment
+Write-Host "Activating virtual environment..." -ForegroundColor Yellow
+& "venv\Scripts\Activate.ps1"
+
+# Install dependencies
+Write-Host "Installing dependencies..." -ForegroundColor Yellow
+pip install -r requirements.txt
+
+# Start the unified API server
 Write-Host ""
-Write-Host "Application stopped." -ForegroundColor Red
+Write-Host "Starting Unified API Server..." -ForegroundColor Green
+Write-Host "Server will be available at: http://localhost:8000" -ForegroundColor Green
+Write-Host "API documentation at: http://localhost:8000/docs" -ForegroundColor Green
+Write-Host ""
+
+if ($StartFrontend) {
+    Write-Host "Starting frontend development server..." -ForegroundColor Yellow
+    
+    # Start frontend in background
+    Start-Process powershell -ArgumentList "-Command", "& .venv\Scripts\Activate.ps1; cd frontend; npm start"
+    
+    # Wait a moment for frontend to start
+    Start-Sleep -Seconds 3
+    
+    # Open browser if not disabled
+    if (-not $NoBrowser) {
+        Start-Process "http://localhost:3000"
+    }
+    
+    # Start backend
+    python unified_api_server.py
+} else {
+    # Start backend only
+    python unified_api_server.py
+}
+
+Write-Host ""
+Write-Host "Server stopped." -ForegroundColor Yellow
 Read-Host "Press Enter to exit"

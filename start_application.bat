@@ -1,43 +1,43 @@
 @echo off
-echo ==========================================
-echo  Agile Backlog Automation Startup Script
-echo ==========================================
+echo ========================================
+echo Agile Backlog Automation - Startup
+echo ========================================
 echo.
 
-echo Checking virtual environment...
-if not exist ".venv\Scripts\activate.bat" (
-    echo ERROR: Virtual environment not found at .venv\Scripts\activate.bat
-    echo Please ensure you have set up the Python virtual environment first.
+REM Check if Python is available
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Python is not installed or not in PATH
+    echo Please install Python 3.8+ and try again
     pause
     exit /b 1
 )
 
-echo Activating virtual environment...
-call .venv\Scripts\activate.bat
-
-echo.
-echo Starting Backend API Server...
-echo Backend will be available at: http://localhost:8000
-echo API documentation at: http://localhost:8000/docs
-echo.
-
-echo Choose which server to start:
-echo 1. Main API Server (api_server.py)
-echo 2. Tron API Server (tron_api_server.py) - includes frontend
-echo.
-set /p choice="Enter your choice (1 or 2): "
-
-if "%choice%"=="1" (
-    echo Starting Main API Server...
-    python api_server.py
-) else if "%choice%"=="2" (
-    echo Starting Tron API Server...
-    python tron_api_server.py
-) else (
-    echo Invalid choice. Starting Tron API Server by default...
-    python tron_api_server.py
+REM Check if virtual environment exists
+if not exist "venv" (
+    echo Creating virtual environment...
+    python -m venv venv
+    if errorlevel 1 (
+        echo ERROR: Failed to create virtual environment
+        pause
+        exit /b 1
+    )
 )
 
+REM Activate virtual environment
+echo Activating virtual environment...
+call venv\Scripts\activate.bat
+
+REM Install dependencies
+echo Installing dependencies...
+pip install -r requirements.txt
+
+REM Start the unified API server
 echo.
-echo Server stopped.
+echo Starting Unified API Server...
+echo Server will be available at: http://localhost:8000
+echo.
+python unified_api_server.py
+
 pause
+

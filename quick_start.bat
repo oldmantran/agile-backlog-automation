@@ -1,4 +1,3 @@
 @echo off
-echo Starting Agile Backlog Automation...
-call .venv\Scripts\activate.bat
-python tron_api_server.py
+echo Starting Unified API Server...
+python unified_api_server.py

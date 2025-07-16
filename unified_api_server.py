@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-REST API Server for Agile Backlog Automation Frontend Integration.
+Unified REST API Server for Agile Backlog Automation Frontend Integration.
 
 This FastAPI server provides endpoints for the React frontend to interact
-with the backend agents and workflow supervisor.
+with the backend agents, workflow supervisor, and management tools.
+Combines the best features from api_server.py and tron_api_server.py.
 """
 
 import os
@@ -12,17 +13,23 @@ import json
 import asyncio
 import logging
 import queue
+import subprocess
+import threading
+import time
+import webbrowser
 from datetime import datetime
-from typing import Dict, Any, List, Optional
 from pathlib import Path
+from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
+from dataclasses import dataclass, asdict
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 import uvicorn
 
@@ -39,6 +46,19 @@ active_jobs: Dict[str, Dict[str, Any]] = {}
 # WebSocket connections for log streaming
 log_connections: List[WebSocket] = []
 log_queue = queue.Queue()
+
+# Global state for background processes
+background_processes: Dict[str, subprocess.Popen] = {}
+sweeper_status = {
+    "isRunning": False,
+    "progress": 0,
+    "currentItem": "",
+    "processedItems": 0,
+    "totalItems": 0,
+    "errors": [],
+    "completedActions": [],
+    "logs": []
+}
 
 # Custom log handler for streaming logs to WebSocket clients
 class WebSocketLogHandler(logging.Handler):
@@ -96,7 +116,7 @@ async def distribute_logs():
 async def lifespan(app: FastAPI):
     """Handle application lifespan events."""
     # Startup
-    logger.info("Starting Agile Backlog Automation API Server")
+    logger.info("Starting Unified Agile Backlog Automation API Server")
     
     # Ensure output directory exists
     Path("output").mkdir(exist_ok=True)
@@ -104,20 +124,18 @@ async def lifespan(app: FastAPI):
     # Start log distribution task
     asyncio.create_task(distribute_logs())
     
-    logger.info("API Server started successfully")
+    logger.info("Unified API Server started successfully")
     
     yield
     
     # Shutdown
-    logger.info("Shutting down API Server")
-
-
+    logger.info("Shutting down Unified API Server")
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
-    title="Agile Backlog Automation API",
-    description="REST API for managing agile backlog generation workflows",
-    version="1.0.0",
+    title="Unified Agile Backlog Automation API",
+    description="REST API for managing agile backlog generation workflows and management tools",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -134,10 +152,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global storage for active jobs (in production, use Redis or database)
-active_jobs: Dict[str, Dict[str, Any]] = {}
+# Serve static files from frontend build
+project_root = Path(__file__).parent
+if (project_root / "frontend" / "build").exists():
+    app.mount("/static", StaticFiles(directory=project_root / "frontend" / "build" / "static"), name="static")
 
 # Pydantic models for request/response
+class ConfigData(BaseModel):
+    azureDevOpsPat: str = ""
+    azureDevOpsOrg: str = ""
+    azureDevOpsProject: str = ""
+    llmProvider: str = "openai"
+    areaPath: str = ""
+    openaiApiKey: str = ""
+    grokApiKey: str = ""
+
+class SweeperConfig(BaseModel):
+    targetArea: str
+    iterationPath: str = ""
+    includeAcceptanceCriteria: bool = True
+    includeTaskDecomposition: bool = True
+
 class ProjectBasics(BaseModel):
     name: str = Field(..., description="Project name")
     description: str = Field(..., description="Project description")
@@ -172,12 +207,138 @@ class GenerationStatus(BaseModel):
     endTime: Optional[datetime] = None
     error: Optional[str] = None
 
+# WorkItem model for mock data
+@dataclass
+class WorkItem:
+    id: int
+    title: str
+    work_item_type: str
+    state: str
+    area_path: str
+    assigned_to: Optional[str] = None
+
+# Utility functions
+def load_env_config() -> Dict[str, str]:
+    """Load configuration from .env file"""
+    env_file = project_root / ".env"
+    config = {}
+    
+    if env_file.exists():
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    config[key.strip()] = value.strip()
+    
+    return config
+
+def save_env_config(config: Dict[str, str]) -> bool:
+    """Save configuration to .env file"""
+    try:
+        env_file = project_root / ".env"
+        lines = []
+        
+        # Read existing file and preserve non-config lines
+        if env_file.exists():
+            with open(env_file, 'r') as f:
+                for line in f:
+                    line_stripped = line.strip()
+                    if not line_stripped or line_stripped.startswith('#'):
+                        lines.append(line)
+                    elif '=' in line_stripped:
+                        key = line_stripped.split('=', 1)[0].strip()
+                        if key in config:
+                            lines.append(f"{key}={config[key]}\n")
+                            del config[key]  # Remove from dict so we don't add it again
+                        else:
+                            lines.append(line)
+                    else:
+                        lines.append(line)
+        
+        # Add any new config items
+        for key, value in config.items():
+            lines.append(f"{key}={value}\n")
+        
+        # Write back to file
+        with open(env_file, 'w') as f:
+            f.writelines(lines)
+        
+        return True
+    except Exception as e:
+        print(f"Error saving config: {e}")
+        return False
+
+def run_python_script(script_name: str, args: List[str] = None) -> subprocess.Popen:
+    """Run a Python script in the background"""
+    if args is None:
+        args = []
+    
+    script_path = project_root / script_name
+    if not script_path.exists():
+        raise FileNotFoundError(f"Script not found: {script_name}")
+    
+    cmd = [sys.executable, str(script_path)] + args
+    return subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=project_root
+    )
+
 # API Endpoints
+
+@app.get("/")
+async def serve_frontend():
+    """Serve the frontend application"""
+    frontend_build = project_root / "frontend" / "build" / "index.html"
+    if frontend_build.exists():
+        with open(frontend_build, 'r') as f:
+            return HTMLResponse(content=f.read())
+    else:
+        return {"message": "Unified Agile Backlog Automation API v2.0", "status": "Backend running, frontend not built"}
 
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/config")
+async def get_config():
+    """Get current configuration"""
+    env_config = load_env_config()
+    
+    return {
+        "azureDevOpsPat": env_config.get("AZURE_DEVOPS_PAT", ""),
+        "azureDevOpsOrg": env_config.get("AZURE_DEVOPS_ORG", ""),
+        "azureDevOpsProject": env_config.get("AZURE_DEVOPS_PROJECT", ""),
+        "llmProvider": env_config.get("LLM_PROVIDER", "openai"),
+        "areaPath": env_config.get("AREA_PATH", ""),
+        "openaiApiKey": env_config.get("OPENAI_API_KEY", ""),
+        "grokApiKey": env_config.get("GROK_API_KEY", "")
+    }
+
+@app.post("/api/config")
+async def save_config(config: ConfigData):
+    """Save configuration to .env file"""
+    env_config = {
+        "AZURE_DEVOPS_PAT": config.azureDevOpsPat,
+        "AZURE_DEVOPS_ORG": config.azureDevOpsOrg,
+        "AZURE_DEVOPS_PROJECT": config.azureDevOpsProject,
+        "LLM_PROVIDER": config.llmProvider,
+        "AREA_PATH": config.areaPath,
+        "OPENAI_API_KEY": config.openaiApiKey,
+        "GROK_API_KEY": config.grokApiKey
+    }
+    
+    # Remove empty values
+    env_config = {k: v for k, v in env_config.items() if v}
+    
+    if save_env_config(env_config):
+        return {"status": "success", "message": "Configuration saved successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save configuration")
 
 @app.post("/api/projects")
 async def create_project(project_data: CreateProjectRequest, background_tasks: BackgroundTasks):
@@ -215,6 +376,63 @@ async def create_project(project_data: CreateProjectRequest, background_tasks: B
     except Exception as e:
         logger.error(f"Error creating project: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create project: {str(e)}")
+
+@app.get("/api/projects")
+async def list_projects(page: int = 1, limit: int = 10):
+    """List all projects with pagination and basic info."""
+    try:
+        output_dir = Path("output")
+        all_projects = []
+        
+        if output_dir.exists():
+            # Find all project files
+            for project_file in output_dir.glob("project_*.json"):
+                try:
+                    with open(project_file, 'r') as f:
+                        project_info = json.load(f)
+                    
+                    # Extract basic project info
+                    project_data = project_info.get("data", {})
+                    basics = project_data.get("basics", {})
+                    
+                    project_summary = {
+                        "id": project_info.get("id"),
+                        "name": basics.get("name", "Unknown"),
+                        "description": basics.get("description", ""),
+                        "domain": basics.get("domain", ""),
+                        "status": project_info.get("status", "unknown"),
+                        "createdAt": project_info.get("createdAt"),
+                        "updatedAt": project_info.get("updatedAt")
+                    }
+                    all_projects.append(project_summary)
+                except Exception as e:
+                    logger.warning(f"Error reading project file {project_file}: {e}")
+                    continue
+        
+        # Sort by creation date (newest first)
+        all_projects.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+        
+        # Pagination
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        paginated_projects = all_projects[start_idx:end_idx]
+        
+        return {
+            "success": True,
+            "data": {
+                "projects": paginated_projects,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": len(all_projects),
+                    "pages": (len(all_projects) + limit - 1) // limit
+                }
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing projects: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to list projects: {str(e)}")
 
 @app.post("/api/backlog/generate/{project_id}")
 async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
@@ -283,9 +501,10 @@ async def get_all_jobs():
         "data": [
             {
                 **job_data,
-                "jobId": job_id
+                "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
+                "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
             }
-            for job_id, job_data in active_jobs.items()
+            for job_data in active_jobs.values()
         ]
     }
 
@@ -364,7 +583,204 @@ async def get_project_backlog(project_id: str):
         "data": backlog_data
     }
 
+# Azure DevOps and AI Validation Endpoints
+@app.post("/api/validate-azure")
+async def validate_azure_connection(data: dict):
+    """Validate Azure DevOps connection"""
+    try:
+        # Mock validation - in production, test actual connection
+        return {"status": "success", "message": "Azure DevOps connection validated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+
+@app.post("/api/validate-ai")
+async def validate_ai_connection(data: dict):
+    """Validate AI provider connection"""
+    try:
+        # Mock validation - in production, test actual connection
+        return {"status": "success", "message": "AI provider connection validated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+
+# Work Item Management Endpoints
+@app.get("/api/workitems")
+async def get_work_items():
+    """Get work items from Azure DevOps"""
+    # Mock data for now
+    work_items = [
+        WorkItem(1, "Implement user authentication", "User Story", "Active", "Project\\Features"),
+        WorkItem(2, "Design database schema", "Task", "Completed", "Project\\Backend"),
+        WorkItem(3, "Create API endpoints", "User Story", "Active", "Project\\API")
+    ]
+    
+    return {
+        "success": True,
+        "data": [asdict(item) for item in work_items]
+    }
+
+@app.post("/api/workitems/delete")
+async def delete_work_items(data: dict):
+    """Delete work items from Azure DevOps"""
+    try:
+        # Mock deletion - in production, call Azure DevOps API
+        item_ids = data.get("itemIds", [])
+        return {
+            "status": "success",
+            "message": f"Deleted {len(item_ids)} work items",
+            "deletedIds": item_ids
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Deletion failed: {str(e)}")
+
+# Test Management Endpoints
+@app.get("/api/testcases")
+async def get_test_cases():
+    """Get test cases from Azure DevOps"""
+    # Mock data
+    return {
+        "success": True,
+        "data": [
+            {"id": 1, "title": "Login functionality test", "state": "Active"},
+            {"id": 2, "title": "User registration test", "state": "Active"}
+        ]
+    }
+
+@app.get("/api/testsuites")
+async def get_test_suites():
+    """Get test suites from Azure DevOps"""
+    # Mock data
+    return {
+        "success": True,
+        "data": [
+            {"id": 1, "name": "Authentication Suite", "testCaseCount": 5},
+            {"id": 2, "name": "User Management Suite", "testCaseCount": 3}
+        ]
+    }
+
+@app.get("/api/testplans")
+async def get_test_plans():
+    """Get test plans from Azure DevOps"""
+    # Mock data
+    return {
+        "success": True,
+        "data": [
+            {"id": 1, "name": "Sprint 1 Test Plan", "testSuiteCount": 2},
+            {"id": 2, "name": "Regression Test Plan", "testSuiteCount": 1}
+        ]
+    }
+
+@app.post("/api/test/delete")
+async def delete_test_items(data: dict):
+    """Delete test items from Azure DevOps"""
+    try:
+        # Mock deletion
+        item_ids = data.get("itemIds", [])
+        item_type = data.get("itemType", "testcase")
+        return {
+            "status": "success",
+            "message": f"Deleted {len(item_ids)} {item_type}s",
+            "deletedIds": item_ids
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Deletion failed: {str(e)}")
+
+# Backlog Sweeper Endpoints
+@app.get("/api/sweeper/config")
+async def get_sweeper_config():
+    """Get current sweeper configuration"""
+    return {
+        "success": True,
+        "data": {
+            "targetArea": "",
+            "iterationPath": "",
+            "includeAcceptanceCriteria": True,
+            "includeTaskDecomposition": True
+        }
+    }
+
+@app.post("/api/sweeper/config")
+async def save_sweeper_config(config: SweeperConfig):
+    """Save sweeper configuration"""
+    # In production, save to config file
+    return {"status": "success", "message": "Sweeper configuration saved"}
+
+@app.post("/api/sweeper/start")
+async def start_sweeper(config: SweeperConfig, background_tasks: BackgroundTasks):
+    """Start the backlog sweeper"""
+    try:
+        if sweeper_status["isRunning"]:
+            raise HTTPException(status_code=400, detail="Sweeper is already running")
+        
+        # Reset status
+        sweeper_status.update({
+            "isRunning": True,
+            "progress": 0,
+            "currentItem": "",
+            "processedItems": 0,
+            "totalItems": 0,
+            "errors": [],
+            "completedActions": [],
+            "logs": []
+        })
+        
+        # Start background task
+        background_tasks.add_task(run_sweeper_background, config)
+        
+        return {"status": "success", "message": "Sweeper started successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting sweeper: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start sweeper: {str(e)}")
+
+@app.post("/api/sweeper/stop")
+async def stop_sweeper():
+    """Stop the backlog sweeper"""
+    sweeper_status["isRunning"] = False
+    return {"status": "success", "message": "Sweeper stopped"}
+
+@app.get("/api/sweeper/status")
+async def get_sweeper_status():
+    """Get sweeper status"""
+    return {"success": True, "data": sweeper_status}
+
 # Background task functions
+async def run_sweeper_background(config: SweeperConfig):
+    """Background task to run the backlog sweeper"""
+    try:
+        logger.info("Starting backlog sweeper")
+        
+        # Mock sweeper process
+        total_items = 10
+        sweeper_status["totalItems"] = total_items
+        
+        for i in range(total_items):
+            if not sweeper_status["isRunning"]:
+                break
+                
+            sweeper_status["currentItem"] = f"Item {i+1}"
+            sweeper_status["progress"] = int((i + 1) / total_items * 100)
+            sweeper_status["processedItems"] = i + 1
+            
+            # Simulate processing time
+            await asyncio.sleep(1)
+            
+            # Add some logs
+            log_entry = f"Processed {sweeper_status['currentItem']}"
+            sweeper_status["logs"].append(log_entry)
+            logger.info(log_entry)
+        
+        sweeper_status["isRunning"] = False
+        sweeper_status["progress"] = 100
+        sweeper_status["completedActions"].append("Sweep completed")
+        
+        logger.info("Backlog sweeper completed")
+        
+    except Exception as e:
+        logger.error(f"Error in sweeper: {str(e)}")
+        sweeper_status["isRunning"] = False
+        sweeper_status["errors"].append(str(e))
 
 async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
     """Background task to run the actual backlog generation."""
@@ -481,6 +897,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["error"] = str(e)
         active_jobs[job_id]["endTime"] = datetime.now()
 
+# WebSocket and Application Management Endpoints
 @app.websocket("/ws/logs")
 async def websocket_logs(websocket: WebSocket):
     """WebSocket endpoint for streaming server logs to the frontend"""
@@ -491,7 +908,7 @@ async def websocket_logs(websocket: WebSocket):
         await websocket.send_json({
             "timestamp": datetime.now().isoformat(),
             "level": "INFO",
-            "message": "🌐 Connected to server log stream",
+            "message": "🌐 Connected to unified server log stream",
             "module": "websocket"
         })
         
@@ -520,18 +937,35 @@ async def test_log_generation():
     test_message = {
         "timestamp": datetime.now().isoformat(),
         "level": "INFO",
-        "message": "📡 Direct queue test message",
+        "message": "📡 Direct queue test message from unified server",
         "module": "test_api"
     }
     log_queue.put(test_message)
     
     return {"status": "success", "message": "Test log messages generated"}
 
+@app.post("/api/start-application")
+async def start_application():
+    """Start the full application (backend + frontend)"""
+    try:
+        # Start frontend in background
+        threading.Timer(2.0, open_browser).start()
+        return {"status": "success", "message": "Application starting"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start application: {str(e)}")
+
+def open_browser():
+    """Open browser to the application"""
+    try:
+        webbrowser.open("http://localhost:3000")
+    except Exception as e:
+        logger.error(f"Failed to open browser: {e}")
+
 if __name__ == "__main__":
     uvicorn.run(
-        "api_server:app",
+        "unified_api_server:app",
         host="0.0.0.0",
         port=8000,
         reload=False,  # Disable reload to prevent multiprocessing issues
         log_level="info"
-    )
+    ) 
