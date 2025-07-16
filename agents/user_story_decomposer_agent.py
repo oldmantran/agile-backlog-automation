@@ -78,7 +78,7 @@ Edge Cases: {feature.get('edge_cases', [])}
             else:
                 print("⚠️ LLM response was not in expected format. Attempting to extract user stories from response...")
                 # Try to extract any user story-like content from the response
-                return self._extract_user_stories_from_any_format(user_stories, max_user_stories)
+                return self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
                 
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse JSON: {e}")
@@ -88,7 +88,7 @@ Edge Cases: {feature.get('edge_cases', [])}
             # Try to extract user stories from the raw response text
             return self._extract_user_stories_from_text(response, feature, max_user_stories)
 
-    def _extract_user_stories_from_any_format(self, response_data: any, max_user_stories: int = None) -> list[dict]:
+    def _extract_user_stories_from_any_format(self, response_data: any, feature: dict = None, max_user_stories: int = None) -> list[dict]:
         """Extract user stories from any response format the LLM provides."""
         print("🔍 [UserStoryDecomposerAgent] Extracting user stories from unexpected format...")
         
@@ -122,14 +122,21 @@ Edge Cases: {feature.get('edge_cases', [])}
             extracted_stories.append(story)
         
         if not extracted_stories:
-            # Create a basic user story to avoid empty results
+            # Create a basic user story to avoid empty results - but make it feature-specific
+            feature_title = feature.get('title', 'Feature') if feature else 'Feature'
+            feature_description = feature.get('description', '') if feature else ''
+            
             extracted_stories.append({
-                'title': "Process Feature Requirements",
-                'user_story': "As a user, I want to access the feature functionality so that I can complete my tasks",
-                'description': f"Generated from unrecognized LLM response format",
+                'title': f"Implement {feature_title}",
+                'user_story': f"As a user, I want to access {feature_title.lower()} so that I can {feature_description[:50] if feature_description else 'accomplish my objectives'}",
+                'description': f"Implementation of {feature_title} functionality as described in feature requirements",
                 'story_points': 5,
                 'priority': 'Medium',
-                'acceptance_criteria': ["Feature should be accessible", "Feature should function as expected"]
+                'acceptance_criteria': [
+                    f"{feature_title} functionality is accessible to authorized users",
+                    f"{feature_title} operates as specified in requirements",
+                    "System provides appropriate feedback and error handling"
+                ]
             })
         
         print(f"🔍 [UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from format")

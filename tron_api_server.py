@@ -791,6 +791,25 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "azure_config": project_data["azureConfig"]
         }
         
+        # Extract enhanced context from vision statement
+        from utils.vision_context_extractor import VisionContextExtractor
+        extractor = VisionContextExtractor()
+        enhanced_context = extractor.extract_context(
+            project_data={
+                "vision_statement": project_data["vision"]["visionStatement"],
+                "description": project_data["basics"]["description"],
+                "project_name": project_name,
+                "business_objectives": project_data["vision"]["businessObjectives"],
+                "target_audience": project_data["vision"]["targetAudience"]
+            },
+            business_objectives=project_data["vision"]["businessObjectives"],
+            target_audience=project_data["vision"]["targetAudience"],
+            domain=project_domain
+        )
+        
+        # Merge enhanced context with existing context
+        context.update(enhanced_context)
+        
         # Set up the project context for the supervisor
         supervisor.configure_project_context(project_domain, context)
         
