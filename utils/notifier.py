@@ -212,7 +212,10 @@ Check the application logs for detailed issue descriptions and remediation steps
             print("⚠️ Teams webhook not configured.")
             return False
 
-        payload = { "text": message }
+        # Sanitize message for Teams to handle Unicode properly
+        sanitized_message = self._sanitize_unicode_for_email(message)
+        
+        payload = { "text": sanitized_message }
         try:
             response = requests.post(self.teams_webhook, json=payload)
             if response.status_code in [200, 202]:
@@ -236,8 +239,12 @@ Check the application logs for detailed issue descriptions and remediation steps
             print(f"⚠️ Email settings incomplete. Missing: {', '.join(missing_vars)}")
             return False
 
-        msg = MIMEText(body)
-        msg["Subject"] = subject
+        # Sanitize subject and body for email to handle Unicode properly
+        sanitized_subject = self._sanitize_unicode_for_email(subject)
+        sanitized_body = self._sanitize_unicode_for_email(body)
+
+        msg = MIMEText(sanitized_body, 'plain', 'utf-8')
+        msg["Subject"] = sanitized_subject
         msg["From"] = self.email_from
         msg["To"] = self.email_to
 
@@ -260,3 +267,50 @@ Check the application logs for detailed issue descriptions and remediation steps
             print(f"   From: {self.email_from}")
             print(f"   To: {self.email_to}")
             return False
+
+    def _sanitize_unicode_for_email(self, text: str) -> str:
+        """Sanitize Unicode characters for email compatibility."""
+        try:
+            import re
+            
+            # Replace problematic Unicode characters with safe alternatives
+            replacements = {
+                '✅': '[SUCCESS]',
+                '❌': '[FAILED]',
+                '⚠️': '[WARNING]',
+                '📊': '[STATS]',
+                '🔍': '[SEARCH]',
+                '📝': '[NOTE]',
+                '🎯': '[TARGET]',
+                '🚀': '[LAUNCH]',
+                '💡': '[IDEA]',
+                '🔧': '[TOOL]',
+                '📋': '[CHECKLIST]',
+                '🎨': '[DESIGN]',
+                '🔒': '[SECURE]',
+                '🌟': '[STAR]',
+                '⭐': '[STAR]',
+                '🎉': '[CELEBRATE]',
+                '🔄': '[REFRESH]',
+                '📈': '[TREND]',
+                '💾': '[SAVE]',
+                '🎪': '[EVENT]',
+                '🚨': '[ALERT]',
+                '📧': '[EMAIL]',
+                '📤': '[SEND]',
+                '📥': '[RECEIVE]'
+            }
+            
+            for unicode_char, replacement in replacements.items():
+                text = text.replace(unicode_char, replacement)
+            
+            # Remove any remaining problematic Unicode characters
+            text = re.sub(r'[^\x00-\x7F]+', '?', text)
+            
+            return text
+        except Exception as e:
+            # Fallback to UTF-8 with replacement
+            try:
+                return str(text).encode('utf-8', errors='replace').decode('utf-8')
+            except Exception:
+                return str(text).encode('ascii', errors='ignore').decode('ascii')

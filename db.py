@@ -19,7 +19,7 @@ class BacklogJob(Base):
     test_cases_generated = Column(Integer, nullable=False)
     execution_time_seconds = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    raw_summary = Column(Text, nullable=True)  # Store JSON as text
+    raw_summary = Column(Text, nullable=True)  # Store JSON as text with UTF-8 encoding
 
 # SQLite DB file
 engine = create_engine('sqlite:///backlog_jobs.db', echo=False)
@@ -42,6 +42,15 @@ def add_backlog_job(
     raw_summary
 ):
     session = SessionLocal()
+    
+    # Ensure proper UTF-8 encoding for JSON data
+    if raw_summary:
+        # Sanitize any Unicode characters in the summary
+        sanitized_summary = _sanitize_json_for_storage(raw_summary)
+        raw_summary_json = json.dumps(sanitized_summary, ensure_ascii=False)
+    else:
+        raw_summary_json = None
+        
     job = BacklogJob(
         user_email=user_email,
         project_name=project_name,
@@ -51,11 +60,57 @@ def add_backlog_job(
         tasks_generated=tasks_generated,
         test_cases_generated=test_cases_generated,
         execution_time_seconds=execution_time_seconds,
-        raw_summary=json.dumps(raw_summary)
+        raw_summary=raw_summary_json
     )
     session.add(job)
     session.commit()
     session.close()
+
+def _sanitize_json_for_storage(data):
+    """Recursively sanitize JSON data for database storage."""
+    if isinstance(data, dict):
+        return {key: _sanitize_json_for_storage(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [_sanitize_json_for_storage(item) for item in data]
+    elif isinstance(data, str):
+        # Sanitize Unicode characters in strings
+        import re
+        # Replace common Unicode characters
+        replacements = {
+            '✅': '[SUCCESS]',
+            '❌': '[FAILED]',
+            '⚠️': '[WARNING]',
+            '📊': '[STATS]',
+            '🔍': '[SEARCH]',
+            '📝': '[NOTE]',
+            '🎯': '[TARGET]',
+            '🚀': '[LAUNCH]',
+            '💡': '[IDEA]',
+            '🔧': '[TOOL]',
+            '📋': '[CHECKLIST]',
+            '🎨': '[DESIGN]',
+            '🔒': '[SECURE]',
+            '🌟': '[STAR]',
+            '⭐': '[STAR]',
+            '🎉': '[CELEBRATE]',
+            '🔄': '[REFRESH]',
+            '📈': '[TREND]',
+            '💾': '[SAVE]',
+            '🎪': '[EVENT]',
+            '🚨': '[ALERT]',
+            '📧': '[EMAIL]',
+            '📤': '[SEND]',
+            '📥': '[RECEIVE]'
+        }
+        
+        for unicode_char, replacement in replacements.items():
+            data = data.replace(unicode_char, replacement)
+        
+        # Remove any remaining problematic Unicode characters
+        data = re.sub(r'[^\x00-\x7F]+', '?', data)
+        return data
+    else:
+        return data
 
 # Helper to get jobs by user
 

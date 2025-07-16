@@ -979,8 +979,12 @@ class WorkflowSupervisor:
             
             return text
         except Exception as e:
-            # If sanitization fails, return a safe fallback
-            return str(text).encode('ascii', errors='ignore').decode('ascii')
+            # Better fallback - preserve more information using UTF-8
+            try:
+                return str(text).encode('utf-8', errors='replace').decode('utf-8')
+            except Exception:
+                # Final fallback - strip all non-ASCII
+                return str(text).encode('ascii', errors='ignore').decode('ascii')
 
     def _determine_qa_area_path(self, context: Dict[str, Any]) -> str:
         """Determine the appropriate area path for QA artifacts."""
