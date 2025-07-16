@@ -6,9 +6,7 @@ Write-Host "🔍 Scanning for processes on ports 8000 and 3000..." -ForegroundCo
 
 # Function to kill processes on a specific port
 function Kill-ProcessOnPort {
-    param(
-        [int]$Port
-    )
+    param([int]$Port)
     
     Write-Host "Checking port $Port..." -ForegroundColor Cyan
     
@@ -25,17 +23,14 @@ function Kill-ProcessOnPort {
                         Stop-Process -Id $processId -Force
                         Write-Host "  ✅ Process killed successfully" -ForegroundColor Green
                     }
-                }
-                catch {
+                } catch {
                     Write-Host "  ❌ Failed to kill process $processId : $_" -ForegroundColor Red
                 }
             }
-        }
-        else {
+        } else {
             Write-Host "  ✅ No processes found on port $Port" -ForegroundColor Green
         }
-    }
-    catch {
+    } catch {
         Write-Host "  ❌ Error checking port $Port : $_" -ForegroundColor Red
     }
 }
@@ -58,8 +53,7 @@ try {
             $procPath = ""
             try {
                 $procPath = $proc.Path
-            }
-            catch {
+            } catch {
                 $procPath = ""
             }
             
@@ -69,12 +63,10 @@ try {
                 Write-Host "  ✅ Python process killed successfully" -ForegroundColor Green
             }
         }
-    }
-    else {
+    } else {
         Write-Host "  ✅ No Python processes found" -ForegroundColor Green
     }
-}
-catch {
+} catch {
     Write-Host "  ❌ Error checking Python processes: $_" -ForegroundColor Red
 }
 
@@ -88,12 +80,10 @@ try {
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             Write-Host "  ✅ Node process killed successfully" -ForegroundColor Green
         }
-    }
-    else {
+    } else {
         Write-Host "  ✅ No Node processes found" -ForegroundColor Green
     }
-}
-catch {
+} catch {
     Write-Host "  ❌ Error checking Node processes: $_" -ForegroundColor Red
 }
 
@@ -102,4 +92,8 @@ Write-Host "Ports 8000 and 3000 should now be free for fresh testing." -Foregrou
 
 # Don't pause in PowerShell - let it exit normally
 Write-Host "Press any key to continue..." -ForegroundColor Yellow
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+try {
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+} catch {
+    # If ReadKey fails, just continue
+}
