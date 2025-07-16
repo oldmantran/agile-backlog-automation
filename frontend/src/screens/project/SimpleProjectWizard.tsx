@@ -49,24 +49,29 @@ const SimpleProjectWizard: React.FC = () => {
         if (backlogResponse.jobId) {
           setJobId(backlogResponse.jobId);
           setProgress(60);
-          setCurrentOperation('Epic Strategist initializing - transforming vision into business epics...');
+          setCurrentOperation('Backlog generation started successfully!');
           
           // Store job info in localStorage
           const jobInfo = {
             jobId: backlogResponse.jobId,
             projectId: projectId,
+            projectName: projectData.basics?.name || 'Untitled Project',
             status: 'queued',
             progress: 0,
             startTime: new Date().toISOString(),
+            currentAction: 'Epic Strategist initializing...'
           };
           
           const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
           existingJobs.push(jobInfo);
           localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
           
-          console.log('Starting progress polling...');
-          // Step 3: Start polling for progress updates
-          pollJobProgress(backlogResponse.jobId);
+          // Navigate directly to My Projects screen after brief delay
+          setTimeout(() => {
+            console.log('Navigating to My Projects screen...');
+            navigate('/dashboard');
+          }, 2000);
+          
         } else {
           console.error('No jobId in backlog response:', backlogResponse);
           throw new Error('Failed to start backlog generation - no job ID returned');
@@ -82,56 +87,6 @@ const SimpleProjectWizard: React.FC = () => {
       setCurrentOperation(`Error: ${errorMessage}`);
       setIsSubmitting(false); // Only set to false on error
     }
-  };
-
-  const pollJobProgress = async (jobId: string) => {
-    console.log(`Starting progress polling for job: ${jobId}`);
-    const maxAttempts = 60; // 5 minutes max
-    let attempts = 0;
-    
-    const poll = async () => {
-      try {
-        console.log(`Polling attempt ${attempts + 1}/${maxAttempts} for job ${jobId}`);
-        const status = await backlogApi.getGenerationStatus(jobId);
-        console.log('Status response:', status);
-        
-        setProgress(Math.max(60, status.progress || 0));
-        setCurrentOperation(status.currentAction || `${status.currentAgent} working...`);
-        
-        if (status.status === 'completed') {
-          console.log('Job completed successfully');
-          setProgress(100);
-          setCurrentOperation('Backlog generation completed successfully!');
-          setIsCompleted(true);
-          setIsSubmitting(false); // Job completed
-          return;
-        } else if (status.status === 'failed') {
-          console.log('Job failed:', status.error);
-          setError(status.error || 'Unknown error');
-          setCurrentOperation(`Generation failed: ${status.error || 'Unknown error'}`);
-          setIsSubmitting(false); // Job failed
-          return;
-        }
-        
-        attempts++;
-        if (attempts < maxAttempts && (status.status === 'queued' || status.status === 'running')) {
-          console.log(`Job still ${status.status}, scheduling next poll in 5 seconds`);
-          setTimeout(poll, 5000); // Poll every 5 seconds
-        } else if (attempts >= maxAttempts) {
-          console.log('Max polling attempts reached');
-          setError('Generation timeout - check your Azure DevOps project for results');
-          setCurrentOperation('Polling timeout - generation may still be running');
-          setIsSubmitting(false); // Timeout
-        }
-      } catch (error) {
-        console.error('Error polling job status:', error);
-        setError('Error checking generation status');
-        setCurrentOperation('Error checking generation status');
-        setIsSubmitting(false); // Error
-      }
-    };
-    
-    poll();
   };
 
   const handleBackToHome = () => {

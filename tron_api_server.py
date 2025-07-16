@@ -425,6 +425,75 @@ async def get_all_jobs():
         ]
     }
 
+@app.get("/api/projects")
+async def list_projects(page: int = 1, limit: int = 10):
+    """List all projects with pagination and basic info."""
+    try:
+        output_dir = Path("output")
+        all_projects = []
+        
+        if output_dir.exists():
+            # Find all project files
+            for project_file in output_dir.glob("project_*.json"):
+                try:
+                    with open(project_file, 'r') as f:
+                        project_info = json.load(f)
+                    
+                    # Extract basic project info
+                    project_data = project_info.get("data", {})
+                    basics = project_data.get("basics", {})
+                    
+                    project_summary = {
+                        "id": project_info.get("id"),
+                        "basics": {
+                            "name": basics.get("name", "Untitled Project"),
+                            "description": basics.get("description", ""),
+                            "domain": basics.get("domain", "")
+                        },
+                        "status": project_info.get("status", "unknown"),
+                        "createdAt": project_info.get("createdAt"),
+                        "updatedAt": project_info.get("updatedAt"),
+                        "azureDevOps": {
+                            "organization": project_data.get("azureDevOps", {}).get("organization"),
+                            "project": project_data.get("azureDevOps", {}).get("project"),
+                            "areaPath": project_data.get("azureDevOps", {}).get("areaPath"),
+                            "iterationPath": project_data.get("azureDevOps", {}).get("iterationPath")
+                        }
+                    }
+                    
+                    # Check if backlog exists
+                    backlog_file = output_dir / f"backlog_{project_info.get('id')}.json"
+                    project_summary["hasBacklog"] = backlog_file.exists()
+                    
+                    all_projects.append(project_summary)
+                    
+                except Exception as e:
+                    logger.warning(f"Error reading project file {project_file}: {str(e)}")
+                    continue
+        
+        # Sort projects by creation date (newest first)
+        all_projects.sort(key=lambda p: p.get("createdAt", ""), reverse=True)
+        
+        # Apply pagination
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        projects = all_projects[start_idx:end_idx]
+        
+        return {
+            "success": True,
+            "data": {
+                "projects": projects,
+                "total": len(all_projects),
+                "page": page,
+                "limit": limit,
+                "totalPages": (len(all_projects) + limit - 1) // limit
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing projects: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to list projects: {str(e)}")
+
 @app.get("/api/projects/{project_id}")
 async def get_project(project_id: str):
     """Get project details by ID."""
@@ -785,6 +854,24 @@ async def websocket_logs(websocket: WebSocket):
     finally:
         if websocket in log_connections:
             log_connections.remove(websocket)
+
+@app.post("/api/test/logs")
+async def test_log_generation():
+    """Test endpoint to generate log messages for WebSocket streaming verification"""
+    logger.info("🧪 Test log message - INFO level")
+    logger.warning("⚠️ Test log message - WARNING level")
+    logger.error("❌ Test log message - ERROR level")
+    
+    # Also test direct queue insertion
+    test_message = {
+        "timestamp": datetime.now().isoformat(),
+        "level": "INFO",
+        "message": "📡 Direct queue test message",
+        "module": "test_api"
+    }
+    log_queue.put(test_message)
+    
+    return {"status": "success", "message": "Test log messages generated"}
 
 @app.post("/api/start-application")
 async def start_application():
