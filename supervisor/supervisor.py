@@ -535,6 +535,12 @@ class WorkflowSupervisor:
                     'human_review': human_review,
                     'save_outputs': save_outputs,
                     'integrate_azure': integrate_azure
+                },
+                'azure_config': {
+                    'organization_url': self.organization_url,
+                    'project': self.project,
+                    'area_path': self.area_path,
+                    'iteration_path': self.iteration_path
                 }
             }
         }
@@ -559,6 +565,12 @@ class WorkflowSupervisor:
                             'human_review': human_review,
                             'save_outputs': save_outputs,
                             'integrate_azure': integrate_azure
+                        },
+                        'azure_config': {
+                            'organization_url': self.organization_url,
+                            'project': self.project,
+                            'area_path': self.area_path,
+                            'iteration_path': self.iteration_path
                         }
                     }
                 }

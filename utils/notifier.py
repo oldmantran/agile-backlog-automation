@@ -73,6 +73,12 @@ class Notifier:
         
         # Generate summary message
         project_name = workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project')
+        
+        # Get Azure DevOps information
+        azure_config = workflow_data.get('metadata', {}).get('azure_config', {})
+        ado_project = azure_config.get('project', 'Not specified')
+        ado_area_path = azure_config.get('area_path', 'Not specified')
+        
         exec_time = stats.get('execution_time_seconds')
         
         # Format execution time
@@ -107,6 +113,8 @@ class Notifier:
 🎉 **Agile Backlog Automation Complete**
 
 **Project:** {project_name}
+**Azure DevOps Project:** {ado_project}
+**Area Path:** {ado_area_path}
 **Epics Generated:** {stats.get('epics_generated', 0)}
 **Features Generated:** {stats.get('features_generated', 0)}
 **User Stories Generated:** {stats.get('user_stories_generated', 0)}
