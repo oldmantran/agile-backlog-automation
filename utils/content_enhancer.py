@@ -8,14 +8,14 @@ to automatically improve content quality.
 
 from typing import Dict, List, Any, Tuple
 import re
-from utils.quality_validator import QualityValidator
+from utils.quality_validator import WorkItemQualityValidator
 
 
 class ContentEnhancer:
     """Enhances generated content for better specificity and actionability."""
     
     def __init__(self):
-        self.quality_validator = QualityValidator()
+        self.quality_validator = WorkItemQualityValidator()
         
         # Domain-specific terminology and patterns
         self.domain_patterns = {
