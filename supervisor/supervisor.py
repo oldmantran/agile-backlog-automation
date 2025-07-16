@@ -486,7 +486,7 @@ class WorkflowSupervisor:
         # Progress tracking
         stages_to_run = stages or self._get_default_stages()
         total_stages = len(stages_to_run)
-        # Updated progress mapping based on actual processing time
+        # Updated progress mapping including ADO integration as continuous sequence
         # Most time is spent on detailed work (tasks and QA), not high-level items
         stage_progress_mapping = {
             0: 5,   # Initial setup complete (very fast)
@@ -495,6 +495,9 @@ class WorkflowSupervisor:
             3: 35,  # User story decomposition complete (moderate - getting detailed)
             4: 50,  # Task generation complete (significant time - detailed technical work)
             5: 75,  # QA generation complete (most time - complex test case generation)
+            6: 85,  # ADO integration complete (work item creation and linking)
+            7: 95,  # Final validation and cleanup
+            8: 100, # Complete with notifications
         }
         
         # Helper function to update progress with optional sub-progress
@@ -584,6 +587,10 @@ class WorkflowSupervisor:
                         elif stage == 'qa_lead_agent':
                             self._execute_qa_generation(update_progress, stage_index + 1)
                             self._validate_test_cases_and_plans()
+                        elif stage == 'azure_integration':
+                            self._execute_azure_integration(update_progress, stage_index + 1)
+                        elif stage == 'final_validation':
+                            self._execute_final_validation(update_progress, stage_index + 1)
                         else:
                             self.logger.warning(f"Unknown stage: {stage}")
                             break
@@ -821,8 +828,8 @@ class WorkflowSupervisor:
             context = self.project_context.get_context('qa_lead_agent')
             
             # Set up Azure DevOps client for QA agent if available
-            if hasattr(self, 'ado_client') and self.ado_client:
-                agent.ado_client = self.ado_client
+            if hasattr(self, 'azure_integrator') and self.azure_integrator:
+                agent.azure_integrator = self.azure_integrator
             
             # Determine area path for test artifacts
             area_path = self._determine_qa_area_path(context)
@@ -864,19 +871,49 @@ class WorkflowSupervisor:
                 
                 def info(self, message):
                     self.original_logger.info(message)
-                    # Parse progress messages from QA agent
-                    if "Processing QA for feature:" in message:
-                        feature_name = message.split("Processing QA for feature:")[-1].strip()
-                        self.progress_callback("feature", feature_name, False)
-                    elif "Generated test plan for feature:" in message:
-                        feature_name = message.split("Generated test plan for feature:")[-1].strip()
-                        self.progress_callback("feature", feature_name, True)
-                    elif "Processing test cases for user story:" in message:
-                        story_name = message.split("Processing test cases for user story:")[-1].strip()
-                        self.progress_callback("user_story", story_name, False)
-                    elif "Generated" in message and "test cases for user story:" in message:
-                        story_name = message.split("test cases for user story:")[-1].strip()
-                        self.progress_callback("user_story", story_name, True)
+                    # Parse progress messages from QA agent with improved pattern matching
+                    try:
+                        # Feature processing patterns
+                        if "Processing QA for feature:" in message:
+                            feature_name = message.split("Processing QA for feature:")[-1].strip()
+                            self.progress_callback("feature", feature_name, False)
+                        elif "Generated test plan for feature:" in message:
+                            feature_name = message.split("Generated test plan for feature:")[-1].strip()
+                            self.progress_callback("feature", feature_name, True)
+                        elif "Processing test cases for user story:" in message:
+                            story_name = message.split("Processing test cases for user story:")[-1].strip()
+                            self.progress_callback("user_story", story_name, False)
+                        elif "Generated" in message and "test cases for user story:" in message:
+                            story_name = message.split("test cases for user story:")[-1].strip()
+                            self.progress_callback("user_story", story_name, True)
+                        # Additional patterns for better coverage
+                        elif "Processing QA for epic:" in message:
+                            epic_name = message.split("Processing QA for epic:")[-1].strip()
+                            self.progress_callback("epic", epic_name, False)
+                        elif "Processing feature:" in message:
+                            feature_name = message.split("Processing feature:")[-1].strip()
+                            self.progress_callback("feature", feature_name, False)
+                        elif "Created test plan for:" in message:
+                            feature_name = message.split("Created test plan for:")[-1].strip()
+                            self.progress_callback("feature", feature_name, True)
+                        elif "Created test suite for:" in message:
+                            story_name = message.split("Created test suite for:")[-1].strip()
+                            self.progress_callback("user_story", story_name, True)
+                        elif "Created test cases for:" in message:
+                            story_name = message.split("Created test cases for:")[-1].strip()
+                            self.progress_callback("user_story", story_name, True)
+                        # Generic completion patterns
+                        elif "completed" in message.lower() and ("test plan" in message.lower() or "test suite" in message.lower() or "test case" in message.lower()):
+                            # Try to extract item name from completion message
+                            if "for" in message:
+                                item_name = message.split("for")[-1].strip()
+                                if "test plan" in message.lower():
+                                    self.progress_callback("feature", item_name, True)
+                                elif "test suite" in message.lower() or "test case" in message.lower():
+                                    self.progress_callback("user_story", item_name, True)
+                    except Exception as e:
+                        # Don't let parsing errors break the logging
+                        self.original_logger.warning(f"Error parsing progress message: {e}")
                 
                 def __getattr__(self, name):
                     return getattr(self.original_logger, name)
@@ -2026,3 +2063,225 @@ class WorkflowSupervisor:
             
         except Exception as e:
             self.logger.error(f"Failed to write completeness report: {e}")
+
+    def _execute_azure_integration(self, update_progress_callback=None, stage_index=6):
+        """Execute Azure DevOps integration as part of the continuous workflow."""
+        self.logger.info("Starting Azure DevOps integration")
+        
+        if not self.azure_integrator:
+            self.logger.warning("Azure DevOps integration not configured, skipping")
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Azure integration skipped (not configured)", 1.0)
+            return
+        
+        try:
+            # Count total work items to create for progress tracking
+            total_work_items = 0
+            for epic in self.workflow_data.get('epics', []):
+                total_work_items += 1  # Epic
+                for feature in epic.get('features', []):
+                    total_work_items += 1  # Feature
+                    for user_story in feature.get('user_stories', []):
+                        total_work_items += 1  # User Story
+                        total_work_items += len(user_story.get('tasks', []))  # Tasks
+                        total_work_items += len(user_story.get('test_cases', []))  # Test Cases
+            
+            self.logger.info(f"Creating {total_work_items} work items in Azure DevOps")
+            
+            created_items = 0
+            
+            def integration_progress_callback(item_type: str, item_name: str, completed: bool = False):
+                nonlocal created_items
+                if completed:
+                    created_items += 1
+                
+                if update_progress_callback and total_work_items > 0:
+                    sub_progress = created_items / total_work_items
+                    update_progress_callback(stage_index, f"Creating {item_type} ({created_items}/{total_work_items})", sub_progress)
+                
+                self.logger.info(f"ADO: {item_type} '{item_name}' - {'created' if completed else 'creating'}")
+            
+            # Create epics
+            for epic in self.workflow_data.get('epics', []):
+                integration_progress_callback("epic", epic.get('title', 'Unknown Epic'), False)
+                epic_id = self.azure_integrator.create_epic(epic)
+                if epic_id:
+                    epic['azure_id'] = epic_id
+                    integration_progress_callback("epic", epic.get('title', 'Unknown Epic'), True)
+                
+                # Create features
+                for feature in epic.get('features', []):
+                    integration_progress_callback("feature", feature.get('title', 'Unknown Feature'), False)
+                    feature_id = self.azure_integrator.create_feature(feature, epic_id)
+                    if feature_id:
+                        feature['azure_id'] = feature_id
+                        integration_progress_callback("feature", feature.get('title', 'Unknown Feature'), True)
+                    
+                    # Create user stories
+                    for user_story in feature.get('user_stories', []):
+                        integration_progress_callback("user story", user_story.get('title', 'Unknown User Story'), False)
+                        story_id = self.azure_integrator.create_user_story(user_story, feature_id)
+                        if story_id:
+                            user_story['azure_id'] = story_id
+                            integration_progress_callback("user story", user_story.get('title', 'Unknown User Story'), True)
+                        
+                        # Create tasks
+                        for task in user_story.get('tasks', []):
+                            integration_progress_callback("task", task.get('title', 'Unknown Task'), False)
+                            task_id = self.azure_integrator.create_task(task, story_id)
+                            if task_id:
+                                task['azure_id'] = task_id
+                                integration_progress_callback("task", task.get('title', 'Unknown Task'), True)
+                        
+                        # Create test cases
+                        for test_case in user_story.get('test_cases', []):
+                            integration_progress_callback("test case", test_case.get('title', 'Unknown Test Case'), False)
+                            test_case_id = self.azure_integrator.create_test_case(test_case, story_id)
+                            if test_case_id:
+                                test_case['azure_id'] = test_case_id
+                                integration_progress_callback("test case", test_case.get('title', 'Unknown Test Case'), True)
+            
+            # Final progress update
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Azure DevOps integration completed", 1.0)
+                
+        except Exception as e:
+            self.logger.error(f"Azure DevOps integration failed: {e}")
+            raise
+    
+    def _execute_final_validation(self, update_progress_callback=None, stage_index=7):
+        """Execute final validation and cleanup as part of the continuous workflow."""
+        self.logger.info("Starting final validation and cleanup")
+        
+        try:
+            # Validate work item relationships
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Validating work item relationships", 0.25)
+            
+            validation_results = self._validate_work_item_relationships()
+            
+            # Clean up temporary data
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Cleaning up temporary data", 0.5)
+            
+            self._cleanup_temporary_data()
+            
+            # Generate final report
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Generating final report", 0.75)
+            
+            final_report = self._generate_final_report()
+            
+            # Send completion notifications
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Sending completion notifications", 0.9)
+            
+            self._send_completion_notifications(final_report)
+            
+            # Final progress update
+            if update_progress_callback:
+                update_progress_callback(stage_index, "Final validation completed", 1.0)
+                
+        except Exception as e:
+            self.logger.error(f"Final validation failed: {e}")
+            raise
+    
+    def _validate_work_item_relationships(self) -> Dict[str, Any]:
+        """Validate that all work items are properly linked."""
+        validation_results = {
+            'total_items': 0,
+            'validated_items': 0,
+            'errors': []
+        }
+        
+        # Count and validate work items
+        for epic in self.workflow_data.get('epics', []):
+            validation_results['total_items'] += 1
+            if epic.get('azure_id'):
+                validation_results['validated_items'] += 1
+            
+            for feature in epic.get('features', []):
+                validation_results['total_items'] += 1
+                if feature.get('azure_id'):
+                    validation_results['validated_items'] += 1
+                
+                for user_story in feature.get('user_stories', []):
+                    validation_results['total_items'] += 1
+                    if user_story.get('azure_id'):
+                        validation_results['validated_items'] += 1
+                    
+                    for task in user_story.get('tasks', []):
+                        validation_results['total_items'] += 1
+                        if task.get('azure_id'):
+                            validation_results['validated_items'] += 1
+                    
+                    for test_case in user_story.get('test_cases', []):
+                        validation_results['total_items'] += 1
+                        if test_case.get('azure_id'):
+                            validation_results['validated_items'] += 1
+        
+        return validation_results
+    
+    def _cleanup_temporary_data(self):
+        """Clean up temporary data and files."""
+        # Clean up any temporary files or data structures
+        self.logger.info("Cleaning up temporary data")
+        
+        # Clear any temporary workflow state
+        if hasattr(self, 'temp_data'):
+            del self.temp_data
+    
+    def _generate_final_report(self) -> Dict[str, Any]:
+        """Generate final workflow report."""
+        report = {
+            'workflow_id': self.current_workflow_id,
+            'completion_time': datetime.now().isoformat(),
+            'total_epics': len(self.workflow_data.get('epics', [])),
+            'total_features': sum(len(epic.get('features', [])) for epic in self.workflow_data.get('epics', [])),
+            'total_user_stories': sum(len(feature.get('user_stories', [])) for epic in self.workflow_data.get('epics', []) for feature in epic.get('features', [])),
+            'total_tasks': sum(len(user_story.get('tasks', [])) for epic in self.workflow_data.get('epics', []) for feature in epic.get('features', []) for user_story in feature.get('user_stories', [])),
+            'total_test_cases': sum(len(user_story.get('test_cases', [])) for epic in self.workflow_data.get('epics', []) for feature in epic.get('features', []) for user_story in feature.get('user_stories', [])),
+            'azure_integration_enabled': self.azure_integrator is not None
+        }
+        
+        self.logger.info(f"Generated final report: {report}")
+        return report
+    
+    def _send_completion_notifications(self, final_report: Dict[str, Any]):
+        """Send completion notifications."""
+        if self.notifier:
+            try:
+                # Send email notification
+                subject = f"Backlog Generation Completed - {self.project or 'Project'}"
+                message = f"""
+                Backlog generation has been completed successfully!
+                
+                Summary:
+                - Epics: {final_report['total_epics']}
+                - Features: {final_report['total_features']}
+                - User Stories: {final_report['total_user_stories']}
+                - Tasks: {final_report['total_tasks']}
+                - Test Cases: {final_report['total_test_cases']}
+                - Azure Integration: {'Enabled' if final_report['azure_integration_enabled'] else 'Disabled'}
+                
+                Workflow ID: {final_report['workflow_id']}
+                Completed: {final_report['completion_time']}
+                """
+                
+                self.notifier.send_email_notification(subject, message)
+                self.logger.info("Sent completion notification email")
+                
+            except Exception as e:
+                self.logger.error(f"Failed to send completion notification: {e}")
+    
+    def _get_default_stages(self) -> List[str]:
+        """Get the default workflow stages including Azure integration."""
+        return [
+            'epic_strategist',
+            'feature_decomposer_agent',
+            'user_story_decomposer_agent',
+            'developer_agent',
+            'qa_lead_agent',
+            'azure_integration',
+            'final_validation'
+        ]

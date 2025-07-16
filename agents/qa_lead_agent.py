@@ -157,6 +157,7 @@ class QALeadAgent(Agent):
         
         try:
             # Step 1: Create test plan for the feature
+            self.logger.info(f"Creating test plan for feature: {feature_name}")
             test_plan_result = self._create_feature_test_plan(
                 epic, feature, context, area_path
             )
@@ -164,8 +165,10 @@ class QALeadAgent(Agent):
             if test_plan_result.get('success'):
                 result['test_plans_created'] = 1
                 feature['test_plan'] = test_plan_result['test_plan']
+                self.logger.info(f"Generated test plan for feature: {feature_name}")
                 
                 # Step 2: Create test suites for each user story
+                self.logger.info(f"Creating test suites for feature: {feature_name}")
                 suites_result = self._create_user_story_suites(
                     feature, context, area_path
                 )
@@ -173,6 +176,7 @@ class QALeadAgent(Agent):
                 result['errors'].extend(suites_result.get('errors', []))
                 
                 # Step 3: Create test cases for each user story
+                self.logger.info(f"Creating test cases for feature: {feature_name}")
                 cases_result = self._create_user_story_test_cases(
                     feature, context, area_path
                 )
@@ -217,7 +221,9 @@ class QALeadAgent(Agent):
         errors = []
         
         for user_story in feature.get('user_stories', []):
+            story_name = user_story.get('title', 'Unknown User Story')
             try:
+                self.logger.info(f"Creating test suite for user story: {story_name}")
                 suite_result = self.test_suite_agent.create_test_suite(
                     feature=feature,
                     user_story=user_story,
@@ -228,11 +234,14 @@ class QALeadAgent(Agent):
                 if suite_result.get('success'):
                     suites_created += 1
                     user_story['test_suite'] = suite_result['test_suite']
+                    self.logger.info(f"Created test suite for user story: {story_name}")
                 else:
-                    errors.append(f"Failed to create test suite for user story: {user_story.get('title', 'Unknown')}")
+                    error_msg = f"Failed to create test suite for user story: {story_name}"
+                    self.logger.error(error_msg)
+                    errors.append(error_msg)
                     
             except Exception as e:
-                error_msg = f"Error creating test suite for user story {user_story.get('title', 'Unknown')}: {e}"
+                error_msg = f"Error creating test suite for user story {story_name}: {e}"
                 self.logger.error(error_msg)
                 errors.append(error_msg)
         
@@ -250,7 +259,9 @@ class QALeadAgent(Agent):
         errors = []
         
         for user_story in feature.get('user_stories', []):
+            story_name = user_story.get('title', 'Unknown User Story')
             try:
+                self.logger.info(f"Creating test cases for user story: {story_name}")
                 cases_result = self.test_case_agent.create_test_cases(
                     feature=feature,
                     user_story=user_story,
@@ -270,11 +281,14 @@ class QALeadAgent(Agent):
                                 test_case['linked_to_suite'] = True
                     
                     user_story['test_cases'] = test_cases
+                    self.logger.info(f"Created {len(test_cases)} test cases for user story: {story_name}")
                 else:
-                    errors.append(f"Failed to create test cases for user story: {user_story.get('title', 'Unknown')}")
+                    error_msg = f"Failed to create test cases for user story: {story_name}"
+                    self.logger.error(error_msg)
+                    errors.append(error_msg)
                     
             except Exception as e:
-                error_msg = f"Error creating test cases for user story {user_story.get('title', 'Unknown')}: {e}"
+                error_msg = f"Error creating test cases for user story {story_name}: {e}"
                 self.logger.error(error_msg)
                 errors.append(error_msg)
         
