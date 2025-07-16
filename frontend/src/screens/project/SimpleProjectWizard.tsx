@@ -69,7 +69,7 @@ const SimpleProjectWizard: React.FC = () => {
           // Navigate directly to My Projects screen after brief delay
           setTimeout(() => {
             console.log('Navigating to My Projects screen...');
-            navigate('/dashboard');
+            navigate('/projects');
           }, 2000);
           
         } else {
@@ -92,11 +92,11 @@ const SimpleProjectWizard: React.FC = () => {
   const handleBackToHome = () => {
     console.log('Navigating back to dashboard...');
     try {
-      navigate('/dashboard');
+      navigate('/projects');
     } catch (error) {
       console.error('React Router navigation failed:', error);
       // Fallback to direct navigation
-      window.location.href = '/dashboard';
+      window.location.href = '/projects';
     }
   };
 
