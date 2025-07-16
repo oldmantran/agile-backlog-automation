@@ -47,8 +47,26 @@ export const backlogApi = {
   },
 
   // Fetch backlog jobs by user
-  getBacklogJobs: async (user_email: string): Promise<BacklogJob[]> => {
-    const response = await api.get(`/backlog/jobs`, { params: { user_email } });
+  getBacklogJobs: async (
+    user_email: string, 
+    exclude_test_generated: boolean = true,
+    exclude_failed: boolean = true,
+    exclude_deleted: boolean = true
+  ): Promise<BacklogJob[]> => {
+    const response = await api.get(`/backlog/jobs`, { 
+      params: { 
+        user_email, 
+        exclude_test_generated, 
+        exclude_failed, 
+        exclude_deleted 
+      } 
+    });
+    return response.data;
+  },
+
+  // Delete a backlog job (soft delete)
+  deleteBacklogJob: async (jobId: number): Promise<{ status: string; message: string }> => {
+    const response = await api.delete(`/backlog/jobs/${jobId}`);
     return response.data;
   },
 };

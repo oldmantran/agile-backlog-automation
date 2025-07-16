@@ -20,6 +20,8 @@ class BacklogJob(Base):
     execution_time_seconds = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     raw_summary = Column(Text, nullable=True)  # Store JSON as text with UTF-8 encoding
+    status = Column(String, default='completed')  # completed, failed, test_generated
+    is_deleted = Column(Integer, default=0)  # 0 = active, 1 = soft deleted
 
 # SQLite DB file
 engine = create_engine('sqlite:///backlog_jobs.db', echo=False)
@@ -39,7 +41,8 @@ def add_backlog_job(
     tasks_generated,
     test_cases_generated,
     execution_time_seconds,
-    raw_summary
+    raw_summary,
+    status='completed'
 ):
     session = SessionLocal()
     
@@ -60,7 +63,8 @@ def add_backlog_job(
         tasks_generated=tasks_generated,
         test_cases_generated=test_cases_generated,
         execution_time_seconds=execution_time_seconds,
-        raw_summary=raw_summary_json
+        raw_summary=raw_summary_json,
+        status=status
     )
     session.add(job)
     session.commit()
@@ -112,20 +116,80 @@ def _sanitize_json_for_storage(data):
     else:
         return data
 
-# Helper to get jobs by user
-
-def get_jobs_by_user(user_email):
+# Helper to get jobs by user (filtered)
+def get_jobs_by_user(user_email, exclude_test_generated=True, exclude_failed=True, exclude_deleted=True):
     session = SessionLocal()
-    jobs = session.query(BacklogJob).filter_by(user_email=user_email).order_by(BacklogJob.created_at.desc()).all()
+    query = session.query(BacklogJob).filter_by(user_email=user_email)
+    
+    if exclude_deleted:
+        query = query.filter_by(is_deleted=0)
+    
+    if exclude_test_generated:
+        # Exclude test-generated backlogs (identified by project name patterns)
+        query = query.filter(
+            ~BacklogJob.project_name.like('%Test%'),
+            ~BacklogJob.project_name.like('%test%'),
+            ~BacklogJob.project_name.like('%AI Generated Backlog%'),
+            ~BacklogJob.status.like('%test_generated%')
+        )
+    
+    if exclude_failed:
+        # Exclude failed backlogs
+        query = query.filter(
+            ~BacklogJob.status.like('%failed%'),
+            ~BacklogJob.status.like('%Failed%')
+        )
+    
+    jobs = query.order_by(BacklogJob.created_at.desc()).all()
     session.close()
     return jobs
 
-# Helper to get all jobs
-def get_all_jobs():
+# Helper to get all jobs (filtered)
+def get_all_jobs(exclude_test_generated=True, exclude_failed=True, exclude_deleted=True):
     session = SessionLocal()
-    jobs = session.query(BacklogJob).order_by(BacklogJob.created_at.desc()).all()
+    query = session.query(BacklogJob)
+    
+    if exclude_deleted:
+        query = query.filter_by(is_deleted=0)
+    
+    if exclude_test_generated:
+        # Exclude test-generated backlogs
+        query = query.filter(
+            ~BacklogJob.project_name.like('%Test%'),
+            ~BacklogJob.project_name.like('%test%'),
+            ~BacklogJob.project_name.like('%AI Generated Backlog%'),
+            ~BacklogJob.status.like('%test_generated%')
+        )
+    
+    if exclude_failed:
+        # Exclude failed backlogs
+        query = query.filter(
+            ~BacklogJob.status.like('%failed%'),
+            ~BacklogJob.status.like('%Failed%')
+        )
+    
+    jobs = query.order_by(BacklogJob.created_at.desc()).all()
     session.close()
     return jobs
+
+# Helper to soft delete a job
+def soft_delete_job(job_id):
+    session = SessionLocal()
+    job = session.query(BacklogJob).filter_by(id=job_id).first()
+    if job:
+        job.is_deleted = 1
+        session.commit()
+        session.close()
+        return True
+    session.close()
+    return False
+
+# Helper to get job by ID
+def get_job_by_id(job_id):
+    session = SessionLocal()
+    job = session.query(BacklogJob).filter_by(id=job_id).first()
+    session.close()
+    return job
 
 if __name__ == "__main__":
     init_db()

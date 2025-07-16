@@ -80,10 +80,21 @@ const MyProjectsScreen: React.FC = () => {
 
   const loadBacklogJobs = async () => {
     try {
-      const jobs = await backlogApi.getBacklogJobs(USER_EMAIL);
+      const jobs = await backlogApi.getBacklogJobs(USER_EMAIL, true, true, true);
       setBacklogJobs(jobs);
     } catch (error) {
       console.error('Failed to load backlog jobs:', error);
+    }
+  };
+
+  const handleDeleteBacklogJob = async (jobId: number) => {
+    try {
+      await backlogApi.deleteBacklogJob(jobId);
+      // Remove from local state
+      setBacklogJobs(prev => prev.filter(job => job.id !== jobId));
+      console.log(`Backlog job ${jobId} deleted successfully`);
+    } catch (error) {
+      console.error('Failed to delete backlog job:', error);
     }
   };
 
@@ -299,12 +310,17 @@ const MyProjectsScreen: React.FC = () => {
             {backlogJobs.length > 0 && (
               <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
                 <CardHeader>
-                  <div className="flex items-center space-x-2">
-                    <FiFolder className="w-5 h-5 text-primary glow-cyan" />
-                    <CardTitle className="text-foreground glow-cyan">Backlog Generation History</CardTitle>
-                    <Badge variant="outline" className="bg-primary/20 text-primary border-primary/50">
-                      {backlogJobs.length}
-                    </Badge>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FiFolder className="w-5 h-5 text-primary glow-cyan" />
+                      <CardTitle className="text-foreground glow-cyan">Backlog Generation History</CardTitle>
+                      <Badge variant="outline" className="bg-primary/20 text-primary border-primary/50">
+                        {backlogJobs.length}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Test-generated and failed backlogs are automatically filtered out
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -315,10 +331,29 @@ const MyProjectsScreen: React.FC = () => {
                           <div>
                             <h4 className="font-medium text-foreground glow-cyan">{job.project_name}</h4>
                             <div className="text-xs text-muted-foreground">Job ID: {job.id}</div>
+                            {job.status && (
+                              <Badge className="text-xs mt-1 bg-green-400/10 border-green-400/30 text-green-400">
+                                {job.status}
+                              </Badge>
+                            )}
                           </div>
-                          <Badge className="text-xs bg-primary/10 border-primary/30 text-primary">
-                            {new Date(job.created_at).toLocaleString()}
-                          </Badge>
+                          <div className="flex items-center space-x-2">
+                            <Badge className="text-xs bg-primary/10 border-primary/30 text-primary">
+                              {new Date(job.created_at).toLocaleString()}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBacklogJob(job.id);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-red-500/20"
+                              title="Delete this backlog (keeps in DB for reference)"
+                            >
+                              <FiTrash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground mb-2">
                           <div>Epics: <span className="text-foreground font-semibold">{job.epics_generated}</span></div>

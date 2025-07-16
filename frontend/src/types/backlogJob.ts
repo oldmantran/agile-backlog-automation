@@ -10,4 +10,6 @@ export interface BacklogJob {
   execution_time_seconds?: number;
   created_at: string;
   raw_summary?: string;
+  status?: string;
+  is_deleted?: number;
 }
