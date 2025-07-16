@@ -1,14 +1,3 @@
-domains:
-  supported:
-    - "software_development"
-    - "fintech"
-    - "ecommerce"
-    - "healthcare"
-    - "education"
-    - "shipping_logistics"
-    - "oil_gas"
-  default: "oil_gas"
-
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"
