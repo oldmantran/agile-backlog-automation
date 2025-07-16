@@ -99,7 +99,10 @@ workflow:
     fail_fast: false          # Stop workflow on first stage failure
   
   # Output limits (testing mode for quick validation)
-  limits: {}
+  limits:
+    max_epics: null                    # null = unlimited epics
+    max_features_per_epic: null        # null = unlimited features per epic
+    max_user_stories_per_feature: null # null = unlimited user stories per feature
   
   output_format: "azure_devops"
 
