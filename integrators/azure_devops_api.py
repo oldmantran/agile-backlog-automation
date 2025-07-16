@@ -113,8 +113,15 @@ class AzureDevOpsIntegrator:
     def get_available_area_paths(self) -> list:
         """Get all available area paths in the project."""
         url = f"{self.project_base_url}/wit/classificationnodes/areas?$depth=10&api-version=7.0"
+        
+        # Use correct headers for classification nodes API
+        classification_headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
         try:
-            response = requests.get(url, auth=self.auth, headers=self.headers)
+            response = requests.get(url, auth=self.auth, headers=classification_headers)
             response.raise_for_status()
             data = response.json()
             # Recursively collect all area paths
@@ -132,8 +139,32 @@ class AzureDevOpsIntegrator:
             return []
 
     def get_available_iteration_paths(self) -> list:
-        """Get all available iteration paths in the project. Stub returns empty list if not implemented."""
-        return []
+        """Get all available iteration paths in the project."""
+        url = f"{self.project_base_url}/wit/classificationnodes/iterations?$depth=10&api-version=7.0"
+        
+        # Use correct headers for classification nodes API
+        classification_headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        try:
+            response = requests.get(url, auth=self.auth, headers=classification_headers)
+            response.raise_for_status()
+            data = response.json()
+            # Recursively collect all iteration paths
+            def collect_paths(node, prefix=None):
+                paths = []
+                name = node['name']
+                path = f"{prefix}\\{name}" if prefix else name
+                paths.append({"path": path, "name": name})
+                for child in node.get('children', []):
+                    paths.extend(collect_paths(child, path))
+                return paths
+            return collect_paths(data)
+        except Exception as e:
+            self.logger.error(f"Failed to fetch iteration paths: {e}")
+            return []
 
     def _ensure_area_and_iteration_paths(self):
         """Ensure area and iteration paths exist in Azure DevOps, create if missing."""
@@ -996,10 +1027,16 @@ class AzureDevOpsIntegrator:
         else:
             url = f"{self.project_base_url}/wit/classificationnodes/areas?api-version=7.0"
         
+        # Use correct headers for classification nodes API
+        classification_headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
         data = {"name": area_name}
         self.logger.info(f"Creating area path '{area_name}' under '{parent_path or self.project}' (URL: {url})")
         try:
-            response = requests.post(url, json=data, auth=self.auth, headers=self.headers)
+            response = requests.post(url, json=data, auth=self.auth, headers=classification_headers)
             if response.status_code == 409:
                 self.logger.info(f"Area path '{area_name}' already exists.")
                 return {"status": "exists"}
@@ -1015,8 +1052,40 @@ class AzureDevOpsIntegrator:
     def create_iteration_path(self, iteration_name: str, start_date: str, end_date: str, 
                             parent_path: Optional[str] = None) -> Dict[str, Any]:
         """Create a new iteration path (sprint) in the project."""
-        # TODO: Implement iteration path creation with date ranges
-        pass
+        # If parent_path is None, create under the project root
+        if parent_path:
+            url = f"{self.project_base_url}/wit/classificationnodes/iterations/{parent_path}?api-version=7.0"
+        else:
+            url = f"{self.project_base_url}/wit/classificationnodes/iterations?api-version=7.0"
+        
+        # Use correct headers for classification nodes API
+        classification_headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        data = {
+            "name": iteration_name,
+            "attributes": {
+                "startDate": start_date,
+                "finishDate": end_date
+            }
+        }
+        
+        self.logger.info(f"Creating iteration path '{iteration_name}' under '{parent_path or self.project}' (URL: {url})")
+        try:
+            response = requests.post(url, json=data, auth=self.auth, headers=classification_headers)
+            if response.status_code == 409:
+                self.logger.info(f"Iteration path '{iteration_name}' already exists.")
+                return {"status": "exists"}
+            response.raise_for_status()
+            self.logger.info(f"Iteration path '{iteration_name}' created successfully.")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to create iteration path '{iteration_name}': {e}")
+            if hasattr(e, 'response') and e.response:
+                self.logger.error(f"Response: {e.response.text}")
+            raise
     
     # Legacy test management methods - use delegation methods above instead
     def create_test_plan_legacy(self, name: str, area_path: str = None, iteration_path: str = None, description: str = None) -> Dict:

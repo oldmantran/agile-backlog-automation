@@ -15,7 +15,26 @@ def main():
     print("🔍 Checking Azure DevOps Area and Iteration Paths...")
     
     config = Config()
-    integrator = AzureDevOpsIntegrator(config)
+    
+    # Get config values from environment
+    org_url = config.env.get('AZURE_DEVOPS_ORG')
+    project = config.env.get('AZURE_DEVOPS_PROJECT')
+    pat = config.env.get('AZURE_DEVOPS_PAT')
+    
+    if not all([org_url, project, pat]):
+        print("❌ Azure DevOps configuration incomplete")
+        print(f"   Organization: {'✅' if org_url else '❌'}")
+        print(f"   Project: {'✅' if project else '❌'}")
+        print(f"   PAT: {'✅' if pat else '❌'}")
+        return
+    
+    integrator = AzureDevOpsIntegrator(
+        organization_url=f"https://dev.azure.com/{org_url}",
+        project=project,
+        personal_access_token=pat,
+        area_path="temp",  # Required but we're just checking paths
+        iteration_path="temp"  # Required but we're just checking paths
+    )
     
     if not integrator.enabled:
         print("❌ Integration not enabled")
