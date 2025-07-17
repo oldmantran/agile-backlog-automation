@@ -29,11 +29,8 @@ const SimpleProjectWizard: React.FC = () => {
       // Handle different response formats
       let projectId;
       if (projectResponse && typeof projectResponse === 'object') {
-        // Try multiple possible locations for projectId
-        const response = projectResponse as any;
-        projectId = response.projectId || 
-                   (response.data && response.data.projectId) ||
-                   response.id;
+        // The response interceptor should have unwrapped the data
+        projectId = projectResponse.projectId;
         console.log('Extracted projectId:', projectId);
       }
       

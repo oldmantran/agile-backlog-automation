@@ -37,10 +37,15 @@ const responseInterceptor = (response: AxiosResponse) => {
   if (response.data && typeof response.data === 'object') {
     // Standardize response format
     if (response.data.data !== undefined) {
-      return response.data;
+      // Unwrap the nested response structure
+      return {
+        ...response,
+        data: response.data.data
+      };
     } else {
       // Wrap non-standard responses
       return {
+        ...response,
         data: response.data,
         success: true,
         message: 'Success'
