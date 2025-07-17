@@ -746,10 +746,15 @@ class BacklogSweeperAgent:
         """Validate that all epics have required fields (title, description)."""
         discrepancies = []
         for epic in epics:
+            # Ensure work_item_id is always hashable
+            work_item_id = epic.get('id')
+            if work_item_id is None:
+                work_item_id = epic.get('title', f'epic_{len(discrepancies)}')
+            
             if not epic.get('title'):
                 discrepancies.append({
                     'type': 'missing_epic_title',
-                    'work_item_id': epic.get('id'),
+                    'work_item_id': work_item_id,
                     'work_item_type': 'Epic',
                     'title': '',
                     'description': 'Epic missing title.',
@@ -759,7 +764,7 @@ class BacklogSweeperAgent:
             if not epic.get('description'):
                 discrepancies.append({
                     'type': 'missing_epic_description',
-                    'work_item_id': epic.get('id'),
+                    'work_item_id': work_item_id,
                     'work_item_type': 'Epic',
                     'title': epic.get('title', ''),
                     'description': 'Epic missing description.',
@@ -772,11 +777,16 @@ class BacklogSweeperAgent:
         """Validate that every epic has at least one feature with a title."""
         discrepancies = []
         for epic in epics:
+            # Ensure epic work_item_id is always hashable
+            epic_id = epic.get('id')
+            if epic_id is None:
+                epic_id = epic.get('title', f'epic_{len(discrepancies)}')
+            
             features = epic.get('features', [])
             if not features:
                 discrepancies.append({
                     'type': 'missing_child_feature',
-                    'work_item_id': epic.get('id'),
+                    'work_item_id': epic_id,
                     'work_item_type': 'Epic',
                     'title': epic.get('title', ''),
                     'description': 'Epic missing child Feature.',
@@ -784,10 +794,15 @@ class BacklogSweeperAgent:
                     'suggested_agent': 'epic_strategist'
                 })
             for feature in features:
+                # Ensure feature work_item_id is always hashable
+                feature_id = feature.get('id')
+                if feature_id is None:
+                    feature_id = feature.get('title', f'feature_{len(discrepancies)}')
+                
                 if not feature.get('title'):
                     discrepancies.append({
                         'type': 'missing_feature_title',
-                        'work_item_id': feature.get('id'),
+                        'work_item_id': feature_id,
                         'work_item_type': 'Feature',
                         'title': '',
                         'description': f"Feature under epic '{epic.get('title','')}' missing title.",
@@ -801,12 +816,17 @@ class BacklogSweeperAgent:
         discrepancies = []
         for epic in epics:
             for feature in epic.get('features', []):
+                # Ensure feature work_item_id is always hashable
+                feature_id = feature.get('id')
+                if feature_id is None:
+                    feature_id = feature.get('title', f'feature_{len(discrepancies)}')
+                
                 user_stories = feature.get('user_stories', [])
                 # Check for missing or too few/many user stories
                 if not user_stories:
                     discrepancies.append({
                         'type': 'missing_child_user_story',
-                        'work_item_id': feature.get('id'),
+                        'work_item_id': feature_id,
                         'work_item_type': 'Feature',
                         'title': feature.get('title', ''),
                         'description': 'Feature missing child User Story.',
@@ -816,7 +836,7 @@ class BacklogSweeperAgent:
                 elif len(user_stories) < 3:
                     discrepancies.append({
                         'type': 'insufficient_user_stories',
-                        'work_item_id': feature.get('id'),
+                        'work_item_id': feature_id,
                         'work_item_type': 'Feature',
                         'title': feature.get('title', ''),
                         'description': f"Feature has only {len(user_stories)} user stories (should have 3–6 for completeness).",
@@ -826,7 +846,7 @@ class BacklogSweeperAgent:
                 elif len(user_stories) > 6:
                     discrepancies.append({
                         'type': 'excessive_user_stories',
-                        'work_item_id': feature.get('id'),
+                        'work_item_id': feature_id,
                         'work_item_type': 'Feature',
                         'title': feature.get('title', ''),
                         'description': f"Feature has {len(user_stories)} user stories (should have 3–6 for focus and clarity).",
@@ -834,10 +854,15 @@ class BacklogSweeperAgent:
                         'suggested_agent': 'feature_decomposer_agent'
                     })
                 for us in user_stories:
+                    # Ensure user story work_item_id is always hashable
+                    us_id = us.get('id')
+                    if us_id is None:
+                        us_id = us.get('title', f'story_{len(discrepancies)}')
+                    
                     if not us.get('title'):
                         discrepancies.append({
                             'type': 'missing_story_title',
-                            'work_item_id': us.get('id'),
+                            'work_item_id': us_id,
                             'work_item_type': 'User Story',
                             'title': '',
                             'description': f"User Story under feature '{feature.get('title','')}' missing title.",
@@ -852,11 +877,16 @@ class BacklogSweeperAgent:
         for epic in epics:
             for feature in epic.get('features', []):
                 for us in feature.get('user_stories', []):
+                    # Ensure user story work_item_id is always hashable
+                    us_id = us.get('id')
+                    if us_id is None:
+                        us_id = us.get('title', f'story_{len(discrepancies)}')
+                    
                     tasks = us.get('tasks', [])
                     if not tasks:
                         discrepancies.append({
                             'type': 'missing_child_task',
-                            'work_item_id': us.get('id'),
+                            'work_item_id': us_id,
                             'work_item_type': 'User Story',
                             'title': us.get('title', ''),
                             'description': 'User Story missing child Task.',
@@ -866,7 +896,7 @@ class BacklogSweeperAgent:
                     if us.get('story_points') is None:
                         discrepancies.append({
                             'type': 'missing_story_points',
-                            'work_item_id': us.get('id'),
+                            'work_item_id': us_id,
                             'work_item_type': 'User Story',
                             'title': us.get('title', ''),
                             'description': 'User Story missing story points.',
@@ -880,11 +910,16 @@ class BacklogSweeperAgent:
         discrepancies = []
         for epic in epics:
             for feature in epic.get('features', []):
+                # Ensure feature work_item_id is always hashable
+                feature_id = feature.get('id')
+                if feature_id is None:
+                    feature_id = feature.get('title', f'feature_{len(discrepancies)}')
+                
                 # Check for test plan at feature level
                 if not feature.get('test_plan') and not feature.get('test_plan_structure'):
                     discrepancies.append({
                         'type': 'missing_test_plan',
-                        'work_item_id': feature.get('id'),
+                        'work_item_id': feature_id,
                         'work_item_type': 'Feature',
                         'title': feature.get('title', ''),
                         'description': 'Feature missing test plan.',
@@ -893,11 +928,16 @@ class BacklogSweeperAgent:
                     })
                 
                 for us in feature.get('user_stories', []):
+                    # Ensure user story work_item_id is always hashable
+                    us_id = us.get('id')
+                    if us_id is None:
+                        us_id = us.get('title', f'story_{len(discrepancies)}')
+                    
                     # Check for test suite at user story level
                     if not us.get('test_suite'):
                         discrepancies.append({
                             'type': 'missing_test_suite',
-                            'work_item_id': us.get('id'),
+                            'work_item_id': us_id,
                             'work_item_type': 'User Story',
                             'title': us.get('title', ''),
                             'description': 'User Story missing test suite.',
@@ -910,7 +950,7 @@ class BacklogSweeperAgent:
                     if not test_cases:
                         discrepancies.append({
                             'type': 'missing_child_test_case',
-                            'work_item_id': us.get('id'),
+                            'work_item_id': us_id,
                             'work_item_type': 'User Story',
                             'title': us.get('title', ''),
                             'description': 'User Story missing test cases.',
@@ -923,7 +963,7 @@ class BacklogSweeperAgent:
                             if not test_case.get('title'):
                                 discrepancies.append({
                                     'type': 'missing_test_case_title',
-                                    'work_item_id': us.get('id'),
+                                    'work_item_id': us_id,
                                     'work_item_type': 'Test Case',
                                     'title': f"Test case in {us.get('title', '')}",
                                     'description': 'Test case missing title.',
@@ -938,7 +978,7 @@ class BacklogSweeperAgent:
                         if test_suite.get('feature_id') != feature.get('id'):
                             discrepancies.append({
                                 'type': 'test_plan_suite_mismatch',
-                                'work_item_id': us.get('id'),
+                                'work_item_id': us_id,
                                 'work_item_type': 'User Story',
                                 'title': us.get('title', ''),
                                 'description': 'Test suite not properly linked to feature test plan.',
