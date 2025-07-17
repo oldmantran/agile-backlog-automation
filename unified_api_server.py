@@ -36,6 +36,7 @@ import uvicorn
 from supervisor.supervisor import WorkflowSupervisor
 from config.config_loader import Config
 from utils.logger import setup_logger
+from utils.project_context import ProjectContext
 
 # Initialize logging
 logger = setup_logger(__name__)
@@ -49,16 +50,7 @@ log_queue = queue.Queue()
 
 # Global state for background processes
 background_processes: Dict[str, subprocess.Popen] = {}
-sweeper_status = {
-    "isRunning": False,
-    "progress": 0,
-    "currentItem": "",
-    "processedItems": 0,
-    "totalItems": 0,
-    "errors": [],
-    "completedActions": [],
-    "logs": []
-}
+sweeper_status = {"isRunning": False, "progress": 0, "currentItem": "", "processedItems": 0, "totalItems": 0, "errors": [], "completedActions": [], "logs": []}
 
 # Custom log handler for streaming logs to WebSocket clients
 class WebSocketLogHandler(logging.Handler):
@@ -785,7 +777,6 @@ async def run_sweeper_background(config: SweeperConfig):
 async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
     """Background task to run the actual backlog generation."""
     logger.info(f"Starting backlog generation for job {job_id}")
-    print(f"[DEBUG] Starting backlog generation for job {job_id}")
     
     try:
         # Initialize job status
@@ -801,55 +792,30 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "endTime": None
         }
         
-        print(f"[DEBUG] Job {job_id} initialized with status: {active_jobs[job_id]}")
-        
         # Extract project data
         project_data = project_info.get("data", {})
-        print(f"[DEBUG] Project data extracted: {list(project_data.keys()) if project_data else 'None'}")
         
-        # Determine project domain
-        project_domain = project_data.get("basics", {}).get("domain", "software development")
+        # Get project details
+        project_domain = project_data.get("basics", {}).get("domain", "software_development")
         project_name = project_data.get("basics", {}).get("name", "Unknown Project")
-        print(f"[DEBUG] Project domain: {project_domain}, name: {project_name}")
         
         # Check Azure DevOps integration
         azure_config = project_data.get("azureConfig", {})
         azure_integration_enabled = azure_config.get("enabled", False)
-        print(f"[DEBUG] Azure integration enabled: {azure_integration_enabled}")
         
+        # Azure DevOps parameters
+        organization_url = azure_config.get("organizationUrl")
+        project = azure_config.get("project")
+        personal_access_token = azure_config.get("personalAccessToken")
+        area_path = azure_config.get("areaPath")
+        iteration_path = azure_config.get("iterationPath")
+        
+        # Validate Azure DevOps configuration
         if azure_integration_enabled:
-            print(f"[DEBUG] Azure config: {azure_config}")
-            organization_url = azure_config.get("organizationUrl")
-            project = azure_config.get("project")
-            personal_access_token = azure_config.get("personalAccessToken")
-            area_path = azure_config.get("areaPath")
-            iteration_path = azure_config.get("iterationPath")
-            
-            print(f"[DEBUG] Azure params - org:{organization_url}, project:{project}, area:{area_path}, iteration:{iteration_path}")
-            
             if not all([organization_url, project, personal_access_token]):
-                logger.warning("Azure DevOps integration disabled: missing required configuration")
-                print(f"[DEBUG] Azure DevOps integration disabled: missing required configuration")
                 azure_integration_enabled = False
-        else:
-            organization_url = None
-            project = None
-            personal_access_token = None
-            area_path = None
-            iteration_path = None
-            print(f"[DEBUG] Azure integration disabled: 'project'")
         
         # Initialize supervisor
-        print(f"[DEBUG] About to initialize WorkflowSupervisor...")
-        print(f"[DEBUG] WorkflowSupervisor parameters:")
-        print(f"[DEBUG]   - organization_url: {organization_url} (type: {type(organization_url)})")
-        print(f"[DEBUG]   - project: {project} (type: {type(project)})")
-        print(f"[DEBUG]   - personal_access_token: {'***' if personal_access_token else None} (type: {type(personal_access_token)})")
-        print(f"[DEBUG]   - area_path: {area_path} (type: {type(area_path)})")
-        print(f"[DEBUG]   - iteration_path: {iteration_path} (type: {type(iteration_path)})")
-        print(f"[DEBUG]   - job_id: {job_id} (type: {type(job_id)})")
-        print(f"[DEBUG]   - config_path: None (not provided)")
-        
         try:
             supervisor = WorkflowSupervisor(
                 organization_url=organization_url,
@@ -859,93 +825,95 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 iteration_path=iteration_path,
                 job_id=job_id
             )
-            print(f"[DEBUG] WorkflowSupervisor initialized successfully")
         except Exception as e:
-            print(f"[DEBUG] Exception during WorkflowSupervisor initialization: {e}")
-            import traceback
-            print(traceback.format_exc())
-            raise
+            error_msg = f"Failed to initialize WorkflowSupervisor: {str(e)}"
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = error_msg
+            active_jobs[job_id]["endTime"] = datetime.now()
+            return {"error": error_msg}
         
-        # Progress callback function
+        # Progress callback
         def progress_callback(progress: int, action: str):
-            print(f"[DEBUG] Progress callback: {progress}% - {action}")
-            active_jobs[job_id]["progress"] = progress
-            active_jobs[job_id]["currentAction"] = action
-        
-        # Run the workflow with project context
+            if job_id in active_jobs:
+                active_jobs[job_id]["progress"] = progress
+                active_jobs[job_id]["currentAction"] = action
+                # Broadcast progress via WebSocket
+                if manager:
+                    manager.broadcast({
+                        "type": "progress_update",
+                        "job_id": job_id,
+                        "progress": progress,
+                        "action": action
+                    })
+
+        # Prepare context
         context = {
-            "project_type": project_domain,
             "project_name": project_name,
-            "project_description": project_data["basics"]["description"],
-            "vision_statement": project_data["vision"]["visionStatement"],
-            "business_objectives": project_data["vision"]["businessObjectives"],
-            "target_audience": project_data["vision"]["targetAudience"],
-            "azure_config": project_data["azureConfig"]
+            "project_domain": project_domain,
+            "azure_integration_enabled": azure_integration_enabled,
+            "azure_config": azure_config
         }
-        print(f"[DEBUG] Context prepared: {list(context.keys())}")
-        
-        # Set up the project context for the supervisor
-        print(f"[DEBUG] About to configure project context...")
+
+        # Configure project context
         try:
-            supervisor.configure_project_context(project_domain, context)
-            print(f"[DEBUG] Project context configured successfully")
+            project_context = ProjectContext()
+            project_context.configure_project(project_data)
         except Exception as e:
-            print(f"[DEBUG] Exception during project context configuration: {e}")
-            import traceback
-            print(traceback.format_exc())
-            raise
-        
-        # Create the product vision string
+            error_msg = f"Failed to configure project context: {str(e)}"
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = error_msg
+            active_jobs[job_id]["endTime"] = datetime.now()
+            return {"error": error_msg}
+
+        # Create product vision
+        vision_data = project_data.get("vision", {})
         product_vision = f"""
-        Project: {project_name}
-        Domain: {project_domain}
-        Description: {project_data["basics"]["description"]}
-        Vision Statement: {project_data["vision"]["visionStatement"]}
-        Business Objectives: {', '.join(project_data["vision"]["businessObjectives"])}
-        Target Audience: {project_data["vision"]["targetAudience"]}
-        Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
-        """
-        print(f"[DEBUG] Product vision created (length: {len(product_vision)})")
-        
-        # Run the supervisor workflow with progress callback
-        print(f"[DEBUG] About to execute workflow...")
+Project: {project_name}
+Domain: {project_domain}
+
+Vision Statement:
+{vision_data.get('visionStatement', 'No vision statement provided')}
+
+Key Features:
+{vision_data.get('keyFeatures', 'No key features specified')}
+
+Target Users:
+{vision_data.get('targetUsers', 'No target users specified')}
+
+Success Criteria:
+{vision_data.get('successCriteria', 'No success criteria specified')}
+""".strip()
+
+        # Execute workflow
         try:
             results = supervisor.execute_workflow(
-                product_vision, 
-                save_outputs=True, 
-                integrate_azure=azure_integration_enabled,
+                product_vision,
+                context=context,
                 progress_callback=progress_callback
             )
-            print(f"[DEBUG] Workflow executed successfully")
-        except Exception as e:
-            import traceback
-            logger.error(f"Workflow execution failed: {str(e)}")
-            logger.error(traceback.format_exc())
-            print(f"[DEBUG] Workflow execution failed: {str(e)}")
-            print(traceback.format_exc())
-            active_jobs[job_id]["status"] = "failed"
-            active_jobs[job_id]["error"] = str(e)
+
+            # Update job status
+            active_jobs[job_id]["status"] = "completed"
+            active_jobs[job_id]["progress"] = 100
+            active_jobs[job_id]["currentAction"] = "Completed"
             active_jobs[job_id]["endTime"] = datetime.now()
-            return
-        
-        # Update final progress
-        active_jobs[job_id]["status"] = "completed"
-        active_jobs[job_id]["progress"] = 100
-        active_jobs[job_id]["endTime"] = datetime.now()
-        active_jobs[job_id]["results"] = results
-        
-        logger.info(f"Backlog generation completed for job {job_id}")
-        print(f"[DEBUG] Backlog generation completed for job {job_id}")
-        
+
+            return {"job_id": job_id, "status": "completed", "results": results}
+
+        except Exception as e:
+            error_msg = f"Workflow execution failed: {str(e)}"
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = error_msg
+            active_jobs[job_id]["endTime"] = datetime.now()
+            return {"error": error_msg}
     except Exception as e:
-        import traceback
-        logger.error(f"Error in backlog generation job {job_id}: {e}")
-        logger.error(traceback.format_exc())
-        print(f"[DEBUG] Error in backlog generation job {job_id}: {e}")
-        print(traceback.format_exc())
-        active_jobs[job_id]["status"] = "failed"
-        active_jobs[job_id]["error"] = str(e)
-        active_jobs[job_id]["endTime"] = datetime.now()
+        error_msg = f"Unexpected error in run_backlog_generation: {str(e)}"
+        if job_id in active_jobs:
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = error_msg
+            active_jobs[job_id]["endTime"] = datetime.now()
+        logger.error(error_msg)
+        return {"error": error_msg}
 
 # WebSocket and Application Management Endpoints
 @app.websocket("/ws/logs")

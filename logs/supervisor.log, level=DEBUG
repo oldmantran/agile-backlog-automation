@@ -49,3 +49,53 @@ Methodology: Agile/Scrum
 2025-07-16 22:01:50 - supervisor - ERROR - Workflow execution failed: WorkflowSupervisor._send_completion_notifications() missing 1 required positional argument: 'final_report'
 2025-07-16 22:01:50 - supervisor - INFO - Workflow execution failed at 2025-07-16 22:01:50.456287
 2025-07-16 22:01:51 - supervisor - INFO - Error notifications sent
+2025-07-16 22:05:14 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250716_220514
+2025-07-16 22:05:14 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-16 22:05:14 - supervisor - INFO - Applied project type: software_development
+2025-07-16 22:05:14 - supervisor - INFO - Applied custom context: ['project_type', 'project_name', 'project_description', 'vision_statement', 'business_objectives', 'target_audience', 'azure_config']
+2025-07-16 22:05:14 - supervisor - INFO - Project context configured:\nProject Context Summary:
+========================
+Project: AI Generated Project
+Domain: software development
+Platform: Web Application with Mobile Support
+Technology: Modern Web Stack (React, Node.js, Python)
+Team: 5-8 developers (Senior level)
+Timeline: 6-12 months
+Methodology: Agile/Scrum
+2025-07-16 22:05:14 - supervisor - INFO - Starting workflow execution at 2025-07-16 22:05:14.426471
+2025-07-16 22:05:14 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-16 22:05:14 - supervisor - INFO - Generating epics from product vision
+2025-07-16 22:05:14 - supervisor - INFO - Generating epics from product vision: 
+        Project: AI Generated Project
+        Domain: software_development
+        Description: Vis...
+2025-07-16 22:05:30 - supervisor - ERROR - Epic generation failed: Agent epic_strategist failed: Request failed after 3 attempts
+2025-07-16 22:05:30 - supervisor - ERROR - epic_strategist failed with exception: Agent epic_strategist failed: Request failed after 3 attempts
+2025-07-16 22:05:31 - supervisor - INFO - Error notifications sent
+2025-07-16 22:05:31 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-16 22:05:31 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-16 22:05:31 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-16 22:05:31 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-16 22:05:31 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-16 22:05:31 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-16 22:05:31 - supervisor - INFO - Executing stage: developer_agent
+2025-07-16 22:05:31 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-16 22:05:31 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-16 22:05:31 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-16 22:05:31 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 22:05:31 - supervisor - INFO - Validation passed: All user stories have test cases and all features have test plans.
+2025-07-16 22:05:31 - supervisor - INFO - Executing stage: azure_integration
+2025-07-16 22:05:31 - supervisor - INFO - Starting Azure DevOps integration
+2025-07-16 22:05:31 - supervisor - WARNING - Azure DevOps integration not configured, skipping
+2025-07-16 22:05:31 - supervisor - INFO - Executing stage: final_validation
+2025-07-16 22:05:31 - supervisor - INFO - Starting final validation and cleanup
+2025-07-16 22:05:31 - supervisor - INFO - Cleaning up temporary data
+2025-07-16 22:05:31 - supervisor - INFO - Generated final report: {'workflow_id': 'workflow_20250716_220514', 'completion_time': '2025-07-16T22:05:31.873464', 'total_epics': 0, 'total_features': 0, 'total_user_stories': 0, 'total_tasks': 0, 'total_test_cases': 0, 'azure_integration_enabled': False}
+2025-07-16 22:05:31 - supervisor - ERROR - Failed to send completion notification: 'Notifier' object has no attribute 'send_email_notification'
+2025-07-16 22:05:31 - supervisor - INFO - Workflow execution completed successfully at 2025-07-16 22:05:31.873728
+2025-07-16 22:05:31 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 0, 'features_generated': 0, 'user_stories_generated': 0, 'tasks_generated': 0, 'test_cases_generated': 0, 'execution_time_seconds': 17.447257, 'stages_completed': 0, 'errors_encountered': 1}
+2025-07-16 22:05:33 - supervisor - INFO - Completion notifications sent
+2025-07-16 22:05:33 - supervisor - INFO - Output saved: output/backlog_20250716_220533.json, output/backlog_20250716_220533.yaml
+2025-07-16 22:09:02 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250716_220902
+2025-07-16 22:09:02 - supervisor - INFO - Azure DevOps config for job_id=job_20250716_220902: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-16 22:09:02 - supervisor - INFO - Initialized 5 agents successfully
