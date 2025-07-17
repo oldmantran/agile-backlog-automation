@@ -627,7 +627,12 @@ class WorkflowSupervisor:
                         still_incomplete = []
                         for item in incomplete_items:
                             item_id = item.get('work_item_id')
+                            # Ensure item_id is hashable (not a dict or list)
                             if item_id is None:
+                                self.logger.warning(f"Incomplete item missing work_item_id: {item}. Skipping.")
+                                continue
+                            if isinstance(item_id, (dict, list)):
+                                self.logger.warning(f"work_item_id is not hashable (dict or list): {item_id}. Skipping item: {item}")
                                 continue
                             retry_count = self.sweeper_retry_tracker[stage].get(item_id, 0)
                             if retry_count < max_retries:
