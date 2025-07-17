@@ -181,7 +181,14 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
               className="w-full h-15 text-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Generating Backlog..." : "Generate Agile Backlog"}
+              {isSubmitting ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  <span>Generating Backlog...</span>
+                </div>
+              ) : (
+                "Generate Agile Backlog"
+              )}
             </Button>
           </div>
         </form>

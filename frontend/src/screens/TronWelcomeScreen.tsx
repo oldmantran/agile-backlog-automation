@@ -47,7 +47,7 @@ const TronWelcomeScreen: React.FC = () => {
       title: 'Create New Backlog',
       description: 'Generate backlog from vision statement using AI',
       icon: Plus,
-      route: '/new-project',
+      route: '/simple-project-wizard',
       color: 'primary',
       glowColor: 'primary',
       isNew: true,

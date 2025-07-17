@@ -12,11 +12,15 @@ import { FiX } from 'react-icons/fi';
 const SimpleProjectWizard: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [jobInfo, setJobInfo] = useState<any>(null);
 
   const handleSubmit = async (projectData: Partial<Project>) => {
     try {
       console.log('🚀 Starting project submission with data:', projectData);
       setError(null);
+      setIsSubmitting(true);
       
       // Step 1: Create the project
       console.log('📞 Calling createProject API...');
@@ -70,9 +74,25 @@ const SimpleProjectWizard: React.FC = () => {
             existingJobs.push(jobInfo);
             localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
             
-            // Navigate immediately to My Projects screen
-            console.log('🧭 Navigating to My Projects screen...');
-            navigate('/my-projects');
+            // Show success state
+            setJobInfo(jobInfo);
+            setIsSuccess(true);
+            setIsSubmitting(false);
+            
+            console.log('✅ Backlog generation started successfully!');
+            
+            // Navigate to My Projects screen after a brief delay
+            setTimeout(() => {
+              console.log('🧭 Navigating to My Projects screen...');
+              try {
+                navigate('/my-projects');
+                console.log('✅ React Router navigation successful');
+              } catch (navError) {
+                console.error('❌ React Router navigation failed:', navError);
+                console.log('🔄 Falling back to window.location navigation...');
+                window.location.href = '/my-projects';
+              }
+            }, 2000); // 2 second delay to show success message
             
           } else {
             console.error('❌ No jobId in backlog response:', backlogResponse);
@@ -90,6 +110,8 @@ const SimpleProjectWizard: React.FC = () => {
       console.error('Project creation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create project';
       setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,7 +142,7 @@ const SimpleProjectWizard: React.FC = () => {
           </p>
         </div>
 
-        {!error && (
+        {!error && !isSuccess && (
           <>
             <Alert className="rounded-md">
               <AlertDescription>
@@ -136,9 +158,52 @@ const SimpleProjectWizard: React.FC = () => {
 
             <SimplifiedProjectForm 
               onSubmit={handleSubmit}
-              isSubmitting={false}
+              isSubmitting={isSubmitting}
             />
           </>
+        )}
+
+        {isSuccess && jobInfo && (
+          <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+            <CardContent className="pt-6">
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-green-700 dark:text-green-300 mb-2">
+                    Backlog Generation Started!
+                  </h2>
+                  <p className="text-green-600 dark:text-green-400 mb-4">
+                    Your project "{jobInfo.projectName}" has been created and backlog generation is now running.
+                  </p>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg text-sm">
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                      <div>
+                        <span className="font-semibold">Project ID:</span> {jobInfo.projectId}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Job ID:</span> {jobInfo.jobId}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Status:</span> {jobInfo.status}
+                      </div>
+                      <div>
+                        <span className="font-semibold">Current Action:</span> {jobInfo.currentAction}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-4">
+                    Redirecting to My Projects screen to monitor progress...
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {error && (

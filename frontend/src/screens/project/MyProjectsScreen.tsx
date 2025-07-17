@@ -192,7 +192,14 @@ const MyProjectsScreen: React.FC = () => {
       console.log('Loading projects from API...');
       const response = await projectApi.listProjects(1, 20);
       console.log('Projects API response:', response);
-      setProjects(response.projects || []);
+      
+      // Simple, robust handling - just check if response exists and has projects
+      if (response && response.projects) {
+        setProjects(response.projects);
+      } else {
+        console.warn('No projects found in API response:', response);
+        setProjects([]);
+      }
     } catch (error) {
       logError('loadProjects', error, 'API call failed');
       setProjects([]);
@@ -428,6 +435,16 @@ const MyProjectsScreen: React.FC = () => {
               </Alert>
             )}
 
+            {/* Server Logs Section - Always Show */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
+                SERVER LOGS
+              </h2>
+              <ServerLogsErrorBoundary jobId="general">
+                <ServerLogs />
+              </ServerLogsErrorBoundary>
+            </div>
+
             {/* Active Jobs Section */}
             {activeJobs.length > 0 && (
               <div className="mb-8">
@@ -486,14 +503,6 @@ const MyProjectsScreen: React.FC = () => {
                           </div>
                         </ProgressBarErrorBoundary>
 
-                                                 {/* Server Logs with Error Boundary */}
-                         <ServerLogsErrorBoundary jobId={job.jobId}>
-                           <div className="space-y-2">
-                             <h4 className="text-sm font-semibold text-foreground">Live Logs</h4>
-                             <ServerLogs />
-                           </div>
-                         </ServerLogsErrorBoundary>
-
                         {/* Error Display for Job */}
                         {job.error && (
                           <Alert className="border-red-500 bg-red-50 dark:bg-red-950">
@@ -503,6 +512,65 @@ const MyProjectsScreen: React.FC = () => {
                             </AlertDescription>
                           </Alert>
                         )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Backlog Jobs Section */}
+            {backlogJobs.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
+                  BACKLOG GENERATION HISTORY
+                </h2>
+                <div className="space-y-4">
+                  {backlogJobs.map((job) => (
+                    <Card key={job.id} className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <FiFolder className="w-5 h-5 text-primary glow-cyan" />
+                            <div>
+                              <CardTitle className="text-foreground glow-cyan">
+                                {job.project_name}
+                              </CardTitle>
+                              <p className="text-sm text-muted-foreground font-mono">
+                                Job ID: {job.id}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              variant="outline" 
+                              className="font-mono text-green-400 border-green-400/50 bg-green-400/10"
+                            >
+                              {job.status?.toUpperCase() || 'COMPLETED'}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteBacklogJob(job.id)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground mb-2">
+                          <div>Epics: <span className="text-foreground font-semibold">{job.epics_generated}</span></div>
+                          <div>Features: <span className="text-foreground font-semibold">{job.features_generated}</span></div>
+                          <div>User Stories: <span className="text-foreground font-semibold">{job.user_stories_generated}</span></div>
+                          <div>Tasks: <span className="text-foreground font-semibold">{job.tasks_generated}</span></div>
+                          <div>Test Cases: <span className="text-foreground font-semibold">{job.test_cases_generated}</span></div>
+                          <div>Exec Time: <span className="text-foreground font-semibold">{job.execution_time_seconds ? `${job.execution_time_seconds.toFixed(1)}s` : 'N/A'}</span></div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Created: {new Date(job.created_at).toLocaleString()}
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
