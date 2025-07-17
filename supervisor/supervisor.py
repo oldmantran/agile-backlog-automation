@@ -271,7 +271,7 @@ class WorkflowSupervisor:
         self.config = Config(config_path) if config_path else Config()
         
         # Setup logging
-        self.logger = setup_logger("supervisor", "logs/supervisor.log")
+        self.logger = setup_logger("supervisor", "logs/supervisor.log, level=DEBUG")
         self.logger.info(f"Initializing WorkflowSupervisor for job_id={job_id}")
         if organization_url or project or area_path or iteration_path:
             self.logger.info(f"Azure DevOps config for job_id={job_id}: org_url={organization_url}, project={project}, area_path={area_path}, iteration_path={iteration_path}")
@@ -618,29 +618,53 @@ class WorkflowSupervisor:
                             break
                         
                         # After agent stage, run sweeper to validate outputs
+                        self.logger.debug(f"[DEBUG] Stage {stage}: Runningsweeper validation.")
+                        print(f"[DEBUG] Stage {stage}: Runningsweeper validation.")
                         incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
+                        self.logger.debug(f"[DEBUG] Stage '{stage}': Incomplete items returned: {incomplete_items}")
+                        print(f"[DEBUG] Stage '{stage}': Incomplete items returned: {incomplete_items}")
                         if not incomplete_items:
                             completed = True
                             break
-                        
                         # Targeted retry logic
                         still_incomplete = []
                         for item in incomplete_items:
                             item_id = item.get('work_item_id')
+                            self.logger.debug(f"[DEBUG] Stage '{stage}: Processing item: {item}")
+                            self.logger.debug(f"[DEBUG] Stage {stage}:item_id = {item_id} (type: {type(item_id)})")
+                            print(f"[DEBUG] Stage '{stage}: Processing item: {item}")
+                            print(f"[DEBUG] Stage {stage}:item_id = {item_id} (type: {type(item_id)})")
                             # Ensure item_id is hashable (not a dict or list)
                             if item_id is None:
-                                self.logger.warning(f"Incomplete item missing work_item_id: {item}. Skipping.")
+                                self.logger.warning(f"[DEBUG] Incomplete item missing work_item_id: {item}. Skipping.")
+                                print(f"[DEBUG] Incomplete item missing work_item_id: {item}. Skipping.")
                                 continue
                             if isinstance(item_id, (dict, list)):
-                                self.logger.warning(f"work_item_id is not hashable (dict or list): {item_id}. Skipping item: {item}")
+                                self.logger.warning(f"[DEBUG] work_item_id is not hashable (dict or list): {item_id}. Skipping item: {item}")
+                                print(f"[DEBUG] work_item_id is not hashable (dict or list): {item_id}. Skipping item: {item}")
                                 continue
-                            retry_count = self.sweeper_retry_tracker[stage].get(item_id, 0)
+                            try:
+                                retry_count = self.sweeper_retry_tracker[stage].get(item_id, 0)
+                            except Exception as e:
+                                self.logger.error(f"[DEBUG] Exception using item_id as key: {item_id} (type: {type(item_id)}), error: {e}")
+                                print(f"[DEBUG] Exception using item_id as key: {item_id} (type: {type(item_id)}), error: {e}")
+                                import traceback
+                                self.logger.error(traceback.format_exc())
+                                print(traceback.format_exc())
+                                continue
                             if retry_count < max_retries:
-                                self.logger.info(f"Retrying incomplete item {item_id} for stage {stage} (attempt {retry_count+1}/{max_retries})")
-                                # Here, you would call the appropriate agent's remediation method if implemented
-                                self.sweeper_retry_tracker[stage][item_id] = retry_count + 1
+                                self.logger.info(f"[DEBUG] Retrying incomplete item {item_id} for stage {stage} (attempt {retry_count+1}/{max_retries})")
+                                try:
+                                    self.sweeper_retry_tracker[stage][item_id] = retry_count + 1
+                                except Exception as e:
+                                    self.logger.error(f"[DEBUG] Exception setting retry count for item_id: {item_id} (type: {type(item_id)}), error: {e}")
+                                    print(f"[DEBUG] Exception setting retry count for item_id: {item_id} (type: {type(item_id)}), error: {e}")
+                                    import traceback
+                                    self.logger.error(traceback.format_exc())
+                                    print(traceback.format_exc())
+                                    continue
                             else:
-                                self.logger.error(f"Item {item_id} in stage {stage} failed after {max_retries} attempts. Logging and notifying.")
+                                self.logger.error(f"[DEBUG] Item {item_id} in stage {stage} failed after {max_retries} attempts. Logging and notifying.")
                                 self.notifier.send_error_notification(
                                     Exception(f"Item {item_id} in stage {stage} incomplete after {max_retries} retries: {item.get('description','')}") ,
                                     self.execution_metadata
@@ -650,10 +674,13 @@ class WorkflowSupervisor:
                             # Only retry items that have not hit max_retries
                             if self.sweeper_retry_tracker[stage].get(item_id, 0) < max_retries:
                                 still_incomplete.append(item)
+                        self.logger.debug(f"[DEBUG] Stage '{stage}': still_incomplete after retry: {still_incomplete}")
+                        print(f"[DEBUG] Stage '{stage}': still_incomplete after retry: {still_incomplete}")
                         if not still_incomplete:
                             completed = True
                         else:
-                            self.logger.info(f"{len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
+                            self.logger.info(f"[DEBUG] {len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
+                            print(f"[DEBUG] {len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
                     except Exception as e:
                         self.logger.error(f"{stage} failed with exception: {e}")
                         self.execution_metadata['errors'].append(f"{stage} failed: {e}")

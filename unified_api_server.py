@@ -784,71 +784,84 @@ async def run_sweeper_background(config: SweeperConfig):
 
 async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
     """Background task to run the actual backlog generation."""
+    logger.info(f"Starting backlog generation for job {job_id}")
+    print(f"[DEBUG] Starting backlog generation for job {job_id}")
+    
     try:
-        logger.info(f"Starting backlog generation for job {job_id}")
+        # Initialize job status
+        active_jobs[job_id] = {
+            "jobId": job_id,
+            "projectId": project_info.get("id", "unknown"),
+            "status": "running",
+            "progress": 0,
+            "currentAgent": "",
+            "currentAction": "",
+            "startTime": datetime.now(),
+            "error": None,
+            "endTime": None
+        }
         
-        # Update job status
-        active_jobs[job_id]["status"] = "running"
-        active_jobs[job_id]["currentAction"] = "Initializing workflow"
-        active_jobs[job_id]["progress"] = 10
+        print(f"[DEBUG] Job {job_id} initialized with status: {active_jobs[job_id]}")
         
         # Extract project data
-        project_data = project_info["data"]
-        project_name = project_data["basics"]["name"]
-        project_domain = project_data["basics"]["domain"]
+        project_data = project_info.get("data", {})
+        print(f"[DEBUG] Project data extracted: {list(project_data.keys()) if project_data else 'None'}")
         
-        # Extract area/iteration path and Azure DevOps credentials from Azure config
+        # Determine project domain
+        project_domain = project_data.get("basics", {}).get("domain", "software development")
+        project_name = project_data.get("basics", {}).get("name", "Unknown Project")
+        print(f"[DEBUG] Project domain: {project_domain}, name: {project_name}")
+        
+        # Check Azure DevOps integration
         azure_config = project_data.get("azureConfig", {})
-        organization_url = azure_config.get("organizationUrl")
-        project_name_ado = azure_config.get("project")
-        area_path = azure_config.get("areaPath")
-        iteration_path = azure_config.get("iterationPath")
+        azure_integration_enabled = azure_config.get("enabled", False)
+        print(f"[DEBUG] Azure integration enabled: {azure_integration_enabled}")
         
-        # Only get PAT from environment if explicitly provided in config
-        personal_access_token = azure_config.get("personalAccessToken")
-        if not personal_access_token:
-            # Only use environment PAT if other config is provided
-            if organization_url or project_name_ado or area_path or iteration_path:
-                personal_access_token = os.getenv("AZURE_DEVOPS_PAT")
-        
-        # Check if Azure integration is enabled (if any meaningful Azure config is provided)
-        azure_integration_enabled = bool(
-            (organization_url and organization_url.strip()) or
-            (personal_access_token and personal_access_token.strip()) or
-            (project_name_ado and project_name_ado.strip()) or
-            (area_path and area_path.strip()) or
-            (iteration_path and iteration_path.strip())
-        )
-        
-        if azure_integration_enabled and not all([organization_url, personal_access_token, project_name_ado, area_path, iteration_path]):
-            error_msg = "organizationUrl, personalAccessToken (or AZURE_DEVOPS_PAT in .env), project, areaPath, and iterationPath must all be provided in the Azure DevOps configuration."
-            logger.error(error_msg)
-            active_jobs[job_id]["status"] = "failed"
-            active_jobs[job_id]["error"] = error_msg
-            active_jobs[job_id]["endTime"] = datetime.now()
-            return
-
-        # Initialize the workflow supervisor with Azure DevOps config (if enabled) and job_id
         if azure_integration_enabled:
+            print(f"[DEBUG] Azure config: {azure_config}")
+            organization_url = azure_config.get("organizationUrl")
+            project = azure_config.get("project")
+            personal_access_token = azure_config.get("personalAccessToken")
+            area_path = azure_config.get("areaPath")
+            iteration_path = azure_config.get("iterationPath")
+            
+            print(f"[DEBUG] Azure params - org:{organization_url}, project:{project}, area:{area_path}, iteration:{iteration_path}")
+            
+            if not all([organization_url, project, personal_access_token]):
+                logger.warning("Azure DevOps integration disabled: missing required configuration")
+                print(f"[DEBUG] Azure DevOps integration disabled: missing required configuration")
+                azure_integration_enabled = False
+        else:
+            organization_url = None
+            project = None
+            personal_access_token = None
+            area_path = None
+            iteration_path = None
+            print(f"[DEBUG] Azure integration disabled: 'project'")
+        
+        # Initialize supervisor
+        print(f"[DEBUG] About to initialize WorkflowSupervisor...")
+        try:
             supervisor = WorkflowSupervisor(
                 organization_url=organization_url,
-                project=project_name_ado,
+                project=project,
                 personal_access_token=personal_access_token,
                 area_path=area_path,
                 iteration_path=iteration_path,
                 job_id=job_id
             )
-        else:
-            # Content-only mode (no Azure integration)
-            supervisor = WorkflowSupervisor(job_id=job_id)
+            print(f"[DEBUG] WorkflowSupervisor initialized successfully")
+        except Exception as e:
+            print(f"[DEBUG] Exception during WorkflowSupervisor initialization: {e}")
+            import traceback
+            print(traceback.format_exc())
+            raise
         
-        # Define progress callback function
+        # Progress callback function
         def progress_callback(progress: int, action: str):
-            """Update job progress in real-time."""
-            if job_id in active_jobs:
-                active_jobs[job_id]["progress"] = progress
-                active_jobs[job_id]["currentAction"] = action
-                logger.info(f"Job {job_id} progress: {progress}% - {action}")
+            print(f"[DEBUG] Progress callback: {progress}% - {action}")
+            active_jobs[job_id]["progress"] = progress
+            active_jobs[job_id]["currentAction"] = action
         
         # Run the workflow with project context
         context = {
@@ -860,9 +873,18 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "target_audience": project_data["vision"]["targetAudience"],
             "azure_config": project_data["azureConfig"]
         }
+        print(f"[DEBUG] Context prepared: {list(context.keys())}")
         
         # Set up the project context for the supervisor
-        supervisor.configure_project_context(project_domain, context)
+        print(f"[DEBUG] About to configure project context...")
+        try:
+            supervisor.configure_project_context(project_domain, context)
+            print(f"[DEBUG] Project context configured successfully")
+        except Exception as e:
+            print(f"[DEBUG] Exception during project context configuration: {e}")
+            import traceback
+            print(traceback.format_exc())
+            raise
         
         # Create the product vision string
         product_vision = f"""
@@ -874,8 +896,10 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         Target Audience: {project_data["vision"]["targetAudience"]}
         Success Metrics: {', '.join(project_data["vision"]["successMetrics"])}
         """
+        print(f"[DEBUG] Product vision created (length: {len(product_vision)})")
         
         # Run the supervisor workflow with progress callback
+        print(f"[DEBUG] About to execute workflow...")
         try:
             results = supervisor.execute_workflow(
                 product_vision, 
@@ -883,8 +907,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 integrate_azure=azure_integration_enabled,
                 progress_callback=progress_callback
             )
+            print(f"[DEBUG] Workflow executed successfully")
         except Exception as e:
+            import traceback
             logger.error(f"Workflow execution failed: {str(e)}")
+            logger.error(traceback.format_exc())
+            print(f"[DEBUG] Workflow execution failed: {str(e)}")
+            print(traceback.format_exc())
             active_jobs[job_id]["status"] = "failed"
             active_jobs[job_id]["error"] = str(e)
             active_jobs[job_id]["endTime"] = datetime.now()
@@ -894,11 +923,17 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         active_jobs[job_id]["status"] = "completed"
         active_jobs[job_id]["progress"] = 100
         active_jobs[job_id]["endTime"] = datetime.now()
+        active_jobs[job_id]["results"] = results
         
-        logger.info(f"Completed backlog generation for job {job_id}")
+        logger.info(f"Backlog generation completed for job {job_id}")
+        print(f"[DEBUG] Backlog generation completed for job {job_id}")
         
     except Exception as e:
-        logger.error(f"Error in backlog generation job {job_id}: {str(e)}")
+        import traceback
+        logger.error(f"Error in backlog generation job {job_id}: {e}")
+        logger.error(traceback.format_exc())
+        print(f"[DEBUG] Error in backlog generation job {job_id}: {e}")
+        print(traceback.format_exc())
         active_jobs[job_id]["status"] = "failed"
         active_jobs[job_id]["error"] = str(e)
         active_jobs[job_id]["endTime"] = datetime.now()
