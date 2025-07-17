@@ -26,9 +26,14 @@ const SimpleProjectWizard: React.FC = () => {
       const projectResponse = await projectApi.createProject(projectData);
       console.log('Project creation response:', projectResponse);
       
-      // Use only projectResponse.projectId, as per projectApi
-      const projectId = projectResponse.projectId;
+      // Handle different response formats
+      let projectId;
+      if (projectResponse && typeof projectResponse === 'object') {
+        projectId = projectResponse.projectId || projectResponse.data?.projectId || projectResponse.id;
+      }
+      
       if (projectId) {
+        console.log('Found projectId:', projectId);
         // Step 2: Start backlog generation
         console.log('Calling generateBacklog API for project:', projectId);
         
@@ -60,7 +65,7 @@ const SimpleProjectWizard: React.FC = () => {
           throw new Error('Failed to start backlog generation - no job ID returned');
         }
       } else {
-        console.error('No projectId in project response:', projectResponse);
+        console.error('No projectId found in project response:', projectResponse);
         throw new Error('Failed to create project - no project ID returned');
       }
     } catch (error) {
@@ -96,7 +101,7 @@ const SimpleProjectWizard: React.FC = () => {
     <div className="container max-w-4xl mx-auto py-8">
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">
+          <h1 className="text-3 font-bold mb-4">
             Agile Backlog Automation
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -111,7 +116,7 @@ const SimpleProjectWizard: React.FC = () => {
                 <div>
                   <h4 className="font-bold mb-1">Simplified Setup</h4>
                   <p>
-                    Only 4 fields required: Vision Statement, Azure DevOps Project, Area Path, and Iteration Path. 
+                    Only 4s required: Vision Statement, Azure DevOps Project, Area Path, and Iteration Path. 
                     Everything else is automatically extracted by AI or set to sensible defaults.
                   </p>
                 </div>
@@ -126,7 +131,7 @@ const SimpleProjectWizard: React.FC = () => {
         )}
 
         {isSubmitting && (
-          <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <Card className="bg-blue-50 bg-blue-950 border-blue-200 dark:border-blue-800">
             <CardContent className="pt-6">
               <div className="space-y-6 text-center">
                 <div className="flex justify-center">
@@ -146,7 +151,7 @@ const SimpleProjectWizard: React.FC = () => {
         )}
 
         {error && (
-          <Card className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
+          <Card className="bg-red-50 bg-red-950 border-red-200 dark:border-red-800">
             <CardContent className="pt-6">
               <div className="space-y-6 text-center">
                 <div className="flex justify-center">
@@ -179,11 +184,9 @@ const SimpleProjectWizard: React.FC = () => {
             </CardContent>
           </Card>
         )}
-
-
       </div>
     </div>
   );
 };
 
-export default SimpleProjectWizard;
+export default SimpleProjectWizard; 
