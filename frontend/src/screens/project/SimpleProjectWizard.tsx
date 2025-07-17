@@ -26,9 +26,9 @@ const SimpleProjectWizard: React.FC = () => {
       const projectResponse = await projectApi.createProject(projectData);
       console.log('Project creation response:', projectResponse);
       
-      if (projectResponse.projectId) {
-        const { projectId } = projectResponse;
-        
+      // Use only projectResponse.projectId, as per projectApi
+      const projectId = projectResponse.projectId;
+      if (projectId) {
         // Step 2: Start backlog generation
         console.log('Calling generateBacklog API for project:', projectId);
         

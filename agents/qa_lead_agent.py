@@ -258,16 +258,20 @@ class QALeadAgent(Agent):
                     return {'success': False, 'error': error_msg}
             
             with ThreadPoolExecutor(max_workers=min(self.max_workers, len(user_stories))) as executor:
-                future_to_story = {executor.submit(process_user_story_suite, user_story): user_story for user_story in user_stories}
+                # Use indices instead of dictionaries as keys
+                future_to_story = {executor.submit(process_user_story_suite, user_story): i for i, user_story in enumerate(user_stories)}
                 for future in as_completed(future_to_story):
-                    result = future.result()
-                    if result['success']:
-                        suites_created += 1
-                        # Update the user story in the feature
-                        original_story = future_to_story[future]
-                        original_story['test_suite'] = result['user_story']['test_suite']
-                    else:
-                        errors.append(result['error'])
+                    story_index = future_to_story[future]
+                    original_story = user_stories[story_index]
+                    test_suite = future.result()
+                    original_story['test_suite'] = test_suite
+                    suites_created += 1
+                    # The original code had update_progress_callback and total_stories,
+                    # but these are not defined in the provided context.
+                    # Assuming they are intended to be passed or handled elsewhere
+                    # if update_progress_callback and total_stories > 0:
+                    #     sub_progress = processed_stories / total_stories
+                    #     update_progress_callback(stage_index, f"Creating test suites ({processed_stories}/{total_stories})", sub_progress)
         else:
             # Sequential processing
             for user_story in user_stories:
@@ -352,16 +356,19 @@ class QALeadAgent(Agent):
                     return {'success': False, 'error': error_msg}
             
             with ThreadPoolExecutor(max_workers=min(self.max_workers, len(user_stories))) as executor:
-                future_to_story = {executor.submit(process_user_story_cases, user_story): user_story for user_story in user_stories}
+                future_to_story = {executor.submit(process_user_story_cases, user_story): i for i, user_story in enumerate(user_stories)}
                 for future in as_completed(future_to_story):
-                    result = future.result()
-                    if result['success']:
-                        cases_created += result['cases_created']
-                        # Update the user story in the feature
-                        original_story = future_to_story[future]
-                        original_story['test_cases'] = result['user_story']['test_cases']
-                    else:
-                        errors.append(result['error'])
+                    story_index = future_to_story[future]
+                    original_story = user_stories[story_index]
+                    cases_result = future.result()
+                    original_story['test_cases'] = cases_result['user_story']['test_cases']
+                    cases_created += cases_result['cases_created']
+                    # The original code had update_progress_callback and total_stories,
+                    # but these are not defined in the provided context.
+                    # Assuming they are intended to be passed or handled elsewhere
+                    # if update_progress_callback and total_stories > 0:
+                    #     sub_progress = processed_stories / total_stories
+                    #     update_progress_callback(stage_index, f"Creating test suites ({processed_stories}/{total_stories})", sub_progress)
         else:
             # Sequential processing
             for user_story in user_stories:

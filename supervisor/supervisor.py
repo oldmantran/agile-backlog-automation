@@ -735,10 +735,12 @@ class WorkflowSupervisor:
                 features = agent.decompose_epic(epic, context, max_features=max_features)
                 return epic, features
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
-                future_to_epic = {executor.submit(process_epic, epic): epic for epic in epics}
+                # Use indices instead of dictionaries as keys
+                future_to_epic = {executor.submit(process_epic, epic): i for i, epic in enumerate(epics)}
                 for future in as_completed(future_to_epic):
+                    epic_index = future_to_epic[future]
                     epic, features = future.result()
-                    epic['features'] = features
+                    epics[epic_index]['features'] = features
         else:
             for epic in epics:
                 self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
@@ -760,10 +762,12 @@ class WorkflowSupervisor:
                 user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
                 return feature, user_stories
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
-                future_to_feature = {executor.submit(process_feature, args): args for args in features}
+                # Use indices instead of dictionaries as keys
+                future_to_feature = {executor.submit(process_feature, args): i for i, args in enumerate(features)}
                 for future in as_completed(future_to_feature):
+                    feature_index = future_to_feature[future]
                     feature, user_stories = future.result()
-                    feature['user_stories'] = user_stories
+                    features[feature_index][1]['user_stories'] = user_stories
         else:
             for epic, feature in features:
                 self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
@@ -775,26 +779,24 @@ class WorkflowSupervisor:
         self.logger.info("Generating developer tasks (parallel mode: %s)", self.parallel_config['stages']['developer_agent'])
         agent = self.agents['developer_agent']
         context = self.project_context.get_context('developer_agent')
-        user_stories = []
-        for epic in self.workflow_data['epics']:
-            for feature in epic.get('features', []):
-                for story in feature.get('user_stories', []):
-                    user_stories.append((feature, story))
+        user_stories = [(epic, feature, user_story) for epic in self.workflow_data['epics'] for feature in epic.get('features', []) for user_story in feature.get('user_stories', [])]
         total_stories = len(user_stories)
         processed_stories = 0
         
         def process_story(args):
-            feature, user_story = args
+            epic, feature, user_story = args
             self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
             tasks = agent.generate_tasks(user_story, context)
             return user_story, tasks
         
         if self.parallel_config['enabled'] and self.parallel_config['stages']['developer_agent'] and total_stories > 1:
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
-                future_to_story = {executor.submit(process_story, args): args for args in user_stories}
+                # Use indices instead of dictionaries as keys
+                future_to_story = {executor.submit(process_story, args): i for i, args in enumerate(user_stories)}
                 for future in as_completed(future_to_story):
+                    story_index = future_to_story[future]
                     user_story, tasks = future.result()
-                    user_story['tasks'] = tasks
+                    user_stories[story_index][2]['tasks'] = tasks
                     processed_stories += 1
                     if update_progress_callback and total_stories > 0:
                         sub_progress = processed_stories / total_stories
@@ -831,8 +833,10 @@ class WorkflowSupervisor:
         
         if self.parallel_config['enabled'] and self.parallel_config['stages']['qa_lead_agent'] and total_features > 1:
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
-                future_to_feature = {executor.submit(process_feature, args): args for args in features}
+                # Use indices instead of dictionaries as keys
+                future_to_feature = {executor.submit(process_feature, args): i for i, args in enumerate(features)}
                 for future in as_completed(future_to_feature):
+                    feature_index = future_to_feature[future]
                     feature, result = future.result()
                     feature['test_plan'] = result.get('test_plan')
                     processed_qa_items += 1
