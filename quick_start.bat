@@ -53,14 +53,11 @@ if not exist "frontend\node_modules" (
     popd
 )
 
-REM Start the frontend in a new window
+REM Start the frontend in a new window (it will open browser automatically)
 start "Frontend Server" cmd /k "cd frontend && npm start"
 
 REM Wait a moment for frontend to start
 ping 127.0.0.1 -n 6 >nul
-
-REM Open browser to frontend
-start http://localhost:3000
 
 echo Starting Unified API Server...
 echo Backend will be available at: http://localhost:8000

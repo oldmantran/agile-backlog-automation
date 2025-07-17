@@ -164,7 +164,7 @@ const apiClient = createApiClient();
 export const apiClientMethods = {
   async get<T>(url: string, config?: any): Promise<ApiResponse<T>> {
     try {
-      const response = await retryRequest(apiClient, { method: 'GET', url, ...config });
+      const response = await apiClient.get(url, config);
       return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
@@ -173,12 +173,7 @@ export const apiClientMethods = {
 
   async post<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
     try {
-      const response = await retryRequest(apiClient, { 
-        method: 'POST', 
-        url, 
-        data, 
-        ...config 
-      });
+      const response = await apiClient.post(url, data, config);
       return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
@@ -187,12 +182,7 @@ export const apiClientMethods = {
 
   async put<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
     try {
-      const response = await retryRequest(apiClient, { 
-        method: 'PUT', 
-        url, 
-        data, 
-        ...config 
-      });
+      const response = await apiClient.put(url, data, config);
       return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
@@ -201,7 +191,7 @@ export const apiClientMethods = {
 
   async delete<T>(url: string, config?: any): Promise<ApiResponse<T>> {
     try {
-      const response = await retryRequest(apiClient, { method: 'DELETE', url, ...config });
+      const response = await apiClient.delete(url, config);
       return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
@@ -210,12 +200,7 @@ export const apiClientMethods = {
 
   async patch<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
     try {
-      const response = await retryRequest(apiClient, { 
-        method: 'PATCH', 
-        url, 
-        data, 
-        ...config 
-      });
+      const response = await apiClient.patch(url, data, config);
       return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
