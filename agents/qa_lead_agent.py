@@ -39,22 +39,8 @@ class QALeadAgent(Agent):
         # Initialize completeness validator
         self.completeness_validator = QACompletenessValidator(config)
         
-        # Initialize Azure DevOps integration
-        try:
-            if hasattr(config, 'env') and config.env.get("AZURE_DEVOPS_ORG"):
-                paths = config.get_project_paths()
-                self.azure_api = AzureDevOpsIntegrator(
-                    organization_url=config.env.get("AZURE_DEVOPS_ORG", ""),
-                    project=config.env.get("AZURE_DEVOPS_PROJECT", ""),
-                    personal_access_token=config.env.get("AZURE_DEVOPS_PAT", ""),
-                    area_path=paths.get("area", ""),
-                    iteration_path=paths.get("iteration", "")
-                )
-            else:
-                self.azure_api = None
-        except Exception as e:
-            self.logger.warning(f"Azure DevOps integration not available: {e}")
-            self.azure_api = None
+        # Azure DevOps integration will be set by supervisor when needed
+        self.azure_api = None
         
         # QA strategy settings
         self.max_retries = 3
@@ -72,6 +58,10 @@ class QALeadAgent(Agent):
         self.max_workers = parallel_config.get('max_workers', 4)
         self.ado_integration_config = qa_config.get('ado_integration', {})
         self.auto_remediate = self.ado_integration_config.get('auto_create_test_plans', True)
+        
+    def set_azure_integrator(self, azure_integrator):
+        """Set the Azure DevOps integrator for this agent."""
+        self.azure_api = azure_integrator
         
     def generate_quality_assurance(self, 
                                  epics: List[Dict[str, Any]], 

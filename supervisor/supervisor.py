@@ -279,9 +279,6 @@ class WorkflowSupervisor:
         # Initialize project context
         self.project_context = ProjectContext(self.config)
         
-        # Initialize agents
-        self.agents = self._initialize_agents()
-        
         # Store area/iteration path for Azure DevOps
         self.area_path = area_path
         self.iteration_path = iteration_path
@@ -302,6 +299,9 @@ class WorkflowSupervisor:
         else:
             self.azure_integrator = None
         self.notifier = Notifier(self.config)
+        
+        # Initialize agents (after Azure integrator is created)
+        self.agents = self._initialize_agents()
         
         # Workflow state
         self.workflow_data = {}
@@ -324,7 +324,7 @@ class WorkflowSupervisor:
         
         # Parallel processing configuration
         self.parallel_config = self._get_parallel_config()
-        
+    
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
         agents = {}
@@ -333,7 +333,13 @@ class WorkflowSupervisor:
         agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
         agents['developer_agent'] = DeveloperAgent(self.config)
         agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
-        agents['qa_lead_agent'] = QALeadAgent(self.config)
+        
+        # Set Azure DevOps integrator for agents that need it
+        if hasattr(self, 'azure_integrator') and self.azure_integrator is not None:
+            for agent_name, agent in agents.items():
+                if hasattr(agent, 'set_azure_integrator'):
+                    agent.set_azure_integrator(self.azure_integrator)
+        
         self.logger.info(f"Initialized {len(agents)} agents successfully")
         return agents
     
