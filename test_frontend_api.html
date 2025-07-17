@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    <button onclick="testBasicAPI()">Test Basic API</button>
+    <button onclick="testProjectCreation()">Test Project Creation</button>
+    <button onclick="testBacklogGeneration()">Test Backlog Generation</button>
+    <div id="results"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api';
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+            console.log(message);
+        }
+
+        async function testBasicAPI() {
+            log('🧪 Testing basic API connectivity...');
+            try {
+                const response = await axios.get(`${API_BASE_URL}/test`, { timeout: 10000 });
+                log(`✅ Test endpoint response: ${response.status}`);
+                log(`📄 Response: ${JSON.stringify(response.data)}`);
+            } catch (error) {
+                log(`❌ Test endpoint failed: ${error.message}`);
+                if (error.response) {
+                    log(`❌ Response status: ${error.response.status}`);
+                    log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                }
+            }
+        }
+
+        async function testProjectCreation() {
+            log('📝 Testing project creation...');
+            const projectData = {
+                basics: {
+                    name: "Test Project",
+                    description: "Test project for API testing",
+                    domain: "testing"
+                },
+                vision: {
+                    visionStatement: "A test project to verify API functionality",
+                    businessObjectives: ["Test API", "Verify connectivity"],
+                    successMetrics: ["API responds", "No timeouts"],
+                    targetAudience: "developers"
+                },
+                azureConfig: {
+                    organizationUrl: "https://dev.azure.com/test",
+                    personalAccessToken: "",
+                    project: "TestProject",
+                    areaPath: "Test",
+                    iterationPath: "Sprint 1"
+                }
+            };
+
+            try {
+                const response = await axios.post(`${API_BASE_URL}/projects`, projectData, { 
+                    timeout: 30000,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                log(`✅ Project creation response: ${response.status}`);
+                log(`📄 Response: ${JSON.stringify(response.data)}`);
+                
+                if (response.data.projectId) {
+                    window.testProjectId = response.data.projectId;
+                    log(`🆔 Created project ID: ${window.testProjectId}`);
+                }
+            } catch (error) {
+                log(`❌ Project creation failed: ${error.message}`);
+                if (error.response) {
+                    log(`❌ Response status: ${error.response.status}`);
+                    log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                }
+            }
+        }
+
+        async function testBacklogGeneration() {
+            if (!window.testProjectId) {
+                log('❌ No project ID available. Please create a project first.');
+                return;
+            }
+
+            log(`🚀 Testing backlog generation for project: ${window.testProjectId}`);
+            log(`⏰ Start time: ${new Date().toISOString()}`);
+            
+            try {
+                const response = await axios.post(`${API_BASE_URL}/backlog/generate/${window.testProjectId}`, {}, {
+                    timeout: 60000,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                log(`⏰ End time: ${new Date().toISOString()}`);
+                log(`✅ Backlog generation response: ${response.status}`);
+                log(`📄 Response: ${JSON.stringify(response.data)}`);
+                
+                if (response.status === 200) {
+                    log('🎉 SUCCESS: Backlog generation API call completed successfully!');
+                } else {
+                    log(`❌ FAILED: Unexpected status code: ${response.status}`);
+                }
+            } catch (error) {
+                log(`⏰ End time: ${new Date().toISOString()}`);
+                log(`❌ Backlog generation failed: ${error.message}`);
+                
+                if (error.code === 'ECONNABORTED') {
+                    log('❌ TIMEOUT: Request timed out');
+                }
+                
+                if (error.response) {
+                    log(`❌ Response status: ${error.response.status}`);
+                    log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                }
+            }
+        }
+    </script>
+</body>
+</html> 

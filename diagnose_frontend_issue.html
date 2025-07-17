@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Issue Diagnosis</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Frontend Issue Diagnosis</h1>
+    <div id="results"></div>
+
+    <script>
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+            console.log(message);
+        }
+
+        async function diagnoseIssue() {
+            log('🔍 Starting frontend issue diagnosis...');
+            
+            // Test 1: Basic connectivity
+            log('🧪 Test 1: Basic connectivity to backend');
+            try {
+                const response = await fetch('http://localhost:8000/api/test');
+                log(`✅ Basic fetch successful: ${response.status}`);
+                const data = await response.json();
+                log(`📄 Response: ${JSON.stringify(data)}`);
+            } catch (error) {
+                log(`❌ Basic fetch failed: ${error.message}`);
+                return;
+            }
+
+            // Test 2: Axios basic connectivity
+            log('🧪 Test 2: Axios basic connectivity');
+            try {
+                const response = await axios.get('http://localhost:8000/api/test', { timeout: 10000 });
+                log(`✅ Axios basic successful: ${response.status}`);
+                log(`📄 Response: ${JSON.stringify(response.data)}`);
+            } catch (error) {
+                log(`❌ Axios basic failed: ${error.message}`);
+                if (error.code === 'ECONNABORTED') {
+                    log('❌ TIMEOUT detected');
+                }
+                return;
+            }
+
+            // Test 3: Create a project (like the frontend does)
+            log('🧪 Test 3: Project creation');
+            const projectData = {
+                basics: {
+                    name: "Diagnostic Test Project",
+                    description: "Test project for diagnosis",
+                    domain: "testing"
+                },
+                vision: {
+                    visionStatement: "A test project for diagnosis",
+                    businessObjectives: ["Test API"],
+                    successMetrics: ["API works"],
+                    targetAudience: "developers"
+                },
+                azureConfig: {
+                    organizationUrl: "https://dev.azure.com/test",
+                    personalAccessToken: "",
+                    project: "TestProject",
+                    areaPath: "Test",
+                    iterationPath: "Sprint 1"
+                }
+            };
+
+            try {
+                const response = await axios.post('http://localhost:8000/api/projects', projectData, {
+                    timeout: 30000,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                log(`✅ Project creation successful: ${response.status}`);
+                log(`📄 Response: ${JSON.stringify(response.data)}`);
+                
+                const projectId = response.data.projectId;
+                log(`🆔 Project ID: ${projectId}`);
+
+                // Test 4: Backlog generation (the failing call)
+                log('🧪 Test 4: Backlog generation (the failing call)');
+                log(`⏰ Start time: ${new Date().toISOString()}`);
+                
+                try {
+                    const backlogResponse = await axios.post(`http://localhost:8000/api/backlog/generate/${projectId}`, {}, {
+                        timeout: 60000,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    log(`⏰ End time: ${new Date().toISOString()}`);
+                    log(`✅ Backlog generation successful: ${backlogResponse.status}`);
+                    log(`📄 Response: ${JSON.stringify(backlogResponse.data)}`);
+                    log('🎉 SUCCESS: The exact API call that was failing now works!');
+                } catch (error) {
+                    log(`⏰ End time: ${new Date().toISOString()}`);
+                    log(`❌ Backlog generation failed: ${error.message}`);
+                    log(`❌ Error code: ${error.code}`);
+                    log(`❌ Error config: ${JSON.stringify(error.config)}`);
+                    
+                    if (error.response) {
+                        log(`❌ Response status: ${error.response.status}`);
+                        log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                    }
+                    
+                    if (error.request) {
+                        log(`❌ No response received`);
+                    }
+                }
+
+            } catch (error) {
+                log(`❌ Project creation failed: ${error.message}`);
+                if (error.response) {
+                    log(`❌ Response status: ${error.response.status}`);
+                    log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                }
+            }
+        }
+
+        // Run diagnosis when page loads
+        window.onload = function() {
+            log('🚀 Page loaded, starting diagnosis...');
+            diagnoseIssue();
+        };
+    </script>
+</body>
+</html> 

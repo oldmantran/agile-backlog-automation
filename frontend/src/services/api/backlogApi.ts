@@ -10,17 +10,38 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 second timeout
+  timeout: 60000, // 60 second timeout
+  // Force direct connection to bypass React proxy
+  withCredentials: false,
 });
 
 export const backlogApi = {
   // Backlog Generation
   generateBacklog: async (projectId: string): Promise<{ jobId: string }> => {
     console.log('📞 Calling generateBacklog API for project:', projectId);
+    console.log('🌐 API URL:', `${API_BASE_URL}/backlog/generate/${projectId}`);
     
     try {
-      const response = await api.post<ApiResponse<{ jobId: string }>>(`/backlog/generate/${projectId}`);
+      console.log('🚀 Making POST request...');
+      console.log('⏰ Request start time:', new Date().toISOString());
+      
+      // Add a timeout promise to catch hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.error('⏰ Request timeout after 60 seconds');
+          reject(new Error('Request timeout - request hung for 60 seconds'));
+        }, 60000);
+      });
+      
+      const requestPromise = api.post<ApiResponse<{ jobId: string }>>(`/backlog/generate/${projectId}`);
+      
+      // Race between the request and timeout
+      const response = await Promise.race([requestPromise, timeoutPromise]) as any;
+      
+      console.log('⏰ Request completed at:', new Date().toISOString());
       console.log('📥 Raw API response:', response);
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers);
       console.log('📥 Response data:', response.data);
       console.log('📥 Response data.data:', response.data.data);
       
@@ -29,9 +50,10 @@ export const backlogApi = {
       return response.data.data;
     } catch (error: any) {
       console.error('❌ generateBacklog API error:', error);
+      console.error('⏰ Error occurred at:', new Date().toISOString());
       
       if (error.code === 'ECONNABORTED') {
-        console.error('❌ Request timed out after 30 seconds');
+        console.error('❌ Request timed out after 60 seconds');
         throw new Error('Request timed out - the backend may be processing. Please try again.');
       }
       

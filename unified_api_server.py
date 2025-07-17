@@ -470,6 +470,8 @@ async def list_projects(page: int = 1, limit: int = 10):
 async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
     """Generate a backlog for a project."""
     logger.info(f"🚀 Backlog generation requested for project: {project_id}")
+    logger.info(f"🔍 Request received at: {datetime.now().isoformat()}")
+    logger.info(f"🔍 Background tasks object: {background_tasks}")
     
     try:
         # Get project info
@@ -508,6 +510,7 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
         # Return response immediately
         response_data = {"jobId": job_id}
         logger.info(f"📤 Returning response: {response_data}")
+        logger.info(f"📤 Response timestamp: {datetime.now().isoformat()}")
         
         return {
             "success": True,
@@ -948,7 +951,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         
         logger.info(f"   Final azure_integration_enabled: {azure_integration_enabled}")
         
-        # Initialize supervisor
+        # Initialize supervisor with error handling for Azure DevOps
         try:
             logger.info(f"🔧 Initializing WorkflowSupervisor for job {job_id} with Azure config:")
             logger.info(f"   organization_url: {organization_url}")
@@ -956,14 +959,32 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             logger.info(f"   area_path: {area_path}")
             logger.info(f"   iteration_path: {iteration_path}")
             
-            supervisor = WorkflowSupervisor(
-                organization_url=organization_url,
-                project=project_name,
-                personal_access_token=personal_access_token,
-                area_path=area_path,
-                iteration_path=iteration_path,
-                job_id=job_id
-            )
+            # If Azure integration is enabled but credentials are invalid, disable it
+            if azure_integration_enabled and (not personal_access_token or not organization_url or not project_name):
+                logger.warning(f"⚠️ Azure integration enabled but credentials incomplete, disabling for job {job_id}")
+                azure_integration_enabled = False
+            
+            # Initialize supervisor with safe defaults if Azure integration is disabled
+            if azure_integration_enabled:
+                supervisor = WorkflowSupervisor(
+                    organization_url=organization_url,
+                    project=project_name,
+                    personal_access_token=personal_access_token,
+                    area_path=area_path,
+                    iteration_path=iteration_path,
+                    job_id=job_id
+                )
+            else:
+                # Initialize without Azure DevOps integration
+                logger.info(f"🔧 Initializing WorkflowSupervisor without Azure DevOps integration for job {job_id}")
+                supervisor = WorkflowSupervisor(
+                    organization_url="",  # Empty to disable Azure integration
+                    project=project_name,
+                    personal_access_token="",  # Empty to disable Azure integration
+                    area_path="",
+                    iteration_path="",
+                    job_id=job_id
+                )
             
             # IMPORTANT: Set the project name in the supervisor's project context
             supervisor.project = project_name
@@ -975,14 +996,43 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             logger.info(f"✅ WorkflowSupervisor initialized successfully for job {job_id}")
             logger.info(f"   Project name set to: {project_name}")
             logger.info(f"   Domain set to: {project_domain}")
+            logger.info(f"   Azure integration: {'enabled' if azure_integration_enabled else 'disabled'}")
             
         except Exception as e:
             error_msg = f"Failed to initialize WorkflowSupervisor: {str(e)}"
             logger.error(f"❌ {error_msg}")
-            active_jobs[job_id]["status"] = "failed"
-            active_jobs[job_id]["error"] = error_msg
-            active_jobs[job_id]["endTime"] = datetime.now()
-            return {"error": error_msg}
+            
+            # If Azure DevOps validation failed, try without Azure integration
+            if "401" in str(e) or "Unauthorized" in str(e) or "Azure" in str(e):
+                logger.info(f"🔄 Azure DevOps validation failed, retrying without Azure integration for job {job_id}")
+                try:
+                    azure_integration_enabled = False
+                    supervisor = WorkflowSupervisor(
+                        organization_url="",
+                        project=project_name,
+                        personal_access_token="",
+                        area_path="",
+                        iteration_path="",
+                        job_id=job_id
+                    )
+                    supervisor.project = project_name
+                    supervisor.project_context.update_context({
+                        'project_name': project_name,
+                        'domain': project_domain
+                    })
+                    logger.info(f"✅ WorkflowSupervisor initialized successfully without Azure DevOps for job {job_id}")
+                except Exception as retry_error:
+                    error_msg = f"Failed to initialize WorkflowSupervisor (retry without Azure): {str(retry_error)}"
+                    logger.error(f"❌ {error_msg}")
+                    active_jobs[job_id]["status"] = "failed"
+                    active_jobs[job_id]["error"] = error_msg
+                    active_jobs[job_id]["endTime"] = datetime.now()
+                    return {"error": error_msg}
+            else:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
+                return {"error": error_msg}
         
         # Progress callback
         def progress_callback(progress: int, action: str):
@@ -998,7 +1048,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "project_name": project_name,
             "project_domain": project_domain,
             "azure_integration_enabled": azure_integration_enabled,
-            "azure_config": azure_config
+            "azure_config": azure_config if azure_integration_enabled else {}
         }
 
         # Configure project context

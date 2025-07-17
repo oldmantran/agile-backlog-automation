@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React API Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>React API Test - Mimicking React App</h1>
+    <button onclick="testReactAPI()">Test React API Call</button>
+    <div id="results"></div>
+
+    <script>
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+            console.log(message);
+        }
+
+        // Mimic the exact React app configuration
+        const API_BASE_URL = 'http://localhost:8000/api';
+        
+        const api = axios.create({
+            baseURL: API_BASE_URL,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            timeout: 60000, // 60 second timeout
+        });
+
+        async function testReactAPI() {
+            log('🧪 Testing React API call (mimicking React app)...');
+            
+            // Step 1: Create project (like React app does)
+            log('📝 Step 1: Creating project...');
+            const projectData = {
+                basics: {
+                    name: "React Test Project",
+                    description: "Test project for React API",
+                    domain: "testing"
+                },
+                vision: {
+                    visionStatement: "A test project for React API testing",
+                    businessObjectives: ["Test API"],
+                    successMetrics: ["API works"],
+                    targetAudience: "developers"
+                },
+                azureConfig: {
+                    organizationUrl: "https://dev.azure.com/c4workx",
+                    personalAccessToken: "",
+                    project: "Backlog Automation",
+                    areaPath: "Real Estate",
+                    iterationPath: "Sprint 2025-07"
+                }
+            };
+
+            try {
+                const projectResponse = await api.post('/projects', projectData);
+                log(`✅ Project creation successful: ${projectResponse.status}`);
+                log(`📄 Project response: ${JSON.stringify(projectResponse.data)}`);
+                
+                const projectId = projectResponse.data.projectId;
+                log(`🆔 Project ID: ${projectId}`);
+
+                // Step 2: Generate backlog (the failing call)
+                log('🚀 Step 2: Generating backlog...');
+                log(`📞 Calling generateBacklog API for project: ${projectId}`);
+                log(`🌐 API URL: ${API_BASE_URL}/backlog/generate/${projectId}`);
+                
+                try {
+                    log('🚀 Making POST request...');
+                    log('⏰ Request start time:', new Date().toISOString());
+                    
+                    const response = await api.post(`/backlog/generate/${projectId}`);
+                    
+                    log('⏰ Request completed at:', new Date().toISOString());
+                    log(`✅ Backlog generation successful: ${response.status}`);
+                    log(`📥 Response data: ${JSON.stringify(response.data)}`);
+                    log('🎉 SUCCESS: React API call works!');
+                    
+                } catch (error) {
+                    log('⏰ Error occurred at:', new Date().toISOString());
+                    log(`❌ Backlog generation failed: ${error.message}`);
+                    log(`❌ Error code: ${error.code}`);
+                    
+                    if (error.response) {
+                        log(`❌ Response status: ${error.response.status}`);
+                        log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                    }
+                    
+                    if (error.request) {
+                        log(`❌ No response received`);
+                    }
+                }
+
+            } catch (error) {
+                log(`❌ Project creation failed: ${error.message}`);
+                if (error.response) {
+                    log(`❌ Response status: ${error.response.status}`);
+                    log(`❌ Response data: ${JSON.stringify(error.response.data)}`);
+                }
+            }
+        }
+    </script>
+</body>
+</html> 
