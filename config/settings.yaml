@@ -108,7 +108,7 @@ workflow:
   
   # Parallel processing configuration
   parallel_processing:
-    enabled: true
+    enabled: true  # Re-enabled after fixing asyncio.to_thread issue
     max_workers: 4
     rate_limit_per_second: 10
     feature_decomposition: true

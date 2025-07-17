@@ -876,13 +876,19 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         """
         
         # Run the supervisor workflow with progress callback
-        results = await asyncio.to_thread(
-            supervisor.execute_workflow, 
-            product_vision, 
-            save_outputs=True, 
-            integrate_azure=azure_integration_enabled,
-            progress_callback=progress_callback
-        )
+        try:
+            results = supervisor.execute_workflow(
+                product_vision, 
+                save_outputs=True, 
+                integrate_azure=azure_integration_enabled,
+                progress_callback=progress_callback
+            )
+        except Exception as e:
+            logger.error(f"Workflow execution failed: {str(e)}")
+            active_jobs[job_id]["status"] = "failed"
+            active_jobs[job_id]["error"] = str(e)
+            active_jobs[job_id]["endTime"] = datetime.now()
+            return
         
         # Update final progress
         active_jobs[job_id]["status"] = "completed"
