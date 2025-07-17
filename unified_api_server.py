@@ -80,6 +80,9 @@ root_logger.addHandler(websocket_handler)
 uvicorn_logger = logging.getLogger("uvicorn")
 uvicorn_logger.addHandler(websocket_handler)
 
+# Test WebSocket logging
+logger.info("🔧 WebSocket log handler initialized and attached to loggers")
+
 # Log distribution task
 async def distribute_logs():
     """Distribute log messages to all connected WebSocket clients"""
@@ -837,14 +840,6 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             if job_id in active_jobs:
                 active_jobs[job_id]["progress"] = progress
                 active_jobs[job_id]["currentAction"] = action
-                # Broadcast progress via WebSocket
-                if manager:
-                    manager.broadcast({
-                        "type": "progress_update",
-                        "job_id": job_id,
-                        "progress": progress,
-                        "action": action
-                    })
 
         # Prepare context
         context = {
@@ -856,8 +851,19 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
 
         # Configure project context
         try:
-            project_context = ProjectContext()
-            project_context.configure_project(project_data)
+            config = Config()
+            project_context = ProjectContext(config)
+            
+            # Update context with project data
+            project_updates = {
+                "project_name": project_name,
+                "domain": project_domain,
+                "platform": "Web Application",  # Default platform
+                "target_users": project_data.get("vision", {}).get("targetUsers", "End users"),
+                "timeline": "6-12 months"  # Default timeline
+            }
+            project_context.update_context(project_updates)
+            
         except Exception as e:
             error_msg = f"Failed to configure project context: {str(e)}"
             active_jobs[job_id]["status"] = "failed"
@@ -888,7 +894,8 @@ Success Criteria:
         try:
             results = supervisor.execute_workflow(
                 product_vision,
-                context=context,
+                save_outputs=True,
+                integrate_azure=azure_integration_enabled,
                 progress_callback=progress_callback
             )
 

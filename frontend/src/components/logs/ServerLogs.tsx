@@ -41,7 +41,8 @@ const ServerLogs: React.FC<ServerLogsProps> = ({ className = '' }) => {
   const connectWebSocket = () => {
     try {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/logs`;
+      // Connect to backend server on port 80
+      const wsUrl = `${protocol}//localhost:8000/ws/logs`;
       
       wsRef.current = new WebSocket(wsUrl);
       

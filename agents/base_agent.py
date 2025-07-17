@@ -177,17 +177,15 @@ Focus on quality assurance and test coverage."""
             "Content-Type": "application/json"
         }
         
-        max_retries = 3
-        base_delay = 1
-        
+        max_retries = 5
+        base_delay = 2      
         for attempt in range(max_retries):
             try:
                 response = requests.post(
                     self.api_url, 
                     headers=headers, 
                     json=payload, 
-                    timeout=60
-                )
+                    timeout=60                )
                 
                 # Handle different response status codes
                 if response.status_code == 200:
@@ -197,8 +195,8 @@ Focus on quality assurance and test coverage."""
                 elif response.status_code == 403:
                     raise CommunicationError(f"Access denied for {self.llm_provider}")
                 elif response.status_code == 429:
-                    # Rate limit - wait longer
-                    wait_time = base_delay * (2 ** attempt) * 2
+                    # Rate limit - wait longer with increased multiplier
+                    wait_time = base_delay * (2 ** attempt)
                     logger.warning(f"Rate limited, waiting {wait_time}s before retry {attempt + 1}")
                     import time
                     time.sleep(wait_time)
