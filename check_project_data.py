@@ -3,12 +3,13 @@ import json
 
 conn = sqlite3.connect('backlog_jobs.db')
 cursor = conn.cursor()
-cursor.execute('SELECT project_data FROM backlog_jobs WHERE id = 3')
+cursor.execute('SELECT id, project_data FROM backlog_jobs ORDER BY id DESC LIMIT 1')
 result = cursor.fetchone()
 
-if result and result[0]:
-    data = json.loads(result[0])
-    print("Project Data for Job 3:")
+if result and result[1]:
+    job_id, project_data_json = result
+    data = json.loads(project_data_json)
+    print(f"Project Data for Job {job_id}:")
     
     # Check the structure
     if 'data' in data:
@@ -49,6 +50,6 @@ if result and result[0]:
     else:
         print("No 'data' field found in project data")
 else:
-    print("No project data found for job 3")
+    print("No project data found")
 
 conn.close() 

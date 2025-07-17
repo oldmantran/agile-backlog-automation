@@ -71,13 +71,13 @@ export const projectApi = {
     try {
       const response = await apiClientMethods.get<{ projects: Project[], pagination: { total: number } }>('/projects', {
         params: { page, limit },
-      });
+      }) as unknown as { projects: Project[], pagination: { total: number } };
       
-      // Handle the nested response structure from the backend
-      if (response && response.data && response.data.projects) {
+      // The API client unwraps the response, so response is the data directly
+      if (response && response.projects) {
         return {
-          projects: response.data.projects,
-          total: response.data.pagination?.total || response.data.projects.length
+          projects: response.projects,
+          total: response.pagination?.total || response.projects.length
         };
       } else {
         console.warn('Unexpected API response structure:', response);

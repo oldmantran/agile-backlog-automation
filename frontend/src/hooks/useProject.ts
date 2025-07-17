@@ -58,8 +58,8 @@ export const useProject = () => {
           iterationPath: 'SampleProject\\Iteration'
         },
         status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       
       setIsLoading(false);

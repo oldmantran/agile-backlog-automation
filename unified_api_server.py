@@ -171,10 +171,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files from frontend build
+# Serve static files from frontend build (only if build directory exists)
 project_root = Path(__file__).parent
-if (project_root / "frontend" / "build").exists():
-    app.mount("/static", StaticFiles(directory=project_root / "frontend" / "build" / "static"), name="static")
+static_dir = project_root / "frontend" / "build" / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Pydantic models for request/response
 class ConfigData(BaseModel):

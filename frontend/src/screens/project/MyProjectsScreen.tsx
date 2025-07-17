@@ -5,10 +5,12 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2 } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import ServerLogs from '../../components/logs/ServerLogs';
+import Header from '../../components/navigation/Header';
+import Sidebar from '../../components/navigation/Sidebar';
 import { BacklogJob } from '../../types/backlogJob';
 import { Project } from '../../types/project';
 
@@ -252,7 +254,10 @@ const MyProjectsScreen: React.FC = () => {
       }
 
       console.log('Updated jobs:', updatedJobs);
-      setActiveJobs(updatedJobs);
+      setActiveJobs(prev => {
+        console.log('Previous active jobs:', prev);
+        return updatedJobs;
+      });
       localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
     } catch (error) {
       logError('pollJobUpdates', error, 'Main polling error');
@@ -358,8 +363,8 @@ const MyProjectsScreen: React.FC = () => {
         pollJobUpdates();
       }, 1000);
       
-      // Poll for job updates every 5 seconds
-      const interval = setInterval(pollJobUpdates, 5000);
+      // Poll for job updates every 2 seconds (reduced from 5 for better real-time feel)
+      const interval = setInterval(pollJobUpdates, 2000);
       return () => clearInterval(interval);
     } catch (error) {
       logError('MyProjectsScreen', error, 'Component mount error');
@@ -410,7 +415,7 @@ const MyProjectsScreen: React.FC = () => {
                     onClick={() => navigate('/simple-project-wizard')}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
-                    <FiPlus className="w-4 h-4 mr-2" />
+                    <FiFolder className="w-4 h-4 mr-2" />
                     Create New Project
                   </Button>
                 </div>
@@ -502,10 +507,14 @@ const MyProjectsScreen: React.FC = () => {
                               <span className="text-muted-foreground">Progress</span>
                               <span className="text-foreground font-mono">{job.progress || 0}%</span>
                             </div>
-                            <Progress 
-                              value={job.progress || 0} 
-                              className="h-2"
-                            />
+                            { (job.progress === 0 && (job.status === 'queued' || job.status === 'running')) ? (
+                              <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                            ) : (
+                              <Progress 
+                                value={job.progress || 0} 
+                                className="h-2"
+                              />
+                            ) }
                             <p className="text-sm text-muted-foreground font-mono">
                               {job.currentAction || 'Initializing...'}
                             </p>
@@ -537,7 +546,7 @@ const MyProjectsScreen: React.FC = () => {
                       onClick={() => navigate('/simple-project-wizard')}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      <FiPlus className="w-4 h-4 mr-2" />
+                      <FiFolder className="w-4 h-4 mr-2" />
                       Generate New Backlog
                     </Button>
                   </CardContent>
@@ -630,17 +639,17 @@ const MyProjectsScreen: React.FC = () => {
                           </Badge>
                         </div>
                         <CardTitle className="text-xl font-semibold text-foreground glow-cyan">
-                          {project.basics.name}
+                          {project.basics?.name || 'Untitled Project'}
                         </CardTitle>
                       </CardHeader>
                       
                       <CardContent>
                         <p className="text-muted-foreground mb-4 text-sm">
-                          {project.basics.description}
+                          {project.basics?.description || 'No description available'}
                         </p>
                         
                         <div className="text-xs text-muted-foreground space-y-1">
-                          <div>Domain: {project.basics.domain}</div>
+                          <div>Domain: {project.basics?.domain || 'Unknown'}</div>
                           <div>Created: {new Date(project.createdAt).toLocaleDateString()}</div>
                           <div>Updated: {new Date(project.updatedAt).toLocaleDateString()}</div>
                         </div>
@@ -660,7 +669,7 @@ const MyProjectsScreen: React.FC = () => {
                       onClick={() => navigate('/simple-project-wizard')}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      <FiPlus className="w-4 h-4 mr-2" />
+                      <FiFolder className="w-4 h-4 mr-2" />
                       Create New Project
                     </Button>
                   </CardContent>

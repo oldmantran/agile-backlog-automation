@@ -24,9 +24,9 @@ export interface Project {
   basics: ProjectBasics;
   vision: ProductVision;
   azureConfig: AzureConfig;
-  status: 'draft' | 'generating' | 'completed' | 'error';
-  createdAt: Date;
-  updatedAt: Date;
+  status: 'draft' | 'generating' | 'completed' | 'error' | 'created';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GenerationStatus {

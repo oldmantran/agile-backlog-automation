@@ -10,65 +10,30 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 second timeout
+  timeout: 300000, // 5 minute timeout (increased from 60 seconds)
   // Force direct connection to bypass React proxy
   withCredentials: false,
 });
 
 export const backlogApi = {
   // Backlog Generation
-  generateBacklog: async (projectId: string): Promise<{ jobId: string }> => {
-    console.log('📞 Calling generateBacklog API for project:', projectId);
-    console.log('🌐 API URL:', `${API_BASE_URL}/backlog/generate/${projectId}`);
+  generateBacklog: async (projectId: string): Promise<GenerationStatus> => {
+    console.log(`📞 Calling generateBacklog API for project: ${projectId}`);
+    console.log(`🌐 API URL: ${API_BASE_URL}/backlog/generate/${projectId}`);
     
     try {
       console.log('🚀 Making POST request...');
-      console.log('⏰ Request start time:', new Date().toISOString());
+      const startTime = new Date();
       
-      // Add a timeout promise to catch hanging requests
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          console.error('⏰ Request timeout after 60 seconds');
-          reject(new Error('Request timeout - request hung for 60 seconds'));
-        }, 60000);
-      });
+      const response = await api.post<GenerationStatus>(`/backlog/generate/${projectId}`);
       
-      const requestPromise = api.post<ApiResponse<{ jobId: string }>>(`/backlog/generate/${projectId}`);
+      const endTime = new Date();
+      console.log(`✅ Request completed in ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`);
       
-      // Race between the request and timeout
-      const response = await Promise.race([requestPromise, timeoutPromise]) as any;
-      
-      console.log('⏰ Request completed at:', new Date().toISOString());
-      console.log('📥 Raw API response:', response);
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response headers:', response.headers);
-      console.log('📥 Response data:', response.data);
-      console.log('📥 Response data.data:', response.data.data);
-      
-      // The backend returns { success: true, data: { jobId: "..." } }
-      // So we need to return response.data.data, not response.data.data.data
-      return response.data.data;
-    } catch (error: any) {
-      console.error('❌ generateBacklog API error:', error);
-      console.error('⏰ Error occurred at:', new Date().toISOString());
-      
-      if (error.code === 'ECONNABORTED') {
-        console.error('❌ Request timed out after 60 seconds');
-        throw new Error('Request timed out - the backend may be processing. Please try again.');
-      }
-      
-      if (error.response) {
-        console.error('❌ Server responded with error:', error.response.status, error.response.data);
-        throw new Error(`Server error: ${error.response.status} - ${error.response.data?.detail || error.response.data}`);
-      }
-      
-      if (error.request) {
-        console.error('❌ No response received from server');
-        throw new Error('No response from server - please check if the backend is running.');
-      }
-      
-      console.error('❌ Network error:', error.message);
-      throw new Error(`Network error: ${error.message}`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ generateBacklog error:', error);
+      throw error;
     }
   },
 
