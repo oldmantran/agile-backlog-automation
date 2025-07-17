@@ -16,18 +16,18 @@ const SimpleProjectWizard: React.FC = () => {
 
   const handleSubmit = async (projectData: Partial<Project>) => {
     try {
-      console.log('Starting project submission with data:', projectData);
+      console.log('🚀 Starting project submission with data:', projectData);
       setIsSubmitting(true);
       setError(null);
       
       // Step 1: Create the project
-      console.log('Calling createProject API...');
+      console.log('📞 Calling createProject API...');
       
       const projectResponse = await projectApi.createProject(projectData);
-      console.log('Project creation response:', projectResponse);
-      console.log('Response type:', typeof projectResponse);
-      console.log('Response keys:', Object.keys(projectResponse || {}));
-      console.log('Full response object:', JSON.stringify(projectResponse, null,2));
+      console.log('✅ Project creation response:', projectResponse);
+      console.log('📊 Response type:', typeof projectResponse);
+      console.log('📊 Response keys:', Object.keys(projectResponse || {}));
+      console.log('📊 Full response object:', JSON.stringify(projectResponse, null,2));
       
       // Handle different response formats
       let projectId;
@@ -46,15 +46,16 @@ const SimpleProjectWizard: React.FC = () => {
       }
       
       if (projectId) {
-        console.log('Found projectId:', projectId);
+        console.log('🎯 Found projectId:', projectId);
         // Step 2: Start backlog generation
-        console.log('Calling generateBacklog API for project:', projectId);
+        console.log('📞 Calling generateBacklog API for project:', projectId);
         
         try {
           const backlogResponse = await backlogApi.generateBacklog(projectId);
-          console.log('Backlog generation response:', backlogResponse);
+          console.log('✅ Backlog generation response:', backlogResponse);
           
           if (backlogResponse.jobId) {
+            console.log('🎯 Found jobId:', backlogResponse.jobId);
             // Store job info in localStorage
             const jobInfo = {
               jobId: backlogResponse.jobId,
@@ -66,24 +67,25 @@ const SimpleProjectWizard: React.FC = () => {
               currentAction: 'Epic Strategist initializing...'
             };
             
+            console.log('💾 Storing job info:', jobInfo);
             const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
             existingJobs.push(jobInfo);
             localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
             
             // Navigate immediately to My Projects screen
-            console.log('Navigating to My Projects screen...');
-            navigate('/projects');
+            console.log('🧭 Navigating to My Projects screen...');
+            navigate('/my-projects');
             
           } else {
-            console.error('No jobId in backlog response:', backlogResponse);
+            console.error('❌ No jobId in backlog response:', backlogResponse);
             throw new Error('Failed to start backlog generation - no job ID returned');
           }
         } catch (backlogError) {
-          console.error('Backlog generation error:', backlogError);
+          console.error('❌ Backlog generation error:', backlogError);
           throw new Error(`Failed to start backlog generation: ${backlogError instanceof Error ? backlogError.message : 'Unknown error'}`);
         }
       } else {
-        console.error('No projectId found in project response:', projectResponse);
+        console.error('❌ No projectId found in project response:', projectResponse);
         throw new Error('Failed to create project - no project ID returned');
       }
     } catch (error) {
@@ -97,11 +99,11 @@ const SimpleProjectWizard: React.FC = () => {
   const handleBackToHome = () => {
     console.log('Navigating back to dashboard...');
     try {
-      navigate('/projects');
+      navigate('/my-projects');
     } catch (error) {
       console.error('React Router navigation failed:', error);
       // Fallback to direct navigation
-      window.location.href = '/projects';
+      window.location.href = '/my-projects';
     }
   };
 

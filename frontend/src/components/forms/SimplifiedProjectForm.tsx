@@ -26,11 +26,16 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
     }  });
 
   const onFormSubmit = (data: any) => {
+    console.log('🔍 Form submitted with data:', data);
+    
     // Transform data to match backend expectations
     // Extract organization and project from input (handles both "org/project" and "project" formats)
     const projectParts = data.adoProject.includes('/') ? data.adoProject.split('/') : [data.adoProject.split('.')[0], data.adoProject];
     const organization = projectParts[0];
     const project = projectParts[1] || projectParts[0];
+    
+    console.log('🔍 Extracted organization:', organization);
+    console.log('🔍 Extracted project:', project);
     
     const projectData = {
       basics: {
@@ -53,6 +58,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       }
     };
     
+    console.log('🔍 Calling onSubmit with projectData:', projectData);
     onSubmit(projectData);
   };
   

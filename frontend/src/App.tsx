@@ -1,69 +1,86 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './index.css';
 
-// Tron-themed screens
+// Screens
+import WelcomeScreen from './screens/onboarding/WelcomeScreen';
+import MyProjectsScreen from './screens/project/MyProjectsScreen';
+import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
+import BacklogSweeperScreen from './screens/sweeper/BacklogSweeperScreen';
+import BacklogSweeperScreen_new from './screens/sweeper/BacklogSweeperScreen_new';
 import TronWelcomeScreen from './screens/TronWelcomeScreen';
 import TronConfigScreen from './screens/TronConfigScreen';
+import TronExecutableScreen from './screens/TronExecutableScreen';
+import TronBacklogSweeperScreen from './screens/TronBacklogSweeperScreen';
 import TronCleanupWorkItemsScreen from './screens/TronCleanupWorkItemsScreen';
 import TronCleanupTestCasesScreen from './screens/TronCleanupTestCasesScreen';
-import TronBacklogSweeperScreen from './screens/TronBacklogSweeperScreen';
-import TronExecutableScreen from './screens/TronExecutableScreen';
 import TronSettingsScreen from './screens/settings/TronSettingsScreen';
-import MyProjectsScreen from './screens/project/MyProjectsScreen';
-
-// Legacy screens (kept for compatibility)
+import SearchDocumentationScreen from './screens/search/SearchDocumentationScreen';
+import TestCasesCleanupScreen from './screens/cleanup/TestCasesCleanupScreen';
+import WorkItemsCleanupScreen from './screens/cleanup/WorkItemsCleanupScreen';
+import TestCasesCleanupScreen_NEW from './screens/cleanup/TestCasesCleanupScreen_NEW';
+import WorkItemsCleanupScreen_NEW from './screens/cleanup/WorkItemsCleanupScreen_NEW';
+import MainDashboard from './screens/dashboard/MainDashboard';
+import MainDashboard_NEW from './screens/dashboard/MainDashboard_NEW';
 import TestScreen from './screens/TestScreen';
-import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
-
-// Layout imports
-import MainLayout from './components/layout/MainLayout';
 
 function App() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Router>
+    <Router>
+      <div className="min-h-screen bg-background">
         <Routes>
-          {/* Dashboard - Main Tron Interface */}
-          <Route path="/dashboard" element={<TronWelcomeScreen />} />
-          <Route path="/" element={<TronWelcomeScreen />} />
+          {/* Main Dashboard as root */}
+          <Route path="/" element={<MainDashboard />} />
           
-          {/* Configuration Screen */}
-          <Route path="/configure" element={<TronConfigScreen />} />
+          {/* Welcome/Onboarding */}
+          <Route path="/welcome" element={<WelcomeScreen />} />
           
-          {/* Cleanup Screens */}
-          <Route path="/cleanup-workitems" element={<TronCleanupWorkItemsScreen />} />
-          <Route path="/cleanup-tests" element={<TronCleanupTestCasesScreen />} />
+          {/* Project Management */}
+          <Route path="/my-projects" element={<MyProjectsScreen />} />
+          <Route path="/simple-project-wizard" element={<SimpleProjectWizard />} />
+          <Route path="/project/create" element={<SimpleProjectWizard />} />
+          <Route path="/project/new" element={<SimpleProjectWizard />} />
           
-          {/* Backlog Sweeper */}
-          <Route path="/sweeper" element={<TronBacklogSweeperScreen />} />
+          {/* Backlog Management */}
+          <Route path="/backlog-sweeper" element={<BacklogSweeperScreen />} />
+          <Route path="/backlog-sweeper-new" element={<BacklogSweeperScreen_new />} />
+          <Route path="/sweeper" element={<BacklogSweeperScreen />} />
           
-          {/* Executable Launcher */}
-          <Route path="/launcher" element={<TronExecutableScreen />} />
+          {/* TRON Interface */}
+          <Route path="/tron" element={<TronWelcomeScreen />} />
+          <Route path="/tron/config" element={<TronConfigScreen />} />
+          <Route path="/tron/executable" element={<TronExecutableScreen />} />
+          <Route path="/tron/backlog-sweeper" element={<TronBacklogSweeperScreen />} />
+          <Route path="/tron/cleanup-work-items" element={<TronCleanupWorkItemsScreen />} />
+          <Route path="/tron/cleanup-test-cases" element={<TronCleanupTestCasesScreen />} />
+          <Route path="/tron/settings" element={<TronSettingsScreen />} />
           
-          {/* Settings Screen */}
+          {/* Cleanup Tools */}
+          <Route path="/cleanup/test-cases" element={<TestCasesCleanupScreen />} />
+          <Route path="/cleanup/work-items" element={<WorkItemsCleanupScreen />} />
+          <Route path="/cleanup/test-cases-new" element={<TestCasesCleanupScreen_NEW />} />
+          <Route path="/cleanup/work-items-new" element={<WorkItemsCleanupScreen_NEW />} />
+          <Route path="/cleanup/workitems" element={<WorkItemsCleanupScreen />} />
+          <Route path="/cleanup/testcases" element={<TestCasesCleanupScreen />} />
+          
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<MainDashboard />} />
+          <Route path="/dashboard-new" element={<MainDashboard_NEW />} />
+          
+          {/* Search */}
+          <Route path="/search" element={<SearchDocumentationScreen />} />
+          
+          {/* Settings */}
           <Route path="/settings" element={<TronSettingsScreen />} />
           
-          {/* Projects and Backlog Generator */}
-          <Route path="/projects" element={<MyProjectsScreen />} />
-          <Route path="/backlog-generator" element={<TronBacklogSweeperScreen />} />
-          <Route path="/search" element={<TronWelcomeScreen />} />
+          {/* Test */}
+          <Route path="/test" element={<TestScreen />} />
           
-          {/* New Project (reuse existing) */}
-          <Route path="/new-project" element={
-            <MainLayout>
-              <SimpleProjectWizard />
-            </MainLayout>
-          } />
-          
-          {/* Legacy test route */}
-          <Route path="/test" element={
-            <MainLayout>
-              <TestScreen />
-            </MainLayout>
-          } />
+          {/* Default redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Router>
-    </div>
+      </div>
+    </Router>
   );
 }
 
