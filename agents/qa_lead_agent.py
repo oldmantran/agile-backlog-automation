@@ -65,7 +65,7 @@ class QALeadAgent(Agent):
         self.enforce_completeness = self.test_organization_config.get('enforce_completeness', True)
         
         # Parallel processing configuration
-        workflow_config = config.get_setting('workflow', {}) or {}
+        workflow_config = config.get_setting('workflow') or {}
         parallel_config = workflow_config.get('parallel_processing', {})
         self.parallel_enabled = parallel_config.get('enabled', True)
         self.qa_sub_agent_parallel = parallel_config.get('qa_sub_agent_parallel', True)

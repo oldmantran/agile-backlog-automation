@@ -841,6 +841,15 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         
         # Initialize supervisor
         print(f"[DEBUG] About to initialize WorkflowSupervisor...")
+        print(f"[DEBUG] WorkflowSupervisor parameters:")
+        print(f"[DEBUG]   - organization_url: {organization_url} (type: {type(organization_url)})")
+        print(f"[DEBUG]   - project: {project} (type: {type(project)})")
+        print(f"[DEBUG]   - personal_access_token: {'***' if personal_access_token else None} (type: {type(personal_access_token)})")
+        print(f"[DEBUG]   - area_path: {area_path} (type: {type(area_path)})")
+        print(f"[DEBUG]   - iteration_path: {iteration_path} (type: {type(iteration_path)})")
+        print(f"[DEBUG]   - job_id: {job_id} (type: {type(job_id)})")
+        print(f"[DEBUG]   - config_path: None (not provided)")
+        
         try:
             supervisor = WorkflowSupervisor(
                 organization_url=organization_url,
