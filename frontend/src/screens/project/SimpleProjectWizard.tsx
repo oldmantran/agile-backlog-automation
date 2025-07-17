@@ -7,7 +7,7 @@ import SimplifiedProjectForm from '../../components/forms/SimplifiedProjectForm'
 import { Project } from '../../types/project';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
-import { FiArrowLeft, FiCheckCircle, FiX } from 'react-icons/fi';
+import { FiX } from 'react-icons/fi';
 
 const SimpleProjectWizard: React.FC = () => {
   const navigate = useNavigate();
@@ -29,7 +29,12 @@ const SimpleProjectWizard: React.FC = () => {
       // Handle different response formats
       let projectId;
       if (projectResponse && typeof projectResponse === 'object') {
-        projectId = projectResponse.projectId || projectResponse.data?.projectId || projectResponse.id;
+        // Try multiple possible locations for projectId
+        const response = projectResponse as any;
+        projectId = response.projectId || 
+                   (response.data && response.data.projectId) ||
+                   response.id;
+        console.log('Extracted projectId:', projectId);
       }
       
       if (projectId) {
@@ -85,11 +90,6 @@ const SimpleProjectWizard: React.FC = () => {
       // Fallback to direct navigation
       window.location.href = '/projects';
     }
-  };
-
-  const handleCancel = () => {
-    setIsSubmitting(false);
-    setError(null);
   };
 
   const handleRestart = () => {
