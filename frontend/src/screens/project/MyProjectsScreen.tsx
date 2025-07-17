@@ -177,9 +177,22 @@ const MyProjectsScreen: React.FC = () => {
       if (stored) {
         const jobs = JSON.parse(stored);
         console.log('Loaded active jobs:', jobs);
-        setActiveJobs(jobs);
+        // Filter out old completed/failed jobs (older than 10 minutes)
+        const now = Date.now();
+        const filteredJobs = jobs.filter((job: JobInfo) => {
+          const jobAge = now - new Date(job.startTime).getTime();
+          if (job.status === 'completed' || job.status === 'failed') {
+            return jobAge < 600000; // Keep for 10 minutes
+          }
+          return true; // Keep all running/queued jobs
+        });
+        console.log('Filtered active jobs:', filteredJobs);
+        setActiveJobs(filteredJobs);
+        // Update localStorage with filtered jobs
+        localStorage.setItem('activeJobs', JSON.stringify(filteredJobs));
       } else {
         console.log('No active jobs found in localStorage');
+        setActiveJobs([]);
       }
     } catch (error) {
       logError('loadActiveJobs', error, 'localStorage parsing error');
@@ -446,11 +459,11 @@ const MyProjectsScreen: React.FC = () => {
             </div>
 
             {/* Active Jobs Section */}
-            {activeJobs.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                  ACTIVE BACKLOG GENERATION
-                </h2>
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
+                ACTIVE BACKLOG GENERATION
+              </h2>
+              {activeJobs.length > 0 ? (
                 <div className="space-y-6">
                   {activeJobs.map((job) => (
                     <Card key={job.jobId} className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
@@ -516,8 +529,25 @@ const MyProjectsScreen: React.FC = () => {
                     </Card>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                  <CardContent className="pt-6 text-center">
+                    <FiActivity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No Active Backlog Generation</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Start a new backlog generation to see progress here.
+                    </p>
+                    <Button
+                      onClick={() => navigate('/simple-project-wizard')}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      <FiPlus className="w-4 h-4 mr-2" />
+                      Generate New Backlog
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
             {/* Backlog Jobs Section */}
             {backlogJobs.length > 0 && (

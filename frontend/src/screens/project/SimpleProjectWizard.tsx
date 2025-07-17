@@ -53,8 +53,12 @@ const SimpleProjectWizard: React.FC = () => {
         console.log('📞 Calling generateBacklog API for project:', projectId);
         
         try {
+          console.log('📞 About to call backlogApi.generateBacklog with projectId:', projectId);
           const backlogResponse = await backlogApi.generateBacklog(projectId);
           console.log('✅ Backlog generation response:', backlogResponse);
+          console.log('✅ Response type:', typeof backlogResponse);
+          console.log('✅ Response keys:', Object.keys(backlogResponse || {}));
+          console.log('✅ Full response object:', backlogResponse);
           
           if (backlogResponse.jobId) {
             console.log('🎯 Found jobId:', backlogResponse.jobId);
@@ -75,31 +79,54 @@ const SimpleProjectWizard: React.FC = () => {
             localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
             
             // Show success state
+            console.log('🎯 Setting success state...');
             setJobInfo(jobInfo);
             setIsSuccess(true);
             setIsSubmitting(false);
+            console.log('✅ Success state set - jobInfo:', jobInfo);
+            console.log('✅ Success state set - isSuccess:', true);
+            console.log('✅ Success state set - isSubmitting:', false);
             
             console.log('✅ Backlog generation started successfully!');
             
-            // Navigate to My Projects screen after a brief delay
-            setTimeout(() => {
-              console.log('🧭 Navigating to My Projects screen...');
-              try {
-                navigate('/my-projects');
-                console.log('✅ React Router navigation successful');
-              } catch (navError) {
-                console.error('❌ React Router navigation failed:', navError);
-                console.log('🔄 Falling back to window.location navigation...');
-                window.location.href = '/my-projects';
-              }
-            }, 2000); // 2 second delay to show success message
+            // Navigate to My Projects screen immediately
+            console.log('🧭 Navigating to My Projects screen immediately...');
+            console.log('🔍 Current location before navigation:', window.location.href);
+            console.log('🔍 React Router navigate function:', typeof navigate);
+            
+            try {
+              console.log('🔄 Attempting React Router navigation to /my-projects...');
+              navigate('/my-projects');
+              console.log('✅ React Router navigation successful');
+              
+              // Double-check if navigation actually happened
+              setTimeout(() => {
+                console.log('🔍 Location after navigation attempt:', window.location.href);
+                if (!window.location.href.includes('/my-projects')) {
+                  console.warn('⚠️ React Router navigation may not have worked, trying fallback...');
+                  window.location.href = '/my-projects';
+                }
+              }, 100);
+              
+            } catch (navError) {
+              console.error('❌ React Router navigation failed:', navError);
+              console.log('🔄 Falling back to window.location navigation...');
+              window.location.href = '/my-projects';
+            }
             
           } else {
             console.error('❌ No jobId in backlog response:', backlogResponse);
             throw new Error('Failed to start backlog generation - no job ID returned');
           }
-        } catch (backlogError) {
+        } catch (backlogError: any) {
           console.error('❌ Backlog generation error:', backlogError);
+          console.error('❌ Error details:', {
+            message: backlogError.message,
+            status: backlogError.response?.status,
+            statusText: backlogError.response?.statusText,
+            data: backlogError.response?.data,
+            config: backlogError.config
+          });
           throw new Error(`Failed to start backlog generation: ${backlogError instanceof Error ? backlogError.message : 'Unknown error'}`);
         }
       } else {
@@ -133,6 +160,22 @@ const SimpleProjectWizard: React.FC = () => {
   return (
     <div className="container max-w-4xl mx-auto py-8">
       <div className="space-y-8">
+        {/* Test Navigation Button */}
+        <div className="text-center">
+          <Button 
+            onClick={() => {
+              console.log('🧪 Test navigation button clicked');
+              console.log('🔍 Current location:', window.location.href);
+              navigate('/my-projects');
+              console.log('✅ Test navigation called');
+            }}
+            variant="outline"
+            className="mb-4"
+          >
+            🧪 Test Navigation to My Projects
+          </Button>
+        </div>
+
         <div className="text-center">
           <h1 className="text-3 font-bold mb-4">
             Agile Backlog Automation
@@ -141,6 +184,11 @@ const SimpleProjectWizard: React.FC = () => {
             Transform your product vision into a comprehensive backlog with AI-powered automation
           </p>
         </div>
+
+        {(() => {
+          console.log('🔍 Render state check:', { error, isSuccess, isSubmitting, jobInfo });
+          return null;
+        })()}
 
         {!error && !isSuccess && (
           <>
@@ -200,6 +248,17 @@ const SimpleProjectWizard: React.FC = () => {
                   <p className="text-sm text-green-600 dark:text-green-400 mt-4">
                     Redirecting to My Projects screen to monitor progress...
                   </p>
+                  <div className="mt-4">
+                    <Button 
+                      onClick={() => {
+                        console.log('🔘 Manual navigation button clicked');
+                        navigate('/my-projects');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Go to My Projects Now
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>

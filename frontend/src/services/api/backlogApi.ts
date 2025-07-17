@@ -15,7 +15,14 @@ const api = axios.create({
 export const backlogApi = {
   // Backlog Generation
   generateBacklog: async (projectId: string): Promise<{ jobId: string }> => {
+    console.log('📞 Calling generateBacklog API for project:', projectId);
     const response = await api.post<ApiResponse<{ jobId: string }>>(`/backlog/generate/${projectId}`);
+    console.log('📥 Raw API response:', response);
+    console.log('📥 Response data:', response.data);
+    console.log('📥 Response data.data:', response.data.data);
+    
+    // The backend returns { success: true, data: { jobId: "..." } }
+    // So we need to return response.data.data, not response.data.data.data
     return response.data.data;
   },
 

@@ -151,6 +151,108 @@ class GitHubIssueCreator:
         """Get all issues data from the analysis."""
         return [
             {
+                "title": "CRITICAL: Navigation to My Projects Screen Not Working After Backlog Generation",
+                "body": """## 🚨 CRITICAL: Navigation Failure After Backlog Generation
+
+### Problem
+After submitting a product vision and starting backlog generation, the application does not automatically navigate to the My Projects screen as expected. Users remain stuck on the project creation screen.
+
+### Impact
+- Users cannot monitor backlog generation progress
+- Poor user experience - users think the system is broken
+- Users manually navigate to My Projects screen
+- Critical workflow interruption
+
+### Current Behavior
+- Project creation succeeds
+- Backlog generation API call is made
+- Success message shows for 2 seconds
+- Navigation to `/my-projects` fails or doesn't happen
+- User remains on project creation screen
+
+### Expected Behavior
+- After successful backlog generation start
+- Immediate navigation to My Projects screen
+- Show progress bar and server logs
+- Allow user to monitor generation progress
+
+### Location
+- `frontend/src/screens/project/SimpleProjectWizard.tsx` (lines 70-90)
+- Navigation logic in `handleSubmit` function
+
+### Root Cause
+- Navigation timeout may be failing
+- React Router navigation may not be working properly
+- Success state may not be triggering correctly
+
+### Acceptance Criteria
+- [ ] Navigation to My Projects screen happens immediately after backlog generation starts
+- [ ] No 2-second delay - navigate immediately
+- [ ] Fallback navigation works if React Router fails
+- [ ] User sees progress bar and server logs on My Projects screen
+- [ ] No manual navigation required
+
+### Labels
+- `bug`
+- `critical`
+- `frontend`
+- `navigation`
+- `user-experience`""",
+                "labels": ["bug", "critical", "frontend", "navigation", "user-experience"]
+            },
+            {
+                "title": "CRITICAL: My Projects Screen Not Showing Progress Bar and Server Logs",
+                "body": """## 🚨 CRITICAL: My Projects Screen Missing Progress and Logs
+
+### Problem
+When navigating to the My Projects screen (either automatically or manually), the progress bar for active backlog generation and server logs are not displayed, even when jobs are running.
+
+### Impact
+- Users cannot monitor backlog generation progress
+- No visibility into server logs and processing status
+- Users think the system is not working
+- Critical monitoring functionality broken
+
+### Current Behavior
+- My Projects screen loads
+- No progress bar visible for active jobs
+- Server Logs component not showing
+- No indication that backlog generation is running
+- API calls may be failing silently
+
+### Expected Behavior
+- My Projects screen shows progress bar for active jobs
+- Server Logs component displays real-time backend logs
+- Active jobs are visible and updating
+- Clear indication of running processes
+
+### Location
+- `frontend/src/screens/project/MyProjectsScreen.tsx`
+- `frontend/src/components/logs/ServerLogs.tsx`
+- API calls to `/api/jobs` and `/api/backlog/status/{job_id}`
+
+### Root Cause
+- API calls may be failing due to network issues
+- Server Logs component may not be rendering
+- Active jobs not being loaded from localStorage or API
+- WebSocket connection may not be established
+
+### Acceptance Criteria
+- [ ] Progress bar shows for active backlog generation jobs
+- [ ] Server Logs component displays and connects to WebSocket
+- [ ] Active jobs are loaded and displayed correctly
+- [ ] Real-time updates work for job progress
+- [ ] Error handling shows clear messages if components fail
+
+### Labels
+- `bug`
+- `critical`
+- `frontend`
+- `monitoring`
+- `user-experience`""",
+                "labels": ["bug", "critical", "frontend", "monitoring", "user-experience"]
+            },
+            {
                 "title": "Fix Navigation Route Inconsistency",
                 "body": """## 🚨 Critical Issue: Navigation Route Inconsistency
 

@@ -456,50 +456,41 @@ async def list_projects(page: int = 1, limit: int = 10):
 
 @app.post("/api/backlog/generate/{project_id}")
 async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
-    """Start backlog generation for a project."""
+    """Generate a backlog for a project."""
+    logger.info(f"🚀 Backlog generation requested for project: {project_id}")
+    
     try:
-        # Check if project exists
+        # Get project info
         project_file = Path("output") / f"project_{project_id}.json"
         if not project_file.exists():
+            logger.error(f"❌ Project file not found: {project_file}")
             raise HTTPException(status_code=404, detail="Project not found")
         
-        # Load project data
         with open(project_file, 'r') as f:
             project_info = json.load(f)
         
-        job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        logger.info(f"📋 Project info loaded: {project_info.get('id', 'unknown')}")
         
-        # Initialize job status
-        job_status = {
-            "jobId": job_id,
-            "projectId": project_id,
-            "status": "queued",
-            "progress": 0,
-            "currentAgent": "",
-            "currentAction": "Initializing workflow",
-            "startTime": datetime.now(),
-            "endTime": None,
-            "error": None
-        }
+        # Generate unique job ID
+        job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{project_id}"
+        logger.info(f"🆔 Generated job ID: {job_id}")
         
-        active_jobs[job_id] = job_status
-        
-        # Start background task for backlog generation
+        # Add to background tasks
         background_tasks.add_task(run_backlog_generation, job_id, project_info)
+        logger.info(f"✅ Background task added for job: {job_id}")
         
-        logger.info(f"Started backlog generation job {job_id} for project {project_id}")
+        response_data = {"jobId": job_id}
+        logger.info(f"📤 Returning response: {response_data}")
         
         return {
             "success": True,
-            "data": {"jobId": job_id},
-            "jobId": job_id  # Also include at root level for compatibility
+            "data": response_data
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error starting backlog generation: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to start generation: {str(e)}")
+        error_msg = f"Failed to start backlog generation: {str(e)}"
+        logger.error(f"❌ {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.get("/api/backlog/status/{job_id}")
 async def get_generation_status(job_id: str):
@@ -509,9 +500,24 @@ async def get_generation_status(job_id: str):
     
     job_status = active_jobs[job_id]
     
+    # Convert job_status to match GenerationStatus model
+    generation_status = {
+        "jobId": job_status.get("jobId", job_id),
+        "projectId": job_status.get("projectId", "unknown"),
+        "status": job_status.get("status", "unknown"),
+        "progress": job_status.get("progress", 0),
+        "currentAgent": job_status.get("currentAgent", ""),
+        "currentAction": job_status.get("currentAction", ""),
+        "startTime": job_status.get("startTime"),
+        "endTime": job_status.get("endTime"),
+        "error": job_status.get("error")
+    }
+    
+    logger.info(f"📊 Returning status for job {job_id}: {generation_status}")
+    
     return {
         "success": True,
-        "data": GenerationStatus(**job_status).dict()
+        "data": generation_status
     }
 
 @app.get("/api/jobs")
@@ -833,12 +839,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             "projectId": project_info.get("id", "unknown"),
             "status": "running",
             "progress": 0,
-            "currentAgent": "",
-            "currentAction": "",
+            "currentAgent": "Supervisor",
+            "currentAction": "Initializing workflow...",
             "startTime": datetime.now(),
             "error": None,
             "endTime": None
         }
+        logger.info(f"🚀 Job {job_id} initialized and ready for execution")
         
         # Extract project data
         project_data = project_info.get("data", {})
@@ -960,6 +967,9 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             if job_id in active_jobs:
                 active_jobs[job_id]["progress"] = progress
                 active_jobs[job_id]["currentAction"] = action
+                active_jobs[job_id]["currentAgent"] = action.split()[0] if action else "Supervisor"  # Extract agent name from action
+                active_jobs[job_id]["status"] = "running"  # Ensure status is running during execution
+                logger.info(f"📊 Progress update for job {job_id}: {progress}% - {action}")
 
         # Prepare context
         context = {
