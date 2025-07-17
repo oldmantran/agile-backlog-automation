@@ -875,6 +875,15 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         area_path = azure_config.get("areaPath")
         iteration_path = azure_config.get("iterationPath")
         
+        # Load PAT from .env if not provided in request
+        if not personal_access_token:
+            env_config = load_env_config()
+            personal_access_token = env_config.get("AZURE_DEVOPS_PAT", "")
+            if personal_access_token:
+                logger.info(f"🔑 Loaded Azure DevOps PAT from .env file")
+            else:
+                logger.warning(f"⚠️ Azure DevOps PAT not found in request or .env file")
+        
         # Enhanced logging for Azure DevOps configuration
         logger.info(f"🔍 Azure DevOps Configuration Analysis for job {job_id}:")
         logger.info(f"   azure_integration_enabled (from config): {azure_integration_enabled}")
