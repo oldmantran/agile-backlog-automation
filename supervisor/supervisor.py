@@ -802,7 +802,7 @@ class WorkflowSupervisor:
                         sub_progress = processed_stories / total_stories
                         update_progress_callback(stage_index, f"Generating tasks ({processed_stories}/{total_stories})", sub_progress)
         else:
-            for feature, user_story in user_stories:
+            for epic, feature, user_story in user_stories:
                 self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
                 tasks = agent.generate_tasks(user_story, context)
                 user_story['tasks'] = tasks

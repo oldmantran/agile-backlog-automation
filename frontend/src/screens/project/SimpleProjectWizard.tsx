@@ -25,6 +25,9 @@ const SimpleProjectWizard: React.FC = () => {
       
       const projectResponse = await projectApi.createProject(projectData);
       console.log('Project creation response:', projectResponse);
+      console.log('Response type:', typeof projectResponse);
+      console.log('Response keys:', Object.keys(projectResponse || {}));
+      console.log('Full response object:', JSON.stringify(projectResponse, null,2));
       
       // Handle different response formats
       let projectId;
@@ -32,6 +35,14 @@ const SimpleProjectWizard: React.FC = () => {
         // The response interceptor should have unwrapped the data
         projectId = projectResponse.projectId;
         console.log('Extracted projectId:', projectId);
+        
+        // Try alternative locations if projectId is not found
+        if (!projectId) {
+          console.log('projectId not found at root level, trying alternatives...');
+          const response = projectResponse as any;
+          projectId = response.data?.projectId || response.id;
+          console.log('Alternative projectId:', projectId);
+        }
       }
       
       if (projectId) {

@@ -3,10 +3,10 @@ import { ApiResponse } from '../../types/api';
 import { apiClientMethods, ApiError, NetworkError } from './apiClient';
 
 export const projectApi = {
-  createProject: async (projectData: any): Promise<{ projectId: string; status: string }> => {
+  createProject: async (projectData: any): Promise<any> => {
     try {
       const response = await apiClientMethods.post<{ projectId: string; status: string }>('/projects', projectData);
-      return response.data;
+      return response; // Return the full response, not just response.data
     } catch (error) {
       if (error instanceof ApiError) {
         throw new Error(`Failed to create project: ${error.message}`);
