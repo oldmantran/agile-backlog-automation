@@ -20,8 +20,6 @@ import TestCasesCleanupScreen from './screens/cleanup/TestCasesCleanupScreen';
 import WorkItemsCleanupScreen from './screens/cleanup/WorkItemsCleanupScreen';
 import TestCasesCleanupScreen_NEW from './screens/cleanup/TestCasesCleanupScreen_NEW';
 import WorkItemsCleanupScreen_NEW from './screens/cleanup/WorkItemsCleanupScreen_NEW';
-import MainDashboard from './screens/dashboard/MainDashboard';
-import MainDashboard_NEW from './screens/dashboard/MainDashboard_NEW';
 import TestScreen from './screens/TestScreen';
 
 function App() {
@@ -29,8 +27,9 @@ function App() {
     <Router>
       <div className="min-h-screen bg-background">
         <Routes>
-          {/* Main Dashboard as root */}
-          <Route path="/" element={<MainDashboard />} />
+          {/* Main Dashboard with Grid Background */}
+          <Route path="/" element={<TronWelcomeScreen />} />
+          <Route path="/dashboard" element={<TronWelcomeScreen />} />
           
           {/* Welcome/Onboarding */}
           <Route path="/welcome" element={<WelcomeScreen />} />
@@ -62,10 +61,6 @@ function App() {
           <Route path="/cleanup/work-items-new" element={<WorkItemsCleanupScreen_NEW />} />
           <Route path="/cleanup/workitems" element={<WorkItemsCleanupScreen />} />
           <Route path="/cleanup/testcases" element={<TestCasesCleanupScreen />} />
-          
-          {/* Dashboard */}
-          <Route path="/dashboard" element={<MainDashboard />} />
-          <Route path="/dashboard-new" element={<MainDashboard_NEW />} />
           
           {/* Search */}
           <Route path="/search" element={<SearchDocumentationScreen />} />

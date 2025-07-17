@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem icon={FiPlus} to="/project/new">
             Create New Project
           </NavItem>
-          <NavItem icon={FiList} to="/projects">
+          <NavItem icon={FiList} to="/my-projects">
             My Projects
           </NavItem>
           
