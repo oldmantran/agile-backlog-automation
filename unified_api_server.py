@@ -32,14 +32,21 @@ from pydantic import BaseModel, Field
 from dataclasses import dataclass
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
-from supervisor.supervisor import WorkflowSupervisor
-from config.config_loader import Config
-from utils.logger import setup_logger
-from utils.project_context import ProjectContext
-from utils.notifier import Notifier
-from db import add_backlog_job
+try:
+    from supervisor.supervisor import WorkflowSupervisor
+    from config.config_loader import Config
+    from utils.logger import setup_logger
+    from utils.project_context import ProjectContext
+    from utils.notifier import Notifier
+    from db import add_backlog_job
+except ImportError as e:
+    print(f"Import error: {e}")
+    print(f"Current directory: {current_dir}")
+    print(f"Python path: {sys.path}")
+    sys.exit(1)
 
 # Global flag for shutdown
 shutdown_event = threading.Event()
