@@ -843,8 +843,19 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         # Extract project data
         project_data = project_info.get("data", {})
         
-        # Get project details
-        project_name = project_data.get("basics", {}).get("name", "Unknown Project")
+        # Check Azure DevOps integration
+        azure_config = project_data.get("azureConfig", {})
+        azure_integration_enabled = azure_config.get("enabled", False)
+        
+        # Azure DevOps parameters
+        organization_url = azure_config.get("organizationUrl")
+        azure_project = azure_config.get("project")
+        personal_access_token = azure_config.get("personalAccessToken")
+        area_path = azure_config.get("areaPath")
+        iteration_path = azure_config.get("iterationPath")
+        
+        # Use Azure DevOps project name as the project name, fallback to basics.name if not available
+        project_name = azure_project or project_data.get("basics", {}).get("name", "Unknown Project")
         
         # Extract domain from vision statement using VisionContextExtractor
         from utils.vision_context_extractor import VisionContextExtractor
@@ -864,17 +875,6 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         # Use extracted domain or fallback to dynamic
         project_domain = enhanced_context.get('domain', 'dynamic')
         
-        # Check Azure DevOps integration
-        azure_config = project_data.get("azureConfig", {})
-        azure_integration_enabled = azure_config.get("enabled", False)
-        
-        # Azure DevOps parameters
-        organization_url = azure_config.get("organizationUrl")
-        project = azure_config.get("project")
-        personal_access_token = azure_config.get("personalAccessToken")
-        area_path = azure_config.get("areaPath")
-        iteration_path = azure_config.get("iterationPath")
-        
         # Load PAT from .env if not provided in request
         if not personal_access_token:
             env_config = load_env_config()
@@ -888,7 +888,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         logger.info(f"🔍 Azure DevOps Configuration Analysis for job {job_id}:")
         logger.info(f"   azure_integration_enabled (from config): {azure_integration_enabled}")
         logger.info(f"   organization_url: {organization_url}")
-        logger.info(f"   project: {project}")
+        logger.info(f"   project: {project_name}")
         logger.info(f"   personal_access_token: {'Set' if personal_access_token else 'Not set'}")
         logger.info(f"   area_path: {area_path}")
         logger.info(f"   iteration_path: {iteration_path}")
@@ -896,7 +896,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         # Check if any Azure config is provided (alternative detection method)
         has_any_azure_config = any([
             organization_url,
-            project,
+            project_name,
             personal_access_token,
             area_path,
             iteration_path
@@ -905,13 +905,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         
         # Validate Azure DevOps configuration
         if azure_integration_enabled:
-            if not all([organization_url, project, personal_access_token]):
+            if not all([organization_url, project_name, personal_access_token]):
                 logger.warning(f"❌ Azure integration enabled but missing required fields for job {job_id}")
                 azure_integration_enabled = False
         elif has_any_azure_config:
             logger.info(f"⚠️ Azure config provided but integration not explicitly enabled for job {job_id}")
             # Auto-enable if we have the required fields
-            if all([organization_url, project, personal_access_token, area_path, iteration_path]):
+            if all([organization_url, project_name, personal_access_token, area_path, iteration_path]):
                 logger.info(f"✅ Auto-enabling Azure integration for job {job_id} (all required fields present)")
                 azure_integration_enabled = True
             else:
@@ -923,13 +923,13 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         try:
             logger.info(f"🔧 Initializing WorkflowSupervisor for job {job_id} with Azure config:")
             logger.info(f"   organization_url: {organization_url}")
-            logger.info(f"   project: {project}")
+            logger.info(f"   project: {project_name}")
             logger.info(f"   area_path: {area_path}")
             logger.info(f"   iteration_path: {iteration_path}")
             
             supervisor = WorkflowSupervisor(
                 organization_url=organization_url,
-                project=project,
+                project=project_name,
                 personal_access_token=personal_access_token,
                 area_path=area_path,
                 iteration_path=iteration_path,

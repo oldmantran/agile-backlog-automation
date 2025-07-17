@@ -34,7 +34,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
     
     const projectData = {
       basics: {
-        name: "AI Generated Project", // Default name - extracted from vision by AI
+        name: project, // Use the Azure DevOps project name as the project name
         description: data.visionStatement.substring(0, 200) + "...", // Extract from vision
         domain: "software_development" // Default domain - not used by agents
       },

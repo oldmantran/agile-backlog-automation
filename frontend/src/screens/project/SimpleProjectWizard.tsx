@@ -50,32 +50,37 @@ const SimpleProjectWizard: React.FC = () => {
         // Step 2: Start backlog generation
         console.log('Calling generateBacklog API for project:', projectId);
         
-        const backlogResponse = await backlogApi.generateBacklog(projectId);
-        console.log('Backlog generation response:', backlogResponse);
-        
-        if (backlogResponse.jobId) {
-          // Store job info in localStorage
-          const jobInfo = {
-            jobId: backlogResponse.jobId,
-            projectId: projectId,
-            projectName: projectData.basics?.name || 'Untitled Project',
-            status: 'queued',
-            progress: 0,
-            startTime: new Date().toISOString(),
-            currentAction: 'Epic Strategist initializing...'
-          };
+        try {
+          const backlogResponse = await backlogApi.generateBacklog(projectId);
+          console.log('Backlog generation response:', backlogResponse);
           
-          const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
-          existingJobs.push(jobInfo);
-          localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
-          
-          // Navigate immediately to My Projects screen
-          console.log('Navigating to My Projects screen...');
-          navigate('/projects');
-          
-        } else {
-          console.error('No jobId in backlog response:', backlogResponse);
-          throw new Error('Failed to start backlog generation - no job ID returned');
+          if (backlogResponse.jobId) {
+            // Store job info in localStorage
+            const jobInfo = {
+              jobId: backlogResponse.jobId,
+              projectId: projectId,
+              projectName: projectData.basics?.name || 'Untitled Project',
+              status: 'queued',
+              progress: 0,
+              startTime: new Date().toISOString(),
+              currentAction: 'Epic Strategist initializing...'
+            };
+            
+            const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+            existingJobs.push(jobInfo);
+            localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+            
+            // Navigate immediately to My Projects screen
+            console.log('Navigating to My Projects screen...');
+            navigate('/projects');
+            
+          } else {
+            console.error('No jobId in backlog response:', backlogResponse);
+            throw new Error('Failed to start backlog generation - no job ID returned');
+          }
+        } catch (backlogError) {
+          console.error('Backlog generation error:', backlogError);
+          throw new Error(`Failed to start backlog generation: ${backlogError instanceof Error ? backlogError.message : 'Unknown error'}`);
         }
       } else {
         console.error('No projectId found in project response:', projectResponse);

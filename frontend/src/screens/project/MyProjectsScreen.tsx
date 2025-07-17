@@ -70,9 +70,11 @@ const MyProjectsScreen: React.FC = () => {
   const loadProjects = async () => {
     try {
       const response = await projectApi.listProjects(1, 20);
+      // The API returns { projects: Project[], total: number }
       setProjects(response.projects || []);
     } catch (error) {
       console.error('Failed to load projects:', error);
+      setProjects([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
