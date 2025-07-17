@@ -1,29 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
+import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import Header from '../../components/navigation/Header';
-import Sidebar from '../../components/navigation/Sidebar';
-import ServerLogs from '../../components/logs/ServerLogs';
-import { backlogApi } from '../../services/api/backlogApi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2 } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
-import { Project } from '../../types/project';
+import { backlogApi } from '../../services/api/backlogApi';
+import ServerLogs from '../../components/logs/ServerLogs';
 import { BacklogJob } from '../../types/backlogJob';
-import { 
-  FiPlus, 
-  FiFolder, 
-  FiActivity, 
-  FiRefreshCw, 
-  FiClock,
-  FiCheckCircle,
-  FiXCircle,
-  FiInfo,
-  FiTrash2,
-  FiAlertTriangle
-} from 'react-icons/fi';
+import { Project } from '../../types/project';
 
 interface JobInfo {
   jobId: string;
@@ -131,6 +118,7 @@ const MyProjectsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<ComponentError[]>([]);
   const [debugMode, setDebugMode] = useState(false);
+  const hasMounted = useRef(false);
 
   // Enhanced error logging
   const logError = (component: string, error: any, details?: any) => {
@@ -150,27 +138,7 @@ const MyProjectsScreen: React.FC = () => {
     localStorage.setItem('debugLogs', JSON.stringify(debugLogs.slice(-50))); // Keep last 50 errors
   };
 
-  useEffect(() => {
-    console.log('MyProjectsScreen: Component mounting...');
-    try {
-      loadActiveJobs();
-      loadProjects();
-      loadBacklogJobs();
-      
-      // Immediate job update on component mount
-      setTimeout(() => {
-        pollJobUpdates();
-      }, 1000);
-      
-      // Poll for job updates every 5 seconds
-      const interval = setInterval(pollJobUpdates, 5000);
-      return () => clearInterval(interval);
-    } catch (error) {
-      logError('MyProjectsScreen', error, 'Component mount error');
-    }
-  }, []);
-
-  const loadActiveJobs = () => {
+  const loadActiveJobs = useCallback(() => {
     try {
       console.log('Loading active jobs from localStorage...');
       const stored = localStorage.getItem('activeJobs');
@@ -198,9 +166,9 @@ const MyProjectsScreen: React.FC = () => {
       logError('loadActiveJobs', error, 'localStorage parsing error');
       setActiveJobs([]);
     }
-  };
+  }, []);
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       console.log('Loading projects from API...');
       const response = await projectApi.listProjects(1, 20);
@@ -219,9 +187,9 @@ const MyProjectsScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadBacklogJobs = async () => {
+  const loadBacklogJobs = useCallback(async () => {
     try {
       console.log('Loading backlog jobs from API...');
       const jobs = await backlogApi.getBacklogJobs(USER_EMAIL, true, true, true);
@@ -231,9 +199,9 @@ const MyProjectsScreen: React.FC = () => {
       logError('loadBacklogJobs', error, 'API call failed');
       setBacklogJobs([]);
     }
-  };
+  }, []);
 
-  const handleDeleteBacklogJob = async (jobId: number) => {
+  const handleDeleteBacklogJob = useCallback(async (jobId: number) => {
     try {
       console.log(`Deleting backlog job ${jobId}...`);
       await backlogApi.deleteBacklogJob(jobId);
@@ -242,9 +210,9 @@ const MyProjectsScreen: React.FC = () => {
     } catch (error) {
       logError('handleDeleteBacklogJob', error, { jobId });
     }
-  };
+  }, []);
 
-  const pollJobUpdates = async () => {
+  const pollJobUpdates = useCallback(async () => {
     try {
       const stored = localStorage.getItem('activeJobs');
       if (!stored) return;
@@ -289,20 +257,22 @@ const MyProjectsScreen: React.FC = () => {
     } catch (error) {
       logError('pollJobUpdates', error, 'Main polling error');
     }
-  };
+  }, []);
 
-  const removeJob = (jobId: string) => {
+  const removeJob = useCallback((jobId: string) => {
     try {
-      const updated = activeJobs.filter(job => job.jobId !== jobId);
-      setActiveJobs(updated);
-      localStorage.setItem('activeJobs', JSON.stringify(updated));
+      setActiveJobs(prev => {
+        const updated = prev.filter(job => job.jobId !== jobId);
+        localStorage.setItem('activeJobs', JSON.stringify(updated));
+        return updated;
+      });
       console.log(`Removed job ${jobId} from active jobs`);
     } catch (error) {
       logError('removeJob', error, { jobId });
     }
-  };
+  }, []);
 
-  const getJobStatusIcon = (status?: string) => {
+  const getJobStatusIcon = useCallback((status?: string) => {
     try {
       switch (status) {
         case 'completed': return <FiCheckCircle className="w-5 h-5 text-green-400" />;
@@ -315,9 +285,9 @@ const MyProjectsScreen: React.FC = () => {
       logError('getJobStatusIcon', error, { status });
       return <FiActivity className="w-5 h-5 text-gray-400" />;
     }
-  };
+  }, []);
 
-  const getJobStatusColor = (status?: string) => {
+  const getJobStatusColor = useCallback((status?: string) => {
     try {
       switch (status) {
         case 'completed': return 'text-green-400 border-green-400/50 bg-green-400/10';
@@ -330,7 +300,7 @@ const MyProjectsScreen: React.FC = () => {
       logError('getJobStatusColor', error, { status });
       return 'text-gray-400 border-gray-400/50 bg-gray-400/10';
     }
-  };
+  }, []);
 
   // Debug panel component
   const DebugPanel = () => {
@@ -369,6 +339,32 @@ const MyProjectsScreen: React.FC = () => {
       </Card>
     );
   };
+
+  useEffect(() => {
+    // Prevent multiple initializations in React 18 Strict Mode
+    if (hasMounted.current) {
+      return;
+    }
+    hasMounted.current = true;
+    
+    console.log('MyProjectsScreen: Component mounting...');
+    try {
+      loadActiveJobs();
+      loadProjects();
+      loadBacklogJobs();
+      
+      // Immediate job update on component mount
+      setTimeout(() => {
+        pollJobUpdates();
+      }, 1000);
+      
+      // Poll for job updates every 5 seconds
+      const interval = setInterval(pollJobUpdates, 5000);
+      return () => clearInterval(interval);
+    } catch (error) {
+      logError('MyProjectsScreen', error, 'Component mount error');
+    }
+  }, [loadActiveJobs, loadProjects, loadBacklogJobs, pollJobUpdates]);
 
   return (
     <div className="min-h-screen">

@@ -1,5 +1,4 @@
 import { Project } from '../../types/project';
-import { ApiResponse } from '../../types/api';
 import { apiClientMethods, ApiError, NetworkError } from './apiClient';
 
 export const projectApi = {
@@ -70,10 +69,20 @@ export const projectApi = {
 
   listProjects: async (page = 1, limit = 10): Promise<{ projects: Project[], total: number }> => {
     try {
-      const response = await apiClientMethods.get<{ projects: Project[], total: number }>('/projects', {
+      const response = await apiClientMethods.get<{ projects: Project[], pagination: { total: number } }>('/projects', {
         params: { page, limit },
       });
-      return response.data;
+      
+      // Handle the nested response structure from the backend
+      if (response && response.data && response.data.projects) {
+        return {
+          projects: response.data.projects,
+          total: response.data.pagination?.total || response.data.projects.length
+        };
+      } else {
+        console.warn('Unexpected API response structure:', response);
+        return { projects: [], total: 0 };
+      }
     } catch (error) {
       if (error instanceof ApiError) {
         throw new Error(`Failed to list projects: ${error.message}`);
