@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { Alert, AlertDescription } from '../../components/ui/alert';
 import SimplifiedProjectForm from '../../components/forms/SimplifiedProjectForm';
 import { Project } from '../../types/project';
 import { projectApi } from '../../services/api/projectApi';
@@ -11,13 +11,11 @@ import { FiX } from 'react-icons/fi';
 
 const SimpleProjectWizard: React.FC = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (projectData: Partial<Project>) => {
     try {
       console.log('🚀 Starting project submission with data:', projectData);
-      setIsSubmitting(true);
       setError(null);
       
       // Step 1: Create the project
@@ -92,7 +90,6 @@ const SimpleProjectWizard: React.FC = () => {
       console.error('Project creation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create project';
       setError(errorMessage);
-      setIsSubmitting(false); // Only set to false on error
     }
   };
 
@@ -108,7 +105,6 @@ const SimpleProjectWizard: React.FC = () => {
   };
 
   const handleRestart = () => {
-    setIsSubmitting(false);
     setError(null);
   };
 
@@ -124,7 +120,7 @@ const SimpleProjectWizard: React.FC = () => {
           </p>
         </div>
 
-        {!isSubmitting && !error && (
+        {!error && (
           <>
             <Alert className="rounded-md">
               <AlertDescription>
@@ -140,29 +136,9 @@ const SimpleProjectWizard: React.FC = () => {
 
             <SimplifiedProjectForm 
               onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
+              isSubmitting={false}
             />
           </>
-        )}
-
-        {isSubmitting && (
-          <Card className="bg-blue-50 bg-blue-950 border-blue-200 dark:border-blue-800">
-            <CardContent className="pt-6">
-              <div className="space-y-6 text-center">
-                <div className="flex justify-center">
-                  <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-blue-700 dark:text-blue-300 mb-2">
-                    Setting Up Your Project
-                  </h2>
-                  <p className="text-blue-600 dark:text-blue-400">
-                    Creating project and starting backlog generation...
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         )}
 
         {error && (
