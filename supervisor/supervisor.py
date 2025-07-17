@@ -556,6 +556,42 @@ class WorkflowSupervisor:
                 'project_name': self.project
             })
         
+        # Extract domain from product vision using VisionContextExtractor
+        try:
+            from utils.vision_context_extractor import VisionContextExtractor
+            vision_extractor = VisionContextExtractor()
+            
+            # Create a mock project_data structure for the extractor
+            mock_project_data = {
+                'vision_statement': product_vision,
+                'description': product_vision
+            }
+            
+            # Extract enhanced context from vision
+            enhanced_context = vision_extractor.extract_context(
+                project_data=mock_project_data,
+                business_objectives=[],
+                target_audience=None,
+                domain=None
+            )
+            
+            # Update project context with extracted domain and other context
+            if enhanced_context.get('domain') and enhanced_context['domain'] != 'dynamic':
+                self.project_context.update_context({
+                    'domain': enhanced_context['domain'],
+                    'industry': enhanced_context.get('industry', enhanced_context['domain']),
+                    'target_users': enhanced_context.get('target_users', 'end users'),
+                    'platform': enhanced_context.get('platform', 'Web application'),
+                    'integrations': enhanced_context.get('integrations', 'standard integrations')
+                })
+                self.logger.info(f"Updated project context with extracted domain: {enhanced_context['domain']}")
+            else:
+                self.logger.info("No specific domain detected from vision, using dynamic domain")
+                
+        except Exception as e:
+            self.logger.warning(f"Failed to extract domain from vision: {e}")
+            # Continue with default context
+        
         # Initialize workflow data
         self.workflow_data = {
             'product_vision': product_vision,

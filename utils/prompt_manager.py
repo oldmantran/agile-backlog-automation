@@ -95,7 +95,7 @@ class PromptTemplateManager:
         default_context = {
             'timestamp': self._get_timestamp(),
             'project_name': context.get('project_name', 'Unknown Project'),
-            'domain': context.get('domain', 'software development'),
+            'domain': context.get('domain', 'dynamic'),  # Will be determined by vision analysis
             'output_format': context.get('output_format', 'JSON'),
             'agent_name': agent_name,
             'template_version': self.template_metadata[agent_name]['hash'][:8] if agent_name in self.template_metadata else 'unknown'
@@ -133,7 +133,7 @@ class PromptTemplateManager:
         """Provide fallback values for missing template variables."""
         fallbacks = {
             'project_name': 'Project',
-            'domain': 'software development',
+            'domain': 'dynamic',  # Will be determined by vision analysis
             'target_users': 'end users',
             'timeline': 'not specified',
             'budget_constraints': 'standard budget',

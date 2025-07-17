@@ -19,7 +19,7 @@ class UserStoryDecomposerAgent(Agent):
         
         # Build context for prompt template
         prompt_context = {
-            'domain': context.get('domain', 'software development') if context else 'software development',
+            'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',

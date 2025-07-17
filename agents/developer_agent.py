@@ -33,7 +33,7 @@ class DeveloperAgent(Agent):
         
         # Build context for prompt template
         prompt_context = {
-            'domain': context.get('domain', 'software development') if context else 'software development',
+            'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'tech_stack': context.get('tech_stack', 'Modern Web Stack') if context else 'Modern Web Stack',
             'architecture_pattern': context.get('architecture_pattern', 'MVC') if context else 'MVC',

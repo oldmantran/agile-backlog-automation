@@ -93,7 +93,7 @@ class Agent:
         """Generate a fallback prompt when template fails."""
         context = context or {}
         project_name = context.get('project_name', 'Unknown Project')
-        domain = context.get('domain', 'software development')
+        domain = context.get('domain', 'dynamic')  # Will be determined by vision analysis
         
         # Agent-specific fallback prompts
         fallback_prompts = {

@@ -12,6 +12,7 @@ class BacklogJob(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_email = Column(String, nullable=False)
     project_name = Column(String, nullable=False)
+    creator = Column(String, default='user')  # 'user' or 'ai_generated'
     epics_generated = Column(Integer, nullable=False)
     features_generated = Column(Integer, nullable=False)
     user_stories_generated = Column(Integer, nullable=False)
@@ -42,7 +43,8 @@ def add_backlog_job(
     test_cases_generated,
     execution_time_seconds,
     raw_summary,
-    status='completed'
+    status='completed',
+    creator='user'
 ):
     session = SessionLocal()
     
@@ -57,6 +59,7 @@ def add_backlog_job(
     job = BacklogJob(
         user_email=user_email,
         project_name=project_name,
+        creator=creator,
         epics_generated=epics_generated,
         features_generated=features_generated,
         user_stories_generated=user_stories_generated,

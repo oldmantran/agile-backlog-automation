@@ -7,36 +7,53 @@ with the backend agents, workflow supervisor, and management tools.
 Combines the best features from api_server.py and tron_api_server.py.
 """
 
-import os
-import sys
-import json
 import asyncio
+import json
 import logging
-import queue
+import os
+import signal
 import subprocess
-import threading
+import sys
 import time
+import threading
+import queue
 import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, asdict
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from pydantic import BaseModel, Field
+from dataclasses import dataclass
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from fastapi import FastAPI, HTTPException, BackgroundTasks, status, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel, Field
-import uvicorn
 
 from supervisor.supervisor import WorkflowSupervisor
 from config.config_loader import Config
 from utils.logger import setup_logger
 from utils.project_context import ProjectContext
+from utils.notifier import Notifier
+from db import add_backlog_job
+
+# Global flag for shutdown
+shutdown_event = threading.Event()
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully."""
+    print(f"\n🛑 Received signal {signum}. Shutting down gracefully...")
+    shutdown_event.set()
+    # Force exit after a short delay if needed
+    threading.Timer(5.0, lambda: os._exit(0)).start()
+
+# Register signal handlers
+signal.signal(signal.SIGINT, signal_handler)  # CTRL+C
+signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 
 # Initialize logging
 logger = setup_logger(__name__)
@@ -820,8 +837,25 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         project_data = project_info.get("data", {})
         
         # Get project details
-        project_domain = project_data.get("basics", {}).get("domain", "software_development")
         project_name = project_data.get("basics", {}).get("name", "Unknown Project")
+        
+        # Extract domain from vision statement using VisionContextExtractor
+        from utils.vision_context_extractor import VisionContextExtractor
+        vision_extractor = VisionContextExtractor()
+        
+        # Extract enhanced context from vision
+        vision_data = project_data.get("vision", {})
+        vision_statement = vision_data.get('visionStatement', '')
+        
+        enhanced_context = vision_extractor.extract_context(
+            project_data=project_data,
+            business_objectives=vision_data.get('businessObjectives', []),
+            target_audience=vision_data.get('targetAudience'),
+            domain=project_data.get("basics", {}).get("domain")
+        )
+        
+        # Use extracted domain or fallback to dynamic
+        project_domain = enhanced_context.get('domain', 'dynamic')
         
         # Check Azure DevOps integration
         azure_config = project_data.get("azureConfig", {})
@@ -886,7 +920,16 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 job_id=job_id
             )
             
+            # IMPORTANT: Set the project name in the supervisor's project context
+            supervisor.project = project_name
+            supervisor.project_context.update_context({
+                'project_name': project_name,
+                'domain': project_domain
+            })
+            
             logger.info(f"✅ WorkflowSupervisor initialized successfully for job {job_id}")
+            logger.info(f"   Project name set to: {project_name}")
+            logger.info(f"   Domain set to: {project_domain}")
             
         except Exception as e:
             error_msg = f"Failed to initialize WorkflowSupervisor: {str(e)}"
