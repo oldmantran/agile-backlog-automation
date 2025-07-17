@@ -529,3 +529,183 @@ To transform th...
 2025-07-16 23:35:30 - supervisor - INFO - Processing QA for feature: Integrated Professional Collaboration Workspace
 2025-07-16 23:36:40 - supervisor - INFO - Processing QA for feature: Professional Service Booking and Management
 2025-07-16 23:36:40 - supervisor - INFO - Processing QA for feature: Role-Based Access Control and Data Privacy
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Unified Property Search and Listing Integration'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'End-to-End Offer and Negotiation Management'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Collaborative Document Management and E-Signature Workflow'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transparent Transaction Timeline and Cost Breakdown'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Collaboration and Messaging Tools'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Dashboard Administration and User Management'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transaction Performance Monitoring and Error Handling'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Personalized AI Property Recommendations'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'AI-Driven Financing and Affordability Analysis'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Market Analytics and Comparative Insights'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'DIY and Professional-Assisted Journey Selector'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Integrated Professional Collaboration Workspace'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Professional Service Booking and Management'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Access Control and Data Privacy'. Skipping invalid test plan.
+2025-07-16 23:37:55 - supervisor - WARNING - Validation completed with 14 test case errors.
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Property Search and Listing Integration for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item End-to-End Offer and Negotiation Management for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative Document Management and E-Signature Workflow for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Transparent Transaction Timeline and Cost Breakdown for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Collaboration and Messaging Tools for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Dashboard Administration and User Management for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Transaction Performance Monitoring and Error Handling for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Personalized AI Property Recommendations for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Financing and Affordability Analysis for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Market Analytics and Comparative Insights for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item DIY and Professional-Assisted Journey Selector for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Professional Collaboration Workspace for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Professional Service Booking and Management for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control and Data Privacy for stage qa_lead_agent (attempt 2/5)
+2025-07-16 23:37:55 - supervisor - INFO - [DEBUG] 14 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-16 23:37:55 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 23:37:55 - supervisor - INFO - Processing QA for feature: Unified Property Search and Listing Integration
+2025-07-16 23:37:55 - supervisor - INFO - Processing QA for feature: End-to-End Offer and Negotiation Management
+2025-07-16 23:37:55 - supervisor - INFO - Processing QA for feature: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:37:55 - supervisor - INFO - Processing QA for feature: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:39:04 - supervisor - INFO - Processing QA for feature: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:39:19 - supervisor - INFO - Processing QA for feature: Dashboard Administration and User Management
+2025-07-16 23:39:21 - supervisor - INFO - Processing QA for feature: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:39:21 - supervisor - INFO - Processing QA for feature: Personalized AI Property Recommendations
+2025-07-16 23:40:26 - supervisor - INFO - Processing QA for feature: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:40:30 - supervisor - INFO - Processing QA for feature: Market Analytics and Comparative Insights
+2025-07-16 23:40:31 - supervisor - INFO - Processing QA for feature: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:40:32 - supervisor - INFO - Processing QA for feature: Integrated Professional Collaboration Workspace
+2025-07-16 23:41:51 - supervisor - INFO - Processing QA for feature: Professional Service Booking and Management
+2025-07-16 23:41:53 - supervisor - INFO - Processing QA for feature: Role-Based Access Control and Data Privacy
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Unified Property Search and Listing Integration'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'End-to-End Offer and Negotiation Management'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Collaborative Document Management and E-Signature Workflow'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transparent Transaction Timeline and Cost Breakdown'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Collaboration and Messaging Tools'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Dashboard Administration and User Management'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transaction Performance Monitoring and Error Handling'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Personalized AI Property Recommendations'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'AI-Driven Financing and Affordability Analysis'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Market Analytics and Comparative Insights'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'DIY and Professional-Assisted Journey Selector'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Integrated Professional Collaboration Workspace'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Professional Service Booking and Management'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Access Control and Data Privacy'. Skipping invalid test plan.
+2025-07-16 23:43:05 - supervisor - WARNING - Validation completed with 14 test case errors.
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Property Search and Listing Integration for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item End-to-End Offer and Negotiation Management for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative Document Management and E-Signature Workflow for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Transparent Transaction Timeline and Cost Breakdown for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Collaboration and Messaging Tools for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Dashboard Administration and User Management for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Transaction Performance Monitoring and Error Handling for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Personalized AI Property Recommendations for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Financing and Affordability Analysis for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Market Analytics and Comparative Insights for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item DIY and Professional-Assisted Journey Selector for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Professional Collaboration Workspace for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Professional Service Booking and Management for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control and Data Privacy for stage qa_lead_agent (attempt 3/5)
+2025-07-16 23:43:05 - supervisor - INFO - [DEBUG] 14 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-16 23:43:05 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 23:43:05 - supervisor - INFO - Processing QA for feature: Unified Property Search and Listing Integration
+2025-07-16 23:43:05 - supervisor - INFO - Processing QA for feature: End-to-End Offer and Negotiation Management
+2025-07-16 23:43:05 - supervisor - INFO - Processing QA for feature: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:43:05 - supervisor - INFO - Processing QA for feature: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:44:08 - supervisor - INFO - Processing QA for feature: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:44:10 - supervisor - INFO - Processing QA for feature: Dashboard Administration and User Management
+2025-07-16 23:44:10 - supervisor - INFO - Processing QA for feature: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:44:12 - supervisor - INFO - Processing QA for feature: Personalized AI Property Recommendations
+2025-07-16 23:45:20 - supervisor - INFO - Processing QA for feature: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:45:24 - supervisor - INFO - Processing QA for feature: Market Analytics and Comparative Insights
+2025-07-16 23:45:24 - supervisor - INFO - Processing QA for feature: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:45:35 - supervisor - INFO - Processing QA for feature: Integrated Professional Collaboration Workspace
+2025-07-16 23:46:46 - supervisor - INFO - Processing QA for feature: Professional Service Booking and Management
+2025-07-16 23:46:50 - supervisor - INFO - Processing QA for feature: Role-Based Access Control and Data Privacy
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Unified Property Search and Listing Integration'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'End-to-End Offer and Negotiation Management'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Collaborative Document Management and E-Signature Workflow'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transparent Transaction Timeline and Cost Breakdown'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Collaboration and Messaging Tools'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Dashboard Administration and User Management'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transaction Performance Monitoring and Error Handling'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Personalized AI Property Recommendations'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'AI-Driven Financing and Affordability Analysis'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Market Analytics and Comparative Insights'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'DIY and Professional-Assisted Journey Selector'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Integrated Professional Collaboration Workspace'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Professional Service Booking and Management'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Access Control and Data Privacy'. Skipping invalid test plan.
+2025-07-16 23:48:13 - supervisor - WARNING - Validation completed with 14 test case errors.
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Property Search and Listing Integration for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item End-to-End Offer and Negotiation Management for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative Document Management and E-Signature Workflow for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Transparent Transaction Timeline and Cost Breakdown for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Collaboration and Messaging Tools for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Dashboard Administration and User Management for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Transaction Performance Monitoring and Error Handling for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Personalized AI Property Recommendations for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Financing and Affordability Analysis for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Market Analytics and Comparative Insights for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item DIY and Professional-Assisted Journey Selector for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Professional Collaboration Workspace for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Professional Service Booking and Management for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control and Data Privacy for stage qa_lead_agent (attempt 4/5)
+2025-07-16 23:48:13 - supervisor - INFO - [DEBUG] 14 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-16 23:48:13 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 23:48:13 - supervisor - INFO - Processing QA for feature: Unified Property Search and Listing Integration
+2025-07-16 23:48:13 - supervisor - INFO - Processing QA for feature: End-to-End Offer and Negotiation Management
+2025-07-16 23:48:13 - supervisor - INFO - Processing QA for feature: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:48:13 - supervisor - INFO - Processing QA for feature: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:49:39 - supervisor - INFO - Processing QA for feature: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:49:43 - supervisor - INFO - Processing QA for feature: Dashboard Administration and User Management
+2025-07-16 23:49:43 - supervisor - INFO - Processing QA for feature: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:49:45 - supervisor - INFO - Processing QA for feature: Personalized AI Property Recommendations
+2025-07-16 23:50:46 - supervisor - INFO - Processing QA for feature: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:50:49 - supervisor - INFO - Processing QA for feature: Market Analytics and Comparative Insights
+2025-07-16 23:51:08 - supervisor - INFO - Processing QA for feature: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:51:19 - supervisor - INFO - Processing QA for feature: Integrated Professional Collaboration Workspace
+2025-07-16 23:51:59 - supervisor - INFO - Processing QA for feature: Professional Service Booking and Management
+2025-07-16 23:52:06 - supervisor - INFO - Processing QA for feature: Role-Based Access Control and Data Privacy
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Unified Property Search and Listing Integration'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'End-to-End Offer and Negotiation Management'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Collaborative Document Management and E-Signature Workflow'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transparent Transaction Timeline and Cost Breakdown'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Collaboration and Messaging Tools'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Dashboard Administration and User Management'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transaction Performance Monitoring and Error Handling'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Personalized AI Property Recommendations'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'AI-Driven Financing and Affordability Analysis'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Market Analytics and Comparative Insights'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'DIY and Professional-Assisted Journey Selector'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Integrated Professional Collaboration Workspace'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Professional Service Booking and Management'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Access Control and Data Privacy'. Skipping invalid test plan.
+2025-07-16 23:53:19 - supervisor - WARNING - Validation completed with 14 test case errors.
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Property Search and Listing Integration for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item End-to-End Offer and Negotiation Management for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative Document Management and E-Signature Workflow for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Transparent Transaction Timeline and Cost Breakdown for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Collaboration and Messaging Tools for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Dashboard Administration and User Management for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Transaction Performance Monitoring and Error Handling for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Personalized AI Property Recommendations for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Financing and Affordability Analysis for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Market Analytics and Comparative Insights for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item DIY and Professional-Assisted Journey Selector for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Professional Collaboration Workspace for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Professional Service Booking and Management for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control and Data Privacy for stage qa_lead_agent (attempt 5/5)
+2025-07-16 23:53:19 - supervisor - INFO - Executing stage: azure_integration
+2025-07-16 23:53:19 - supervisor - INFO - Starting Azure DevOps integration
+2025-07-16 23:53:19 - supervisor - WARNING - Azure DevOps integration not configured, skipping
+2025-07-16 23:53:19 - supervisor - INFO - Executing stage: final_validation
+2025-07-16 23:53:19 - supervisor - INFO - Starting final validation and cleanup
+2025-07-16 23:53:19 - supervisor - INFO - Cleaning up temporary data
+2025-07-16 23:53:19 - supervisor - INFO - Generated final report: {'workflow_id': 'workflow_20250716_231638', 'completion_time': '2025-07-16T23:53:19.302896', 'total_epics': 2, 'total_features': 14, 'total_user_stories': 83, 'total_tasks': 249, 'total_test_cases': 908, 'azure_integration_enabled': False}
+2025-07-16 23:53:19 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 2, 'features_generated': 14, 'user_stories_generated': 83, 'tasks_generated': 249, 'test_cases_generated': 908, 'execution_time_seconds': None, 'stages_completed': 0, 'errors_encountered': 0}
+2025-07-16 23:53:21 - supervisor - INFO - Completion notifications sent
+2025-07-16 23:53:21 - supervisor - INFO - Workflow execution completed successfully at 2025-07-16 23:53:21.381691
+2025-07-16 23:53:21 - supervisor - ERROR - Workflow execution failed: Circular reference detected
+2025-07-16 23:53:21 - supervisor - INFO - Workflow execution failed at 2025-07-16 23:53:21.382587
+2025-07-16 23:53:22 - supervisor - INFO - Error notifications sent
+2025-07-17 07:58:33 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=test_job_001
+2025-07-17 07:58:33 - supervisor - INFO - Azure DevOps config for job_id=test_job_001: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-17 07:58:33 - supervisor - INFO - Initialized 5 agents successfully

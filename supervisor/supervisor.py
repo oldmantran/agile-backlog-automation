@@ -610,7 +610,16 @@ class WorkflowSupervisor:
                             self._execute_qa_generation(update_progress, stage_index + 1)
                             self._validate_test_cases_and_plans()
                         elif stage == 'azure_integration':
-                            self._execute_azure_integration(update_progress, stage_index + 1)
+                            self.logger.info(f"🔗 Executing Azure integration stage (integrate_azure flag: {integrate_azure})")
+                            if integrate_azure:
+                                self._execute_azure_integration(update_progress, stage_index + 1)
+                            else:
+                                self.logger.warning("❌ Azure integration stage skipped (integrate_azure=False)")
+                                self.workflow_data['azure_integration'] = {
+                                    'status': 'skipped',
+                                    'reason': 'integrate_azure flag is False',
+                                    'timestamp': datetime.now().isoformat()
+                                }
                         elif stage == 'final_validation':
                             self._execute_final_validation(update_progress, stage_index + 1)
                         else:
@@ -1001,11 +1010,11 @@ class WorkflowSupervisor:
     
     def _integrate_with_azure_devops(self):
         """Integrate generated backlog with Azure DevOps with pre-integration validation."""
-        self.logger.info("Preparing for Azure DevOps integration")
+        self.logger.info("🔗 Preparing for Azure DevOps integration")
         
         # Check if Azure integration is enabled
         if self.azure_integrator is None:
-            self.logger.info("Azure DevOps integration disabled (no Azure config provided)")
+            self.logger.warning("❌ Azure DevOps integration disabled (no Azure config provided)")
             self.logger.info("Content generation completed - skipping Azure upload")
             
             # Store integration results as skipped
@@ -1015,6 +1024,12 @@ class WorkflowSupervisor:
                 'timestamp': datetime.now().isoformat()
             }
             return
+        
+        self.logger.info("✅ Azure DevOps integrator is available")
+        self.logger.info(f"   Organization: {self.organization_url}")
+        self.logger.info(f"   Project: {self.project}")
+        self.logger.info(f"   Area Path: {self.area_path}")
+        self.logger.info(f"   Iteration Path: {self.iteration_path}")
         
         try:
             # Perform pre-integration quality check using backlog sweeper
@@ -1967,13 +1982,16 @@ class WorkflowSupervisor:
 
     def _execute_azure_integration(self, update_progress_callback=None, stage_index=6):
         """Execute Azure DevOps integration as part of the continuous workflow."""
+        self.logger.info("🔗 _execute_azure_integration method called")
         self.logger.info("Starting Azure DevOps integration")
         
         if not self.azure_integrator:
-            self.logger.warning("Azure DevOps integration not configured, skipping")
+            self.logger.warning("❌ Azure DevOps integration not configured, skipping")
             if update_progress_callback:
                 update_progress_callback(stage_index, "Azure integration skipped (not configured)", 1.0)
             return
+        
+        self.logger.info("✅ Azure DevOps integrator is available in _execute_azure_integration")
         
         try:
             # Count total work items to create for progress tracking

@@ -503,6 +503,25 @@ async def get_all_jobs():
         ]
     }
 
+@app.post("/api/jobs/add")
+async def add_job(job_data: dict):
+    """Add a job to the active jobs tracking."""
+    try:
+        job_id = job_data.get("jobId")
+        if not job_id:
+            raise HTTPException(status_code=400, detail="jobId is required")
+        
+        active_jobs[job_id] = job_data
+        logger.info(f"Added job {job_id} to active jobs tracking")
+        
+        return {
+            "success": True,
+            "data": {"jobId": job_id, "message": "Job added to tracking"}
+        }
+    except Exception as e:
+        logger.error(f"Error adding job: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to add job: {str(e)}")
+
 @app.get("/api/backlog/templates")
 async def get_templates(domain: Optional[str] = None):
     """Get available backlog templates."""
@@ -813,13 +832,49 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         area_path = azure_config.get("areaPath")
         iteration_path = azure_config.get("iterationPath")
         
+        # Enhanced logging for Azure DevOps configuration
+        logger.info(f"🔍 Azure DevOps Configuration Analysis for job {job_id}:")
+        logger.info(f"   azure_integration_enabled (from config): {azure_integration_enabled}")
+        logger.info(f"   organization_url: {organization_url}")
+        logger.info(f"   project: {project}")
+        logger.info(f"   personal_access_token: {'Set' if personal_access_token else 'Not set'}")
+        logger.info(f"   area_path: {area_path}")
+        logger.info(f"   iteration_path: {iteration_path}")
+        
+        # Check if any Azure config is provided (alternative detection method)
+        has_any_azure_config = any([
+            organization_url,
+            project,
+            personal_access_token,
+            area_path,
+            iteration_path
+        ])
+        logger.info(f"   has_any_azure_config: {has_any_azure_config}")
+        
         # Validate Azure DevOps configuration
         if azure_integration_enabled:
             if not all([organization_url, project, personal_access_token]):
+                logger.warning(f"❌ Azure integration enabled but missing required fields for job {job_id}")
                 azure_integration_enabled = False
+        elif has_any_azure_config:
+            logger.info(f"⚠️ Azure config provided but integration not explicitly enabled for job {job_id}")
+            # Auto-enable if we have the required fields
+            if all([organization_url, project, personal_access_token, area_path, iteration_path]):
+                logger.info(f"✅ Auto-enabling Azure integration for job {job_id} (all required fields present)")
+                azure_integration_enabled = True
+            else:
+                logger.warning(f"❌ Cannot auto-enable Azure integration for job {job_id} (missing required fields)")
+        
+        logger.info(f"   Final azure_integration_enabled: {azure_integration_enabled}")
         
         # Initialize supervisor
         try:
+            logger.info(f"🔧 Initializing WorkflowSupervisor for job {job_id} with Azure config:")
+            logger.info(f"   organization_url: {organization_url}")
+            logger.info(f"   project: {project}")
+            logger.info(f"   area_path: {area_path}")
+            logger.info(f"   iteration_path: {iteration_path}")
+            
             supervisor = WorkflowSupervisor(
                 organization_url=organization_url,
                 project=project,
@@ -828,8 +883,12 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 iteration_path=iteration_path,
                 job_id=job_id
             )
+            
+            logger.info(f"✅ WorkflowSupervisor initialized successfully for job {job_id}")
+            
         except Exception as e:
             error_msg = f"Failed to initialize WorkflowSupervisor: {str(e)}"
+            logger.error(f"❌ {error_msg}")
             active_jobs[job_id]["status"] = "failed"
             active_jobs[job_id]["error"] = error_msg
             active_jobs[job_id]["endTime"] = datetime.now()
@@ -892,12 +951,29 @@ Success Criteria:
 
         # Execute workflow
         try:
+            logger.info(f"🚀 Starting workflow execution for job {job_id}")
+            logger.info(f"   integrate_azure: {azure_integration_enabled}")
+            logger.info(f"   product_vision length: {len(product_vision)} characters")
+            logger.info(f"   save_outputs: True")
+            
             results = supervisor.execute_workflow(
                 product_vision,
                 save_outputs=True,
                 integrate_azure=azure_integration_enabled,
                 progress_callback=progress_callback
             )
+            
+            logger.info(f"✅ Workflow execution completed for job {job_id}")
+            logger.info(f"   Results type: {type(results)}")
+            if isinstance(results, dict):
+                logger.info(f"   Results keys: {list(results.keys())}")
+                if 'azure_integration' in results:
+                    azure_result = results['azure_integration']
+                    logger.info(f"   Azure integration status: {azure_result.get('status', 'Unknown')}")
+                    if azure_result.get('work_items_created'):
+                        logger.info(f"   Work items created: {len(azure_result['work_items_created'])}")
+                    if azure_result.get('error'):
+                        logger.error(f"   Azure integration error: {azure_result['error']}")
 
             # Update job status
             active_jobs[job_id]["status"] = "completed"
