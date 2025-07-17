@@ -54,6 +54,17 @@ const SimpleProjectWizard: React.FC = () => {
         
         try {
           console.log('📞 About to call backlogApi.generateBacklog with projectId:', projectId);
+          
+          // Test API connection first
+          console.log('🧪 Testing API connection...');
+          try {
+            const testResponse = await fetch('http://localhost:8000/api/test');
+            const testData = await testResponse.json();
+            console.log('✅ API test successful:', testData);
+          } catch (testError) {
+            console.error('❌ API test failed:', testError);
+          }
+          
           const backlogResponse = await backlogApi.generateBacklog(projectId);
           console.log('✅ Backlog generation response:', backlogResponse);
           console.log('✅ Response type:', typeof backlogResponse);

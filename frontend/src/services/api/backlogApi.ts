@@ -10,20 +10,44 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout
 });
 
 export const backlogApi = {
   // Backlog Generation
   generateBacklog: async (projectId: string): Promise<{ jobId: string }> => {
     console.log('📞 Calling generateBacklog API for project:', projectId);
-    const response = await api.post<ApiResponse<{ jobId: string }>>(`/backlog/generate/${projectId}`);
-    console.log('📥 Raw API response:', response);
-    console.log('📥 Response data:', response.data);
-    console.log('📥 Response data.data:', response.data.data);
     
-    // The backend returns { success: true, data: { jobId: "..." } }
-    // So we need to return response.data.data, not response.data.data.data
-    return response.data.data;
+    try {
+      const response = await api.post<ApiResponse<{ jobId: string }>>(`/backlog/generate/${projectId}`);
+      console.log('📥 Raw API response:', response);
+      console.log('📥 Response data:', response.data);
+      console.log('📥 Response data.data:', response.data.data);
+      
+      // The backend returns { success: true, data: { jobId: "..." } }
+      // So we need to return response.data.data, not response.data.data.data
+      return response.data.data;
+    } catch (error: any) {
+      console.error('❌ generateBacklog API error:', error);
+      
+      if (error.code === 'ECONNABORTED') {
+        console.error('❌ Request timed out after 30 seconds');
+        throw new Error('Request timed out - the backend may be processing. Please try again.');
+      }
+      
+      if (error.response) {
+        console.error('❌ Server responded with error:', error.response.status, error.response.data);
+        throw new Error(`Server error: ${error.response.status} - ${error.response.data?.detail || error.response.data}`);
+      }
+      
+      if (error.request) {
+        console.error('❌ No response received from server');
+        throw new Error('No response from server - please check if the backend is running.');
+      }
+      
+      console.error('❌ Network error:', error.message);
+      throw new Error(`Network error: ${error.message}`);
+    }
   },
 
   getGenerationStatus: async (jobId: string): Promise<GenerationStatus> => {

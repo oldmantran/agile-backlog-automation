@@ -318,6 +318,18 @@ async def serve_frontend():
     else:
         return {"message": "Unified Agile Backlog Automation API v2.0", "status": "Backend running, frontend not built"}
 
+@app.get("/api/test")
+async def test_endpoint():
+    """Simple test endpoint to verify API connectivity."""
+    logger.info("🧪 Test endpoint called")
+    return {
+        "success": True,
+        "data": {
+            "message": "API is working",
+            "timestamp": datetime.now().isoformat()
+        }
+    }
+
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
@@ -475,10 +487,25 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
         job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{project_id}"
         logger.info(f"🆔 Generated job ID: {job_id}")
         
-        # Add to background tasks
+        # Initialize job status immediately
+        active_jobs[job_id] = {
+            "jobId": job_id,
+            "projectId": project_id,
+            "status": "queued",
+            "progress": 0,
+            "currentAgent": "Supervisor",
+            "currentAction": "Initializing...",
+            "startTime": datetime.now(),
+            "error": None,
+            "endTime": None
+        }
+        logger.info(f"🚀 Job {job_id} initialized and queued")
+        
+        # Add to background tasks (non-blocking)
         background_tasks.add_task(run_backlog_generation, job_id, project_info)
         logger.info(f"✅ Background task added for job: {job_id}")
         
+        # Return response immediately
         response_data = {"jobId": job_id}
         logger.info(f"📤 Returning response: {response_data}")
         
@@ -833,19 +860,14 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
     logger.info(f"Starting backlog generation for job {job_id}")
     
     try:
-        # Initialize job status
-        active_jobs[job_id] = {
-            "jobId": job_id,
-            "projectId": project_info.get("id", "unknown"),
-            "status": "running",
-            "progress": 0,
-            "currentAgent": "Supervisor",
-            "currentAction": "Initializing workflow...",
-            "startTime": datetime.now(),
-            "error": None,
-            "endTime": None
-        }
-        logger.info(f"🚀 Job {job_id} initialized and ready for execution")
+        # Update job status to running (job is already initialized)
+        if job_id in active_jobs:
+            active_jobs[job_id]["status"] = "running"
+            active_jobs[job_id]["currentAction"] = "Starting workflow execution..."
+            logger.info(f"🚀 Job {job_id} status updated to running")
+        else:
+            logger.error(f"❌ Job {job_id} not found in active_jobs")
+            return {"error": f"Job {job_id} not found"}
         
         # Extract project data
         project_data = project_info.get("data", {})
