@@ -697,32 +697,45 @@ class WorkflowSupervisor:
                         completed = True  # Move to next stage even on error
             
             # Final processing
-            self._finalize_workflow_data()
-            
-            # Azure DevOps integration
-            if integrate_azure:
-                update_progress(total_stages + 1, "Integrating with Azure DevOps")
-                self._integrate_with_azure_devops()
-            
-            # Set end time before sending notifications
-            self.execution_metadata['end_time'] = datetime.now()
-            self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
-            
-            # Note: Notifications will be sent from final_validation stage
-            
-            # Save final output
-            if save_outputs:
-                self._save_final_output()
-            
-            # Final progress update
-            update_progress(total_stages + 2, "Backlog generation completed")
-            return self.workflow_data
+            try:
+                self._finalize_workflow_data()
+                
+                # Azure DevOps integration
+                if integrate_azure:
+                    update_progress(total_stages + 1, "Integrating with Azure DevOps")
+                    self._integrate_with_azure_devops()
+                
+                # Set end time before sending notifications
+                self.execution_metadata['end_time'] = datetime.now()
+                self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
+                
+                # Note: Notifications will be sent from final_validation stage
+                
+                # Save final output
+                if save_outputs:
+                    self._save_final_output()
+                
+                # Final progress update
+                update_progress(total_stages + 2, "Backlog generation completed")
+                return self.workflow_data
+                
+            except Exception as e:
+                self.logger.error(f"Error in final processing: {e}")
+                # Don't fail the entire workflow for final processing errors
+                # Just log the error and return the workflow data
+                return self.workflow_data
             
         except Exception as e:
             self.logger.error(f"Workflow execution failed: {e}")
             self.execution_metadata['errors'].append(str(e))
             self.execution_metadata['end_time'] = datetime.now()
             self.logger.info(f"Workflow execution failed at {self.execution_metadata['end_time']}")
+            
+            # Calculate execution time even on failure
+            if self.execution_metadata['start_time'] and self.execution_metadata['end_time']:
+                execution_time = (self.execution_metadata['end_time'] - self.execution_metadata['start_time']).total_seconds()
+                self.logger.info(f"Workflow execution time before failure: {execution_time:.2f} seconds")
+            
             # Send error notifications
             self._send_error_notifications(e)
             raise
@@ -730,6 +743,16 @@ class WorkflowSupervisor:
             if not self.execution_metadata['end_time']:
                 self.execution_metadata['end_time'] = datetime.now()
                 self.logger.info(f"Workflow execution finalized at {self.execution_metadata['end_time']}")
+            
+            # Ensure execution time is always calculated and logged
+            if self.execution_metadata['start_time'] and self.execution_metadata['end_time']:
+                execution_time = (self.execution_metadata['end_time'] - self.execution_metadata['start_time']).total_seconds()
+                self.logger.info(f"Final workflow execution time: {execution_time:.2f} seconds")
+                
+                # Log parallel processing efficiency if enabled
+                if self.parallel_config.get('enabled'):
+                    self.logger.info(f"Parallel processing was enabled with {self.parallel_config.get('max_workers', 0)} workers")
+                    self.logger.info(f"Parallel stages: {[k for k, v in self.parallel_config.get('stages', {}).items() if v]}")
     
     def _execute_epic_generation(self):
         """Execute epic generation stage."""

@@ -758,3 +758,301 @@ Create a test application to v...
 2025-07-17 08:18:39 - supervisor - INFO - Decomposing feature to user stories: Basic Notification Mechanism for Failed Test Runs
 2025-07-17 08:18:43 - supervisor - INFO - Decomposing feature to user stories: Test Execution and Notification Audit Logging
 2025-07-17 08:18:45 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control for Test Automation Features
+2025-07-17 08:22:22 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250717_082222
+2025-07-17 08:22:22 - supervisor - INFO - Azure DevOps config for job_id=job_20250717_082222: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-17 08:22:22 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-17 08:22:22 - supervisor - INFO - Starting workflow execution at 2025-07-17 08:22:22.195811
+2025-07-17 08:22:22 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-17 08:22:22 - supervisor - INFO - Generating epics from product vision
+2025-07-17 08:22:22 - supervisor - INFO - Generating epics from product vision: Project: Progress Test Project
+Domain: software_development
+
+Vision Statement:
+Create a test applica...
+2025-07-17 08:22:42 - supervisor - INFO - Generated 2 epics
+2025-07-17 08:22:42 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-17 08:22:42 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-17 08:22:42 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-17 08:22:42 - supervisor - INFO - Decomposing epic: Design and Implement Core Progress Bar Functionality
+2025-07-17 08:22:42 - supervisor - INFO - Decomposing epic: Develop Test Application for Progress Bar Verification
+2025-07-17 08:23:10 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-17 08:23:10 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-17 08:23:10 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-17 08:23:10 - supervisor - INFO - Decomposing feature to user stories: Reusable Progress Bar UI Component
+2025-07-17 08:23:10 - supervisor - INFO - Decomposing feature to user stories: Real-Time Progress Data Integration
+2025-07-17 08:23:10 - supervisor - INFO - Decomposing feature to user stories: Progress Bar Configuration API
+2025-07-17 08:23:10 - supervisor - INFO - Decomposing feature to user stories: Accessibility and Internationalization Support
+2025-07-17 08:23:36 - supervisor - INFO - Decomposing feature to user stories: Comprehensive Progress Bar Documentation and Sample Use Cases
+2025-07-17 08:23:37 - supervisor - INFO - Decomposing feature to user stories: Configurable Progress Bar Simulation Interface
+2025-07-17 08:23:39 - supervisor - INFO - Decomposing feature to user stories: Automated Progress State Logging and Export
+2025-07-17 08:23:44 - supervisor - INFO - Decomposing feature to user stories: Edge Case and Failure State Simulation Tools
+2025-07-17 08:24:07 - supervisor - INFO - Decomposing feature to user stories: Automated Test Result Reporting Dashboard
+2025-07-17 08:24:12 - supervisor - INFO - Decomposing feature to user stories: Manual Verification Aids and Guided Testing Mode
+2025-07-17 08:24:15 - supervisor - INFO - Decomposing feature to user stories: REST API for Remote Test Execution and Data Retrieval
+2025-07-17 08:24:50 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-17 08:24:50 - supervisor - INFO - Executing stage: developer_agent
+2025-07-17 08:24:50 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-17 08:24:50 - supervisor - INFO - Generating tasks for user story: Display task completion with dynamic progress percentage in reusable component
+2025-07-17 08:24:50 - supervisor - INFO - Generating tasks for user story: Support custom colors, sizes, and shapes for progress bar component
+2025-07-17 08:24:50 - supervisor - INFO - Generating tasks for user story: Provide optional labels and tooltips for progress bar component
+2025-07-17 08:24:50 - supervisor - INFO - Generating tasks for user story: Ensure component accessibility and ARIA compliance for all users
+2025-07-17 08:25:04 - supervisor - INFO - Generating tasks for user story: Handle invalid progress values and configuration errors gracefully
+2025-07-17 08:25:10 - supervisor - INFO - Generating tasks for user story: Ensure responsive design and mobile support for progress bar component
+2025-07-17 08:25:11 - supervisor - INFO - Generating tasks for user story: Progress bar reflects real-time backend task updates
+2025-07-17 08:25:11 - supervisor - INFO - Generating tasks for user story: Progress bar updates reflect multiple sources of change
+2025-07-17 08:25:19 - supervisor - INFO - Generating tasks for user story: Display informative messaging on progress update failures
+2025-07-17 08:25:39 - supervisor - INFO - Generating tasks for user story: Handle conflicting or out-of-order progress updates gracefully
+2025-07-17 08:25:45 - supervisor - INFO - Generating tasks for user story: Administrator can monitor real-time progress updates for all active tasks
+2025-07-17 08:26:06 - supervisor - INFO - Generating tasks for user story: Progress bar provides accessible and mobile-friendly real-time status feedback
+2025-07-17 08:26:07 - supervisor - INFO - Generating tasks for user story: Expose API endpoint for updating progress bar color scheme
+2025-07-17 08:26:12 - supervisor - INFO - Generating tasks for user story: Allow configuration of progress bar animation speed via API
+2025-07-17 08:26:19 - supervisor - INFO - Generating tasks for user story: Support progress bar status thresholds configuration via API
+2025-07-17 08:26:30 - supervisor - INFO - Generating tasks for user story: Enable progress bar label text customization via API
+2025-07-17 08:26:30 - supervisor - INFO - Generating tasks for user story: Handle invalid or partial progress bar configuration updates via API
+2025-07-17 08:26:34 - supervisor - INFO - Generating tasks for user story: Provide API configuration preview and documentation endpoint
+2025-07-17 08:26:38 - supervisor - INFO - Generating tasks for user story: Progress bar supports screen readers with semantic ARIA attributes
+2025-07-17 08:26:45 - supervisor - INFO - Generating tasks for user story: Progress bar supports keyboard navigation and operation
+2025-07-17 08:26:45 - supervisor - INFO - Generating tasks for user story: Progress bar adapts layout and directionality for right-to-left languages
+2025-07-17 08:26:50 - supervisor - INFO - Generating tasks for user story: Progress bar text and labels are fully localized with fallback for missing translations
+2025-07-17 08:26:53 - supervisor - INFO - Generating tasks for user story: Progress bar ensures visibility and color contrast for color-blind and low-vision users
+2025-07-17 08:26:56 - supervisor - INFO - Generating tasks for user story: Progress bar exposes accessibility and localization configuration options for administrators
+2025-07-17 08:27:14 - supervisor - INFO - Generating tasks for user story: Developer can access step-by-step integration guide for the progress bar
+2025-07-17 08:27:16 - supervisor - INFO - Generating tasks for user story: Developers can view and run interactive live code samples of the progress bar
+2025-07-17 08:27:17 - supervisor - INFO - Generating tasks for user story: Documentation provides troubleshooting and error-handling section for the progress bar
+2025-07-17 08:27:33 - supervisor - INFO - Generating tasks for user story: End users can reference documentation about progress bar accessibility features
+2025-07-17 08:27:33 - supervisor - INFO - Generating tasks for user story: Administrators are notified of documentation updates when the progress bar component changes
+2025-07-17 08:27:33 - supervisor - INFO - Generating tasks for user story: Users can browse searchable and well-structured documentation with categorized progress bar use cases
+2025-07-17 08:27:41 - supervisor - INFO - Generating tasks for user story: User can configure and start simulated progress bar tasks via interface
+2025-07-17 08:27:45 - supervisor - INFO - Generating tasks for user story: System validates parameter input and displays real-time feedback for errors
+2025-07-17 08:27:48 - supervisor - INFO - Generating tasks for user story: Interface supports concurrent and rapid test triggering for load scenarios
+2025-07-17 08:27:49 - supervisor - INFO - Generating tasks for user story: Administrators can access logs and analytics for simulation sessions
+2025-07-17 08:27:54 - supervisor - INFO - Generating tasks for user story: Interface provides API for automated test scripts to trigger and observe progress bar simulations
+2025-07-17 08:28:01 - supervisor - INFO - Generating tasks for user story: Simulation interface is responsive and accessible on both web and mobile platforms
+2025-07-17 08:28:08 - supervisor - INFO - Generating tasks for user story: Log progress bar state transitions with timestamps during test runs
+2025-07-17 08:28:08 - supervisor - INFO - Generating tasks for user story: Allow exporting of progress logs in CSV and JSON formats
+2025-07-17 08:28:09 - supervisor - INFO - Generating tasks for user story: Enable log viewing and filtering in the UI for test result analysis
+2025-07-17 08:28:13 - supervisor - INFO - Generating tasks for user story: Handle exporting logs from large or rapid test iterations robustly
+2025-07-17 08:28:22 - supervisor - INFO - Generating tasks for user story: Display user feedback for export actions and error scenarios
+2025-07-17 08:28:24 - supervisor - INFO - Generating tasks for user story: Enable authorized administrators to audit all progress logs across test runs
+2025-07-17 08:28:28 - supervisor - INFO - Generating tasks for user story: Tester can simulate task failure and observe progress bar response
+2025-07-17 08:28:31 - supervisor - INFO - Generating tasks for user story: Tester can simulate progress bar stall and monitor user feedback mechanisms
+2025-07-17 08:28:34 - supervisor - INFO - Generating tasks for user story: Tester can simulate abrupt interruption of ongoing progress
+2025-07-17 08:28:38 - supervisor - INFO - Generating tasks for user story: Tester can simulate invalid state transitions and receive immediate feedback
+2025-07-17 08:28:47 - supervisor - INFO - Generating tasks for user story: Simulation tool handles multiple simultaneous failure scenarios gracefully
+2025-07-17 08:28:48 - supervisor - INFO - Generating tasks for user story: Accessible guidance and visual cues provided for each simulation scenario
+2025-07-17 08:28:52 - supervisor - INFO - Generating tasks for user story: Manual tester views summarized test run results with pass/fail indicators
+2025-07-17 08:29:00 - supervisor - INFO - Generating tasks for user story: Automated system integrates and exports test results for dashboard population
+2025-07-17 08:29:04 - supervisor - INFO - Generating tasks for user story: User drills down into individual test run for detailed analysis
+2025-07-17 08:29:09 - supervisor - INFO - Generating tasks for user story: Dashboard user visualizes test trends over time using accessible charts
+2025-07-17 08:29:11 - supervisor - INFO - Generating tasks for user story: Administrator manages dashboard access permissions for different user roles
+2025-07-17 08:29:20 - supervisor - INFO - Generating tasks for user story: Manual tester can activate guided testing mode to receive step-by-step instructions
+2025-07-17 08:29:27 - supervisor - INFO - Generating tasks for user story: Manual tester receives visual cues and interactive markers for progress verification tasks
+2025-07-17 08:29:28 - supervisor - INFO - Generating tasks for user story: Manual tester can view and complete in-app checklists corresponding to progress bar acceptance criteria
+2025-07-17 08:29:32 - supervisor - INFO - Generating tasks for user story: System detects and warns testers attempting to skip required steps in guided mode
+2025-07-17 08:29:40 - supervisor - INFO - Generating tasks for user story: Manual tester can seamlessly switch between guided and free testing modes without data loss
+2025-07-17 08:29:42 - supervisor - INFO - Generating tasks for user story: Administrator can configure and update step instructions and acceptance criteria for guided testing scenarios
+2025-07-17 08:29:46 - supervisor - INFO - Generating tasks for user story: API endpoint allows authenticated triggering of progress bar tests
+2025-07-17 08:29:56 - supervisor - INFO - Generating tasks for user story: API clients can retrieve real-time results of progress bar test runs
+2025-07-17 08:30:11 - supervisor - INFO - Generating tasks for user story: API clients can download detailed logs of progress bar test executions
+2025-07-17 08:30:13 - supervisor - INFO - Generating tasks for user story: Admin users can manage API keys and view API usage logs via the web interface
+2025-07-17 08:30:18 - supervisor - INFO - Generating tasks for user story: Provide comprehensive API usage documentation accessible via the UI
+2025-07-17 08:30:22 - supervisor - INFO - Generating tasks for user story: Handle concurrent API-initiated and manual progress bar test executions gracefully
+2025-07-17 08:30:41 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-17 08:30:41 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-17 08:30:41 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-17 08:30:41 - supervisor - INFO - Processing QA for feature: Reusable Progress Bar UI Component
+2025-07-17 08:30:41 - supervisor - INFO - Processing QA for feature: Real-Time Progress Data Integration
+2025-07-17 08:30:41 - supervisor - INFO - Processing QA for feature: Progress Bar Configuration API
+2025-07-17 08:30:41 - supervisor - INFO - Processing QA for feature: Accessibility and Internationalization Support
+2025-07-17 08:31:57 - supervisor - INFO - Processing QA for feature: Comprehensive Progress Bar Documentation and Sample Use Cases
+2025-07-17 08:32:00 - supervisor - INFO - Processing QA for feature: Configurable Progress Bar Simulation Interface
+2025-07-17 08:32:00 - supervisor - INFO - Processing QA for feature: Automated Progress State Logging and Export
+2025-07-17 08:32:06 - supervisor - INFO - Processing QA for feature: Edge Case and Failure State Simulation Tools
+2025-07-17 08:33:03 - supervisor - INFO - Processing QA for feature: Automated Test Result Reporting Dashboard
+2025-07-17 08:33:10 - supervisor - INFO - Processing QA for feature: Manual Verification Aids and Guided Testing Mode
+2025-07-17 08:33:18 - supervisor - INFO - Processing QA for feature: REST API for Remote Test Execution and Data Retrieval
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Reusable Progress Bar UI Component'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Real-Time Progress Data Integration'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Progress Bar Configuration API'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Accessibility and Internationalization Support'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Comprehensive Progress Bar Documentation and Sample Use Cases'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Configurable Progress Bar Simulation Interface'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Progress State Logging and Export'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Edge Case and Failure State Simulation Tools'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Test Result Reporting Dashboard'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Manual Verification Aids and Guided Testing Mode'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'REST API for Remote Test Execution and Data Retrieval'. Skipping invalid test plan.
+2025-07-17 08:34:47 - supervisor - WARNING - Validation completed with 11 test case errors.
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Reusable Progress Bar UI Component for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Progress Data Integration for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Progress Bar Configuration API for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Accessibility and Internationalization Support for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Comprehensive Progress Bar Documentation and Sample Use Cases for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Configurable Progress Bar Simulation Interface for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Progress State Logging and Export for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Edge Case and Failure State Simulation Tools for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Test Result Reporting Dashboard for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item Manual Verification Aids and Guided Testing Mode for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] Retrying incomplete item REST API for Remote Test Execution and Data Retrieval for stage qa_lead_agent (attempt 1/5)
+2025-07-17 08:34:47 - supervisor - INFO - [DEBUG] 11 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-17 08:34:47 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-17 08:34:47 - supervisor - INFO - Processing QA for feature: Reusable Progress Bar UI Component
+2025-07-17 08:34:47 - supervisor - INFO - Processing QA for feature: Real-Time Progress Data Integration
+2025-07-17 08:34:47 - supervisor - INFO - Processing QA for feature: Progress Bar Configuration API
+2025-07-17 08:34:47 - supervisor - INFO - Processing QA for feature: Accessibility and Internationalization Support
+2025-07-17 08:35:59 - supervisor - INFO - Processing QA for feature: Comprehensive Progress Bar Documentation and Sample Use Cases
+2025-07-17 08:36:01 - supervisor - INFO - Processing QA for feature: Configurable Progress Bar Simulation Interface
+2025-07-17 08:36:01 - supervisor - INFO - Processing QA for feature: Automated Progress State Logging and Export
+2025-07-17 08:36:02 - supervisor - INFO - Processing QA for feature: Edge Case and Failure State Simulation Tools
+2025-07-17 08:37:00 - supervisor - INFO - Processing QA for feature: Automated Test Result Reporting Dashboard
+2025-07-17 08:37:09 - supervisor - INFO - Processing QA for feature: Manual Verification Aids and Guided Testing Mode
+2025-07-17 08:37:13 - supervisor - INFO - Processing QA for feature: REST API for Remote Test Execution and Data Retrieval
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Reusable Progress Bar UI Component'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Real-Time Progress Data Integration'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Progress Bar Configuration API'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Accessibility and Internationalization Support'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Comprehensive Progress Bar Documentation and Sample Use Cases'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Configurable Progress Bar Simulation Interface'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Progress State Logging and Export'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Edge Case and Failure State Simulation Tools'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Test Result Reporting Dashboard'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Manual Verification Aids and Guided Testing Mode'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'REST API for Remote Test Execution and Data Retrieval'. Skipping invalid test plan.
+2025-07-17 08:38:24 - supervisor - WARNING - Validation completed with 11 test case errors.
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Reusable Progress Bar UI Component for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Progress Data Integration for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Progress Bar Configuration API for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Accessibility and Internationalization Support for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Comprehensive Progress Bar Documentation and Sample Use Cases for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Configurable Progress Bar Simulation Interface for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Progress State Logging and Export for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Edge Case and Failure State Simulation Tools for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Test Result Reporting Dashboard for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Manual Verification Aids and Guided Testing Mode for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] Retrying incomplete item REST API for Remote Test Execution and Data Retrieval for stage qa_lead_agent (attempt 2/5)
+2025-07-17 08:38:24 - supervisor - INFO - [DEBUG] 11 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-17 08:38:24 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-17 08:38:24 - supervisor - INFO - Processing QA for feature: Reusable Progress Bar UI Component
+2025-07-17 08:38:24 - supervisor - INFO - Processing QA for feature: Real-Time Progress Data Integration
+2025-07-17 08:38:24 - supervisor - INFO - Processing QA for feature: Progress Bar Configuration API
+2025-07-17 08:38:24 - supervisor - INFO - Processing QA for feature: Accessibility and Internationalization Support
+2025-07-17 08:39:37 - supervisor - INFO - Processing QA for feature: Comprehensive Progress Bar Documentation and Sample Use Cases
+2025-07-17 08:39:38 - supervisor - INFO - Processing QA for feature: Configurable Progress Bar Simulation Interface
+2025-07-17 08:39:40 - supervisor - INFO - Processing QA for feature: Automated Progress State Logging and Export
+2025-07-17 08:39:53 - supervisor - INFO - Processing QA for feature: Edge Case and Failure State Simulation Tools
+2025-07-17 08:41:02 - supervisor - INFO - Processing QA for feature: Automated Test Result Reporting Dashboard
+2025-07-17 08:41:20 - supervisor - INFO - Processing QA for feature: Manual Verification Aids and Guided Testing Mode
+2025-07-17 08:41:22 - supervisor - INFO - Processing QA for feature: REST API for Remote Test Execution and Data Retrieval
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Reusable Progress Bar UI Component'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Real-Time Progress Data Integration'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Progress Bar Configuration API'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Accessibility and Internationalization Support'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Comprehensive Progress Bar Documentation and Sample Use Cases'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Configurable Progress Bar Simulation Interface'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Progress State Logging and Export'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Edge Case and Failure State Simulation Tools'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Test Result Reporting Dashboard'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Manual Verification Aids and Guided Testing Mode'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'REST API for Remote Test Execution and Data Retrieval'. Skipping invalid test plan.
+2025-07-17 08:42:42 - supervisor - WARNING - Validation completed with 11 test case errors.
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Reusable Progress Bar UI Component for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Progress Data Integration for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Progress Bar Configuration API for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Accessibility and Internationalization Support for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Comprehensive Progress Bar Documentation and Sample Use Cases for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Configurable Progress Bar Simulation Interface for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Progress State Logging and Export for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Edge Case and Failure State Simulation Tools for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Test Result Reporting Dashboard for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item Manual Verification Aids and Guided Testing Mode for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] Retrying incomplete item REST API for Remote Test Execution and Data Retrieval for stage qa_lead_agent (attempt 3/5)
+2025-07-17 08:42:42 - supervisor - INFO - [DEBUG] 11 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-17 08:42:42 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-17 08:42:42 - supervisor - INFO - Processing QA for feature: Reusable Progress Bar UI Component
+2025-07-17 08:42:42 - supervisor - INFO - Processing QA for feature: Real-Time Progress Data Integration
+2025-07-17 08:42:42 - supervisor - INFO - Processing QA for feature: Progress Bar Configuration API
+2025-07-17 08:42:42 - supervisor - INFO - Processing QA for feature: Accessibility and Internationalization Support
+2025-07-17 08:43:55 - supervisor - INFO - Processing QA for feature: Comprehensive Progress Bar Documentation and Sample Use Cases
+2025-07-17 08:44:02 - supervisor - INFO - Processing QA for feature: Configurable Progress Bar Simulation Interface
+2025-07-17 08:44:06 - supervisor - INFO - Processing QA for feature: Automated Progress State Logging and Export
+2025-07-17 08:44:45 - supervisor - INFO - Processing QA for feature: Edge Case and Failure State Simulation Tools
+2025-07-17 08:45:10 - supervisor - INFO - Processing QA for feature: Automated Test Result Reporting Dashboard
+2025-07-17 08:45:19 - supervisor - INFO - Processing QA for feature: Manual Verification Aids and Guided Testing Mode
+2025-07-17 08:45:25 - supervisor - INFO - Processing QA for feature: REST API for Remote Test Execution and Data Retrieval
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Reusable Progress Bar UI Component'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Real-Time Progress Data Integration'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Progress Bar Configuration API'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Accessibility and Internationalization Support'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Comprehensive Progress Bar Documentation and Sample Use Cases'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Configurable Progress Bar Simulation Interface'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Progress State Logging and Export'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Edge Case and Failure State Simulation Tools'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Test Result Reporting Dashboard'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Manual Verification Aids and Guided Testing Mode'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'REST API for Remote Test Execution and Data Retrieval'. Skipping invalid test plan.
+2025-07-17 08:46:45 - supervisor - WARNING - Validation completed with 11 test case errors.
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Reusable Progress Bar UI Component for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Progress Data Integration for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Progress Bar Configuration API for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Accessibility and Internationalization Support for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Comprehensive Progress Bar Documentation and Sample Use Cases for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Configurable Progress Bar Simulation Interface for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Progress State Logging and Export for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Edge Case and Failure State Simulation Tools for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Test Result Reporting Dashboard for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Manual Verification Aids and Guided Testing Mode for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] Retrying incomplete item REST API for Remote Test Execution and Data Retrieval for stage qa_lead_agent (attempt 4/5)
+2025-07-17 08:46:45 - supervisor - INFO - [DEBUG] 11 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-17 08:46:45 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-17 08:46:45 - supervisor - INFO - Processing QA for feature: Reusable Progress Bar UI Component
+2025-07-17 08:46:45 - supervisor - INFO - Processing QA for feature: Real-Time Progress Data Integration
+2025-07-17 08:46:45 - supervisor - INFO - Processing QA for feature: Progress Bar Configuration API
+2025-07-17 08:46:45 - supervisor - INFO - Processing QA for feature: Accessibility and Internationalization Support
+2025-07-17 08:48:01 - supervisor - INFO - Processing QA for feature: Comprehensive Progress Bar Documentation and Sample Use Cases
+2025-07-17 08:48:03 - supervisor - INFO - Processing QA for feature: Configurable Progress Bar Simulation Interface
+2025-07-17 08:48:11 - supervisor - INFO - Processing QA for feature: Automated Progress State Logging and Export
+2025-07-17 08:48:19 - supervisor - INFO - Processing QA for feature: Edge Case and Failure State Simulation Tools
+2025-07-17 08:49:05 - supervisor - INFO - Processing QA for feature: Automated Test Result Reporting Dashboard
+2025-07-17 08:49:15 - supervisor - INFO - Processing QA for feature: Manual Verification Aids and Guided Testing Mode
+2025-07-17 08:49:28 - supervisor - INFO - Processing QA for feature: REST API for Remote Test Execution and Data Retrieval
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Reusable Progress Bar UI Component'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Real-Time Progress Data Integration'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Progress Bar Configuration API'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Accessibility and Internationalization Support'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Comprehensive Progress Bar Documentation and Sample Use Cases'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Configurable Progress Bar Simulation Interface'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Progress State Logging and Export'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Edge Case and Failure State Simulation Tools'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Automated Test Result Reporting Dashboard'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Manual Verification Aids and Guided Testing Mode'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'REST API for Remote Test Execution and Data Retrieval'. Skipping invalid test plan.
+2025-07-17 08:50:57 - supervisor - WARNING - Validation completed with 11 test case errors.
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Reusable Progress Bar UI Component for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Progress Data Integration for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Progress Bar Configuration API for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Accessibility and Internationalization Support for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Comprehensive Progress Bar Documentation and Sample Use Cases for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Configurable Progress Bar Simulation Interface for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Progress State Logging and Export for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Edge Case and Failure State Simulation Tools for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated Test Result Reporting Dashboard for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Manual Verification Aids and Guided Testing Mode for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - [DEBUG] Retrying incomplete item REST API for Remote Test Execution and Data Retrieval for stage qa_lead_agent (attempt 5/5)
+2025-07-17 08:50:57 - supervisor - INFO - Executing stage: azure_integration
+2025-07-17 08:50:57 - supervisor - INFO - Executing stage: final_validation
+2025-07-17 08:50:57 - supervisor - INFO - Starting final validation and cleanup
+2025-07-17 08:50:57 - supervisor - INFO - Cleaning up temporary data
+2025-07-17 08:50:57 - supervisor - INFO - Generated final report: {'workflow_id': 'workflow_20250717_082222', 'completion_time': '2025-07-17T08:50:57.293773', 'total_epics': 2, 'total_features': 11, 'total_user_stories': 65, 'total_tasks': 195, 'total_test_cases': 708, 'azure_integration_enabled': False}
+2025-07-17 08:50:57 - supervisor - INFO - Adding Azure DevOps integration info to notifications: {'status': 'skipped', 'reason': 'integrate_azure flag is False', 'timestamp': '2025-07-17T08:50:57.293078'}
+2025-07-17 08:50:57 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 2, 'features_generated': 11, 'user_stories_generated': 65, 'tasks_generated': 195, 'test_cases_generated': 708, 'execution_time_seconds': None, 'stages_completed': 0, 'errors_encountered': 0}
+2025-07-17 08:50:59 - supervisor - INFO - Completion notifications sent
+2025-07-17 08:50:59 - supervisor - INFO - Workflow execution completed successfully at 2025-07-17 08:50:59.086542
+2025-07-17 08:50:59 - supervisor - ERROR - Workflow execution failed: Circular reference detected
+2025-07-17 08:50:59 - supervisor - INFO - Workflow execution failed at 2025-07-17 08:50:59.087677
+2025-07-17 08:51:00 - supervisor - INFO - Error notifications sent
+2025-07-17 09:08:57 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=None
+2025-07-17 09:08:57 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-17 09:09:03 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=None
+2025-07-17 09:09:03 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-17 09:09:03 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=None
+2025-07-17 09:09:03 - supervisor - INFO - Initialized 5 agents successfully

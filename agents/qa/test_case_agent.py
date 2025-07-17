@@ -680,14 +680,14 @@ Keep it simple and focused only on {category} scenarios. Each test should be exe
         """Fallback method using a simplified boundary prompt."""
         try:
             # Ultra-simplified boundary prompt
-            prompt = f"""Create 2 boundary test cases for: "{user_story.get('title', '')}"
+            prompt = f"""Create comprehensive boundary test cases for: "{user_story.get('title', '')}"
 
 Acceptance criteria: {', '.join(user_story.get('acceptance_criteria', []))}
 
 JSON format:
 [{{"title": "Test at minimum boundary", "steps": ["Step 1", "Step 2"], "expected": "Result", "priority": "Medium"}}]
 
-Focus only on timing boundaries and input limits. Keep responses under 200 tokens."""
+Focus on timing boundaries, input limits, and edge cases. Generate 3-5 comprehensive boundary test cases."""
             
             response = self.run(prompt)
             
@@ -707,7 +707,7 @@ Focus only on timing boundaries and input limits. Keep responses under 200 token
         """Generate boundary test cases using a simplified, faster approach."""
         try:
             # Ultra-simplified prompt for boundary cases
-            prompt = f"""Generate 2 boundary test cases for: "{user_story.get('title', '')}"
+            prompt = f"""Generate comprehensive boundary test cases for: "{user_story.get('title', '')}"
 
 Acceptance Criteria: {', '.join(user_story.get('acceptance_criteria', []))}
 
@@ -715,11 +715,12 @@ Focus on:
 - Empty/null inputs
 - Maximum limits
 - Timing boundaries
+- Edge cases and stress conditions
 
 JSON format:
 [{{"title": "...", "steps": ["...", "..."], "expected": "...", "priority": "Medium"}}]
 
-Keep it minimal and fast."""
+Generate 3-5 comprehensive boundary test cases for thorough coverage."""
 
             # Call LLM with simplified prompt
             response = self.run(prompt)

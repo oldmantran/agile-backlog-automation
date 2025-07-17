@@ -72,10 +72,30 @@ def add_backlog_job(
 
 def _sanitize_json_for_storage(data):
     """Recursively sanitize JSON data for database storage."""
+    # Handle circular references and complex objects
+    if hasattr(data, '__dict__'):
+        # Convert objects to dict, but be careful of circular refs
+        try:
+            data = data.__dict__
+        except:
+            return str(data)
+    
     if isinstance(data, dict):
-        return {key: _sanitize_json_for_storage(value) for key, value in data.items()}
+        sanitized_dict = {}
+        for key, value in data.items():
+            try:
+                sanitized_dict[str(key)] = _sanitize_json_for_storage(value)
+            except (RecursionError, TypeError):
+                sanitized_dict[str(key)] = str(value)
+        return sanitized_dict
     elif isinstance(data, list):
-        return [_sanitize_json_for_storage(item) for item in data]
+        sanitized_list = []
+        for item in data:
+            try:
+                sanitized_list.append(_sanitize_json_for_storage(item))
+            except (RecursionError, TypeError):
+                sanitized_list.append(str(item))
+        return sanitized_list
     elif isinstance(data, str):
         # Sanitize Unicode characters in strings
         import re
