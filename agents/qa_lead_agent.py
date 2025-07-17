@@ -4,6 +4,7 @@ QA Lead Agent - Orchestrates test planning, suite creation, and test case genera
 
 import logging
 from typing import Dict, List, Any, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from agents.base_agent import Agent
 from agents.qa.test_plan_agent import TestPlanAgent
 from agents.qa.test_suite_agent import TestSuiteAgent
@@ -62,6 +63,13 @@ class QALeadAgent(Agent):
         # Test organization requirements
         self.test_organization_config = qa_config.get('test_organization', {})
         self.enforce_completeness = self.test_organization_config.get('enforce_completeness', True)
+        
+        # Parallel processing configuration
+        workflow_config = config.get_setting('workflow', {}) or {}
+        parallel_config = workflow_config.get('parallel_processing', {})
+        self.parallel_enabled = parallel_config.get('enabled', True)
+        self.qa_sub_agent_parallel = parallel_config.get('qa_sub_agent_parallel', True)
+        self.max_workers = parallel_config.get('max_workers', 4)
         self.ado_integration_config = qa_config.get('ado_integration', {})
         self.auto_remediate = self.ado_integration_config.get('auto_create_test_plans', True)
         
@@ -216,34 +224,76 @@ class QALeadAgent(Agent):
                                  feature: Dict[str, Any], 
                                  context: Dict[str, Any],
                                  area_path: str) -> Dict[str, Any]:
-        """Create test suites for all user stories in a feature."""
+        """Create test suites for all user stories in a feature (parallelized if enabled)."""
+        user_stories = feature.get('user_stories', [])
         suites_created = 0
         errors = []
         
-        for user_story in feature.get('user_stories', []):
-            story_name = user_story.get('title', 'Unknown User Story')
-            try:
-                self.logger.info(f"Creating test suite for user story: {story_name}")
-                suite_result = self.test_suite_agent.create_test_suite(
-                    feature=feature,
-                    user_story=user_story,
-                    context=context,
-                    area_path=area_path
-                )
-                
-                if suite_result.get('success'):
-                    suites_created += 1
-                    user_story['test_suite'] = suite_result['test_suite']
-                    self.logger.info(f"Created test suite for user story: {story_name}")
-                else:
-                    error_msg = f"Failed to create test suite for user story: {story_name}"
+        if self.parallel_enabled and self.qa_sub_agent_parallel and len(user_stories) > 1:
+            self.logger.info(f"Creating test suites in parallel for {len(user_stories)} user stories")
+            
+            def process_user_story_suite(user_story):
+                story_name = user_story.get('title', 'Unknown User Story')
+                try:
+                    self.logger.info(f"Creating test suite for user story: {story_name}")
+                    suite_result = self.test_suite_agent.create_test_suite(
+                        feature=feature,
+                        user_story=user_story,
+                        context=context,
+                        area_path=area_path
+                    )
+                    
+                    if suite_result.get('success'):
+                        user_story['test_suite'] = suite_result['test_suite']
+                        self.logger.info(f"Created test suite for user story: {story_name}")
+                        return {'success': True, 'user_story': user_story}
+                    else:
+                        error_msg = f"Failed to create test suite for user story: {story_name}"
+                        self.logger.error(error_msg)
+                        return {'success': False, 'error': error_msg}
+                        
+                except Exception as e:
+                    error_msg = f"Error creating test suite for user story {story_name}: {e}"
+                    self.logger.error(error_msg)
+                    return {'success': False, 'error': error_msg}
+            
+            with ThreadPoolExecutor(max_workers=min(self.max_workers, len(user_stories))) as executor:
+                future_to_story = {executor.submit(process_user_story_suite, user_story): user_story for user_story in user_stories}
+                for future in as_completed(future_to_story):
+                    result = future.result()
+                    if result['success']:
+                        suites_created += 1
+                        # Update the user story in the feature
+                        original_story = future_to_story[future]
+                        original_story['test_suite'] = result['user_story']['test_suite']
+                    else:
+                        errors.append(result['error'])
+        else:
+            # Sequential processing
+            for user_story in user_stories:
+                story_name = user_story.get('title', 'Unknown User Story')
+                try:
+                    self.logger.info(f"Creating test suite for user story: {story_name}")
+                    suite_result = self.test_suite_agent.create_test_suite(
+                        feature=feature,
+                        user_story=user_story,
+                        context=context,
+                        area_path=area_path
+                    )
+                    
+                    if suite_result.get('success'):
+                        suites_created += 1
+                        user_story['test_suite'] = suite_result['test_suite']
+                        self.logger.info(f"Created test suite for user story: {story_name}")
+                    else:
+                        error_msg = f"Failed to create test suite for user story: {story_name}"
+                        self.logger.error(error_msg)
+                        errors.append(error_msg)
+                        
+                except Exception as e:
+                    error_msg = f"Error creating test suite for user story {story_name}: {e}"
                     self.logger.error(error_msg)
                     errors.append(error_msg)
-                    
-            except Exception as e:
-                error_msg = f"Error creating test suite for user story {story_name}: {e}"
-                self.logger.error(error_msg)
-                errors.append(error_msg)
         
         return {
             'suites_created': suites_created,
@@ -254,43 +304,99 @@ class QALeadAgent(Agent):
                                      feature: Dict[str, Any], 
                                      context: Dict[str, Any],
                                      area_path: str) -> Dict[str, Any]:
-        """Create test cases for all user stories in a feature."""
+        """Create test cases for all user stories in a feature (parallelized if enabled)."""
+        user_stories = feature.get('user_stories', [])
         cases_created = 0
         errors = []
         
-        for user_story in feature.get('user_stories', []):
-            story_name = user_story.get('title', 'Unknown User Story')
-            try:
-                self.logger.info(f"Creating test cases for user story: {story_name}")
-                cases_result = self.test_case_agent.create_test_cases(
-                    feature=feature,
-                    user_story=user_story,
-                    context=context,
-                    area_path=area_path
-                )
-                
-                if cases_result.get('success'):
-                    cases_created += cases_result.get('cases_created', 0)
-                    test_cases = cases_result.get('test_cases', [])
+        if self.parallel_enabled and self.qa_sub_agent_parallel and len(user_stories) > 1:
+            self.logger.info(f"Creating test cases in parallel for {len(user_stories)} user stories")
+            
+            def process_user_story_cases(user_story):
+                story_name = user_story.get('title', 'Unknown User Story')
+                try:
+                    self.logger.info(f"Creating test cases for user story: {story_name}")
+                    cases_result = self.test_case_agent.create_test_cases(
+                        feature=feature,
+                        user_story=user_story,
+                        context=context,
+                        area_path=area_path
+                    )
                     
-                    # Ensure test cases are properly linked to their test suite
-                    if user_story.get('test_suite'):
-                        for test_case in test_cases:
-                            if not test_case.get('test_suite_id'):
-                                test_case['test_suite_id'] = user_story['test_suite'].get('id')
-                                test_case['linked_to_suite'] = True
+                    if cases_result.get('success'):
+                        story_cases_created = cases_result.get('cases_created', 0)
+                        test_cases = cases_result.get('test_cases', [])
+                        
+                        # Ensure test cases are properly linked to their test suite
+                        if user_story.get('test_suite'):
+                            for test_case in test_cases:
+                                if not test_case.get('test_suite_id'):
+                                    test_case['test_suite_id'] = user_story['test_suite'].get('id')
+                                    test_case['linked_to_suite'] = True
+                        
+                        user_story['test_cases'] = test_cases
+                        self.logger.info(f"Created {len(test_cases)} test cases for user story: {story_name}")
+                        return {
+                            'success': True, 
+                            'user_story': user_story, 
+                            'cases_created': story_cases_created
+                        }
+                    else:
+                        error_msg = f"Failed to create test cases for user story: {story_name}"
+                        self.logger.error(error_msg)
+                        return {'success': False, 'error': error_msg}
+                        
+                except Exception as e:
+                    error_msg = f"Error creating test cases for user story {story_name}: {e}"
+                    self.logger.error(error_msg)
+                    return {'success': False, 'error': error_msg}
+            
+            with ThreadPoolExecutor(max_workers=min(self.max_workers, len(user_stories))) as executor:
+                future_to_story = {executor.submit(process_user_story_cases, user_story): user_story for user_story in user_stories}
+                for future in as_completed(future_to_story):
+                    result = future.result()
+                    if result['success']:
+                        cases_created += result['cases_created']
+                        # Update the user story in the feature
+                        original_story = future_to_story[future]
+                        original_story['test_cases'] = result['user_story']['test_cases']
+                    else:
+                        errors.append(result['error'])
+        else:
+            # Sequential processing
+            for user_story in user_stories:
+                story_name = user_story.get('title', 'Unknown User Story')
+                try:
+                    self.logger.info(f"Creating test cases for user story: {story_name}")
+                    cases_result = self.test_case_agent.create_test_cases(
+                        feature=feature,
+                        user_story=user_story,
+                        context=context,
+                        area_path=area_path
+                    )
                     
-                    user_story['test_cases'] = test_cases
-                    self.logger.info(f"Created {len(test_cases)} test cases for user story: {story_name}")
-                else:
-                    error_msg = f"Failed to create test cases for user story: {story_name}"
+                    if cases_result.get('success'):
+                        cases_created += cases_result.get('cases_created', 0)
+                        test_cases = cases_result.get('test_cases', [])
+                        
+                        # Ensure test cases are properly linked to their test suite
+                        if user_story.get('test_suite'):
+                            for test_case in test_cases:
+                                if not test_case.get('test_suite_id'):
+                                    test_case['test_suite_id'] = user_story['test_suite'].get('id')
+                                    test_case['linked_to_suite'] = True
+                        
+                        user_story['test_cases'] = test_cases
+                        self.logger.info(f"Created {len(test_cases)} test cases for user story: {story_name}")
+                    else:
+                        error_msg = f"Failed to create test cases for user story: {story_name}"
+                        self.logger.error(error_msg)
+                        errors.append(error_msg)
+                        
+                except Exception as e:
+                    error_msg = f"Error creating test cases for user story {story_name}: {e}"
                     self.logger.error(error_msg)
                     errors.append(error_msg)
-                    
-            except Exception as e:
-                error_msg = f"Error creating test cases for user story {story_name}: {e}"
-                self.logger.error(error_msg)
-                errors.append(error_msg)
         
         return {
             'cases_created': cases_created,

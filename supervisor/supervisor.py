@@ -17,6 +17,8 @@ import threading
 import time
 from dataclasses import dataclass, asdict
 from enum import Enum
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import queue
 
 from config.config_loader import Config
 from agents.epic_strategist import EpicStrategist
@@ -320,6 +322,9 @@ class WorkflowSupervisor:
         self.workflow_monitor = WorkflowMonitor(self)
         self.current_workflow_id = None
         
+        # Parallel processing configuration
+        self.parallel_config = self._get_parallel_config()
+        
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
         agents = {}
@@ -331,6 +336,23 @@ class WorkflowSupervisor:
         agents['qa_lead_agent'] = QALeadAgent(self.config)
         self.logger.info(f"Initialized {len(agents)} agents successfully")
         return agents
+    
+    def _get_parallel_config(self) -> Dict[str, Any]:
+        """Get parallel processing configuration from settings."""
+        workflow_config = self.config.settings.get('workflow', {})
+        parallel_config = workflow_config.get('parallel_processing', {})
+        
+        return {
+            'enabled': parallel_config.get('enabled', True),
+            'max_workers': parallel_config.get('max_workers', 4),
+            'rate_limit_per_second': parallel_config.get('rate_limit_per_second', 10),
+            'stages': {
+                'feature_decomposer_agent': parallel_config.get('feature_decomposition', True),
+                'user_story_decomposer_agent': parallel_config.get('user_story_decomposition', True),
+                'developer_agent': parallel_config.get('task_generation', True),
+                'qa_lead_agent': parallel_config.get('qa_generation', True)
+            }
+        }
     
     def configure_project_context(self, project_type: str = None, custom_context: Dict[str, Any] = None):
         """Configure project context for domain-aware prompt generation."""
@@ -700,288 +722,132 @@ class WorkflowSupervisor:
             raise
     
     def _execute_feature_decomposition(self):
-        """Execute feature decomposition stage."""
-        self.logger.info("Decomposing epics into features")
+        """Execute feature decomposition stage (parallelized if enabled)."""
+        self.logger.info("Decomposing epics into features (parallel mode: %s)", self.parallel_config['stages']['feature_decomposer_agent'])
+        agent = self.agents['feature_decomposer_agent']
+        context = self.project_context.get_context('feature_decomposer_agent')
+        max_features = self.config.settings.get('workflow', {}).get('limits', {}).get('max_features_per_epic')
+        epics = self.workflow_data['epics']
         
-        try:
-            agent = self.agents['feature_decomposer_agent']
-            context = self.project_context.get_context('feature_decomposer_agent')
-            
-            # Get limits from configuration (null = unlimited)
-            max_features = self.config.settings.get('workflow', {}).get('limits', {}).get('max_features_per_epic')
-            
-            for epic in self.workflow_data['epics']:
+        if self.parallel_config['enabled'] and self.parallel_config['stages']['feature_decomposer_agent'] and len(epics) > 1:
+            def process_epic(epic):
                 self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
-                
+                features = agent.decompose_epic(epic, context, max_features=max_features)
+                return epic, features
+            with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
+                future_to_epic = {executor.submit(process_epic, epic): epic for epic in epics}
+                for future in as_completed(future_to_epic):
+                    epic, features = future.result()
+                    epic['features'] = features
+        else:
+            for epic in epics:
+                self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
                 features = agent.decompose_epic(epic, context, max_features=max_features)
                 epic['features'] = features
-                
-                if max_features:
-                    self.logger.info(f"Generated {len(features)} features for epic (limited to {max_features})")
-                else:
-                    self.logger.info(f"Generated {len(features)} features for epic")
-                
-        except Exception as e:
-            self.logger.error(f"Feature decomposition failed: {e}")
-            raise
     
     def _execute_user_story_decomposition(self):
-        """Execute user story decomposition stage."""
-        self.logger.info("Decomposing features into user stories")
+        """Execute user story decomposition stage (parallelized if enabled)."""
+        self.logger.info("Decomposing features into user stories (parallel mode: %s)", self.parallel_config['stages']['user_story_decomposer_agent'])
+        agent = self.agents['user_story_decomposer_agent']
+        context = self.project_context.get_context('user_story_decomposer_agent')
+        max_user_stories = self.config.settings.get('workflow', {}).get('limits', {}).get('max_user_stories_per_feature')
+        features = [(epic, feature) for epic in self.workflow_data['epics'] for feature in epic.get('features', [])]
         
-        try:
-            agent = self.agents['user_story_decomposer_agent']
-            context = self.project_context.get_context('user_story_decomposer_agent')
-            
-            # Get limits from configuration (null = unlimited)
-            max_user_stories = self.config.settings.get('workflow', {}).get('limits', {}).get('max_user_stories_per_feature')
-            
-            for epic in self.workflow_data['epics']:
-                for feature in epic.get('features', []):
-                    self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
-                    
-                    user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
+        if self.parallel_config['enabled'] and self.parallel_config['stages']['user_story_decomposer_agent'] and len(features) > 1:
+            def process_feature(args):
+                epic, feature = args
+                self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
+                user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
+                return feature, user_stories
+            with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
+                future_to_feature = {executor.submit(process_feature, args): args for args in features}
+                for future in as_completed(future_to_feature):
+                    feature, user_stories = future.result()
                     feature['user_stories'] = user_stories
-                    
-                    if max_user_stories:
-                        self.logger.info(f"Generated {len(user_stories)} user stories for feature (limited to {max_user_stories})")
-                    else:
-                        self.logger.info(f"Generated {len(user_stories)} user stories for feature")
-                    
-        except Exception as e:
-            self.logger.error(f"User story decomposition failed: {e}")
-            raise
+        else:
+            for epic, feature in features:
+                self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
+                user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
+                feature['user_stories'] = user_stories
     
     def _execute_task_generation(self, update_progress_callback=None, stage_index=4):
-        """Execute developer task generation stage."""
-        self.logger.info("Generating developer tasks")
+        """Execute developer task generation stage (parallelized if enabled)."""
+        self.logger.info("Generating developer tasks (parallel mode: %s)", self.parallel_config['stages']['developer_agent'])
+        agent = self.agents['developer_agent']
+        context = self.project_context.get_context('developer_agent')
+        user_stories = []
+        for epic in self.workflow_data['epics']:
+            for feature in epic.get('features', []):
+                for story in feature.get('user_stories', []):
+                    user_stories.append((feature, story))
+        total_stories = len(user_stories)
+        processed_stories = 0
         
-        try:
-            agent = self.agents['developer_agent']
-            context = self.project_context.get_context('developer_agent')
-            
-            # Count total user stories for progress tracking
-            total_stories = 0
-            for epic in self.workflow_data['epics']:
-                for feature in epic.get('features', []):
-                    total_stories += len(feature.get('user_stories', []))
-            
-            processed_stories = 0
-            
-            for epic in self.workflow_data['epics']:
-                for feature in epic.get('features', []):
-                    user_stories = feature.get('user_stories', [])
-                    if user_stories:
-                        # With updated prompt, user_stories are now structured objects
-                        processed_stories_list = []
-                        for i, story_item in enumerate(user_stories):
-                            if isinstance(story_item, dict):
-                                # New structured format - already has all needed fields
-                                story_dict = {
-                                    'title': story_item.get('title', f"User Story {i+1} for {feature.get('title', 'Feature')}"),
-                                    'user_story': story_item.get('description', ''),
-                                    'description': story_item.get('description', ''),
-                                    'acceptance_criteria': story_item.get('acceptance_criteria', []),
-                                    'priority': story_item.get('priority', 'Medium'),
-                                    'story_points': story_item.get('story_points', 3),
-                                    'tags': story_item.get('tags', [])
-                                }
-                                processed_stories_list.append(story_dict)
-                            elif isinstance(story_item, str):
-                                # Legacy string format - convert to dict format for task generation
-                                story_dict = {
-                                    'title': f"User Story {i+1} for {feature.get('title', 'Feature')}",
-                                    'user_story': story_item,
-                                    'description': f"From feature: {feature.get('title', 'Unknown Feature')}",
-                                    'acceptance_criteria': [],  # User stories should define their own acceptance criteria
-                                    'priority': feature.get('priority', 'Medium'),
-                                    'story_points': feature.get('estimated_story_points', 5)
-                                }
-                                processed_stories_list.append(story_dict)
-                        
-                        feature['user_stories'] = processed_stories_list
-                        
-                        for user_story in processed_stories_list:
-                            self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
-                            
-                            # Update progress with granular tracking
-                            if update_progress_callback and total_stories > 0:
-                                sub_progress = processed_stories / total_stories
-                                update_progress_callback(stage_index, f"Generating tasks ({processed_stories + 1}/{total_stories})", sub_progress)
-                            
-                            tasks = agent.generate_tasks(user_story, context)
-                            user_story['tasks'] = tasks
-                            
-                            processed_stories += 1
-                            self.logger.info(f"Generated {len(tasks)} tasks for user story")
-                    
-        except Exception as e:
-            self.logger.error(f"Task generation failed: {e}")
-            raise
+        def process_story(args):
+            feature, user_story = args
+            self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
+            tasks = agent.generate_tasks(user_story, context)
+            return user_story, tasks
+        
+        if self.parallel_config['enabled'] and self.parallel_config['stages']['developer_agent'] and total_stories > 1:
+            with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
+                future_to_story = {executor.submit(process_story, args): args for args in user_stories}
+                for future in as_completed(future_to_story):
+                    user_story, tasks = future.result()
+                    user_story['tasks'] = tasks
+                    processed_stories += 1
+                    if update_progress_callback and total_stories > 0:
+                        sub_progress = processed_stories / total_stories
+                        update_progress_callback(stage_index, f"Generating tasks ({processed_stories}/{total_stories})", sub_progress)
+        else:
+            for feature, user_story in user_stories:
+                self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
+                tasks = agent.generate_tasks(user_story, context)
+                user_story['tasks'] = tasks
+                processed_stories += 1
+                if update_progress_callback and total_stories > 0:
+                    sub_progress = processed_stories / total_stories
+                    update_progress_callback(stage_index, f"Generating tasks ({processed_stories}/{total_stories})", sub_progress)
     
     def _execute_qa_generation(self, update_progress_callback=None, stage_index=5):
-        """Execute QA generation using hierarchical QA Lead Agent with granular progress tracking."""
-        self.logger.info("Generating QA artifacts using QA Lead Agent")
+        """Execute QA generation using hierarchical QA Lead Agent with granular progress tracking (parallelized if enabled)."""
+        self.logger.info("Generating QA artifacts using QA Lead Agent (parallel mode: %s)", self.parallel_config['stages']['qa_lead_agent'])
+        agent = self.agents['qa_lead_agent']
+        context = self.project_context.get_context('qa_lead_agent')
+        if hasattr(self, 'azure_integrator') and self.azure_integrator:
+            agent.azure_integrator = self.azure_integrator
+        area_path = self._determine_qa_area_path(context)
+        features = [(epic, feature) for epic in self.workflow_data['epics'] for feature in epic.get('features', [])]
+        total_features = len(features)
+        total_stories = sum(len(feature.get('user_stories', [])) for _, feature in features)
+        total_qa_items = total_features + total_stories
+        processed_qa_items = 0
         
-        try:
-            agent = self.agents['qa_lead_agent']
-            context = self.project_context.get_context('qa_lead_agent')
-            
-            # Set up Azure DevOps client for QA agent if available
-            if hasattr(self, 'azure_integrator') and self.azure_integrator:
-                agent.azure_integrator = self.azure_integrator
-            
-            # Determine area path for test artifacts
-            area_path = self._determine_qa_area_path(context)
-            
-            # Count total items for granular progress tracking
-            total_features = 0
-            total_stories = 0
-            for epic in self.workflow_data['epics']:
-                total_features += len(epic.get('features', []))
-                for feature in epic.get('features', []):
-                    total_stories += len(feature.get('user_stories', []))
-            
-            total_qa_items = total_features + total_stories  # Features get test plans, stories get test cases
-            
-            self.logger.info(f"Starting QA generation for {total_features} features and {total_stories} user stories")
-            
-            # Create a custom progress callback to track QA generation progress
-            processed_qa_items = 0
-            
-            def qa_progress_callback(item_type: str, item_name: str, completed: bool = False):
-                nonlocal processed_qa_items
-                if completed:
+        def process_feature(args):
+            epic, feature = args
+            self.logger.info(f"Processing QA for feature: {feature.get('title', 'Untitled')}")
+            result = agent._process_feature_qa(epic, feature, context, area_path, 0, 0)
+            return feature, result
+        
+        if self.parallel_config['enabled'] and self.parallel_config['stages']['qa_lead_agent'] and total_features > 1:
+            with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
+                future_to_feature = {executor.submit(process_feature, args): args for args in features}
+                for future in as_completed(future_to_feature):
+                    feature, result = future.result()
+                    feature['test_plan'] = result.get('test_plan')
                     processed_qa_items += 1
-                
+                    if update_progress_callback and total_qa_items > 0:
+                        sub_progress = processed_qa_items / total_qa_items
+                        update_progress_callback(stage_index, f"Generating QA ({processed_qa_items}/{total_qa_items})", sub_progress)
+        else:
+            for epic, feature in features:
+                self.logger.info(f"Processing QA for feature: {feature.get('title', 'Untitled')}")
+                result = agent._process_feature_qa(epic, feature, context, area_path, 0, 0)
+                feature['test_plan'] = result.get('test_plan')
+                processed_qa_items += 1
                 if update_progress_callback and total_qa_items > 0:
                     sub_progress = processed_qa_items / total_qa_items
-                    item_type_text = "test plans" if item_type == "feature" else "test cases"
-                    update_progress_callback(stage_index, f"Generating {item_type_text} ({processed_qa_items}/{total_qa_items})", sub_progress)
-                
-                self.logger.info(f"QA: {item_type} '{item_name}' - {'completed' if completed else 'processing'}")
-            
-            # Monkey patch the QA agent to use our progress callback
-            original_logger = agent.logger
-            
-            class ProgressLoggingWrapper:
-                def __init__(self, original_logger, progress_callback):
-                    self.original_logger = original_logger
-                    self.progress_callback = progress_callback
-                
-                def info(self, message):
-                    self.original_logger.info(message)
-                    # Parse progress messages from QA agent with improved pattern matching
-                    try:
-                        # Feature processing patterns
-                        if "Processing QA for feature:" in message:
-                            feature_name = message.split("Processing QA for feature:")[-1].strip()
-                            self.progress_callback("feature", feature_name, False)
-                        elif "Generated test plan for feature:" in message:
-                            feature_name = message.split("Generated test plan for feature:")[-1].strip()
-                            self.progress_callback("feature", feature_name, True)
-                        elif "Processing test cases for user story:" in message:
-                            story_name = message.split("Processing test cases for user story:")[-1].strip()
-                            self.progress_callback("user_story", story_name, False)
-                        elif "Generated" in message and "test cases for user story:" in message:
-                            story_name = message.split("test cases for user story:")[-1].strip()
-                            self.progress_callback("user_story", story_name, True)
-                        # Additional patterns for better coverage
-                        elif "Processing QA for epic:" in message:
-                            epic_name = message.split("Processing QA for epic:")[-1].strip()
-                            self.progress_callback("epic", epic_name, False)
-                        elif "Processing feature:" in message:
-                            feature_name = message.split("Processing feature:")[-1].strip()
-                            self.progress_callback("feature", feature_name, False)
-                        elif "Created test plan for:" in message:
-                            feature_name = message.split("Created test plan for:")[-1].strip()
-                            self.progress_callback("feature", feature_name, True)
-                        elif "Created test suite for:" in message:
-                            story_name = message.split("Created test suite for:")[-1].strip()
-                            self.progress_callback("user_story", story_name, True)
-                        elif "Created test cases for:" in message:
-                            story_name = message.split("Created test cases for:")[-1].strip()
-                            self.progress_callback("user_story", story_name, True)
-                        # Generic completion patterns
-                        elif "completed" in message.lower() and ("test plan" in message.lower() or "test suite" in message.lower() or "test case" in message.lower()):
-                            # Try to extract item name from completion message
-                            if "for" in message:
-                                item_name = message.split("for")[-1].strip()
-                                if "test plan" in message.lower():
-                                    self.progress_callback("feature", item_name, True)
-                                elif "test suite" in message.lower() or "test case" in message.lower():
-                                    self.progress_callback("user_story", item_name, True)
-                    except Exception as e:
-                        # Don't let parsing errors break the logging
-                        self.original_logger.warning(f"Error parsing progress message: {e}")
-                
-                def __getattr__(self, name):
-                    return getattr(self.original_logger, name)
-            
-            # Temporarily replace the logger
-            agent.logger = ProgressLoggingWrapper(original_logger, qa_progress_callback)
-            
-            try:
-                # Use QA Lead Agent to orchestrate the entire QA process
-                qa_result = agent.generate_quality_assurance(
-                    epics=self.workflow_data['epics'],
-                    context=context,
-                    area_path=area_path
-                )
-                
-                # Update workflow data with QA results
-                if qa_result.get('epics'):
-                    self.workflow_data['epics'] = qa_result['epics']
-                
-                # Log QA generation summary (sanitize Unicode for Windows console)
-                qa_summary = qa_result.get('qa_summary', {})
-                sanitized_summary = self._sanitize_unicode_for_logging(str(qa_summary))
-                self.logger.info(f"QA generation completed: {sanitized_summary}")
-                
-            finally:
-                # Restore original logger
-                agent.logger = original_logger
-            
-            # Calculate overall QA completeness
-            self.logger.info("Calculating QA completeness score...")
-            completeness_summary = self._calculate_qa_completeness()
-            
-            # Merge completeness summary with QA summary
-            if qa_summary:
-                qa_summary.update(completeness_summary)
-            else:
-                qa_summary = completeness_summary
-            
-            # Log completeness score if available
-            if 'completeness_score' in qa_summary:
-                completeness_score = qa_summary['completeness_score']
-                self.logger.info(f"Test organization completeness: {completeness_score:.1%}")
-                
-                # Send critical notification if completeness is low
-                if completeness_score < 0.5:
-                    self._send_critical_issue_notification(
-                        f"QA Test Organization Completeness Low",
-                        f"Test organization completeness is {completeness_score:.1%}. "
-                        f"Many features may be missing test plans or user stories missing test suites. "
-                        f"Review the QA completeness report for details."
-                    )
-                
-                # Log completeness report (sanitize Unicode for Windows console)
-                if 'completeness_report' in qa_summary:
-                    # Sanitize report for logging (remove Unicode emojis)
-                    sanitized_report = self._sanitize_unicode_for_logging(qa_summary['completeness_report'])
-                    self.logger.info(f"QA Completeness Report:\n{sanitized_report}")
-                    
-                    # Write completeness report to file (keep original with emojis)
-                    self._write_completeness_report(qa_summary['completeness_report'])
-            
-            # Final progress update
-            if update_progress_callback:
-                update_progress_callback(5, "QA generation completed", 1.0)
-                
-        except Exception as e:
-            self.logger.error(f"QA generation failed: {e}")
-            raise
+                    update_progress_callback(stage_index, f"Generating QA ({processed_qa_items}/{total_qa_items})", sub_progress)
     
     def _sanitize_unicode_for_logging(self, text: str) -> str:
         """Sanitize Unicode characters for Windows console logging."""

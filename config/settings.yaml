@@ -105,6 +105,17 @@ workflow:
     max_user_stories_per_feature: null # null = unlimited user stories per feature
   
   output_format: "azure_devops"
+  
+  # Parallel processing configuration
+  parallel_processing:
+    enabled: true
+    max_workers: 4
+    rate_limit_per_second: 10
+    feature_decomposition: true
+    user_story_decomposition: true
+    task_generation: true
+    qa_generation: true
+    qa_sub_agent_parallel: true  # Enable parallel processing within QA sub-agents
 
 notifications:
   enabled: true
