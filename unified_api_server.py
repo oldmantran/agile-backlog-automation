@@ -365,7 +365,8 @@ async def create_project(project_data: CreateProjectRequest, background_tasks: B
             "data": {
                 "projectId": project_id,
                 "status": "created"
-            }
+            },
+            "projectId": project_id  # Also include at root level for compatibility
         }
         
     except Exception as e:
@@ -466,7 +467,8 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
         
         return {
             "success": True,
-            "data": {"jobId": job_id}
+            "data": {"jobId": job_id},
+            "jobId": job_id  # Also include at root level for compatibility
         }
         
     except HTTPException:
