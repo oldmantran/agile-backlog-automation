@@ -165,7 +165,7 @@ export const apiClientMethods = {
   async get<T>(url: string, config?: any): Promise<ApiResponse<T>> {
     try {
       const response = await retryRequest(apiClient, { method: 'GET', url, ...config });
-      return response as ApiResponse<T>;
+      return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
     }
@@ -179,7 +179,7 @@ export const apiClientMethods = {
         data, 
         ...config 
       });
-      return response as ApiResponse<T>;
+      return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
     }
@@ -193,7 +193,7 @@ export const apiClientMethods = {
         data, 
         ...config 
       });
-      return response as ApiResponse<T>;
+      return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
     }
@@ -202,7 +202,7 @@ export const apiClientMethods = {
   async delete<T>(url: string, config?: any): Promise<ApiResponse<T>> {
     try {
       const response = await retryRequest(apiClient, { method: 'DELETE', url, ...config });
-      return response as ApiResponse<T>;
+      return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
     }
@@ -216,7 +216,7 @@ export const apiClientMethods = {
         data, 
         ...config 
       });
-      return response as ApiResponse<T>;
+      return response.data as ApiResponse<T>;
     } catch (error) {
       throw error;
     }
