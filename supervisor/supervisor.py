@@ -2078,7 +2078,7 @@ class WorkflowSupervisor:
             if update_progress_callback:
                 update_progress_callback(stage_index, "Sending completion notifications", 0.9)
             
-            self._send_completion_notifications(final_report)
+            self._send_completion_notifications_with_report(final_report)
             
             # Final progress update
             if update_progress_callback:
@@ -2149,8 +2149,8 @@ class WorkflowSupervisor:
         self.logger.info(f"Generated final report: {report}")
         return report
     
-    def _send_completion_notifications(self, final_report: Dict[str, Any]):
-        """Send completion notifications."""
+    def _send_completion_notifications_with_report(self, final_report: Dict[str, Any]):
+        """Send completion notifications with final report."""
         if self.notifier:
             try:
                 # Send email notification
