@@ -147,3 +147,385 @@ To transform th...
 2025-07-16 22:28:26 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 0, 'features_generated': 0, 'user_stories_generated': 0, 'tasks_generated': 0, 'test_cases_generated': 0, 'execution_time_seconds': 17.522366, 'stages_completed': 0, 'errors_encountered': 1}
 2025-07-16 22:28:27 - supervisor - INFO - Completion notifications sent
 2025-07-16 22:28:27 - supervisor - INFO - Output saved: output/backlog_20250716_222827.json, output/backlog_20250716_222827.yaml
+2025-07-16 22:38:54 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250716_223854
+2025-07-16 22:38:54 - supervisor - INFO - Azure DevOps config for job_id=job_20250716_223854: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-16 22:38:54 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-16 22:38:54 - supervisor - INFO - Starting workflow execution at 2025-07-16 22:38:54.341282
+2025-07-16 22:38:54 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-16 22:38:54 - supervisor - INFO - Generating epics from product vision
+2025-07-16 22:38:54 - supervisor - INFO - Generating epics from product vision: Project: AI Generated Project
+Domain: software_development
+
+Vision Statement:
+Vision
+To transform th...
+2025-07-16 22:39:04 - supervisor - INFO - Generated 2 epics
+2025-07-16 22:39:04 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-16 22:39:04 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-16 22:39:04 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-16 22:39:04 - supervisor - INFO - Decomposing epic: Launch End-to-End Digital Transaction Platform
+2025-07-16 22:39:04 - supervisor - INFO - Decomposing epic: Enable Seamless Professional & Service Provider Integration
+2025-07-16 22:39:31 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-16 22:39:31 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-16 22:39:31 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-16 22:39:31 - supervisor - INFO - Decomposing feature to user stories: Centralized Transaction Dashboard
+2025-07-16 22:39:31 - supervisor - INFO - Decomposing feature to user stories: Integrated Offer & Contract Management
+2025-07-16 22:39:31 - supervisor - INFO - Decomposing feature to user stories: End-to-End Financing Integration
+2025-07-16 22:39:31 - supervisor - INFO - Decomposing feature to user stories: Real-Time Cost & Timeline Transparency
+2025-07-16 22:39:51 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Compliance & Process Guidance
+2025-07-16 22:39:52 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access & Security Controls
+2025-07-16 22:39:53 - supervisor - INFO - Decomposing feature to user stories: Platform Administration & Analytics
+2025-07-16 22:39:54 - supervisor - INFO - Decomposing feature to user stories: Self-Service Professional Onboarding & Verification
+2025-07-16 22:40:16 - supervisor - INFO - Decomposing feature to user stories: Admin-Assisted Onboarding & Bulk Import Tools
+2025-07-16 22:40:17 - supervisor - INFO - Decomposing feature to user stories: Professional Profile Management & Service Catalog
+2025-07-16 22:40:19 - supervisor - INFO - Decomposing feature to user stories: Integrated Scheduling & Booking for Services
+2025-07-16 22:40:22 - supervisor - INFO - Decomposing feature to user stories: Secure Document Exchange & Management
+2025-07-16 22:40:40 - supervisor - INFO - Decomposing feature to user stories: In-Platform Messaging & Communication Hub
+2025-07-16 22:40:44 - supervisor - INFO - Decomposing feature to user stories: Professional Dashboard & Client Management
+2025-07-16 22:41:59 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-16 22:41:59 - supervisor - INFO - Executing stage: developer_agent
+2025-07-16 22:41:59 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-16 22:41:59 - supervisor - INFO - Generating tasks for user story: Buyer can view real-time transaction timeline and statuses
+2025-07-16 22:41:59 - supervisor - INFO - Generating tasks for user story: User receives actionable notifications for critical transaction events
+2025-07-16 22:41:59 - supervisor - INFO - Generating tasks for user story: Seller can manage outstanding actions and upload required documents
+2025-07-16 22:41:59 - supervisor - INFO - Generating tasks for user story: Professional can track and update progress for multiple concurrent transactions
+2025-07-16 22:42:09 - supervisor - INFO - Generating tasks for user story: Dashboard displays partial data and error messaging when integrations are unavailable
+2025-07-16 22:42:10 - supervisor - INFO - Generating tasks for user story: Administrator can configure dashboard templates and default notification settings
+2025-07-16 22:42:10 - supervisor - INFO - Generating tasks for user story: Buyer initiates offer creation with standardized document templates
+2025-07-16 22:42:15 - supervisor - INFO - Generating tasks for user story: Parties collaborate, negotiate, and track version history in document editor
+2025-07-16 22:42:19 - supervisor - INFO - Generating tasks for user story: AI-driven contract review supports compliance and error prevention
+2025-07-16 22:42:20 - supervisor - INFO - Generating tasks for user story: Parties electronically sign finalized offers and contracts
+2025-07-16 22:42:20 - supervisor - INFO - Generating tasks for user story: System tracks and manages rejected or counter-offered contracts
+2025-07-16 22:42:26 - supervisor - INFO - Generating tasks for user story: Administrator manages standard templates and compliance updates
+2025-07-16 22:42:29 - supervisor - INFO - Generating tasks for user story: Applicant can initiate financing application with real-time eligibility checks
+2025-07-16 22:42:30 - supervisor - INFO - Generating tasks for user story: Applicant receives AI-guided financing option recommendations
+2025-07-16 22:42:30 - supervisor - INFO - Generating tasks for user story: Applicant can upload, manage, and track required financing documents
+2025-07-16 22:42:36 - supervisor - INFO - Generating tasks for user story: Applicant can monitor real-time loan approval status and receive notifications
+2025-07-16 22:42:39 - supervisor - INFO - Generating tasks for user story: Applicant receives guided support for error handling and denied applications
+2025-07-16 22:42:41 - supervisor - INFO - Generating tasks for user story: Administrator can view, audit, and manage user financing applications
+2025-07-16 22:42:42 - supervisor - INFO - Generating tasks for user story: Display dynamic cost breakdown for ongoing transactions
+2025-07-16 22:42:52 - supervisor - INFO - Generating tasks for user story: Render real-time transaction milestone timeline with progress tracking
+2025-07-16 22:42:52 - supervisor - INFO - Generating tasks for user story: Send proactive notifications and alerts on cost or timeline changes
+2025-07-16 22:42:54 - supervisor - INFO - Generating tasks for user story: Show AI-driven risk forecasts and suggest preventive actions
+2025-07-16 22:42:57 - supervisor - INFO - Generating tasks for user story: Handle and display unexpected fees and externally-caused timeline updates
+2025-07-16 22:43:01 - supervisor - INFO - Generating tasks for user story: Allow administrators to configure cost/timeline notification triggers and escalation rules
+2025-07-16 22:43:02 - supervisor - INFO - Generating tasks for user story: Buyer receives real-time compliance alerts during transaction steps
+2025-07-16 22:43:04 - supervisor - INFO - Generating tasks for user story: Seller accesses personalized compliance checklist and progress tracking
+2025-07-16 22:43:08 - supervisor - INFO - Generating tasks for user story: Professional users access AI-powered guidance for resolving conflicting regulations
+2025-07-16 22:43:11 - supervisor - INFO - Generating tasks for user story: System proactively prevents submission of incomplete or non-compliant documentation
+2025-07-16 22:43:13 - supervisor - INFO - Generating tasks for user story: Administrator manages and customizes AI compliance guidance templates
+2025-07-16 22:43:15 - supervisor - INFO - Generating tasks for user story: Mobile users receive responsive, accessible compliance guidance throughout transaction workflows
+2025-07-16 22:43:17 - supervisor - INFO - Generating tasks for user story: Buyer accesses only permitted features based on role
+2025-07-16 22:43:21 - supervisor - INFO - Generating tasks for user story: Seller manages listings and sees seller-specific tools
+2025-07-16 22:43:23 - supervisor - INFO - Generating tasks for user story: Agent accesses and manages assigned transactions securely
+2025-07-16 22:43:24 - supervisor - INFO - Generating tasks for user story: Administrator manages user roles and audit security events
+2025-07-16 22:43:26 - supervisor - INFO - Generating tasks for user story: Users authenticate with multi-factor authentication during login
+2025-07-16 22:43:31 - supervisor - INFO - Generating tasks for user story: System handles locked, compromised, or role-changed accounts securely
+2025-07-16 22:43:33 - supervisor - INFO - Generating tasks for user story: Administrator can configure user roles and permissions
+2025-07-16 22:43:34 - supervisor - INFO - Generating tasks for user story: Administrator can customize dashboard widgets and KPIs
+2025-07-16 22:43:39 - supervisor - INFO - Generating tasks for user story: Administrator can set up and manage proactive alerts
+2025-07-16 22:43:42 - supervisor - INFO - Generating tasks for user story: Administrators can view and investigate detailed transaction analytics
+2025-07-16 22:43:43 - supervisor - INFO - Generating tasks for user story: System auto-generates periodic analytics reports and sends to designated admins
+2025-07-16 22:43:46 - supervisor - INFO - Generating tasks for user story: Administrators can monitor system health and performance metrics in real-time
+2025-07-16 22:43:52 - supervisor - INFO - Generating tasks for user story: Professional initiates self-service onboarding with multi-step guided wizard
+2025-07-16 22:43:53 - supervisor - INFO - Generating tasks for user story: Professional uploads credentials and receives real-time validation feedback
+2025-07-16 22:43:54 - supervisor - INFO - Generating tasks for user story: System executes automated credential verification and updates professional’s onboarding status
+2025-07-16 22:43:56 - supervisor - INFO - Generating tasks for user story: Professional can partially complete onboarding and resume later
+2025-07-16 22:44:02 - supervisor - INFO - Generating tasks for user story: Agency admins perform bulk onboarding for multiple professionals
+2025-07-16 22:44:03 - supervisor - INFO - Generating tasks for user story: System detects and prevents duplicate registrations based on professional identifiers
+2025-07-16 22:44:05 - supervisor - INFO - Generating tasks for user story: Admin initiates bulk onboarding of professionals via CSV upload
+2025-07-16 22:44:07 - supervisor - INFO - Generating tasks for user story: Admin sends bulk invitations with custom onboarding instructions
+2025-07-16 22:44:11 - supervisor - INFO - Generating tasks for user story: Admin tracks onboarding progress with real-time status dashboard
+2025-07-16 22:44:13 - supervisor - INFO - Generating tasks for user story: Admin handles onboarding exceptions and warnings with manual override
+2025-07-16 22:44:17 - supervisor - INFO - Generating tasks for user story: Admin communicates onboarding status and resolution to professionals
+2025-07-16 22:44:17 - supervisor - INFO - Generating tasks for user story: System prevents and resolves conflicts between bulk and self-onboarded users
+2025-07-16 22:44:24 - supervisor - INFO - Generating tasks for user story: Professional can create and publish a detailed profile with services and credentials
+2025-07-16 22:44:25 - supervisor - INFO - Generating tasks for user story: Professional can update or temporarily unpublish their profile
+2025-07-16 22:44:34 - supervisor - INFO - Generating tasks for user story: End users can search, filter, and view professional profiles by service, location, and rating
+2025-07-16 22:44:36 - supervisor - INFO - Generating tasks for user story: Service catalog supports profiles with incomplete or outdated information gracefully
+2025-07-16 22:44:44 - supervisor - INFO - Generating tasks for user story: Admin can suspend or manage professional profiles with review and audit capabilities
+2025-07-16 22:44:46 - supervisor - INFO - Generating tasks for user story: System handles professional profile updates during active bookings without disrupting user experience
+2025-07-16 22:44:47 - supervisor - INFO - Generating tasks for user story: User can view professional's real-time availability calendar
+2025-07-16 22:44:48 - supervisor - INFO - Generating tasks for user story: Client can request and confirm an appointment with a professional
+2025-07-16 22:44:56 - supervisor - INFO - Generating tasks for user story: Professional can set and update availability, with external calendar sync
+2025-07-16 22:44:57 - supervisor - INFO - Generating tasks for user story: Clients and professionals receive reminders and status notifications for bookings
+2025-07-16 22:44:59 - supervisor - INFO - Generating tasks for user story: Client can reschedule or cancel existing appointments, with real-time updates
+2025-07-16 22:45:02 - supervisor - INFO - Generating tasks for user story: System prevents and resolves double-booking, including edge cases
+2025-07-16 22:45:08 - supervisor - INFO - Generating tasks for user story: Users can securely upload and organize transaction documents
+2025-07-16 22:45:11 - supervisor - INFO - Generating tasks for user story: Users can share documents with permission controls
+2025-07-16 22:45:12 - supervisor - INFO - Generating tasks for user story: Professionals can request e-signature on specific documents
+2025-07-16 22:45:12 - supervisor - INFO - Generating tasks for user story: System maintains document version history with rollback capability
+2025-07-16 22:45:21 - supervisor - INFO - Generating tasks for user story: Administrators can generate audit trails and compliance reports
+2025-07-16 22:45:21 - supervisor - INFO - Generating tasks for user story: Users receive notifications for shared, signed, and revoked document actions
+2025-07-16 22:45:22 - supervisor - INFO - Generating tasks for user story: User can initiate individual and group conversations from booking workflow
+2025-07-16 22:45:22 - supervisor - INFO - Generating tasks for user story: User can send, receive, and view messages with read and urgency indicators
+2025-07-16 22:45:31 - supervisor - INFO - Generating tasks for user story: User can share files and documents securely in chat
+2025-07-16 22:45:31 - supervisor - INFO - Generating tasks for user story: User receives automated notifications for new messages and mentions
+2025-07-16 22:45:35 - supervisor - INFO - Generating tasks for user story: Admin can view, moderate, and intervene in flagged conversations
+2025-07-16 22:45:36 - supervisor - INFO - Generating tasks for user story: System handles message delivery failures and offline recipients gracefully
+2025-07-16 22:45:40 - supervisor - INFO - Generating tasks for user story: Professional views consolidated client portfolio on dashboard
+2025-07-16 22:45:41 - supervisor - INFO - Generating tasks for user story: Professional accesses and filters booking history from dashboard
+2025-07-16 22:45:47 - supervisor - INFO - Generating tasks for user story: Professional reviews engagement analytics and performance insights
+2025-07-16 22:45:47 - supervisor - INFO - Generating tasks for user story: Professional receives actionable system notifications and reminders
+2025-07-16 22:45:51 - supervisor - INFO - Generating tasks for user story: Administrator manages professional access and dashboard visibility
+2025-07-16 22:45:52 - supervisor - INFO - Generating tasks for user story: Professional dashboard adapts responsively for mobile users
+2025-07-16 22:46:11 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-16 22:46:11 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-16 22:46:11 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 22:46:11 - supervisor - INFO - Processing QA for feature: Centralized Transaction Dashboard
+2025-07-16 22:46:11 - supervisor - INFO - Processing QA for feature: Integrated Offer & Contract Management
+2025-07-16 22:46:11 - supervisor - INFO - Processing QA for feature: End-to-End Financing Integration
+2025-07-16 22:46:11 - supervisor - INFO - Processing QA for feature: Real-Time Cost & Timeline Transparency
+2025-07-16 22:59:37 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250716_225937
+2025-07-16 22:59:37 - supervisor - INFO - Azure DevOps config for job_id=job_20250716_225937: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-16 22:59:37 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-16 22:59:37 - supervisor - INFO - Starting workflow execution at 2025-07-16 22:59:37.575014
+2025-07-16 22:59:37 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-16 22:59:37 - supervisor - INFO - Generating epics from product vision
+2025-07-16 22:59:37 - supervisor - INFO - Generating epics from product vision: Project: AI Generated Project
+Domain: software_development
+
+Vision Statement:
+Vision
+To transform th...
+2025-07-16 22:59:52 - supervisor - INFO - Generated 2 epics
+2025-07-16 22:59:52 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-16 22:59:52 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-16 22:59:52 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-16 22:59:52 - supervisor - INFO - Decomposing epic: End-to-End Digital Home Transaction Platform
+2025-07-16 22:59:52 - supervisor - INFO - Decomposing epic: AI-Driven Insights & Professional Integration Suite
+2025-07-16 23:00:22 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-16 23:00:22 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-16 23:00:22 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-16 23:00:22 - supervisor - INFO - Decomposing feature to user stories: Unified Transaction Dashboard
+2025-07-16 23:00:22 - supervisor - INFO - Decomposing feature to user stories: Digital Offer and Negotiation Management
+2025-07-16 23:00:22 - supervisor - INFO - Decomposing feature to user stories: Integrated Digital Contract Generation & E-Signing
+2025-07-16 23:00:22 - supervisor - INFO - Decomposing feature to user stories: Integrated Financing Application and Approval Workflow
+2025-07-16 23:00:46 - supervisor - INFO - Decomposing feature to user stories: Automated Closing and Funds Disbursement Orchestration
+2025-07-16 23:00:51 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control and Activity Auditing
+2025-07-16 23:00:52 - supervisor - INFO - Decomposing feature to user stories: Secure Messaging and Notifications Framework
+2025-07-16 23:00:53 - supervisor - INFO - Decomposing feature to user stories: Transaction Analytics & Reporting Suite
+2025-07-16 23:01:09 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Personalized Property Recommendation Engine
+2025-07-16 23:01:11 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Financing Option Insights
+2025-07-16 23:01:12 - supervisor - INFO - Decomposing feature to user stories: AI-Generated Market Trend Analytics Dashboard
+2025-07-16 23:01:14 - supervisor - INFO - Decomposing feature to user stories: Unified Professional Discovery & Booking Interface
+2025-07-16 23:01:32 - supervisor - INFO - Decomposing feature to user stories: Collaborative Deal Room for Users and Professionals
+2025-07-16 23:01:34 - supervisor - INFO - Decomposing feature to user stories: Professional Onboarding and Verification Workflow
+2025-07-16 23:01:35 - supervisor - INFO - Decomposing feature to user stories: User and Professional Activity Analytics & Engagement Tracking
+2025-07-16 23:02:01 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-16 23:02:01 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Financing Application and Approval Workflow for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-16 23:02:01 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-07-16 23:02:01 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-16 23:02:01 - supervisor - INFO - Decomposing feature to user stories: Unified Transaction Dashboard
+2025-07-16 23:02:01 - supervisor - INFO - Decomposing feature to user stories: Digital Offer and Negotiation Management
+2025-07-16 23:02:01 - supervisor - INFO - Decomposing feature to user stories: Integrated Digital Contract Generation & E-Signing
+2025-07-16 23:02:01 - supervisor - INFO - Decomposing feature to user stories: Integrated Financing Application and Approval Workflow
+2025-07-16 23:02:22 - supervisor - INFO - Decomposing feature to user stories: Automated Closing and Funds Disbursement Orchestration
+2025-07-16 23:02:23 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control and Activity Auditing
+2025-07-16 23:02:23 - supervisor - INFO - Decomposing feature to user stories: Secure Messaging and Notifications Framework
+2025-07-16 23:02:23 - supervisor - INFO - Decomposing feature to user stories: Transaction Analytics & Reporting Suite
+2025-07-16 23:02:43 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Personalized Property Recommendation Engine
+2025-07-16 23:02:44 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Financing Option Insights
+2025-07-16 23:02:44 - supervisor - INFO - Decomposing feature to user stories: AI-Generated Market Trend Analytics Dashboard
+2025-07-16 23:02:55 - supervisor - INFO - Decomposing feature to user stories: Unified Professional Discovery & Booking Interface
+2025-07-16 23:16:38 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250716_231638
+2025-07-16 23:16:38 - supervisor - INFO - Azure DevOps config for job_id=job_20250716_231638: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-16 23:16:38 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-16 23:16:38 - supervisor - INFO - Starting workflow execution at 2025-07-16 23:16:38.373838
+2025-07-16 23:16:38 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-16 23:16:38 - supervisor - INFO - Generating epics from product vision
+2025-07-16 23:16:38 - supervisor - INFO - Generating epics from product vision: Project: AI Generated Project
+Domain: software_development
+
+Vision Statement:
+Vision
+To transform th...
+2025-07-16 23:16:44 - supervisor - INFO - Generated 2 epics
+2025-07-16 23:16:44 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-16 23:16:44 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-16 23:16:44 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-16 23:16:44 - supervisor - INFO - Decomposing epic: Launch End-to-End Real Estate Transaction Dashboard
+2025-07-16 23:16:44 - supervisor - INFO - Decomposing epic: Enable AI-Powered Insights and Professional Integration
+2025-07-16 23:17:07 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-16 23:17:07 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-16 23:17:07 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-16 23:17:07 - supervisor - INFO - Decomposing feature to user stories: Unified Property Search and Listing Integration
+2025-07-16 23:17:07 - supervisor - INFO - Decomposing feature to user stories: End-to-End Offer and Negotiation Management
+2025-07-16 23:17:07 - supervisor - INFO - Decomposing feature to user stories: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:17:07 - supervisor - INFO - Decomposing feature to user stories: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:17:31 - supervisor - INFO - Decomposing feature to user stories: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:17:35 - supervisor - INFO - Decomposing feature to user stories: Dashboard Administration and User Management
+2025-07-16 23:17:36 - supervisor - INFO - Decomposing feature to user stories: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:17:40 - supervisor - INFO - Decomposing feature to user stories: Personalized AI Property Recommendations
+2025-07-16 23:17:54 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:18:00 - supervisor - INFO - Decomposing feature to user stories: Market Analytics and Comparative Insights
+2025-07-16 23:18:05 - supervisor - INFO - Decomposing feature to user stories: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:18:05 - supervisor - INFO - Decomposing feature to user stories: Integrated Professional Collaboration Workspace
+2025-07-16 23:18:48 - supervisor - INFO - Decomposing feature to user stories: Professional Service Booking and Management
+2025-07-16 23:19:02 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control and Data Privacy
+2025-07-16 23:19:54 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-16 23:19:54 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Property Search and Listing Integration for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-16 23:19:54 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-07-16 23:19:54 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-16 23:19:54 - supervisor - INFO - Decomposing feature to user stories: Unified Property Search and Listing Integration
+2025-07-16 23:19:54 - supervisor - INFO - Decomposing feature to user stories: End-to-End Offer and Negotiation Management
+2025-07-16 23:19:54 - supervisor - INFO - Decomposing feature to user stories: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:19:54 - supervisor - INFO - Decomposing feature to user stories: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:20:35 - supervisor - INFO - Decomposing feature to user stories: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:20:40 - supervisor - INFO - Decomposing feature to user stories: Dashboard Administration and User Management
+2025-07-16 23:20:41 - supervisor - INFO - Decomposing feature to user stories: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:20:43 - supervisor - INFO - Decomposing feature to user stories: Personalized AI Property Recommendations
+2025-07-16 23:21:04 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:21:04 - supervisor - INFO - Decomposing feature to user stories: Market Analytics and Comparative Insights
+2025-07-16 23:21:06 - supervisor - INFO - Decomposing feature to user stories: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:21:07 - supervisor - INFO - Decomposing feature to user stories: Integrated Professional Collaboration Workspace
+2025-07-16 23:21:33 - supervisor - INFO - Decomposing feature to user stories: Professional Service Booking and Management
+2025-07-16 23:21:35 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control and Data Privacy
+2025-07-16 23:22:29 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-16 23:22:29 - supervisor - INFO - Executing stage: developer_agent
+2025-07-16 23:22:29 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-16 23:22:29 - supervisor - INFO - Generating tasks for user story: User can search for properties using basic and advanced filters
+2025-07-16 23:22:29 - supervisor - INFO - Generating tasks for user story: User can view detailed property information with live MLS updates
+2025-07-16 23:22:29 - supervisor - INFO - Generating tasks for user story: User can sort, compare, and preview multiple properties
+2025-07-16 23:22:29 - supervisor - INFO - Generating tasks for user story: System handles MLS outages, duplicate, and outdated property listings gracefully
+2025-07-16 23:22:39 - supervisor - INFO - Generating tasks for user story: Administrator can configure and monitor external property data source integrations
+2025-07-16 23:22:41 - supervisor - INFO - Generating tasks for user story: User can access property search and details on mobile and assistive devices
+2025-07-16 23:22:43 - supervisor - INFO - Generating tasks for user story: Buyer can create and submit a new offer on a property
+2025-07-16 23:22:43 - supervisor - INFO - Generating tasks for user story: Agent or seller can review, accept, reject, or counter offers
+2025-07-16 23:22:50 - supervisor - INFO - Generating tasks for user story: All parties can view complete negotiation history for an offer
+2025-07-16 23:22:55 - supervisor - INFO - Generating tasks for user story: System sends automated real-time notifications for offer and negotiation events
+2025-07-16 23:22:56 - supervisor - INFO - Generating tasks for user story: System handles simultaneous, withdrawn, expired, and disputed offer states
+2025-07-16 23:22:56 - supervisor - INFO - Generating tasks for user story: Administrator can audit offer and negotiation records for compliance
+2025-07-16 23:23:01 - supervisor - INFO - Generating tasks for user story: User uploads and shares transaction documents with role-based permissions
+2025-07-16 23:23:06 - supervisor - INFO - Generating tasks for user story: User reviews documents and initiates e-signature workflow
+2025-07-16 23:23:06 - supervisor - INFO - Generating tasks for user story: User signs documents electronically with secure audit tracking
+2025-07-16 23:23:10 - supervisor - INFO - Generating tasks for user story: Administrator monitors and manages document status and activity logs
+2025-07-16 23:23:14 - supervisor - INFO - Generating tasks for user story: System handles document version conflicts and notifies affected users
+2025-07-16 23:23:18 - supervisor - INFO - Generating tasks for user story: System validates file formats and provides clear upload feedback
+2025-07-16 23:23:19 - supervisor - INFO - Generating tasks for user story: End user views dynamic transaction timeline with real-time milestone updates
+2025-07-16 23:23:22 - supervisor - INFO - Generating tasks for user story: User reviews detailed, real-time cost breakdown for each transaction stage
+2025-07-16 23:23:25 - supervisor - INFO - Generating tasks for user story: End user receives proactive notifications when transaction milestones or costs change unexpectedly
+2025-07-16 23:23:31 - supervisor - INFO - Generating tasks for user story: Administrator configures and manages transaction milestone types and cost categories
+2025-07-16 23:23:32 - supervisor - INFO - Generating tasks for user story: System handles partial or missing data in transaction timeline and cost breakdown gracefully
+2025-07-16 23:23:33 - supervisor - INFO - Generating tasks for user story: Mobile user accesses summary view of timeline and cost breakdown optimized for small screens
+2025-07-16 23:23:34 - supervisor - INFO - Generating tasks for user story: Buyer can initiate and participate in secure direct messages with sellers and agents
+2025-07-16 23:23:41 - supervisor - INFO - Generating tasks for user story: Contextual group chat for all transaction participants with milestone-linked threads
+2025-07-16 23:23:42 - supervisor - INFO - Generating tasks for user story: Role-based permissions for viewing and sending messages within transactions
+2025-07-16 23:23:43 - supervisor - INFO - Generating tasks for user story: Unread message indicators and real-time notifications for all messaging channels
+2025-07-16 23:23:45 - supervisor - INFO - Generating tasks for user story: Contextual comments on transaction documents and milestones
+2025-07-16 23:23:51 - supervisor - INFO - Generating tasks for user story: Message delivery failure and error handling with retry and user feedback
+2025-07-16 23:23:53 - supervisor - INFO - Generating tasks for user story: Administrator assigns and modifies user roles and permissions from dashboard
+2025-07-16 23:23:56 - supervisor - INFO - Generating tasks for user story: Administrator views and exports user activity audit logs
+2025-07-16 23:23:56 - supervisor - INFO - Generating tasks for user story: Administrator removes user and resolves associated orphaned data
+2025-07-16 23:24:02 - supervisor - INFO - Generating tasks for user story: Administrator manages dashboard configuration templates for organization or roles
+2025-07-16 23:24:03 - supervisor - INFO - Generating tasks for user story: Administrator performs bulk user import and export with validation
+2025-07-16 23:24:09 - supervisor - INFO - Generating tasks for user story: End user receives updated dashboard and permissions based on administrator configuration
+2025-07-16 23:24:16 - supervisor - INFO - Generating tasks for user story: Admin views real-time transaction performance metrics on dashboard
+2025-07-16 23:24:16 - supervisor - INFO - Generating tasks for user story: System sends real-time alerts to admins for critical transaction errors or anomalies
+2025-07-16 23:24:19 - supervisor - INFO - Generating tasks for user story: System logs transaction lifecycle events with error capture for diagnostics
+2025-07-16 23:24:23 - supervisor - INFO - Generating tasks for user story: End user receives clear, actionable error messages for failed transactions
+2025-07-16 23:24:30 - supervisor - INFO - Generating tasks for user story: Admin accesses historical transaction performance and error analytics
+2025-07-16 23:24:31 - supervisor - INFO - Generating tasks for user story: System reliably handles monitoring outages and intermittent error reporting
+2025-07-16 23:24:31 - supervisor - INFO - Generating tasks for user story: Display AI-powered property recommendations on user dashboard
+2025-07-16 23:24:33 - supervisor - INFO - Generating tasks for user story: Adapt property recommendations in real-time as user behavior changes
+2025-07-16 23:24:39 - supervisor - INFO - Generating tasks for user story: Handle cold start scenarios for users with minimal or no history
+2025-07-16 23:24:39 - supervisor - INFO - Generating tasks for user story: Enable user feedback on individual recommendations to refine suggestions
+2025-07-16 23:24:40 - supervisor - INFO - Generating tasks for user story: Allow users to opt-out of personalized recommendations and receive generic listings
+2025-07-16 23:24:44 - supervisor - INFO - Generating tasks for user story: Administrative dashboard for monitoring and troubleshooting AI recommendation delivery
+2025-07-16 23:24:48 - supervisor - INFO - Generating tasks for user story: User receives personalized affordability assessment based on financial profile
+2025-07-16 23:24:49 - supervisor - INFO - Generating tasks for user story: User views and compares tailored financing and mortgage offers
+2025-07-16 23:24:49 - supervisor - INFO - Generating tasks for user story: User pre-qualifies for loans and receives approval likelihood rating
+2025-07-16 23:24:53 - supervisor - INFO - Generating tasks for user story: System handles incomplete or inaccurate user financial input gracefully
+2025-07-16 23:24:58 - supervisor - INFO - Generating tasks for user story: Administrator manages lender integrations and monitors API health status
+2025-07-16 23:25:00 - supervisor - INFO - Generating tasks for user story: System presents financing flows optimized for mobile and accessibility
+2025-07-16 23:25:00 - supervisor - INFO - Generating tasks for user story: View AI-generated property value trends on interactive dashboard
+2025-07-16 23:25:02 - supervisor - INFO - Generating tasks for user story: Compare neighborhoods using key metrics and AI insights
+2025-07-16 23:25:12 - supervisor - INFO - Generating tasks for user story: Access predictive insights for property and neighborhood performance
+2025-07-16 23:25:13 - supervisor - INFO - Generating tasks for user story: Filter and customize analytics dashboards with advanced options
+2025-07-16 23:25:14 - supervisor - INFO - Generating tasks for user story: Handle missing, sparse, or conflicting data gracefully in analytics dashboards
+2025-07-16 23:25:17 - supervisor - INFO - Generating tasks for user story: Enable administrators to configure supported regions and data source priorities
+2025-07-16 23:25:24 - supervisor - INFO - Generating tasks for user story: User selects journey type during onboarding
+2025-07-16 23:25:24 - supervisor - INFO - Generating tasks for user story: User can switch journey type during active transaction
+2025-07-16 23:25:25 - supervisor - INFO - Generating tasks for user story: Platform personalizes dashboard and content based on journey selection
+2025-07-16 23:25:28 - supervisor - INFO - Generating tasks for user story: User is informed when professional assistance is unavailable in their region
+2025-07-16 23:25:35 - supervisor - INFO - Generating tasks for user story: Administrator configures professional journey touchpoints and fallback rules
+2025-07-16 23:25:35 - supervisor - INFO - Generating tasks for user story: Handle incomplete journey selection and onboarding data gracefully
+2025-07-16 23:25:37 - supervisor - INFO - Generating tasks for user story: User can initiate and join a collaborative workspace for a property transaction
+2025-07-16 23:25:41 - supervisor - INFO - Generating tasks for user story: Workspace supports real-time messaging and notifications among participants
+2025-07-16 23:25:49 - supervisor - INFO - Generating tasks for user story: Workspace enables secure document upload, download, and version control
+2025-07-16 23:25:49 - supervisor - INFO - Generating tasks for user story: Participants can assign and track tasks within the workspace
+2025-07-16 23:25:53 - supervisor - INFO - Generating tasks for user story: Workspace handles participant removal and re-assignment gracefully
+2025-07-16 23:25:53 - supervisor - INFO - Generating tasks for user story: User schedules a new service appointment using calendar interface
+2025-07-16 23:25:59 - supervisor - INFO - Generating tasks for user story: Professional manages and updates booked service appointments
+2025-07-16 23:26:00 - supervisor - INFO - Generating tasks for user story: User receives real-time status updates and notifications for service appointments
+2025-07-16 23:26:02 - supervisor - INFO - Generating tasks for user story: System prevents double-booking and handles appointment conflicts across timezones
+2025-07-16 23:26:04 - supervisor - INFO - Generating tasks for user story: Administrator can configure and oversee service categories, provider integrations, and appointment policies
+2025-07-16 23:26:12 - supervisor - INFO - Generating tasks for user story: User and professional can view and filter past and upcoming appointments with status indicators
+2025-07-16 23:26:14 - supervisor - INFO - Generating tasks for user story: Professional is restricted to view only assigned client data based on role
+2025-07-16 23:26:15 - supervisor - INFO - Generating tasks for user story: Administrator manages permissions for professional roles via permission matrix
+2025-07-16 23:26:15 - supervisor - INFO - Generating tasks for user story: Unauthorized users receive clear in-app error messages and are prevented from accessing restricted data or actions
+2025-07-16 23:26:22 - supervisor - INFO - Generating tasks for user story: System enforces data access changes in real-time when user roles or permissions are updated during active sessions
+2025-07-16 23:26:25 - supervisor - INFO - Generating tasks for user story: Platform enforces privacy policies on AI module interactions based on user role and data sensitivity
+2025-07-16 23:26:26 - supervisor - INFO - Generating tasks for user story: Administrator exports audit logs for role and permission changes to support compliance and data retention requests
+2025-07-16 23:26:36 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-16 23:26:36 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-16 23:26:36 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 23:26:36 - supervisor - INFO - Processing QA for feature: Unified Property Search and Listing Integration
+2025-07-16 23:26:36 - supervisor - INFO - Processing QA for feature: End-to-End Offer and Negotiation Management
+2025-07-16 23:26:36 - supervisor - INFO - Processing QA for feature: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:26:36 - supervisor - INFO - Processing QA for feature: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:27:53 - supervisor - INFO - Processing QA for feature: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:27:54 - supervisor - INFO - Processing QA for feature: Dashboard Administration and User Management
+2025-07-16 23:28:06 - supervisor - INFO - Processing QA for feature: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:28:07 - supervisor - INFO - Processing QA for feature: Personalized AI Property Recommendations
+2025-07-16 23:29:34 - supervisor - INFO - Processing QA for feature: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:29:55 - supervisor - INFO - Processing QA for feature: Market Analytics and Comparative Insights
+2025-07-16 23:29:58 - supervisor - INFO - Processing QA for feature: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:30:08 - supervisor - INFO - Processing QA for feature: Integrated Professional Collaboration Workspace
+2025-07-16 23:31:04 - supervisor - INFO - Processing QA for feature: Professional Service Booking and Management
+2025-07-16 23:31:27 - supervisor - INFO - Processing QA for feature: Role-Based Access Control and Data Privacy
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Unified Property Search and Listing Integration'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'End-to-End Offer and Negotiation Management'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Collaborative Document Management and E-Signature Workflow'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transparent Transaction Timeline and Cost Breakdown'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Collaboration and Messaging Tools'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Dashboard Administration and User Management'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Transaction Performance Monitoring and Error Handling'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Personalized AI Property Recommendations'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'AI-Driven Financing and Affordability Analysis'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Market Analytics and Comparative Insights'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'DIY and Professional-Assisted Journey Selector'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Integrated Professional Collaboration Workspace'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Professional Service Booking and Management'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Role-Based Access Control and Data Privacy'. Skipping invalid test plan.
+2025-07-16 23:32:48 - supervisor - WARNING - Validation completed with 14 test case errors.
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Property Search and Listing Integration for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item End-to-End Offer and Negotiation Management for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative Document Management and E-Signature Workflow for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Transparent Transaction Timeline and Cost Breakdown for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Collaboration and Messaging Tools for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Dashboard Administration and User Management for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Transaction Performance Monitoring and Error Handling for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Personalized AI Property Recommendations for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Financing and Affordability Analysis for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Market Analytics and Comparative Insights for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item DIY and Professional-Assisted Journey Selector for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Professional Collaboration Workspace for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Professional Service Booking and Management for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control and Data Privacy for stage qa_lead_agent (attempt 1/5)
+2025-07-16 23:32:48 - supervisor - INFO - [DEBUG] 14 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-16 23:32:48 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-16 23:32:48 - supervisor - INFO - Processing QA for feature: Unified Property Search and Listing Integration
+2025-07-16 23:32:48 - supervisor - INFO - Processing QA for feature: End-to-End Offer and Negotiation Management
+2025-07-16 23:32:48 - supervisor - INFO - Processing QA for feature: Collaborative Document Management and E-Signature Workflow
+2025-07-16 23:32:48 - supervisor - INFO - Processing QA for feature: Transparent Transaction Timeline and Cost Breakdown
+2025-07-16 23:34:04 - supervisor - INFO - Processing QA for feature: Role-Based Collaboration and Messaging Tools
+2025-07-16 23:34:06 - supervisor - INFO - Processing QA for feature: Dashboard Administration and User Management
+2025-07-16 23:34:07 - supervisor - INFO - Processing QA for feature: Transaction Performance Monitoring and Error Handling
+2025-07-16 23:34:08 - supervisor - INFO - Processing QA for feature: Personalized AI Property Recommendations
+2025-07-16 23:35:17 - supervisor - INFO - Processing QA for feature: AI-Driven Financing and Affordability Analysis
+2025-07-16 23:35:22 - supervisor - INFO - Processing QA for feature: Market Analytics and Comparative Insights
+2025-07-16 23:35:27 - supervisor - INFO - Processing QA for feature: DIY and Professional-Assisted Journey Selector
+2025-07-16 23:35:30 - supervisor - INFO - Processing QA for feature: Integrated Professional Collaboration Workspace
+2025-07-16 23:36:40 - supervisor - INFO - Processing QA for feature: Professional Service Booking and Management
+2025-07-16 23:36:40 - supervisor - INFO - Processing QA for feature: Role-Based Access Control and Data Privacy

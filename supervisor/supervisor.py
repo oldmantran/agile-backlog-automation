@@ -699,8 +699,7 @@ class WorkflowSupervisor:
             self.execution_metadata['end_time'] = datetime.now()
             self.logger.info(f"Workflow execution completed successfully at {self.execution_metadata['end_time']}")
             
-            # Send notifications
-            self._send_completion_notifications()
+            # Note: Notifications will be sent from final_validation stage
             
             # Save final output
             if save_outputs:
@@ -2078,7 +2077,8 @@ class WorkflowSupervisor:
             if update_progress_callback:
                 update_progress_callback(stage_index, "Sending completion notifications", 0.9)
             
-            self._send_completion_notifications_with_report(final_report)
+            # Call the correct notification method that commits to database
+            self._send_completion_notifications()
             
             # Final progress update
             if update_progress_callback:
