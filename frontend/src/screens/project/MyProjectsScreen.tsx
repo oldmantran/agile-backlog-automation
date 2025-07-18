@@ -33,43 +33,49 @@ interface ComponentError {
 const USER_EMAIL = 'kevin.tran@c4workx.com'; // TODO: Replace with dynamic user email if available
 
 // Error Boundary Component for Progress Bar
-const ProgressBarErrorBoundary: React.FC<{ job: JobInfo; children: React.ReactNode }> = ({ job, children }) => {
-  const [hasError, setHasError] = useState(false);
-  const [error, setError] = useState<string>('');
-
-  if (hasError) {
-    console.error(`Progress Bar Error for job ${job.jobId}:`, error);
-    return (
-      <div className="p-4 border border-red-500 bg-red-50 dark:bg-red-950 rounded-md">
-        <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
-          <FiAlertTriangle className="w-4 h-4" />
-          <span className="text-sm font-medium">Progress Bar Error</span>
-        </div>
-        <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-          Job: {job.jobId} | Error: {error}
-        </p>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="mt-2 text-xs"
-          onClick={() => setHasError(false)}
-        >
-          Retry
-        </Button>
-      </div>
-    );
+class ProgressBarErrorBoundary extends React.Component<
+  { job: JobInfo; children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { job: JobInfo; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
   }
 
-  return (
-    <div onError={(e) => {
-      setHasError(true);
-      setError(e.toString());
-      console.error('Progress Bar rendering error:', e);
-    }}>
-      {children}
-    </div>
-  );
-};
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error(`Progress Bar Error for job ${this.props.job.jobId}:`, error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 border border-red-500 bg-red-50 dark:bg-red-950 rounded-md">
+          <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
+            <FiAlertTriangle className="w-4 h-4" />
+            <span className="text-sm font-medium">Progress Bar Error</span>
+          </div>
+          <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+            Job: {this.props.job.jobId} | Error: {this.state.error}
+          </p>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="mt-2 text-xs"
+            onClick={() => this.setState({ hasError: false, error: '' })}
+          >
+            Retry
+          </Button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const MyProjectsScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -138,6 +144,18 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, []);
 
+  // Function to clear all stale jobs
+  const clearStaleJobs = useCallback(() => {
+    try {
+      console.log('🧹 Clearing all stale jobs from localStorage...');
+      localStorage.removeItem('activeJobs');
+      setActiveJobs([]);
+      console.log('✅ All stale jobs cleared');
+    } catch (error) {
+      logError('clearStaleJobs', error, 'Failed to clear stale jobs');
+    }
+  }, []);
+
   const loadProjects = useCallback(async () => {
     try {
       console.log('Loading projects from API...');
@@ -196,6 +214,8 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, []);
 
+  const pollJobUpdatesRef = useRef<() => Promise<void>>();
+  
   const pollJobUpdates = useCallback(async () => {
     try {
       console.log('🔄 Starting pollJobUpdates...');
@@ -336,15 +356,24 @@ const MyProjectsScreen: React.FC = () => {
                 {JSON.stringify(errors, null, 2)}
               </pre>
             </div>
-            <Button 
-              size="sm" 
-              onClick={() => {
-                localStorage.removeItem('debugLogs');
-                setErrors([]);
-              }}
-            >
-              Clear Debug Logs
-            </Button>
+            <div className="flex space-x-2">
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  localStorage.removeItem('debugLogs');
+                  setErrors([]);
+                }}
+              >
+                Clear Debug Logs
+              </Button>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={clearStaleJobs}
+              >
+                Clear Stale Jobs
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -376,9 +405,22 @@ const MyProjectsScreen: React.FC = () => {
         pollJobUpdates();
       }, 1500);
       
+      // Store the polling function in ref to ensure it's stable
+      pollJobUpdatesRef.current = pollJobUpdates;
+      
       // Poll for job updates every 3 seconds (increased to reduce load)
-      const interval = setInterval(pollJobUpdates, 3000);
-      return () => clearInterval(interval);
+      console.log('🔄 Setting up polling interval...');
+      const interval = setInterval(() => {
+        console.log('🔄 Polling interval triggered');
+        if (pollJobUpdatesRef.current) {
+          pollJobUpdatesRef.current();
+        }
+      }, 3000);
+      
+      return () => {
+        console.log('🔄 Clearing polling interval');
+        clearInterval(interval);
+      };
     } catch (error) {
       logError('MyProjectsScreen', error, 'Component mount error');
     }

@@ -81,9 +81,9 @@ const SimpleProjectWizard: React.FC = () => {
           startTime: new Date().toISOString(),
           currentAction: 'Epic Strategist initializing...'
         };
-        const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
-        existingJobs.push(jobInfo);
-        localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+        // Clear any existing jobs and start fresh with the new job
+        localStorage.setItem('activeJobs', JSON.stringify([jobInfo]));
+        console.log('🧹 Cleared old jobs and set new job:', jobInfo);
         navigate('/my-projects');
         console.log('🧭 Navigated to My Projects');
       } else {
