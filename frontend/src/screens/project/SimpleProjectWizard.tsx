@@ -23,7 +23,7 @@ const SimpleProjectWizard: React.FC = () => {
       try {
         // Add timeout to prevent hanging
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Backlog generation timeout')), 30000) // 30 second timeout
+          setTimeout(() => reject(new Error('Backlog generation timeout')), 300000) // 5 minute timeout
         );
         
         const backlogPromise = backlogApi.generateBacklog(projectId);

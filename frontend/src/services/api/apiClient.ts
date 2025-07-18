@@ -167,46 +167,46 @@ const apiClient = createApiClient();
 
 // Generic API methods with proper typing and error handling
 export const apiClientMethods = {
-  async get<T>(url: string, config?: any): Promise<ApiResponse<T>> {
+  async get<T>(url: string, config?: any): Promise<T> {
     try {
       const response = await apiClient.get(url, config);
-      return response.data as ApiResponse<T>;
+      return response.data as T;
     } catch (error) {
       throw error;
     }
   },
 
-  async post<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+  async post<T>(url: string, data?: any, config?: any): Promise<T> {
     try {
       const response = await apiClient.post(url, data, config);
-      return response.data as ApiResponse<T>;
+      return response.data as T;
     } catch (error) {
       throw error;
     }
   },
 
-  async put<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+  async put<T>(url: string, data?: any, config?: any): Promise<T> {
     try {
       const response = await apiClient.put(url, data, config);
-      return response.data as ApiResponse<T>;
+      return response.data as T;
     } catch (error) {
       throw error;
     }
   },
 
-  async delete<T>(url: string, config?: any): Promise<ApiResponse<T>> {
+  async delete<T>(url: string, config?: any): Promise<T> {
     try {
       const response = await apiClient.delete(url, config);
-      return response.data as ApiResponse<T>;
+      return response.data as T;
     } catch (error) {
       throw error;
     }
   },
 
-  async patch<T>(url: string, data?: any, config?: any): Promise<ApiResponse<T>> {
+  async patch<T>(url: string, data?: any, config?: any): Promise<T> {
     try {
       const response = await apiClient.patch(url, data, config);
-      return response.data as ApiResponse<T>;
+      return response.data as T;
     } catch (error) {
       throw error;
     }

@@ -1,30 +1,18 @@
-import axios from 'axios';
+import { apiClientMethods } from './apiClient';
 import { Project, GenerationStatus } from '../../types/project';
 import { ApiResponse } from '../../types/api';
 import { BacklogJob } from '../../types/backlogJob';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 300000, // 5 minute timeout (increased from 60 seconds)
-  // Force direct connection to bypass React proxy
-  withCredentials: false,
-});
 
 export const backlogApi = {
   // Backlog Generation
   generateBacklog: async (projectId: string): Promise<GenerationStatus> => {
     console.log(`📞 Calling generateBacklog API for project: ${projectId}`);
-    console.log(`🌐 API URL: ${API_BASE_URL}/backlog/generate/${projectId}`);
+    console.log(`🌐 API URL: ${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/backlog/generate/${projectId}`);
     try {
       console.log('🚀 Making POST request...');
-      const response = await api.post<ApiResponse<GenerationStatus>>(`/backlog/generate/${projectId}`);
-      console.log('📥 Response received:', response.data);
-      return response.data.data; // Extract the data field from the wrapped response
+      const response = await apiClientMethods.post<GenerationStatus>(`/backlog/generate/${projectId}`);
+      console.log('📥 Response received:', response);
+      return response; // The response is already unwrapped by the interceptor
     } catch (error) {
       console.error('❌ generateBacklog error:', error);
       throw error;
@@ -32,30 +20,30 @@ export const backlogApi = {
   },
 
   getGenerationStatus: async (jobId: string): Promise<GenerationStatus> => {
-    const response = await api.get<ApiResponse<GenerationStatus>>(`/backlog/status/${jobId}`);
-    return response.data.data;
+    const response = await apiClientMethods.get<GenerationStatus>(`/backlog/status/${jobId}`);
+    return response;
   },
   
   // Template Management
   getTemplates: async (domain?: string): Promise<any[]> => {
     const params = domain ? { domain } : {};
-    const response = await api.get<ApiResponse<any[]>>('/backlog/templates', { params });
-    return response.data.data;
+    const response = await apiClientMethods.get<any[]>('/backlog/templates', { params });
+    return response;
   },
   
   // Preview Generation
   previewBacklog: async (projectData: Partial<Project>): Promise<any> => {
-    const response = await api.post<ApiResponse<any>>('/backlog/preview', projectData);
-    return response.data.data;
+    const response = await apiClientMethods.post<any>('/backlog/preview', projectData);
+    return response;
   },
 
   // Backlog Export
   exportBacklog: async (projectId: string, format: 'json' | 'yaml' | 'csv' = 'json'): Promise<Blob> => {
-    const response = await api.get(`/backlog/export/${projectId}`, {
+    const response = await apiClientMethods.get<Blob>(`/backlog/export/${projectId}`, {
       params: { format },
       responseType: 'blob',
     });
-    return response.data;
+    return response;
   },
 
   // Fetch backlog jobs by user
@@ -65,7 +53,7 @@ export const backlogApi = {
     exclude_failed: boolean = true,
     exclude_deleted: boolean = true
   ): Promise<BacklogJob[]> => {
-    const response = await api.get(`/backlog/jobs`, { 
+    const response = await apiClientMethods.get<BacklogJob[]>(`/backlog/jobs`, { 
       params: { 
         user_email, 
         exclude_test_generated, 
@@ -73,14 +61,12 @@ export const backlogApi = {
         exclude_deleted 
       } 
     });
-    return response.data;
+    return response;
   },
 
   // Delete a backlog job (soft delete)
   deleteBacklogJob: async (jobId: number): Promise<{ status: string; message: string }> => {
-    const response = await api.delete(`/backlog/jobs/${jobId}`);
-    return response.data;
+    const response = await apiClientMethods.delete<{ status: string; message: string }>(`/backlog/jobs/${jobId}`);
+    return response;
   },
 };
-
-export default backlogApi;
