@@ -5,13 +5,14 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus, FiWifi, FiWifiOff } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
 import { BacklogJob } from '../../types/backlogJob';
 import { Project } from '../../types/project';
+import { useSSEProgress } from '../../hooks/useSSEProgress';
 
 interface JobInfo {
   jobId: string;
@@ -87,6 +88,13 @@ const MyProjectsScreen: React.FC = () => {
   const [errors, setErrors] = useState<ComponentError[]>([]);
   const [debugMode, setDebugMode] = useState(false);
   const hasMounted = useRef(false);
+  
+  // WebSocket progress hook
+  const { isConnected: sseConnected, lastUpdate: sseUpdate, error: sseError, connect: connectSSE, disconnect: disconnectSSE } = useSSEProgress();
+  
+  // Fallback polling interval
+  const [usePolling, setUsePolling] = useState(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Enhanced error logging
   const logError = (component: string, error: any, details?: any) => {
@@ -214,27 +222,70 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, []);
 
-  const pollJobUpdatesRef = useRef<() => Promise<void>>();
-  
-  const pollJobUpdates = useCallback(async () => {
+  // SSE-based job updates
+  const updateJobsFromSSE = useCallback(() => {
     try {
-      console.log('🔄 Starting pollJobUpdates...');
+      if (!sseUpdate) return;
+      
       const stored = localStorage.getItem('activeJobs');
       if (!stored) {
-        console.log('No active jobs in localStorage');
         return;
       }
 
       const jobs: JobInfo[] = JSON.parse(stored);
-      console.log(`Found ${jobs.length} active jobs to poll`);
+      const updatedJobs: JobInfo[] = [];
+
+      for (const job of jobs) {
+        // Check if this SSE update is for our job
+        if (sseUpdate.jobId === job.jobId) {
+          const updatedJob = {
+            ...job,
+            status: sseUpdate.status || job.status,
+            progress: sseUpdate.progress || job.progress || 0,
+            currentAction: sseUpdate.currentAction || job.currentAction || 'Working...',
+            error: sseUpdate.message || job.error
+          };
+          
+          // Only log progress changes
+          if (sseUpdate.progress !== job.progress) {
+            console.log(`📡 Job ${job.jobId} progress: ${job.progress}% → ${sseUpdate.progress}%`);
+          }
+
+          if (updatedJob.status === 'running' || updatedJob.status === 'queued') {
+            updatedJobs.push(updatedJob);
+          } else if (updatedJob.status === 'completed' || updatedJob.status === 'failed') {
+            const jobAge = Date.now() - new Date(job.startTime).getTime();
+            if (jobAge < 600000) {
+              updatedJobs.push(updatedJob);
+            }
+          }
+        } else {
+          // Keep existing job if SSE update is for different job
+          updatedJobs.push(job);
+        }
+      }
+
+      setActiveJobs(prev => updatedJobs);
+      localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+    } catch (error) {
+      logError('updateJobsFromSSE', error, 'SSE update error');
+    }
+  }, [sseUpdate]);
+
+  // Fallback polling function
+  const pollJobUpdates = useCallback(async () => {
+    try {
+      const stored = localStorage.getItem('activeJobs');
+      if (!stored) {
+        return;
+      }
+
+      const jobs: JobInfo[] = JSON.parse(stored);
       const updatedJobs: JobInfo[] = [];
 
       for (const job of jobs) {
         try {
-          console.log(`Polling status for job: ${job.jobId}`);
           const status = await backlogApi.getGenerationStatus(job.jobId);
-          console.log(`Job ${job.jobId} status:`, status);
-          console.log(`Job ${job.jobId} progress from API:`, status.progress);
           
           const updatedJob = {
             ...job,
@@ -244,12 +295,10 @@ const MyProjectsScreen: React.FC = () => {
             error: status.error
           };
           
-          console.log(`Job ${job.jobId} updated:`, {
-            oldProgress: job.progress,
-            newProgress: status.progress,
-            status: status.status,
-            currentAction: status.currentAction
-          });
+          // Only log progress changes
+          if (status.progress !== job.progress) {
+            console.log(`📊 Job ${job.jobId} progress: ${job.progress}% → ${status.progress}%`);
+          }
 
           if (status.status === 'running' || status.status === 'queued') {
             updatedJobs.push(updatedJob);
@@ -260,15 +309,15 @@ const MyProjectsScreen: React.FC = () => {
             }
           }
           
-          // Small delay between job status checks to reduce backend load
+          // Small delay between job status checks
           await new Promise(resolve => setTimeout(resolve, 200));
         } catch (error) {
           logError('pollJobUpdates', error, { jobId: job.jobId });
           
-          // If it's a 404 error, the job no longer exists in the backend, so remove it
+          // If it's a 404 error, the job no longer exists in the backend
           if (error instanceof Error && error.message.includes('Resource not found')) {
             console.log(`Job ${job.jobId} not found in backend (404), removing from active jobs`);
-            continue; // Skip adding this job to updatedJobs
+            continue;
           }
           
           // For other errors, keep the job if it's recent
@@ -279,11 +328,7 @@ const MyProjectsScreen: React.FC = () => {
         }
       }
 
-      console.log('Updated jobs:', updatedJobs);
-      setActiveJobs(prev => {
-        console.log('Previous active jobs:', prev);
-        return updatedJobs;
-      });
+      setActiveJobs(prev => updatedJobs);
       localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
     } catch (error) {
       logError('pollJobUpdates', error, 'Main polling error');
@@ -400,31 +445,36 @@ const MyProjectsScreen: React.FC = () => {
         loadBacklogJobs();
       }, 1000);
       
-      // Immediate job update on component mount
-      setTimeout(() => {
-        pollJobUpdates();
-      }, 1500);
-      
-      // Store the polling function in ref to ensure it's stable
-      pollJobUpdatesRef.current = pollJobUpdates;
-      
-      // Poll for job updates every 3 seconds (increased to reduce load)
-      console.log('🔄 Setting up polling interval...');
-      const interval = setInterval(() => {
-        console.log('🔄 Polling interval triggered');
-        if (pollJobUpdatesRef.current) {
-          pollJobUpdatesRef.current();
-        }
-      }, 3000);
-      
-      return () => {
-        console.log('🔄 Clearing polling interval');
-        clearInterval(interval);
-      };
     } catch (error) {
       logError('MyProjectsScreen', error, 'Component mount error');
     }
-  }, [loadActiveJobs, loadProjects, loadBacklogJobs, pollJobUpdates]);
+  }, [loadActiveJobs, loadProjects, loadBacklogJobs]);
+
+  // Use reliable polling for job updates
+  useEffect(() => {
+    if (activeJobs.length > 0) {
+      console.log('🔗 Setting up SSE connections for active jobs:', activeJobs.map(job => job.jobId));
+      setUsePolling(false);
+      
+      // Connect to SSE for the first active job (we'll handle multiple jobs later)
+      const firstJob = activeJobs[0];
+      connectSSE(firstJob.jobId);
+      
+      return () => {
+        console.log('🔌 Disconnecting SSE');
+        disconnectSSE();
+      };
+    }
+  }, [activeJobs, connectSSE, disconnectSSE]);
+
+  // Effect to handle SSE updates
+  useEffect(() => {
+    if (sseUpdate) {
+      updateJobsFromSSE();
+    }
+  }, [sseUpdate, updateJobsFromSSE]);
+
+  // Note: We're using SSE instead of polling for real-time updates
 
   return (
     <div className="min-h-screen">
@@ -506,9 +556,25 @@ const MyProjectsScreen: React.FC = () => {
 
             {/* Active Jobs Section */}
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                ACTIVE BACKLOG GENERATION
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-foreground tracking-wider glow-cyan">
+                  ACTIVE BACKLOG GENERATION
+                </h2>
+                <div className="flex items-center space-x-2">
+                  {activeJobs.length > 0 && sseConnected && (
+                    <div className="flex items-center space-x-1 text-green-400 text-sm">
+                      <FiActivity className="w-4 h-4" />
+                      <span>SSE Connected</span>
+                    </div>
+                  )}
+                  {sseError && (
+                    <div className="flex items-center space-x-1 text-red-400 text-sm">
+                      <FiAlertTriangle className="w-4 h-4" />
+                      <span>SSE Error</span>
+                    </div>
+                  )}
+                </div>
+              </div>
               {activeJobs.length > 0 ? (
                 <div className="space-y-6">
                   {activeJobs.map((job) => (

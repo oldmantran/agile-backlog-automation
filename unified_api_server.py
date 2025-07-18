@@ -16,7 +16,6 @@ import subprocess
 import sys
 import time
 import threading
-import queue
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -25,7 +24,8 @@ from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -70,9 +70,8 @@ logger = setup_logger(__name__)
 active_jobs: Dict[str, Dict[str, Any]] = {}
 active_jobs_lock = threading.Lock()  # Thread-safe lock for active_jobs access
 
-# WebSocket connections for log streaming
-log_connections: List[WebSocket] = []
-log_queue = queue.Queue()
+# SSE connections for progress streaming
+sse_connections: Dict[str, List[asyncio.Queue]] = {}
 
 # Global state for background processes
 background_processes: Dict[str, subprocess.Popen] = {}
@@ -81,57 +80,17 @@ sweeper_status = {"isRunning": False, "progress": 0, "currentItem": "", "process
 # Thread pool for CPU-intensive AI tasks
 ai_thread_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="AI_Worker")
 
-# Custom log handler for streaming logs to WebSocket clients
-class WebSocketLogHandler(logging.Handler):
-    def emit(self, record):
-        try:
-            log_message = {
-                "timestamp": datetime.now().isoformat(),
-                "level": record.levelname,
-                "message": self.format(record),
-                "module": record.module if hasattr(record, 'module') else record.name
-            }
-            log_queue.put(log_message)
-        except Exception:
-            pass
+# Disable FastAPI access logs completely
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_access_logger.setLevel(logging.ERROR)
 
-# Set up WebSocket log handler
-websocket_handler = WebSocketLogHandler()
-websocket_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(message)s')
-websocket_handler.setFormatter(formatter)
+logger.info("🔧 SSE progress streaming ready")
 
-# Add handler to root logger to capture all logs
-root_logger = logging.getLogger()
-root_logger.addHandler(websocket_handler)
-
-# Also add to uvicorn logger
-uvicorn_logger = logging.getLogger("uvicorn")
-uvicorn_logger.addHandler(websocket_handler)
-
-# Test WebSocket logging
-logger.info("🔧 WebSocket log handler initialized and attached to loggers")
-
-# Log distribution task
-async def distribute_logs():
-    """Distribute log messages to all connected WebSocket clients"""
+# SSE progress distribution task
+async def distribute_sse_progress():
+    """Distribute progress updates to all connected SSE clients"""
     while True:
         try:
-            if not log_queue.empty():
-                log_message = log_queue.get_nowait()
-                disconnected_clients = []
-                
-                for websocket in log_connections:
-                    try:
-                        await websocket.send_json(log_message)
-                    except Exception:
-                        disconnected_clients.append(websocket)
-                
-                # Remove disconnected clients
-                for client in disconnected_clients:
-                    if client in log_connections:
-                        log_connections.remove(client)
-            
             await asyncio.sleep(0.1)  # Small delay to prevent excessive CPU usage
         except Exception:
             pass
@@ -145,8 +104,8 @@ async def lifespan(app: FastAPI):
     # Ensure output directory exists
     Path("output").mkdir(exist_ok=True)
     
-    # Start log distribution task
-    asyncio.create_task(distribute_logs())
+    # Start SSE progress distribution task
+    asyncio.create_task(distribute_sse_progress())
     
     logger.info("Unified API Server started successfully")
     
@@ -556,8 +515,12 @@ async def get_generation_status(job_id: str):
             "error": job_status.get("error")
         }
         
-        logger.info(f"📊 Returning status for job {job_id}: {generation_status}")
-        logger.info(f"📊 Current progress value in response: {generation_status.get('progress', 'NOT_FOUND')}")
+        # Only log progress changes, not every status request
+        current_progress = generation_status.get('progress', 0)
+        if job_id in active_jobs and active_jobs[job_id].get('progress') != current_progress:
+            logger.info(f"📊 Progress update for job {job_id}: {active_jobs[job_id].get('progress', 0)}% → {current_progress}%")
+        elif job_id not in active_jobs:
+            logger.info(f"📊 Initial status for job {job_id}: {current_progress}%")
         
         return {
             "success": True,
@@ -1378,14 +1341,19 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                     active_jobs[job_id]["endTime"] = datetime.now()
                 return {"error": error_msg}
         
-        # Progress callback
+        # Progress callback with SSE updates
         def progress_callback(progress: int, action: str):
             if job_id in active_jobs:
                 active_jobs[job_id]["progress"] = progress
                 active_jobs[job_id]["currentAction"] = action
                 active_jobs[job_id]["currentAgent"] = action.split()[0] if action else "Supervisor"  # Extract agent name from action
                 active_jobs[job_id]["status"] = "running"  # Ensure status is running during execution
-                logger.info(f"📊 Progress update for job {job_id}: {progress}% - {action}")
+                
+                # Log progress changes only
+                current_progress = active_jobs[job_id].get('progress', 0)
+                if current_progress != progress:
+                    logger.info(f"📊 Progress update for job {job_id}: {current_progress}% → {progress}% - {action}")
+                    logger.info(f"📊 Active jobs after update: {list(active_jobs.keys())}")
 
         # Prepare context
         context = {
@@ -1489,34 +1457,81 @@ Success Criteria:
         logger.error(error_msg)
         return {"error": error_msg}
 
-# WebSocket and Application Management Endpoints
-@app.websocket("/ws/logs")
-async def websocket_logs(websocket: WebSocket):
-    """WebSocket endpoint for streaming server logs to the frontend"""
-    await websocket.accept()
-    log_connections.append(websocket)
+# SSE Progress Streaming Endpoints
+
+@app.get("/api/progress/stream/{job_id}")
+async def stream_progress(job_id: str, request: Request):
+    """Stream progress updates for a specific job using Server-Sent Events."""
     
-    try:
-        await websocket.send_json({
-            "timestamp": datetime.now().isoformat(),
-            "level": "INFO",
-            "message": "🌐 Connected to unified server log stream",
-            "module": "websocket"
-        })
-        
-        while True:
-            try:
-                await asyncio.wait_for(websocket.receive_text(), timeout=1.0)
-            except asyncio.TimeoutError:
-                pass
-            except WebSocketDisconnect:
-                break
+    async def event_generator():
+        try:
+            # Send initial connection message
+            yield f"data: {json.dumps({'type': 'connected', 'jobId': job_id, 'message': 'SSE connection established'})}\n\n"
+            
+            last_progress = -1
+            
+            while True:
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    logger.info(f"SSE client disconnected for job {job_id}")
+                    break
                 
-    except WebSocketDisconnect:
-        pass
-    finally:
-        if websocket in log_connections:
-            log_connections.remove(websocket)
+                # Get current job status
+                with active_jobs_lock:
+                    if job_id not in active_jobs:
+                        yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': 'Job not found'})}\n\n"
+                        break
+                    
+                    job_data = active_jobs[job_id]
+                    current_progress = job_data.get('progress', 0)
+                    current_status = job_data.get('status', 'unknown')
+                    current_action = job_data.get('currentAction', '')
+                    
+                    # Only send update if progress changed
+                    if current_progress != last_progress:
+                        progress_data = {
+                            'type': 'progress',
+                            'jobId': job_id,
+                            'progress': current_progress,
+                            'status': current_status,
+                            'currentAction': current_action,
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        yield f"data: {json.dumps(progress_data)}\n\n"
+                        last_progress = current_progress
+                        
+                        # If job is completed or failed, send final message and close
+                        if current_status in ['completed', 'failed']:
+                            final_data = {
+                                'type': 'final',
+                                'jobId': job_id,
+                                'status': current_status,
+                                'progress': current_progress,
+                                'message': f'Job {current_status}',
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            yield f"data: {json.dumps(final_data)}\n\n"
+                            break
+                
+                # Wait before next check
+                await asyncio.sleep(1)
+                
+        except Exception as e:
+            logger.error(f"SSE error for job {job_id}: {str(e)}")
+            yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
+
 
 @app.post("/api/test/logs")
 async def test_log_generation():
