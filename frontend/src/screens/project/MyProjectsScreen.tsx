@@ -8,7 +8,6 @@ import { Alert, AlertDescription } from '../../components/ui/alert';
 import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
-import ServerLogs from '../../components/logs/ServerLogs';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
 import { BacklogJob } from '../../types/backlogJob';
@@ -66,45 +65,6 @@ const ProgressBarErrorBoundary: React.FC<{ job: JobInfo; children: React.ReactNo
       setHasError(true);
       setError(e.toString());
       console.error('Progress Bar rendering error:', e);
-    }}>
-      {children}
-    </div>
-  );
-};
-
-// Error Boundary Component for Server Logs
-const ServerLogsErrorBoundary: React.FC<{ jobId: string; children: React.ReactNode }> = ({ jobId, children }) => {
-  const [hasError, setHasError] = useState(false);
-  const [error, setError] = useState<string>('');
-
-  if (hasError) {
-    console.error(`Server Logs Error for job ${jobId}:`, error);
-    return (
-      <div className="p-4 border border-red-500 bg-red-50 dark:bg-red-950 rounded-md">
-        <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
-          <FiAlertTriangle className="w-4 h-4" />
-          <span className="text-sm font-medium">Server Logs Error</span>
-        </div>
-        <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-          Job: {jobId} | Error: {error}
-        </p>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          className="mt-2 text-xs"
-          onClick={() => setHasError(false)}
-        >
-          Retry
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div onError={(e) => {
-      setHasError(true);
-      setError(e.toString());
-      console.error('Server Logs rendering error:', e);
     }}>
       {children}
     </div>
@@ -448,16 +408,6 @@ const MyProjectsScreen: React.FC = () => {
                 </AlertDescription>
               </Alert>
             )}
-
-            {/* Server Logs Section - Always Show */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                SERVER LOGS
-              </h2>
-              <ServerLogsErrorBoundary jobId="general">
-                <ServerLogs />
-              </ServerLogsErrorBoundary>
-            </div>
 
             {/* Active Jobs Section */}
             <div className="mb-8">
