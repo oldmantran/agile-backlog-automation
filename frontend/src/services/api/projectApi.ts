@@ -19,7 +19,7 @@ export const projectApi = {
   getProject: async (projectId: string): Promise<Project> => {
     try {
       const response = await apiClientMethods.get<Project>(`/projects/${projectId}`);
-      return response.data;
+      return response; // Response is already unwrapped
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 404) {
@@ -36,7 +36,7 @@ export const projectApi = {
   updateProject: async (projectId: string, updates: Partial<Project>): Promise<Project> => {
     try {
       const response = await apiClientMethods.put<Project>(`/projects/${projectId}`, updates);
-      return response.data;
+      return response; // Response is already unwrapped
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 404) {
@@ -53,7 +53,7 @@ export const projectApi = {
   deleteProject: async (projectId: string): Promise<boolean> => {
     try {
       const response = await apiClientMethods.delete<{ success: boolean }>(`/projects/${projectId}`);
-      return response.data.success;
+      return response.success; // Response is already unwrapped
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 404) {
@@ -73,11 +73,11 @@ export const projectApi = {
         params: { page, limit },
       });
       
-      // The response is already unwrapped by the interceptor, so response.data contains the actual data
-      if (response && response.data && response.data.projects) {
+      // The response is already unwrapped by the interceptor
+      if (response && response.projects) {
         return {
-          projects: response.data.projects,
-          total: response.data.pagination?.total || response.data.projects.length
+          projects: response.projects,
+          total: response.pagination?.total || response.projects.length
         };
       } else {
         console.warn('Unexpected API response structure:', response);

@@ -1,6 +1,5 @@
 import { apiClientMethods } from './apiClient';
 import { Project, GenerationStatus } from '../../types/project';
-import { ApiResponse } from '../../types/api';
 import { BacklogJob } from '../../types/backlogJob';
 
 export const backlogApi = {
