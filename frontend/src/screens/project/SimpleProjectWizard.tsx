@@ -19,9 +19,15 @@ const SimpleProjectWizard: React.FC = () => {
     try {
       const { projectId } = await projectApi.createProject(projectData);
       console.log('✅ Project creation response:', { projectId });
-      let backlogResponse;
+      let backlogResponse: any;
       try {
-        backlogResponse = await backlogApi.generateBacklog(projectId);
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Backlog generation timeout')), 30000) // 30 second timeout
+        );
+        
+        const backlogPromise = backlogApi.generateBacklog(projectId);
+        backlogResponse = await Promise.race([backlogPromise, timeoutPromise]);
       } catch (backlogError: unknown) {
         console.warn('⚠️ Backlog error, navigating anyway:', backlogError);
         navigate('/my-projects');

@@ -22,8 +22,9 @@ export const backlogApi = {
     console.log(`🌐 API URL: ${API_BASE_URL}/backlog/generate/${projectId}`);
     try {
       console.log('🚀 Making POST request...');
-      const response = await api.post<GenerationStatus>(`/backlog/generate/${projectId}`);
-      return response.data;
+      const response = await api.post<ApiResponse<GenerationStatus>>(`/backlog/generate/${projectId}`);
+      console.log('📥 Response received:', response.data);
+      return response.data.data; // Extract the data field from the wrapped response
     } catch (error) {
       console.error('❌ generateBacklog error:', error);
       throw error;
