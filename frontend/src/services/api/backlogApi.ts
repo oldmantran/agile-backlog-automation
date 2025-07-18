@@ -20,16 +20,9 @@ export const backlogApi = {
   generateBacklog: async (projectId: string): Promise<GenerationStatus> => {
     console.log(`📞 Calling generateBacklog API for project: ${projectId}`);
     console.log(`🌐 API URL: ${API_BASE_URL}/backlog/generate/${projectId}`);
-    
     try {
       console.log('🚀 Making POST request...');
-      const startTime = new Date();
-      
       const response = await api.post<GenerationStatus>(`/backlog/generate/${projectId}`);
-      
-      const endTime = new Date();
-      console.log(`✅ Request completed in ${(endTime.getTime() - startTime.getTime()) / 1000} seconds`);
-      
       return response.data;
     } catch (error) {
       console.error('❌ generateBacklog error:', error);

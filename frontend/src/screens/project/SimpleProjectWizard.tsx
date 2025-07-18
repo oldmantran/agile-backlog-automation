@@ -16,35 +16,19 @@ const SimpleProjectWizard: React.FC = () => {
 
   const handleSubmit = async (projectData: Project) => {
     console.log('🚀 Starting project submission with data:', projectData);
-    
     try {
-      // Create project
       const { projectId } = await projectApi.createProject(projectData);
-      console.log('✅ Project creation response:', { projectId, status: 'created' });
-      
-      setTimeout(() => {
-        if (!projectId) {
-          console.warn('⚠️ No projectId received, falling back to navigation');
-          navigate('/my-projects');
-        }
-      }, 5000); // 5s fallback if something goes wrong
-      
-      // Generate backlog
+      console.log('✅ Project creation response:', { projectId });
       let backlogResponse;
       try {
         backlogResponse = await backlogApi.generateBacklog(projectId);
-      } catch (backlogError) {
-        console.warn('⚠️ Backlog API error, but navigating anyway:', backlogError);
+      } catch (backlogError: unknown) {
+        console.warn('⚠️ Backlog error, navigating anyway:', backlogError);
         navigate('/my-projects');
         return;
       }
-      
-      console.log('✅ Backlog generation response:', backlogResponse);
-      
       if (backlogResponse.jobId) {
         console.log('🎯 Found jobId:', backlogResponse.jobId);
-        
-        // Store job info in localStorage
         const jobInfo = {
           jobId: backlogResponse.jobId,
           projectId: projectId,
@@ -54,22 +38,18 @@ const SimpleProjectWizard: React.FC = () => {
           startTime: new Date().toISOString(),
           currentAction: 'Epic Strategist initializing...'
         };
-        
         const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
         existingJobs.push(jobInfo);
         localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
-        
-        // Navigate to My Projects
         navigate('/my-projects');
         console.log('🧭 Navigated to My Projects');
       } else {
         console.error('❌ No jobId in response');
         throw new Error('No job ID returned from backlog generation');
       }
-      
-    } catch (error) {
-      console.error('Project creation error:', error);
-      alert(`Failed to create project: ${error instanceof Error ? error.message : 'An error occurred'}`);
+    } catch (error: unknown) {
+      console.error('Error:', error);
+      alert('Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
