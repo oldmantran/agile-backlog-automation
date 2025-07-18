@@ -1639,3 +1639,352 @@ Domain: dynamic
 Vision Statement:
 Vision
 To transform the home buying e...
+2025-07-18 15:00:19 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_150019_proj_20250718_150019
+2025-07-18 15:00:19 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_150019_proj_20250718_150019: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:00:20 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:00:20 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:00:20.949237
+2025-07-18 15:00:20 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:00:20 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:00:20 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:00:20 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:08:23 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_150823_proj_20250718_150823
+2025-07-18 15:08:23 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_150823_proj_20250718_150823: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:08:24 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:08:24 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:08:24.868907
+2025-07-18 15:08:24 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:08:24 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:08:24 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:08:24 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:16:29 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_151629_proj_20250718_151629
+2025-07-18 15:16:29 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_151629_proj_20250718_151629: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:16:30 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:16:30 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:16:30.267065
+2025-07-18 15:16:30 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:16:30 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:16:30 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:16:30 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:22:01 - supervisor - ERROR - Epic generation failed: Agent epic_strategist failed: Request timeout after 5 attempts
+2025-07-18 15:22:01 - supervisor - ERROR - epic_strategist failed with exception: Agent epic_strategist failed: Request timeout after 5 attempts
+2025-07-18 15:22:03 - supervisor - INFO - Error notifications sent
+2025-07-18 15:22:03 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 15:22:03 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 15:22:03 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-18 15:22:03 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-18 15:22:03 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-18 15:22:03 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-18 15:22:03 - supervisor - INFO - Executing stage: developer_agent
+2025-07-18 15:22:03 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-18 15:22:03 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-18 15:22:03 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-18 15:22:03 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-18 15:22:03 - supervisor - INFO - Validation passed: All user stories have test cases and all features have test plans.
+2025-07-18 15:22:03 - supervisor - INFO - Executing stage: azure_integration
+2025-07-18 15:22:03 - supervisor - INFO - Starting Azure DevOps integration
+2025-07-18 15:22:03 - supervisor - INFO - Creating 0 work items in Azure DevOps
+2025-07-18 15:22:03 - supervisor - INFO - Executing stage: final_validation
+2025-07-18 15:22:03 - supervisor - INFO - Starting final validation and cleanup
+2025-07-18 15:22:03 - supervisor - INFO - Cleaning up temporary data
+2025-07-18 15:22:03 - supervisor - INFO - Generated final report: {'workflow_id': 'workflow_20250718_151630', 'completion_time': '2025-07-18T15:22:03.212618', 'total_epics': 0, 'total_features': 0, 'total_user_stories': 0, 'total_tasks': 0, 'total_test_cases': 0, 'azure_integration_enabled': True}
+2025-07-18 15:22:03 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 0, 'features_generated': 0, 'user_stories_generated': 0, 'tasks_generated': 0, 'test_cases_generated': 0, 'execution_time_seconds': None, 'stages_completed': 0, 'errors_encountered': 1}
+2025-07-18 15:22:04 - supervisor - INFO - Completion notifications sent
+2025-07-18 15:22:04 - supervisor - INFO -    Organization: https://dev.azure.com/c4workx
+2025-07-18 15:22:04 - supervisor - INFO -    Project: Backlog Automation
+2025-07-18 15:22:04 - supervisor - INFO -    Area Path: Real Estate
+2025-07-18 15:22:04 - supervisor - INFO -    Iteration Path: Sprint 2025-07
+2025-07-18 15:22:04 - supervisor - INFO - Running pre-integration validation...
+2025-07-18 15:22:04 - supervisor - ERROR - Pre-integration validation failed with 1 critical issues
+2025-07-18 15:22:04 - supervisor - ERROR - Azure DevOps integration failed: Pre-integration validation failed with 1 critical issues. Check validation report for details.
+2025-07-18 15:22:04 - supervisor - ERROR - Error in final processing: Pre-integration validation failed with 1 critical issues. Check validation report for details.
+2025-07-18 15:22:04 - supervisor - INFO - Workflow execution finalized at 2025-07-18 15:22:04.713608
+2025-07-18 15:22:04 - supervisor - INFO - Final workflow execution time: 334.45 seconds
+2025-07-18 15:22:04 - supervisor - INFO - Parallel processing was enabled with 4 workers
+2025-07-18 15:22:04 - supervisor - INFO - Parallel stages: ['feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_lead_agent']
+2025-07-18 15:28:55 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_152855_proj_20250718_152855
+2025-07-18 15:28:55 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_152855_proj_20250718_152855: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:28:56 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:28:56 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:28:56.341603
+2025-07-18 15:28:56 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:28:56 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:28:56 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:28:56 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:33:25 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_153325_proj_20250718_153325
+2025-07-18 15:33:25 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_153325_proj_20250718_153325: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:33:26 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:33:26 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:33:26.657996
+2025-07-18 15:33:26 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:33:26 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:33:26 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:33:26 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:33:52 - supervisor - INFO - Generated 9 epics
+2025-07-18 15:33:52 - supervisor - INFO - Validation completed: 9 epics checked, 0 errors.
+2025-07-18 15:33:52 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 15:33:52 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 15:33:52 - supervisor - INFO - Decomposing epic: Unified Dashboard for Project and Backlog Management
+2025-07-18 15:33:52 - supervisor - INFO - Decomposing epic: Streamlined Project Creation Wizard
+2025-07-18 15:33:52 - supervisor - INFO - Decomposing epic: Real-Time Server Log and Progress Bar Integration
+2025-07-18 15:33:52 - supervisor - INFO - Decomposing epic: Automated ADO Backlog and Metadata Synchronization
+2025-07-18 15:34:11 - supervisor - INFO - Decomposing epic: Automated Success and Failure Email Notifications
+2025-07-18 15:34:11 - supervisor - INFO - Decomposing epic: Historical Project and Backlog Analytics
+2025-07-18 15:34:12 - supervisor - INFO - Decomposing epic: Mobile-Optimized Project Management Experience
+2025-07-18 15:34:13 - supervisor - INFO - Decomposing epic: Role-Based Access and Collaboration Tools
+2025-07-18 15:34:30 - supervisor - INFO - Decomposing epic: In-App Educational Resources and Guided Onboarding
+2025-07-18 15:34:50 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-18 15:34:50 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-18 15:34:50 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-18 15:34:50 - supervisor - INFO - Decomposing feature to user stories: Centralized Project & Backlog Overview Panel
+2025-07-18 15:34:50 - supervisor - INFO - Decomposing feature to user stories: Integrated Server Log Viewer with Filtering
+2025-07-18 15:34:50 - supervisor - INFO - Decomposing feature to user stories: Real-Time Project Status & Progress Tracking
+2025-07-18 15:34:50 - supervisor - INFO - Decomposing feature to user stories: Advanced Search and Filtering for Projects & Backlogs
+2025-07-18 15:40:16 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_154016_proj_20250718_154016
+2025-07-18 15:40:16 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_154016_proj_20250718_154016: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:40:17 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:40:17 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:40:17.654201
+2025-07-18 15:40:17 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:40:17 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:40:17 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:40:17 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:44:09 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_154409_proj_20250718_154409
+2025-07-18 15:44:09 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_154409_proj_20250718_154409: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:44:10 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:44:10 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:44:10.484899
+2025-07-18 15:44:10 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:44:10 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:44:10 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:44:10 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:44:54 - supervisor - INFO - Generated 10 epics
+2025-07-18 15:44:54 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-18 15:44:54 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 15:44:54 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 15:44:54 - supervisor - INFO - Decomposing epic: Centralized Transaction Management Dashboard
+2025-07-18 15:44:54 - supervisor - INFO - Decomposing epic: AI-Powered Property and Financing Recommendations
+2025-07-18 15:44:54 - supervisor - INFO - Decomposing epic: Transparent Real-time Cost Breakdown
+2025-07-18 15:44:54 - supervisor - INFO - Decomposing epic: Professional & Service Provider Integration Hub
+2025-07-18 15:45:14 - supervisor - INFO - Decomposing epic: Mobile Transaction & Service Booking App
+2025-07-18 15:45:16 - supervisor - INFO - Decomposing epic: Guided Educational Resource Center
+2025-07-18 15:45:16 - supervisor - INFO - Decomposing epic: Automated Compliance and Document Verification
+2025-07-18 15:45:17 - supervisor - INFO - Decomposing epic: End-to-End Offer and Negotiation Automation
+2025-07-18 15:45:30 - supervisor - INFO - Decomposing epic: Integrated Communication & Collaboration Suite
+2025-07-18 15:45:37 - supervisor - INFO - Decomposing epic: Advanced Analytics and Reporting Suite
+2025-07-18 15:45:52 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-18 15:45:52 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-18 15:45:52 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-18 15:45:52 - supervisor - INFO - Decomposing feature to user stories: Unified Transaction Overview Panel
+2025-07-18 15:45:52 - supervisor - INFO - Decomposing feature to user stories: End-to-End Transaction Workflow Orchestration
+2025-07-18 15:45:52 - supervisor - INFO - Decomposing feature to user stories: Integrated Document and Communication Hub
+2025-07-18 15:45:52 - supervisor - INFO - Decomposing feature to user stories: Task and Timeline Management Module
+2025-07-18 15:46:14 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access and Permissions Control
+2025-07-18 15:46:14 - supervisor - INFO - Decomposing feature to user stories: Smart Activity Feed and Notifications Engine
+2025-07-18 15:46:15 - supervisor - INFO - Decomposing feature to user stories: Personalized Property Recommendation Engine
+2025-07-18 15:46:16 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Financing Options and Pre-Approval Recommendations
+2025-07-18 15:46:35 - supervisor - INFO - Decomposing feature to user stories: Market Trends and Price Forecasting Insights
+2025-07-18 15:46:43 - supervisor - INFO - Decomposing feature to user stories: User Profile and Preferences Management for Recommendation Personalization
+2025-07-18 15:46:44 - supervisor - INFO - Decomposing feature to user stories: Recommendation Feedback and Continuous Improvement Loop
+2025-07-18 15:46:45 - supervisor - INFO - Decomposing feature to user stories: Cross-Platform Notification and Alert System for Recommendations
+2025-07-18 15:47:01 - supervisor - INFO - Decomposing feature to user stories: Real-time Transaction Cost Calculation Engine
+2025-07-18 15:47:11 - supervisor - INFO - Decomposing feature to user stories: Itemized Cost Breakdown UI Component
+2025-07-18 15:47:15 - supervisor - INFO - Decomposing feature to user stories: Cost Breakdown Notification & Alerts
+2025-07-18 15:47:17 - supervisor - INFO - Decomposing feature to user stories: Cost Breakdown Data Export and Sharing
+2025-07-18 15:49:01 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_154901_proj_20250718_154901
+2025-07-18 15:49:01 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_154901_proj_20250718_154901: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:49:02 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:49:02 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:49:02.681369
+2025-07-18 15:49:02 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:49:02 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:49:02 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:49:02 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 15:49:24 - supervisor - INFO - Generated 10 epics
+2025-07-18 15:49:24 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-18 15:49:24 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 15:49:24 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 15:49:24 - supervisor - INFO - Decomposing epic: Centralized End-to-End Transaction Dashboard
+2025-07-18 15:49:24 - supervisor - INFO - Decomposing epic: AI-Powered Property & Financing Recommendations
+2025-07-18 15:49:24 - supervisor - INFO - Decomposing epic: Real-Time Transparent Cost Breakdown
+2025-07-18 15:49:24 - supervisor - INFO - Decomposing epic: Professional Partner Onboarding & Collaboration Tools
+2025-07-18 15:49:39 - supervisor - INFO - Decomposing epic: Mobile App for Transaction & Service Management
+2025-07-18 15:49:40 - supervisor - INFO - Decomposing epic: User Education & Empowerment Hub
+2025-07-18 15:49:42 - supervisor - INFO - Decomposing epic: Service Booking & Management for Home Inspections
+2025-07-18 15:49:42 - supervisor - INFO - Decomposing epic: Automated Compliance & Document Generation
+2025-07-18 15:49:54 - supervisor - INFO - Decomposing epic: Multi-Transaction & Portfolio Management Tools
+2025-07-18 15:49:55 - supervisor - INFO - Decomposing epic: Dynamic User Role & Permission Management
+2025-07-18 15:50:10 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-18 15:50:10 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-18 15:50:11 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-18 15:50:11 - supervisor - INFO - Decomposing feature to user stories: Unified Transaction Timeline View
+2025-07-18 15:50:11 - supervisor - INFO - Decomposing feature to user stories: In-App Offer & Negotiation Management
+2025-07-18 15:50:11 - supervisor - INFO - Decomposing feature to user stories: Integrated Contract Review & E-Signature
+2025-07-18 15:50:11 - supervisor - INFO - Decomposing feature to user stories: Financing Status Tracking & Document Upload
+2025-07-18 15:50:26 - supervisor - INFO - Decomposing feature to user stories: Automated Closing Checklist & Notifications
+2025-07-18 15:50:34 - supervisor - INFO - Decomposing feature to user stories: Role-Based Dashboard Customization & Permissions
+2025-07-18 15:50:35 - supervisor - INFO - Decomposing feature to user stories: Comprehensive Transaction Search & Filtering
+2025-07-18 15:50:35 - supervisor - INFO - Decomposing feature to user stories: Audit Trail & Activity Log for Transaction Actions
+2025-07-18 15:56:30 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_155630_proj_20250718_155630
+2025-07-18 15:56:30 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_155630_proj_20250718_155630: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 15:56:31 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 15:56:31 - supervisor - INFO - Starting workflow execution at 2025-07-18 15:56:31.784537
+2025-07-18 15:56:31 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 15:56:31 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 15:56:31 - supervisor - INFO - Generating epics from product vision
+2025-07-18 15:56:31 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 16:00:56 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_160056_proj_20250718_160056
+2025-07-18 16:00:56 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_160056_proj_20250718_160056: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 16:00:57 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 16:00:57 - supervisor - INFO - Starting workflow execution at 2025-07-18 16:00:57.912092
+2025-07-18 16:00:58 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 16:00:58 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 16:00:58 - supervisor - INFO - Generating epics from product vision
+2025-07-18 16:00:58 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 16:01:23 - supervisor - INFO - Generated 10 epics
+2025-07-18 16:01:23 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-18 16:01:23 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 16:01:23 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 16:01:23 - supervisor - INFO - Decomposing epic: Centralized End-to-End Transaction Dashboard
+2025-07-18 16:01:23 - supervisor - INFO - Decomposing epic: AI-Powered Personalized Property and Financing Recommendations
+2025-07-18 16:01:23 - supervisor - INFO - Decomposing epic: Transparent Real-Time Cost Breakdown Engine
+2025-07-18 16:01:23 - supervisor - INFO - Decomposing epic: Professional Collaboration and Integration Toolkit
+2025-07-18 16:01:57 - supervisor - INFO - Decomposing epic: Responsive Mobile Application for Transaction Management
+2025-07-18 16:01:59 - supervisor - INFO - Decomposing epic: Self-Service Educational Resources and Tools
+2025-07-18 16:02:00 - supervisor - INFO - Decomposing epic: Automated Compliance and Error Checking Workflow
+2025-07-18 16:02:02 - supervisor - INFO - Decomposing epic: Marketplace for Service Provider Booking and Management
+2025-07-18 16:02:18 - supervisor - INFO - Decomposing epic: User Profile and Data Privacy Management
+2025-07-18 16:02:24 - supervisor - INFO - Decomposing epic: Integrated Communication Suite (Chat, Email, Notifications)
+2025-07-18 16:04:37 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_160437_proj_20250718_160437
+2025-07-18 16:04:37 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_160437_proj_20250718_160437: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 16:04:39 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 16:04:39 - supervisor - INFO - Starting workflow execution at 2025-07-18 16:04:39.289876
+2025-07-18 16:04:39 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 16:04:39 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 16:04:39 - supervisor - INFO - Generating epics from product vision
+2025-07-18 16:04:39 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 16:04:56 - supervisor - INFO - Generated 10 epics
+2025-07-18 16:04:56 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-18 16:04:56 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 16:04:56 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 16:04:56 - supervisor - INFO - Decomposing epic: Centralized End-to-End Transaction Dashboard
+2025-07-18 16:04:56 - supervisor - INFO - Decomposing epic: AI-Powered Property & Financing Recommendations
+2025-07-18 16:04:56 - supervisor - INFO - Decomposing epic: Transparent Real-Time Cost Breakdown Module
+2025-07-18 16:04:56 - supervisor - INFO - Decomposing epic: Professional Collaboration & Booking Toolkit
+2025-07-18 16:05:14 - supervisor - INFO - Decomposing epic: Fully Responsive Mobile Application
+2025-07-18 16:05:16 - supervisor - INFO - Decomposing epic: Interactive Educational Resource Center
+2025-07-18 16:05:19 - supervisor - INFO - Decomposing epic: Automated Compliance & Error-Checking Engine
+2025-07-18 16:05:22 - supervisor - INFO - Decomposing epic: User & Professional Onboarding Automation
+2025-07-18 16:06:25 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_160625_proj_20250718_160625
+2025-07-18 16:06:25 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_160625_proj_20250718_160625: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 16:06:26 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 16:06:26 - supervisor - INFO - Starting workflow execution at 2025-07-18 16:06:26.680887
+2025-07-18 16:06:27 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 16:06:27 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 16:06:27 - supervisor - INFO - Generating epics from product vision
+2025-07-18 16:06:27 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 16:06:55 - supervisor - INFO - Generated 11 epics
+2025-07-18 16:06:55 - supervisor - INFO - Validation completed: 11 epics checked, 0 errors.
+2025-07-18 16:06:55 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 16:06:56 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 16:06:56 - supervisor - INFO - Decomposing epic: Centralized End-to-End Transaction Dashboard
+2025-07-18 16:06:56 - supervisor - INFO - Decomposing epic: AI-Powered Personalized Property & Financing Insights
+2025-07-18 16:06:56 - supervisor - INFO - Decomposing epic: Real-Time Transparent Cost Breakdown Module
+2025-07-18 16:06:56 - supervisor - INFO - Decomposing epic: Professional Collaboration & Integration Tools
+2025-07-18 16:07:13 - supervisor - INFO - Decomposing epic: Mobile-First Responsive Platform Experience
+2025-07-18 16:07:13 - supervisor - INFO - Decomposing epic: Onboarding & Self-Service Educational Resources
+2025-07-18 16:07:17 - supervisor - INFO - Decomposing epic: Automated Compliance & Error Prevention Engine
+2025-07-18 16:07:19 - supervisor - INFO - Decomposing epic: Multi-User/Portfolio Management for Power Users
+2025-07-18 16:08:36 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_160836_proj_20250718_160836
+2025-07-18 16:08:36 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_160836_proj_20250718_160836: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 16:08:39 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 16:08:39 - supervisor - INFO - Starting workflow execution at 2025-07-18 16:08:39.144009
+2025-07-18 16:08:39 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 16:08:39 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 16:08:40 - supervisor - INFO - Generating epics from product vision
+2025-07-18 16:08:40 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 16:09:10 - supervisor - INFO - Generated 10 epics
+2025-07-18 16:09:10 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-18 16:09:10 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 16:11:11 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250718_161111_proj_20250718_161111
+2025-07-18 16:11:11 - supervisor - INFO - Azure DevOps config for job_id=job_20250718_161111_proj_20250718_161111: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-18 16:11:12 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-18 16:11:12 - supervisor - INFO - Starting workflow execution at 2025-07-18 16:11:12.241660
+2025-07-18 16:11:12 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-18 16:11:12 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-18 16:11:13 - supervisor - INFO - Generating epics from product vision
+2025-07-18 16:11:13 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-18 16:11:36 - supervisor - INFO - Generated 10 epics
+2025-07-18 16:11:36 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-18 16:11:36 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-18 16:11:36 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-18 16:11:36 - supervisor - INFO - Decomposing epic: Centralized Transaction Management Dashboard
+2025-07-18 16:11:36 - supervisor - INFO - Decomposing epic: AI-Powered Property & Finance Recommendations
+2025-07-18 16:11:36 - supervisor - INFO - Decomposing epic: Real-Time Transparent Cost Breakdown
+2025-07-18 16:11:36 - supervisor - INFO - Decomposing epic: Professional Collaboration & Integration Toolkit
+2025-07-18 16:11:54 - supervisor - INFO - Decomposing epic: Mobile-Optimized Transaction and Booking Experience
+2025-07-18 16:11:55 - supervisor - INFO - Decomposing epic: Automated Offer & Negotiation Workflow
+2025-07-18 16:11:57 - supervisor - INFO - Decomposing epic: Self-Service Educational Resource Center
+2025-07-18 16:11:57 - supervisor - INFO - Decomposing epic: Service Provider Marketplace & Booking Engine

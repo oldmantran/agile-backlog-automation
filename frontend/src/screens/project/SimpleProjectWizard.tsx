@@ -14,11 +14,48 @@ const SimpleProjectWizard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const waitForBackend = async (maxAttempts = 10): Promise<boolean> => {
+    console.log('🔄 Starting backend connectivity check...');
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        console.log(`🔍 [${i + 1}/${maxAttempts}] Checking backend at http://localhost:8000/api/health...`);
+        const startTime = Date.now();
+        const response = await fetch('http://localhost:8000/api/health');
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`✅ Backend is ready! Status: ${response.status}, Duration: ${duration}ms, Response:`, data);
+          return true;
+        } else {
+          console.log(`⚠️ Backend responded with status ${response.status} (attempt ${i + 1}/${maxAttempts})`);
+        }
+      } catch (error) {
+        console.log(`⏳ Backend not ready yet (attempt ${i + 1}/${maxAttempts}):`, error);
+      }
+      // Wait 1 second before next attempt
+      console.log(`⏰ Waiting 1 second before next attempt...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    console.error('❌ Backend not available after maximum attempts');
+    return false;
+  };
+
   const handleSubmit = async (projectData: Project) => {
     console.log('🚀 Starting project submission with data:', projectData);
+    
+    // Wait for backend to be ready
+    const backendReady = await waitForBackend();
+    if (!backendReady) {
+      console.error('❌ Backend not available, cannot proceed');
+      return;
+    }
+    
     try {
       const { projectId } = await projectApi.createProject(projectData);
       console.log('✅ Project creation response:', { projectId });
+      
       let backlogResponse: any;
       try {
         // Add timeout to prevent hanging

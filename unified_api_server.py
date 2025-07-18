@@ -18,6 +18,7 @@ import time
 import threading
 import queue
 import webbrowser
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -67,6 +68,7 @@ logger = setup_logger(__name__)
 
 # Global storage for active jobs (in production, use Redis or database)
 active_jobs: Dict[str, Dict[str, Any]] = {}
+active_jobs_lock = threading.Lock()  # Thread-safe lock for active_jobs access
 
 # WebSocket connections for log streaming
 log_connections: List[WebSocket] = []
@@ -75,6 +77,9 @@ log_queue = queue.Queue()
 # Global state for background processes
 background_processes: Dict[str, subprocess.Popen] = {}
 sweeper_status = {"isRunning": False, "progress": 0, "currentItem": "", "processedItems": 0, "totalItems": 0, "errors": [], "completedActions": [], "logs": []}
+
+# Thread pool for CPU-intensive AI tasks
+ai_thread_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="AI_Worker")
 
 # Custom log handler for streaming logs to WebSocket clients
 class WebSocketLogHandler(logging.Handler):
@@ -149,6 +154,11 @@ async def lifespan(app: FastAPI):
     
     # Shutdown
     logger.info("Shutting down Unified API Server")
+    
+    # Shutdown thread pool
+    logger.info("Shutting down AI thread pool...")
+    ai_thread_pool.shutdown(wait=True)
+    logger.info("AI thread pool shutdown complete")
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
@@ -491,21 +501,22 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
         logger.info(f"🆔 Generated job ID: {job_id}")
         
         # Initialize job status immediately
-        active_jobs[job_id] = {
-            "jobId": job_id,
-            "projectId": project_id,
-            "status": "queued",
-            "progress": 0,
-            "currentAgent": "Supervisor",
-            "currentAction": "Initializing...",
-            "startTime": datetime.now(),
-            "error": None,
-            "endTime": None
-        }
+        with active_jobs_lock:  # Thread-safe access to active_jobs
+            active_jobs[job_id] = {
+                "jobId": job_id,
+                "projectId": project_id,
+                "status": "queued",
+                "progress": 0,
+                "currentAgent": "Supervisor",
+                "currentAction": "Initializing...",
+                "startTime": datetime.now(),
+                "error": None,
+                "endTime": None
+            }
         logger.info(f"🚀 Job {job_id} initialized and queued")
         
-        # Add to background tasks (non-blocking)
-        background_tasks.add_task(run_backlog_generation, job_id, project_info)
+        # Add to background tasks using thread pool (non-blocking)
+        background_tasks.add_task(run_backlog_generation_threaded, job_id, project_info)
         logger.info(f"✅ Background task added for job: {job_id}")
         
         # Return response immediately
@@ -526,45 +537,48 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
 @app.get("/api/backlog/status/{job_id}")
 async def get_generation_status(job_id: str):
     """Get the status of a backlog generation job."""
-    if job_id not in active_jobs:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    job_status = active_jobs[job_id]
-    
-    # Convert job_status to match GenerationStatus model
-    generation_status = {
-        "jobId": job_status.get("jobId", job_id),
-        "projectId": job_status.get("projectId", "unknown"),
-        "status": job_status.get("status", "unknown"),
-        "progress": job_status.get("progress", 0),
-        "currentAgent": job_status.get("currentAgent", ""),
-        "currentAction": job_status.get("currentAction", ""),
-        "startTime": job_status.get("startTime"),
-        "endTime": job_status.get("endTime"),
-        "error": job_status.get("error")
-    }
-    
-    logger.info(f"📊 Returning status for job {job_id}: {generation_status}")
-    
-    return {
-        "success": True,
-        "data": generation_status
-    }
+    with active_jobs_lock:  # Thread-safe access to active_jobs
+        if job_id not in active_jobs:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        job_status = active_jobs[job_id]
+        
+        # Convert job_status to match GenerationStatus model
+        generation_status = {
+            "jobId": job_status.get("jobId", job_id),
+            "projectId": job_status.get("projectId", "unknown"),
+            "status": job_status.get("status", "unknown"),
+            "progress": job_status.get("progress", 0),
+            "currentAgent": job_status.get("currentAgent", ""),
+            "currentAction": job_status.get("currentAction", ""),
+            "startTime": job_status.get("startTime"),
+            "endTime": job_status.get("endTime"),
+            "error": job_status.get("error")
+        }
+        
+        logger.info(f"📊 Returning status for job {job_id}: {generation_status}")
+        logger.info(f"📊 Current progress value in response: {generation_status.get('progress', 'NOT_FOUND')}")
+        
+        return {
+            "success": True,
+            "data": generation_status
+        }
 
 @app.get("/api/jobs")
 async def get_all_jobs():
     """Get all active and recent jobs."""
-    return {
-        "success": True,
-        "data": [
-            {
-                **job_data,
-                "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
-                "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
-            }
-            for job_data in active_jobs.values()
-        ]
-    }
+    with active_jobs_lock:  # Thread-safe access to active_jobs
+        return {
+            "success": True,
+            "data": [
+                {
+                    **job_data,
+                    "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
+                    "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
+                }
+                for job_data in active_jobs.values()
+            ]
+        }
 
 @app.post("/api/jobs/add")
 async def add_job(job_data: dict):
@@ -574,7 +588,8 @@ async def add_job(job_data: dict):
         if not job_id:
             raise HTTPException(status_code=400, detail="jobId is required")
         
-        active_jobs[job_id] = job_data
+        with active_jobs_lock:  # Thread-safe access to active_jobs
+            active_jobs[job_id] = job_data
         logger.info(f"Added job {job_id} to active jobs tracking")
         
         return {
@@ -859,6 +874,332 @@ async def run_sweeper_background(config: SweeperConfig):
         sweeper_status["isRunning"] = False
         sweeper_status["errors"].append(str(e))
 
+async def run_backlog_generation_threaded(job_id: str, project_info: Dict[str, Any]):
+    """Async wrapper that runs the AI processing in a separate thread to prevent blocking."""
+    logger.info(f"🔄 Starting threaded backlog generation for job {job_id}")
+    
+    try:
+        # Run the actual AI processing in a thread pool to prevent blocking the event loop
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(ai_thread_pool, run_backlog_generation_sync, job_id, project_info)
+        logger.info(f"✅ Threaded backlog generation completed for job {job_id}")
+        return result
+    except Exception as e:
+        error_msg = f"Threaded backlog generation failed for job {job_id}: {str(e)}"
+        logger.error(f"❌ {error_msg}")
+        with active_jobs_lock:  # Thread-safe access to active_jobs
+            if job_id in active_jobs:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
+        return {"error": error_msg}
+
+def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
+    """Synchronous version of backlog generation that runs in a separate thread."""
+    logger.info(f"Starting backlog generation for job {job_id}")
+    
+    try:
+        # Update job status to running (job is already initialized)
+        with active_jobs_lock:  # Thread-safe access to active_jobs
+            if job_id in active_jobs:
+                active_jobs[job_id]["status"] = "running"
+                active_jobs[job_id]["currentAction"] = "Starting workflow execution..."
+                logger.info(f"🚀 Job {job_id} status updated to running")
+            else:
+                logger.error(f"❌ Job {job_id} not found in active_jobs")
+                return {"error": f"Job {job_id} not found"}
+        
+        # Extract project data
+        project_data = project_info.get("data", {})
+        
+        # Check Azure DevOps integration
+        azure_config = project_data.get("azureConfig", {})
+        azure_integration_enabled = azure_config.get("enabled", False)
+        
+        # Azure DevOps parameters
+        organization_url = azure_config.get("organizationUrl")
+        azure_project = azure_config.get("project")
+        personal_access_token = azure_config.get("personalAccessToken")
+        area_path = azure_config.get("areaPath")
+        iteration_path = azure_config.get("iterationPath")
+        
+        # Use Azure DevOps project name as the project name, fallback to basics.name if not available
+        project_name = azure_project or project_data.get("basics", {}).get("name", "Unknown Project")
+        
+        # Extract domain from vision statement using VisionContextExtractor
+        from utils.vision_context_extractor import VisionContextExtractor
+        vision_extractor = VisionContextExtractor()
+        
+        # Extract enhanced context from vision
+        vision_data = project_data.get("vision", {})
+        vision_statement = vision_data.get('visionStatement', '')
+        
+        enhanced_context = vision_extractor.extract_context(
+            project_data=project_data,
+            business_objectives=vision_data.get('businessObjectives', []),
+            target_audience=vision_data.get('targetAudience'),
+            domain=project_data.get("basics", {}).get("domain")
+        )
+        
+        # Use extracted domain or fallback to dynamic
+        project_domain = enhanced_context.get('domain', 'dynamic')
+        
+        # Load PAT from .env if not provided in request
+        if not personal_access_token:
+            env_config = load_env_config()
+            personal_access_token = env_config.get("AZURE_DEVOPS_PAT", "")
+            if personal_access_token:
+                logger.info(f"🔑 Loaded Azure DevOps PAT from .env file")
+            else:
+                logger.warning(f"⚠️ Azure DevOps PAT not found in request or .env file")
+        
+        # Enhanced logging for Azure DevOps configuration
+        logger.info(f"🔍 Azure DevOps Configuration Analysis for job {job_id}:")
+        logger.info(f"   azure_integration_enabled (from config): {azure_integration_enabled}")
+        logger.info(f"   organization_url: {organization_url}")
+        logger.info(f"   project: {project_name}")
+        logger.info(f"   personal_access_token: {'Set' if personal_access_token else 'Not set'}")
+        logger.info(f"   area_path: {area_path}")
+        logger.info(f"   iteration_path: {iteration_path}")
+        
+        # Check if any Azure config is provided (alternative detection method)
+        has_any_azure_config = any([
+            organization_url,
+            project_name,
+            personal_access_token,
+            area_path,
+            iteration_path
+        ])
+        logger.info(f"   has_any_azure_config: {has_any_azure_config}")
+        
+        # Validate Azure DevOps configuration
+        if azure_integration_enabled:
+            if not all([organization_url, project_name, personal_access_token]):
+                logger.warning(f"❌ Azure integration enabled but missing required fields for job {job_id}")
+                azure_integration_enabled = False
+        elif has_any_azure_config:
+            logger.info(f"⚠️ Azure config provided but integration not explicitly enabled for job {job_id}")
+            # Auto-enable if we have the required fields
+            if all([organization_url, project_name, personal_access_token, area_path, iteration_path]):
+                logger.info(f"✅ Auto-enabling Azure integration for job {job_id} (all required fields present)")
+                azure_integration_enabled = True
+            else:
+                logger.warning(f"❌ Cannot auto-enable Azure integration for job {job_id} (missing required fields)")
+        
+        logger.info(f"   Final azure_integration_enabled: {azure_integration_enabled}")
+        
+        # Initialize supervisor with error handling for Azure DevOps
+        try:
+            logger.info(f"🔧 Initializing WorkflowSupervisor for job {job_id} with Azure config:")
+            logger.info(f"   organization_url: {organization_url}")
+            logger.info(f"   project: {project_name}")
+            logger.info(f"   area_path: {area_path}")
+            logger.info(f"   iteration_path: {iteration_path}")
+            
+            # If Azure integration is enabled but credentials are invalid, disable it
+            if azure_integration_enabled and (not personal_access_token or not organization_url or not project_name):
+                logger.warning(f"⚠️ Azure integration enabled but credentials incomplete, disabling for job {job_id}")
+                azure_integration_enabled = False
+            
+            # Initialize supervisor with safe defaults if Azure integration is disabled
+            if azure_integration_enabled:
+                supervisor = WorkflowSupervisor(
+                    organization_url=organization_url,
+                    project=project_name,
+                    personal_access_token=personal_access_token,
+                    area_path=area_path,
+                    iteration_path=iteration_path,
+                    job_id=job_id
+                )
+            else:
+                # Initialize without Azure DevOps integration
+                logger.info(f"🔧 Initializing WorkflowSupervisor without Azure DevOps integration for job {job_id}")
+                supervisor = WorkflowSupervisor(
+                    organization_url="",  # Empty to disable Azure integration
+                    project=project_name,
+                    personal_access_token="",  # Empty to disable Azure integration
+                    area_path="",
+                    iteration_path="",
+                    job_id=job_id
+                )
+            
+            # IMPORTANT: Set the project name in the supervisor's project context
+            supervisor.project = project_name
+            supervisor.project_context.update_context({
+                'project_name': project_name,
+                'domain': project_domain
+            })
+            
+            logger.info(f"✅ WorkflowSupervisor initialized successfully for job {job_id}")
+            logger.info(f"   Project name set to: {project_name}")
+            logger.info(f"   Domain set to: {project_domain}")
+            logger.info(f"   Azure integration: {'enabled' if azure_integration_enabled else 'disabled'}")
+            
+        except Exception as e:
+            error_msg = f"Failed to initialize WorkflowSupervisor: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            
+            # If Azure DevOps validation failed, try without Azure integration
+            if "401" in str(e) or "Unauthorized" in str(e) or "Azure" in str(e):
+                logger.info(f"🔄 Azure DevOps validation failed, retrying without Azure integration for job {job_id}")
+                try:
+                    azure_integration_enabled = False
+                    supervisor = WorkflowSupervisor(
+                        organization_url="",
+                        project=project_name,
+                        personal_access_token="",
+                        area_path="",
+                        iteration_path="",
+                        job_id=job_id
+                    )
+                    supervisor.project = project_name
+                    supervisor.project_context.update_context({
+                        'project_name': project_name,
+                        'domain': project_domain
+                    })
+                    logger.info(f"✅ WorkflowSupervisor initialized successfully without Azure DevOps for job {job_id}")
+                except Exception as retry_error:
+                    error_msg = f"Failed to initialize WorkflowSupervisor (retry without Azure): {str(retry_error)}"
+                    logger.error(f"❌ {error_msg}")
+                    with active_jobs_lock:
+                        active_jobs[job_id]["status"] = "failed"
+                        active_jobs[job_id]["error"] = error_msg
+                        active_jobs[job_id]["endTime"] = datetime.now()
+                    return {"error": error_msg}
+            else:
+                with active_jobs_lock:
+                    active_jobs[job_id]["status"] = "failed"
+                    active_jobs[job_id]["error"] = error_msg
+                    active_jobs[job_id]["endTime"] = datetime.now()
+                return {"error": error_msg}
+        
+        # Progress callback with thread-safe updates
+        def progress_callback(progress: int, action: str):
+            try:
+                with active_jobs_lock:  # Thread-safe access to active_jobs
+                    if job_id in active_jobs:
+                        old_progress = active_jobs[job_id].get("progress", 0)
+                        # Create a complete new job status to ensure atomic update
+                        new_job_status = {
+                            **active_jobs[job_id],
+                            "progress": progress,
+                            "currentAction": action,
+                            "currentAgent": action.split()[0] if action else "Supervisor",
+                            "status": "running"
+                        }
+                        active_jobs[job_id] = new_job_status
+                        logger.info(f"📊 Progress update for job {job_id}: {old_progress}% → {progress}% - {action}")
+                        logger.info(f"📊 Active jobs after update: {list(active_jobs.keys())}")
+                        # Force a longer delay to ensure the update is fully committed
+                        import time
+                        time.sleep(0.5)  # Increased delay to ensure update is visible
+                    else:
+                        logger.warning(f"⚠️ Job {job_id} not found in active_jobs during progress update")
+            except Exception as e:
+                logger.error(f"Error in progress callback for job {job_id}: {str(e)}")
+
+        # Prepare context
+        context = {
+            "project_name": project_name,
+            "project_domain": project_domain,
+            "azure_integration_enabled": azure_integration_enabled,
+            "azure_config": azure_config if azure_integration_enabled else {}
+        }
+
+        # Configure project context
+        try:
+            config = Config()
+            project_context = ProjectContext(config)
+            
+            # Update context with project data
+            project_updates = {
+                "project_name": project_name,
+                "domain": project_domain,
+                "platform": "Web Application",  # Default platform
+                "target_users": project_data.get("vision", {}).get("targetUsers", "End users"),
+                "timeline": "6-12 months"  # Default timeline
+            }
+            project_context.update_context(project_updates)
+            
+        except Exception as e:
+            error_msg = f"Failed to configure project context: {str(e)}"
+            with active_jobs_lock:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
+            return {"error": error_msg}
+
+        # Create product vision
+        vision_data = project_data.get("vision", {})
+        product_vision = f"""
+Project: {project_name}
+Domain: {project_domain}
+
+Vision Statement:
+{vision_data.get('visionStatement', 'No vision statement provided')}
+
+Key Features:
+{vision_data.get('keyFeatures', 'No key features specified')}
+
+Target Users:
+{vision_data.get('targetUsers', 'No target users specified')}
+
+Success Criteria:
+{vision_data.get('successCriteria', 'No success criteria specified')}
+""".strip()
+
+        # Execute workflow
+        try:
+            logger.info(f"🚀 Starting workflow execution for job {job_id}")
+            logger.info(f"   integrate_azure: {azure_integration_enabled}")
+            logger.info(f"   product_vision length: {len(product_vision)} characters")
+            logger.info(f"   save_outputs: True")
+            
+            results = supervisor.execute_workflow(
+                product_vision,
+                save_outputs=True,
+                integrate_azure=azure_integration_enabled,
+                progress_callback=progress_callback
+            )
+            
+            logger.info(f"✅ Workflow execution completed for job {job_id}")
+            logger.info(f"   Results type: {type(results)}")
+            if isinstance(results, dict):
+                logger.info(f"   Results keys: {list(results.keys())}")
+                if 'azure_integration' in results:
+                    azure_result = results['azure_integration']
+                    logger.info(f"   Azure integration status: {azure_result.get('status', 'Unknown')}")
+                    if azure_result.get('work_items_created'):
+                        logger.info(f"   Work items created: {len(azure_result['work_items_created'])}")
+                    if azure_result.get('error'):
+                        logger.error(f"   Azure integration error: {azure_result['error']}")
+
+            # Update job status
+            with active_jobs_lock:
+                active_jobs[job_id]["status"] = "completed"
+                active_jobs[job_id]["progress"] = 100
+                active_jobs[job_id]["currentAction"] = "Completed"
+                active_jobs[job_id]["endTime"] = datetime.now()
+
+            return {"job_id": job_id, "status": "completed", "results": results}
+
+        except Exception as e:
+            error_msg = f"Workflow execution failed: {str(e)}"
+            with active_jobs_lock:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
+            return {"error": error_msg}
+    except Exception as e:
+        error_msg = f"Unexpected error in run_backlog_generation: {str(e)}"
+        with active_jobs_lock:
+            if job_id in active_jobs:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
+        logger.error(error_msg)
+        return {"error": error_msg}
+
 async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
     """Background task to run the actual backlog generation."""
     logger.info(f"Starting backlog generation for job {job_id}")
@@ -1025,14 +1366,16 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 except Exception as retry_error:
                     error_msg = f"Failed to initialize WorkflowSupervisor (retry without Azure): {str(retry_error)}"
                     logger.error(f"❌ {error_msg}")
+                    with active_jobs_lock:
+                        active_jobs[job_id]["status"] = "failed"
+                        active_jobs[job_id]["error"] = error_msg
+                        active_jobs[job_id]["endTime"] = datetime.now()
+                    return {"error": error_msg}
+            else:
+                with active_jobs_lock:
                     active_jobs[job_id]["status"] = "failed"
                     active_jobs[job_id]["error"] = error_msg
                     active_jobs[job_id]["endTime"] = datetime.now()
-                    return {"error": error_msg}
-            else:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
                 return {"error": error_msg}
         
         # Progress callback
@@ -1069,9 +1412,10 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             
         except Exception as e:
             error_msg = f"Failed to configure project context: {str(e)}"
-            active_jobs[job_id]["status"] = "failed"
-            active_jobs[job_id]["error"] = error_msg
-            active_jobs[job_id]["endTime"] = datetime.now()
+            with active_jobs_lock:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
             return {"error": error_msg}
 
         # Create product vision
@@ -1120,25 +1464,28 @@ Success Criteria:
                         logger.error(f"   Azure integration error: {azure_result['error']}")
 
             # Update job status
-            active_jobs[job_id]["status"] = "completed"
-            active_jobs[job_id]["progress"] = 100
-            active_jobs[job_id]["currentAction"] = "Completed"
-            active_jobs[job_id]["endTime"] = datetime.now()
+            with active_jobs_lock:
+                active_jobs[job_id]["status"] = "completed"
+                active_jobs[job_id]["progress"] = 100
+                active_jobs[job_id]["currentAction"] = "Completed"
+                active_jobs[job_id]["endTime"] = datetime.now()
 
             return {"job_id": job_id, "status": "completed", "results": results}
 
         except Exception as e:
             error_msg = f"Workflow execution failed: {str(e)}"
-            active_jobs[job_id]["status"] = "failed"
-            active_jobs[job_id]["error"] = error_msg
-            active_jobs[job_id]["endTime"] = datetime.now()
+            with active_jobs_lock:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
             return {"error": error_msg}
     except Exception as e:
         error_msg = f"Unexpected error in run_backlog_generation: {str(e)}"
-        if job_id in active_jobs:
-            active_jobs[job_id]["status"] = "failed"
-            active_jobs[job_id]["error"] = error_msg
-            active_jobs[job_id]["endTime"] = datetime.now()
+        with active_jobs_lock:
+            if job_id in active_jobs:
+                active_jobs[job_id]["status"] = "failed"
+                active_jobs[job_id]["error"] = error_msg
+                active_jobs[job_id]["endTime"] = datetime.now()
         logger.error(error_msg)
         return {"error": error_msg}
 

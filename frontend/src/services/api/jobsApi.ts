@@ -1,15 +1,5 @@
-import axios from 'axios';
+import { apiClientMethods } from './apiClient';
 import { GenerationStatus } from '../../types/project';
-import { ApiResponse } from '../../types/api';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 export interface JobInfo {
   jobId: string;
@@ -26,14 +16,14 @@ export interface JobInfo {
 export const jobsApi = {
   // Get all active and recent jobs
   getAllJobs: async (): Promise<JobInfo[]> => {
-    const response = await api.get<ApiResponse<JobInfo[]>>('/jobs');
-    return response.data.data;
+    const response = await apiClientMethods.get<JobInfo[]>('/jobs');
+    return response;
   },
 
   // Get specific job status
   getJobStatus: async (jobId: string): Promise<GenerationStatus> => {
-    const response = await api.get<ApiResponse<GenerationStatus>>(`/backlog/status/${jobId}`);
-    return response.data.data;
+    const response = await apiClientMethods.get<GenerationStatus>(`/backlog/status/${jobId}`);
+    return response;
   },
 
   // Poll for job updates (helper function)
@@ -55,5 +45,3 @@ export const jobsApi = {
     poll();
   },
 };
-
-export default jobsApi;

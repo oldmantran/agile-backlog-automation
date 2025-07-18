@@ -107,6 +107,7 @@ const MyProjectsScreen: React.FC = () => {
       if (stored) {
         const jobs = JSON.parse(stored);
         console.log('Loaded active jobs:', jobs);
+        
         // Filter out old completed/failed jobs (older than 10 minutes)
         const now = Date.now();
         const filteredJobs = jobs.filter((job: JobInfo) => {
@@ -116,10 +117,17 @@ const MyProjectsScreen: React.FC = () => {
           }
           return true; // Keep all running/queued jobs
         });
+        
         console.log('Filtered active jobs:', filteredJobs);
         setActiveJobs(filteredJobs);
+        
         // Update localStorage with filtered jobs
         localStorage.setItem('activeJobs', JSON.stringify(filteredJobs));
+        
+        // Log cleanup if we removed old jobs
+        if (filteredJobs.length !== jobs.length) {
+          console.log(`Cleaned up ${jobs.length - filteredJobs.length} old jobs from localStorage`);
+        }
       } else {
         console.log('No active jobs found in localStorage');
         setActiveJobs([]);
@@ -146,6 +154,13 @@ const MyProjectsScreen: React.FC = () => {
     } catch (error) {
       logError('loadProjects', error, 'API call failed');
       setProjects([]);
+      // Retry after 5 seconds if it's a network error
+      if (error instanceof Error && error.message.includes('Network error')) {
+        setTimeout(() => {
+          console.log('Retrying loadProjects...');
+          loadProjects();
+        }, 5000);
+      }
     } finally {
       setLoading(false);
     }
@@ -160,6 +175,13 @@ const MyProjectsScreen: React.FC = () => {
     } catch (error) {
       logError('loadBacklogJobs', error, 'API call failed');
       setBacklogJobs([]);
+      // Retry after 5 seconds if it's a network error
+      if (error instanceof Error && error.message.includes('Network error')) {
+        setTimeout(() => {
+          console.log('Retrying loadBacklogJobs...');
+          loadBacklogJobs();
+        }, 5000);
+      }
     }
   }, []);
 
@@ -176,10 +198,15 @@ const MyProjectsScreen: React.FC = () => {
 
   const pollJobUpdates = useCallback(async () => {
     try {
+      console.log('🔄 Starting pollJobUpdates...');
       const stored = localStorage.getItem('activeJobs');
-      if (!stored) return;
+      if (!stored) {
+        console.log('No active jobs in localStorage');
+        return;
+      }
 
       const jobs: JobInfo[] = JSON.parse(stored);
+      console.log(`Found ${jobs.length} active jobs to poll`);
       const updatedJobs: JobInfo[] = [];
 
       for (const job of jobs) {
@@ -187,6 +214,7 @@ const MyProjectsScreen: React.FC = () => {
           console.log(`Polling status for job: ${job.jobId}`);
           const status = await backlogApi.getGenerationStatus(job.jobId);
           console.log(`Job ${job.jobId} status:`, status);
+          console.log(`Job ${job.jobId} progress from API:`, status.progress);
           
           const updatedJob = {
             ...job,
@@ -195,6 +223,13 @@ const MyProjectsScreen: React.FC = () => {
             currentAction: status.currentAction || `${status.currentAgent} working...`,
             error: status.error
           };
+          
+          console.log(`Job ${job.jobId} updated:`, {
+            oldProgress: job.progress,
+            newProgress: status.progress,
+            status: status.status,
+            currentAction: status.currentAction
+          });
 
           if (status.status === 'running' || status.status === 'queued') {
             updatedJobs.push(updatedJob);
@@ -204,8 +239,19 @@ const MyProjectsScreen: React.FC = () => {
               updatedJobs.push(updatedJob);
             }
           }
+          
+          // Small delay between job status checks to reduce backend load
+          await new Promise(resolve => setTimeout(resolve, 200));
         } catch (error) {
           logError('pollJobUpdates', error, { jobId: job.jobId });
+          
+          // If it's a 404 error, the job no longer exists in the backend, so remove it
+          if (error instanceof Error && error.message.includes('Resource not found')) {
+            console.log(`Job ${job.jobId} not found in backend (404), removing from active jobs`);
+            continue; // Skip adding this job to updatedJobs
+          }
+          
+          // For other errors, keep the job if it's recent
           const jobAge = Date.now() - new Date(job.startTime).getTime();
           if (jobAge < 600000) {
             updatedJobs.push(job);
@@ -315,16 +361,23 @@ const MyProjectsScreen: React.FC = () => {
     console.log('MyProjectsScreen: Component mounting...');
     try {
       loadActiveJobs();
-      loadProjects();
-      loadBacklogJobs();
+      
+      // Stagger API calls to prevent overwhelming the backend
+      setTimeout(() => {
+        loadProjects();
+      }, 500);
+      
+      setTimeout(() => {
+        loadBacklogJobs();
+      }, 1000);
       
       // Immediate job update on component mount
       setTimeout(() => {
         pollJobUpdates();
-      }, 1000);
+      }, 1500);
       
-      // Poll for job updates every 2 seconds (reduced from 5 for better real-time feel)
-      const interval = setInterval(pollJobUpdates, 2000);
+      // Poll for job updates every 3 seconds (increased to reduce load)
+      const interval = setInterval(pollJobUpdates, 3000);
       return () => clearInterval(interval);
     } catch (error) {
       logError('MyProjectsScreen', error, 'Component mount error');
