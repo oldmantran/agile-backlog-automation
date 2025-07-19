@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus, FiWifi, FiWifiOff } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
@@ -89,12 +89,8 @@ const MyProjectsScreen: React.FC = () => {
   const [debugMode, setDebugMode] = useState(false);
   const hasMounted = useRef(false);
   
-  // WebSocket progress hook
+  // SSE progress hook for real-time updates
   const { isConnected: sseConnected, lastUpdate: sseUpdate, error: sseError, connect: connectSSE, disconnect: disconnectSSE } = useSSEProgress();
-  
-  // Fallback polling interval
-  const [usePolling, setUsePolling] = useState(false);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Enhanced error logging
   const logError = (component: string, error: any, details?: any) => {
@@ -272,69 +268,6 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, [sseUpdate]);
 
-  // Fallback polling function
-  const pollJobUpdates = useCallback(async () => {
-    try {
-      const stored = localStorage.getItem('activeJobs');
-      if (!stored) {
-        return;
-      }
-
-      const jobs: JobInfo[] = JSON.parse(stored);
-      const updatedJobs: JobInfo[] = [];
-
-      for (const job of jobs) {
-        try {
-          const status = await backlogApi.getGenerationStatus(job.jobId);
-          
-          const updatedJob = {
-            ...job,
-            status: status.status,
-            progress: status.progress || 0,
-            currentAction: status.currentAction || `${status.currentAgent} working...`,
-            error: status.error
-          };
-          
-          // Only log progress changes
-          if (status.progress !== job.progress) {
-            console.log(`📊 Job ${job.jobId} progress: ${job.progress}% → ${status.progress}%`);
-          }
-
-          if (status.status === 'running' || status.status === 'queued') {
-            updatedJobs.push(updatedJob);
-          } else if (status.status === 'completed' || status.status === 'failed') {
-            const jobAge = Date.now() - new Date(job.startTime).getTime();
-            if (jobAge < 600000) {
-              updatedJobs.push(updatedJob);
-            }
-          }
-          
-          // Small delay between job status checks
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } catch (error) {
-          logError('pollJobUpdates', error, { jobId: job.jobId });
-          
-          // If it's a 404 error, the job no longer exists in the backend
-          if (error instanceof Error && error.message.includes('Resource not found')) {
-            console.log(`Job ${job.jobId} not found in backend (404), removing from active jobs`);
-            continue;
-          }
-          
-          // For other errors, keep the job if it's recent
-          const jobAge = Date.now() - new Date(job.startTime).getTime();
-          if (jobAge < 600000) {
-            updatedJobs.push(job);
-          }
-        }
-      }
-
-      setActiveJobs(prev => updatedJobs);
-      localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
-    } catch (error) {
-      logError('pollJobUpdates', error, 'Main polling error');
-    }
-  }, []);
-
   const removeJob = useCallback((jobId: string) => {
     try {
       setActiveJobs(prev => {
@@ -366,15 +299,15 @@ const MyProjectsScreen: React.FC = () => {
   const getJobStatusColor = useCallback((status?: string) => {
     try {
       switch (status) {
-        case 'completed': return 'text-green-400 border-green-400/50 bg-green-400/10';
-        case 'failed': return 'text-red-400 border-red-400/50 bg-red-400/10';
-        case 'running': return 'text-blue-400 border-blue-400/50 bg-blue-400/10';
-        case 'queued': return 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10';
-        default: return 'text-gray-400 border-gray-400/50 bg-gray-400/10';
+        case 'completed': return 'text-green-400 border-green-400';
+        case 'failed': return 'text-red-400 border-red-400';
+        case 'running': return 'text-blue-400 border-blue-400';
+        case 'queued': return 'text-yellow-400 border-yellow-400';
+        default: return 'text-gray-400 border-gray-400';
       }
     } catch (error) {
       logError('getJobStatusColor', error, { status });
-      return 'text-gray-400 border-gray-400/50 bg-gray-400/10';
+      return 'text-gray-400 border-gray-400';
     }
   }, []);
 
@@ -385,7 +318,7 @@ const MyProjectsScreen: React.FC = () => {
     return (
       <Card className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
         <CardHeader>
-          <CardTitle className="text-yellow-700 dark:text-yellow-300">Debug Information</CardTitle>
+          <CardTitle className="text-yellow-700 dark:text-yellow-300">Debug Panel</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -450,11 +383,10 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, [loadActiveJobs, loadProjects, loadBacklogJobs]);
 
-  // Use reliable polling for job updates
+  // Set up SSE connections for active jobs
   useEffect(() => {
     if (activeJobs.length > 0) {
       console.log('🔗 Setting up SSE connections for active jobs:', activeJobs.map(job => job.jobId));
-      setUsePolling(false);
       
       // Connect to SSE for the first active job (we'll handle multiple jobs later)
       const firstJob = activeJobs[0];
@@ -473,8 +405,6 @@ const MyProjectsScreen: React.FC = () => {
       updateJobsFromSSE();
     }
   }, [sseUpdate, updateJobsFromSSE]);
-
-  // Note: We're using SSE instead of polling for real-time updates
 
   return (
     <div className="min-h-screen">
@@ -530,6 +460,16 @@ const MyProjectsScreen: React.FC = () => {
             {/* Debug Panel */}
             <DebugPanel />
 
+            {/* SSE Error Display */}
+            {sseError && (
+              <Alert className="mb-6 border-red-500 bg-red-50 dark:bg-red-950">
+                <FiXCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                <AlertDescription className="text-red-700 dark:text-red-300">
+                  <strong>SSE Connection Error:</strong> {sseError}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Error Display */}
             {errors.length > 0 && (
               <Alert className="mb-6 border-red-500 bg-red-50 dark:bg-red-950">
@@ -556,25 +496,9 @@ const MyProjectsScreen: React.FC = () => {
 
             {/* Active Jobs Section */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-foreground tracking-wider glow-cyan">
-                  ACTIVE BACKLOG GENERATION
-                </h2>
-                <div className="flex items-center space-x-2">
-                  {activeJobs.length > 0 && sseConnected && (
-                    <div className="flex items-center space-x-1 text-green-400 text-sm">
-                      <FiActivity className="w-4 h-4" />
-                      <span>SSE Connected</span>
-                    </div>
-                  )}
-                  {sseError && (
-                    <div className="flex items-center space-x-1 text-red-400 text-sm">
-                      <FiAlertTriangle className="w-4 h-4" />
-                      <span>SSE Error</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
+                ACTIVE BACKLOG GENERATION
+              </h2>
               {activeJobs.length > 0 ? (
                 <div className="space-y-6">
                   {activeJobs.map((job) => (
@@ -665,57 +589,35 @@ const MyProjectsScreen: React.FC = () => {
               )}
             </div>
 
-            {/* Backlog Jobs Section */}
-            {backlogJobs.length > 0 && (
+            {/* Projects Section */}
+            {projects.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                  BACKLOG GENERATION HISTORY
+                  YOUR PROJECTS
                 </h2>
-                <div className="space-y-4">
-                  {backlogJobs.map((job) => (
-                    <Card key={job.id} className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project) => (
+                    <Card key={project.id} className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:shadow-lg transition-shadow">
                       <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <FiFolder className="w-5 h-5 text-primary glow-cyan" />
-                            <div>
-                              <CardTitle className="text-foreground glow-cyan">
-                                {job.project_name}
-                              </CardTitle>
-                              <p className="text-sm text-muted-foreground font-mono">
-                                Job ID: {job.id}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge 
-                              variant="outline" 
-                              className="font-mono text-green-400 border-green-400/50 bg-green-400/10"
-                            >
-                              {job.status?.toUpperCase() || 'COMPLETED'}
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteBacklogJob(job.id)}
-                              className="text-red-400 hover:text-red-300"
-                            >
-                              <FiTrash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
+                        <CardTitle className="text-foreground glow-cyan">
+                          {project.basics?.name || 'Untitled Project'}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {project.basics?.description || 'No description'}
+                        </p>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground mb-2">
-                          <div>Epics: <span className="text-foreground font-semibold">{job.epics_generated}</span></div>
-                          <div>Features: <span className="text-foreground font-semibold">{job.features_generated}</span></div>
-                          <div>User Stories: <span className="text-foreground font-semibold">{job.user_stories_generated}</span></div>
-                          <div>Tasks: <span className="text-foreground font-semibold">{job.tasks_generated}</span></div>
-                          <div>Test Cases: <span className="text-foreground font-semibold">{job.test_cases_generated}</span></div>
-                          <div>Exec Time: <span className="text-foreground font-semibold">{job.execution_time_seconds ? `${job.execution_time_seconds.toFixed(1)}s` : 'N/A'}</span></div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Created: {new Date(job.created_at).toLocaleString()}
+                        <div className="flex justify-between items-center">
+                          <Badge variant="outline" className="font-mono">
+                            {project.basics?.domain || 'General'}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/project/${project.id}`)}
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                          >
+                            View Details
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -724,69 +626,77 @@ const MyProjectsScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Projects Section */}
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                PROJECTS
-              </h2>
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Loading projects...</p>
-                </div>
-              ) : projects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {projects.map((project) => (
-                    <Card 
-                      key={project.id}
-                      className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/60 hover:glow-cyan transition-all duration-300 cursor-pointer"
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <FiFolder className="w-6 h-6 text-primary glow-cyan" />
-                          <Badge variant="outline" className="text-xs">
-                            {project.status}
-                          </Badge>
-                        </div>
-                        <CardTitle className="text-xl font-semibold text-foreground glow-cyan">
-                          {project.basics?.name || 'Untitled Project'}
-                        </CardTitle>
-                      </CardHeader>
-                      
-                      <CardContent>
-                        <p className="text-muted-foreground mb-4 text-sm">
-                          {project.basics?.description || 'No description available'}
-                        </p>
-                        
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <div>Domain: {project.basics?.domain || 'Unknown'}</div>
-                          <div>Created: {new Date(project.createdAt).toLocaleDateString()}</div>
-                          <div>Updated: {new Date(project.updatedAt).toLocaleDateString()}</div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
+            {/* Backlog Jobs Section */}
+            {backlogJobs.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
+                  RECENT BACKLOG JOBS
+                </h2>
                 <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
-                  <CardContent className="pt-6 text-center">
-                    <FiFolder className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Projects Found</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create your first project to get started with backlog automation.
-                    </p>
-                    <Button
-                      onClick={() => navigate('/simple-project-wizard')}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                    >
-                      <FiFolder className="w-4 h-4 mr-2" />
-                      Create New Project
-                    </Button>
-                  </CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Project
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Created
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {backlogJobs.map((job) => (
+                          <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              {job.project_name || 'Unknown Project'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge
+                                variant={
+                                  job.status === 'completed' ? 'default' :
+                                  job.status === 'failed' ? 'destructive' :
+                                  job.status === 'running' ? 'secondary' : 'outline'
+                                }
+                              >
+                                {job.status}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(job.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteBacklogJob(job.id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </Card>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">Loading projects...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

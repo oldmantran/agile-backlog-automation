@@ -7,12 +7,14 @@ import SimplifiedProjectForm from '../../components/forms/SimplifiedProjectForm'
 import { Project } from '../../types/project';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiCheckCircle, FiServer } from 'react-icons/fi';
 
 const SimpleProjectWizard: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
 
   const waitForBackend = async (maxAttempts = 10): Promise<boolean> => {
     console.log('🔄 Starting backend connectivity check...');
@@ -44,11 +46,15 @@ const SimpleProjectWizard: React.FC = () => {
 
   const handleSubmit = async (projectData: Project) => {
     console.log('🚀 Starting project submission with data:', projectData);
+    setIsSubmitting(true);
+    setError(null);
     
     // Wait for backend to be ready
     const backendReady = await waitForBackend();
     if (!backendReady) {
       console.error('❌ Backend not available, cannot proceed');
+      setError('Backend server is not available. Please ensure the server is running.');
+      setIsSubmitting(false);
       return;
     }
     
@@ -66,33 +72,26 @@ const SimpleProjectWizard: React.FC = () => {
         const backlogPromise = backlogApi.generateBacklog(projectId);
         backlogResponse = await Promise.race([backlogPromise, timeoutPromise]);
       } catch (backlogError: unknown) {
-        console.warn('⚠️ Backlog error, navigating anyway:', backlogError);
-        navigate('/my-projects');
+        console.warn('⚠️ Backlog error:', backlogError);
+        setError('Project created successfully, but backlog generation failed. Please check the backend server logs.');
+        setIsSubmitting(false);
         return;
       }
+      
       if (backlogResponse.jobId) {
         console.log('🎯 Found jobId:', backlogResponse.jobId);
-        const jobInfo = {
-          jobId: backlogResponse.jobId,
-          projectId: projectId,
-          projectName: projectData.basics?.name || 'Untitled Project',
-          status: 'queued',
-          progress: 0,
-          startTime: new Date().toISOString(),
-          currentAction: 'Epic Strategist initializing...'
-        };
-        // Clear any existing jobs and start fresh with the new job
-        localStorage.setItem('activeJobs', JSON.stringify([jobInfo]));
-        console.log('🧹 Cleared old jobs and set new job:', jobInfo);
-        navigate('/my-projects');
-        console.log('🧭 Navigated to My Projects');
+        setJobId(backlogResponse.jobId);
+        setIsSuccess(true);
+        console.log('✅ Job submitted successfully');
       } else {
         console.error('❌ No jobId in response');
         throw new Error('No job ID returned from backlog generation');
       }
     } catch (error: unknown) {
       console.error('Error:', error);
-      alert('Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setError('Failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -109,27 +108,20 @@ const SimpleProjectWizard: React.FC = () => {
 
   const handleRestart = () => {
     setError(null);
+    setIsSuccess(false);
+    setJobId(null);
+  };
+
+  const handleCreateAnother = () => {
+    setIsSuccess(false);
+    setJobId(null);
   };
 
   return (
     <div className="container max-w-4xl mx-auto py-8">
       <div className="space-y-8">
-        {/* Test Navigation Button */}
         <div className="text-center">
-          <Button 
-            onClick={() => {
-              console.log('🧪 Test navigation button clicked');
-              navigate('/my-projects');
-            }}
-            variant="outline"
-            className="mb-4"
-          >
-            🧪 Test Navigation to My Projects
-          </Button>
-        </div>
-
-        <div className="text-center">
-          <h1 className="text-3 font-bold mb-4">
+          <h1 className="text-3xl font-bold mb-4">
             Agile Backlog Automation
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -137,7 +129,7 @@ const SimpleProjectWizard: React.FC = () => {
           </p>
         </div>
 
-        {!error && (
+        {!error && !isSuccess && (
           <>
             <Alert className="rounded-md">
               <AlertDescription>
@@ -158,8 +150,54 @@ const SimpleProjectWizard: React.FC = () => {
           </>
         )}
 
+        {isSuccess && (
+          <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+            <CardContent className="pt-6">
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <FiCheckCircle className="h-16 w-16 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-green-700 dark:text-green-300 mb-2">
+                    Job Submitted Successfully!
+                  </h2>
+                  <p className="text-green-600 dark:text-green-400 mb-4">
+                    Your backlog generation job has been submitted and is now processing.
+                  </p>
+                  <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <FiServer className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      <span className="font-mono text-sm text-gray-700 dark:text-gray-300">
+                        Job ID: {jobId}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Check the backend server logs for progress updates
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center space-x-3">
+                  <Button 
+                    onClick={handleCreateAnother}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    Create Another Project
+                  </Button>
+                  <Button 
+                    onClick={handleBackToHome}
+                    variant="outline"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {error && (
-          <Card className="bg-red-50 bg-red-950 border-red-200 dark:border-red-800">
+          <Card className="bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
             <CardContent className="pt-6">
               <div className="space-y-6 text-center">
                 <div className="flex justify-center">

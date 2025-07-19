@@ -70,6 +70,51 @@ logger = setup_logger(__name__)
 active_jobs: Dict[str, Dict[str, Any]] = {}
 active_jobs_lock = threading.Lock()  # Thread-safe lock for active_jobs access
 
+# Job persistence file
+JOBS_FILE = Path("output") / "active_jobs.json"
+
+def save_active_jobs():
+    """Save active jobs to disk."""
+    try:
+        with active_jobs_lock:
+            # Convert datetime objects to strings for JSON serialization
+            jobs_to_save = {}
+            for job_id, job_data in active_jobs.items():
+                job_copy = job_data.copy()
+                if isinstance(job_copy.get('startTime'), datetime):
+                    job_copy['startTime'] = job_copy['startTime'].isoformat()
+                if isinstance(job_copy.get('endTime'), datetime):
+                    job_copy['endTime'] = job_copy['endTime'].isoformat()
+                jobs_to_save[job_id] = job_copy
+            
+            with open(JOBS_FILE, 'w') as f:
+                json.dump(jobs_to_save, f, indent=2)
+            logger.info(f"💾 Saved {len(jobs_to_save)} active jobs to disk")
+    except Exception as e:
+        logger.error(f"Failed to save active jobs: {e}")
+
+def load_active_jobs():
+    """Load active jobs from disk."""
+    try:
+        if JOBS_FILE.exists():
+            with open(JOBS_FILE, 'r') as f:
+                jobs_data = json.load(f)
+            
+            # Convert string timestamps back to datetime objects
+            for job_id, job_data in jobs_data.items():
+                if isinstance(job_data.get('startTime'), str):
+                    job_data['startTime'] = datetime.fromisoformat(job_data['startTime'])
+                if isinstance(job_data.get('endTime'), str):
+                    job_data['endTime'] = datetime.fromisoformat(job_data['endTime'])
+                active_jobs[job_id] = job_data
+            
+            logger.info(f"📂 Loaded {len(active_jobs)} active jobs from disk")
+        else:
+            logger.info("No existing jobs file found, starting with empty active_jobs")
+    except Exception as e:
+        logger.error(f"Failed to load active jobs: {e}")
+        active_jobs.clear()
+
 # SSE connections for progress streaming
 sse_connections: Dict[str, List[asyncio.Queue]] = {}
 
@@ -104,6 +149,9 @@ async def lifespan(app: FastAPI):
     # Ensure output directory exists
     Path("output").mkdir(exist_ok=True)
     
+    # Load active jobs from disk on startup
+    load_active_jobs()
+
     # Start SSE progress distribution task
     asyncio.create_task(distribute_sse_progress())
     
@@ -114,6 +162,9 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down Unified API Server")
     
+    # Save active jobs to disk on shutdown
+    save_active_jobs()
+
     # Shutdown thread pool
     logger.info("Shutting down AI thread pool...")
     ai_thread_pool.shutdown(wait=True)
@@ -474,6 +525,9 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
             }
         logger.info(f"🚀 Job {job_id} initialized and queued")
         
+        # Save jobs to disk
+        save_active_jobs()
+        
         # Add to background tasks using thread pool (non-blocking)
         background_tasks.add_task(run_backlog_generation_threaded, job_id, project_info)
         logger.info(f"✅ Background task added for job: {job_id}")
@@ -554,6 +608,9 @@ async def add_job(job_data: dict):
         with active_jobs_lock:  # Thread-safe access to active_jobs
             active_jobs[job_id] = job_data
         logger.info(f"Added job {job_id} to active jobs tracking")
+        
+        # Save jobs to disk
+        save_active_jobs()
         
         return {
             "success": True,
@@ -1053,6 +1110,10 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                         active_jobs[job_id] = new_job_status
                         logger.info(f"📊 Progress update for job {job_id}: {old_progress}% → {progress}% - {action}")
                         logger.info(f"📊 Active jobs after update: {list(active_jobs.keys())}")
+                        
+                        # Save jobs to disk on progress updates
+                        save_active_jobs()
+                        
                         # Force a longer delay to ensure the update is fully committed
                         import time
                         time.sleep(0.5)  # Increased delay to ensure update is visible
@@ -1354,6 +1415,9 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 if current_progress != progress:
                     logger.info(f"📊 Progress update for job {job_id}: {current_progress}% → {progress}% - {action}")
                     logger.info(f"📊 Active jobs after update: {list(active_jobs.keys())}")
+                    
+                    # Save jobs to disk on progress updates
+                    save_active_jobs()
 
         # Prepare context
         context = {
