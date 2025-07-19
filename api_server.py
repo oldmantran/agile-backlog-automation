@@ -20,9 +20,9 @@ from contextlib import asynccontextmanager
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, status, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, BackgroundTasks, status, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 import uvicorn
 
@@ -526,6 +526,120 @@ async def test_log_generation():
     log_queue.put(test_message)
     
     return {"status": "success", "message": "Test log messages generated"}
+
+# SSE Progress Streaming Endpoints
+
+@app.post("/api/test/create-job")
+async def create_test_job():
+    """Create a test job for SSE testing."""
+    try:
+        job_id = f"test_job_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        active_jobs[job_id] = {
+            "jobId": job_id,
+            "projectId": "test_project",
+            "status": "running",
+            "progress": 0,
+            "currentAction": "Test job created",
+            "startTime": datetime.now(),
+            "endTime": None,
+            "error": None
+        }
+        
+        logger.info(f"Created test job: {job_id}")
+        return {"jobId": job_id, "message": "Test job created successfully"}
+    except Exception as e:
+        logger.error(f"Failed to create test job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/test/update-job/{job_id}")
+async def update_test_job(job_id: str, progress: int = 50):
+    """Update a test job progress for SSE testing."""
+    try:
+        if job_id in active_jobs:
+            active_jobs[job_id]["progress"] = progress
+            active_jobs[job_id]["currentAction"] = f"Test progress update: {progress}%"
+            logger.info(f"Updated test job {job_id} progress to {progress}%")
+            return {"message": f"Job {job_id} updated to {progress}%"}
+        else:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    except Exception as e:
+        logger.error(f"Failed to update test job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/progress/stream/{job_id}")
+async def stream_progress(job_id: str, request: Request):
+    """Stream progress updates for a specific job using Server-Sent Events."""
+    
+    async def event_generator():
+        try:
+            # Send initial connection message
+            yield f"data: {json.dumps({'type': 'connected', 'jobId': job_id, 'message': 'SSE connection established'})}\n\n"
+            
+            last_progress = -1
+            
+            while True:
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    logger.info(f"SSE client disconnected for job {job_id}")
+                    break
+                
+                # Get current job status
+                if job_id not in active_jobs:
+                    yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': 'Job not found or not active'})}\n\n"
+                    break
+                
+                job_data = active_jobs[job_id]
+                current_progress = job_data.get('progress', 0)
+                current_status = job_data.get('status', 'unknown')
+                current_action = job_data.get('currentAction', '')
+                
+                # Only send update if progress changed
+                if current_progress != last_progress:
+                    progress_data = {
+                        'type': 'progress',
+                        'jobId': job_id,
+                        'progress': current_progress,
+                        'status': current_status,
+                        'currentAction': current_action,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    yield f"data: {json.dumps(progress_data)}\n\n"
+                    last_progress = current_progress
+                    
+                    # If job is completed or failed, send final message and close
+                    if current_status in ['completed', 'failed']:
+                        final_data = {
+                            'type': 'final',
+                            'jobId': job_id,
+                            'status': current_status,
+                            'progress': current_progress,
+                            'message': f'Job {current_status}',
+                            'timestamp': datetime.now().isoformat()
+                        }
+                        yield f"data: {json.dumps(final_data)}\n\n"
+                        break
+                
+                # Wait before next check
+                await asyncio.sleep(1)
+                
+        except Exception as e:
+            logger.error(f"SSE error for job {job_id}: {str(e)}")
+            yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Credentials": "true",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        }
+    )
 
 if __name__ == "__main__":
     uvicorn.run(
