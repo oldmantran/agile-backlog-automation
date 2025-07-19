@@ -47,6 +47,7 @@ class Database:
                         setting_key TEXT NOT NULL,
                         setting_value TEXT NOT NULL,
                         scope TEXT NOT NULL CHECK (scope IN ('session', 'user_default', 'global_default')),
+                        is_user_default BOOLEAN DEFAULT FALSE,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(user_id, setting_type, setting_key, scope)
@@ -58,6 +59,14 @@ class Database:
                     CREATE INDEX IF NOT EXISTS idx_user_settings_lookup 
                     ON user_settings(user_id, setting_type, scope)
                 ''')
+                
+                # Add is_user_default column if it doesn't exist (migration)
+                try:
+                    cursor.execute('ALTER TABLE user_settings ADD COLUMN is_user_default BOOLEAN DEFAULT FALSE')
+                    logger.info("Added is_user_default column to user_settings table")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
                 
                 conn.commit()
                 logger.info("Database initialized successfully")
@@ -140,18 +149,18 @@ class Database:
     
     # User Settings Methods
     def save_user_setting(self, user_id: str, setting_type: str, setting_key: str, 
-                         setting_value: str, scope: str = 'session') -> bool:
+                         setting_value: str, scope: str = 'session', is_user_default: bool = False) -> bool:
         """Save or update a user setting."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT OR REPLACE INTO user_settings 
-                    (user_id, setting_type, setting_key, setting_value, scope, updated_at) 
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (user_id, setting_type, setting_key, setting_value, scope, datetime.now()))
+                    (user_id, setting_type, setting_key, setting_value, scope, is_user_default, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (user_id, setting_type, setting_key, setting_value, scope, is_user_default, datetime.now()))
                 conn.commit()
-                logger.info(f"Setting saved: {user_id}.{setting_type}.{setting_key} = {setting_value} ({scope})")
+                logger.info(f"Setting saved: {user_id}.{setting_type}.{setting_key} = {setting_value} ({scope}, user_default={is_user_default})")
                 return True
         except Exception as e:
             logger.error(f"Failed to save user setting: {e}")
@@ -250,6 +259,73 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to get setting history: {e}")
             return []
+    
+    def has_custom_settings(self, user_id: str, setting_type: str, scope: str = 'user_default') -> bool:
+        """Check if a user has custom settings (not defaults)."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT COUNT(*) FROM user_settings 
+                    WHERE user_id = ? AND setting_type = ? AND scope = ? AND is_user_default = TRUE
+                ''', (user_id, setting_type, scope))
+                
+                count = cursor.fetchone()[0]
+                return count > 0
+                
+        except Exception as e:
+            logger.error(f"Failed to check custom settings: {e}")
+            return False
+    
+    def get_settings_with_flags(self, user_id: str, setting_type: str, scope: str = None) -> Dict[str, Any]:
+        """Get user settings with flags indicating if they are custom defaults."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                if scope:
+                    cursor.execute('''
+                        SELECT setting_key, setting_value, is_user_default
+                        FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ? AND scope = ?
+                    ''', (user_id, setting_type, scope))
+                else:
+                    cursor.execute('''
+                        SELECT setting_key, setting_value, scope, is_user_default
+                        FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ?
+                        ORDER BY 
+                            CASE scope 
+                                WHEN 'session' THEN 1 
+                                WHEN 'user_default' THEN 2 
+                                WHEN 'global_default' THEN 3 
+                            END
+                    ''', (user_id, setting_type))
+                
+                rows = cursor.fetchall()
+                settings = {}
+                
+                for row in rows:
+                    if len(row) == 3:  # scope specified
+                        key, value, is_user_default = row
+                        settings[key] = {
+                            'value': value,
+                            'is_user_default': bool(is_user_default)
+                        }
+                    else:  # scope not specified, use highest priority
+                        key, value, row_scope, is_user_default = row
+                        if key not in settings:  # Only take first occurrence (highest priority)
+                            settings[key] = {
+                                'value': value,
+                                'scope': row_scope,
+                                'is_user_default': bool(is_user_default)
+                            }
+                
+                return settings
+                
+        except Exception as e:
+            logger.error(f"Failed to get settings with flags: {e}")
+            return {}
 
 # Global database instance
 db = Database()

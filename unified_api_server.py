@@ -24,7 +24,7 @@ from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -1675,16 +1675,10 @@ async def save_user_settings(user_id: str, request: SettingsRequest):
 async def get_work_item_limits(user_id: str, session_id: str = None):
     """Get work item limits for a user/session."""
     try:
-        limits = settings_manager.get_work_item_limits(user_id, session_id)
+        limits_with_flags = settings_manager.get_work_item_limits_with_flags(user_id, session_id)
         return {
             "success": True,
-            "data": {
-                "max_epics": limits.max_epics,
-                "max_features_per_epic": limits.max_features_per_epic,
-                "max_user_stories_per_feature": limits.max_user_stories_per_feature,
-                "max_tasks_per_user_story": limits.max_tasks_per_user_story,
-                "max_test_cases_per_user_story": limits.max_test_cases_per_user_story
-            }
+            "data": limits_with_flags
         }
     except Exception as e:
         logger.error(f"Failed to get work item limits for {user_id}: {e}")
@@ -1702,20 +1696,42 @@ async def save_work_item_limits(user_id: str, request: WorkItemLimitsRequest):
             'max_test_cases_per_user_story': request.max_test_cases_per_user_story
         }
         
+        # Determine if this is a custom user default
+        is_user_default = getattr(request, 'is_user_default', request.scope == 'user_default')
+        
         success = settings_manager.save_work_item_limits(
-            user_id, limits, request.scope, request.session_id
+            user_id, limits, request.scope, request.session_id, is_user_default
         )
         
         if success:
             return {
                 "success": True,
-                "message": f"Work item limits saved successfully ({request.scope})"
+                "message": f"Work item limits saved successfully ({request.scope})",
+                "is_user_default": is_user_default
             }
         else:
             raise HTTPException(status_code=500, detail="Failed to save work item limits")
             
     except Exception as e:
         logger.error(f"Failed to save work item limits for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/settings/{user_id}/work-item-limits")
+async def delete_work_item_limits(user_id: str, scope: str = Query('user_default')):
+    """Delete work item limits."""
+    try:
+        success = db.delete_user_settings(user_id, 'work_item_limits', scope)
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Work item limits deleted successfully ({scope})"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete work item limits")
+            
+    except Exception as e:
+        logger.error(f"Failed to delete work item limits for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/settings/{user_id}/visual-settings")

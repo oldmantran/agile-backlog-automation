@@ -56,7 +56,9 @@ const TronSettingsScreen: React.FC = () => {
   const [saveAsDefault, setSaveAsDefault] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [sessionId] = useState(`session_${Date.now()}`); // Generate unique session ID
+  const [sessionId] = useState(`session_${Date.now()}`);
+  const [hasCustomSettings, setHasCustomSettings] = useState(false);
+  const [useSystemDefaults, setUseSystemDefaults] = useState(false); // Generate unique session ID
 
   // Initialize component
   useEffect(() => {
@@ -80,13 +82,22 @@ const TronSettingsScreen: React.FC = () => {
         
         if ((workItemLimitsResponse as any).success && (workItemLimitsResponse as any).data) {
           const data = (workItemLimitsResponse as any).data;
+          const limits = data.limits || data; // Handle both new and old format
+          
           setWorkItemLimits({
-            maxEpics: data.max_epics || 2,
-            maxFeaturesPerEpic: data.max_features_per_epic || 3,
-            maxUserStoriesPerFeature: data.max_user_stories_per_feature || 5,
-            maxTasksPerUserStory: data.max_tasks_per_user_story || 5,
-            maxTestCasesPerUserStory: data.max_test_cases_per_user_story || 5
+            maxEpics: limits.max_epics || 2,
+            maxFeaturesPerEpic: limits.max_features_per_epic || 3,
+            maxUserStoriesPerFeature: limits.max_user_stories_per_feature || 5,
+            maxTasksPerUserStory: limits.max_tasks_per_user_story || 5,
+            maxTestCasesPerUserStory: limits.max_test_cases_per_user_story || 5
           });
+          
+          // Log if user has custom settings
+          if (data.has_custom_settings !== undefined) {
+            console.log(`User has custom settings: ${data.has_custom_settings}`);
+            setHasCustomSettings(data.has_custom_settings);
+            setUseSystemDefaults(!data.has_custom_settings);
+          }
         }
         
         if ((visualSettingsResponse as any).success && (visualSettingsResponse as any).data) {
@@ -149,6 +160,7 @@ const TronSettingsScreen: React.FC = () => {
       }
       
       const scope = saveAsDefault ? 'user_default' : 'session';
+      const isUserDefault = saveAsDefault && !useSystemDefaults;
       
       // Save work item limits
       const workItemLimitsRequest: WorkItemLimitsRequest = {
@@ -158,7 +170,8 @@ const TronSettingsScreen: React.FC = () => {
         max_tasks_per_user_story: workItemLimits.maxTasksPerUserStory,
         max_test_cases_per_user_story: workItemLimits.maxTestCasesPerUserStory,
         scope,
-        session_id: scope === 'session' ? sessionId : undefined
+        session_id: scope === 'session' ? sessionId : undefined,
+        is_user_default: isUserDefault
       };
       
       // Save visual settings
@@ -202,6 +215,32 @@ const TronSettingsScreen: React.FC = () => {
       maxTestCasesPerUserStory: 5
     });
     setSelectedPreset('default');
+  };
+  
+  const handleSystemDefaultsToggle = async (useDefaults: boolean) => {
+    setUseSystemDefaults(useDefaults);
+    
+    if (useDefaults) {
+      // User wants to use system defaults - delete custom settings
+      try {
+        if (currentUser) {
+          // Delete user default settings
+          await fetch(`/api/settings/${currentUser.user_id}/work-item-limits?scope=user_default`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          setHasCustomSettings(false);
+          console.log('Switched to system defaults');
+        }
+      } catch (error) {
+        console.error('Failed to switch to system defaults:', error);
+      }
+    } else {
+      // User wants to use custom settings - save current values as user defaults
+      setHasCustomSettings(true);
+      setSaveAsDefault(true); // Automatically enable save as default
+    }
   };
   
   const handlePresetChange = (preset: string) => {
@@ -320,7 +359,7 @@ const TronSettingsScreen: React.FC = () => {
                   <Label className="text-foreground font-medium glow-cyan mb-3 block">
                     Quick Preset
                   </Label>
-                  <Select value={selectedPreset} onValueChange={handlePresetChange}>
+                  <Select value={selectedPreset} onValueChange={handlePresetChange} disabled={useSystemDefaults}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a preset" />
                     </SelectTrigger>
@@ -333,6 +372,34 @@ const TronSettingsScreen: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* System Defaults Toggle */}
+                <div className="flex items-center space-x-3 pt-4 border-t border-primary/20">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="use-system-defaults"
+                      checked={useSystemDefaults}
+                      onCheckedChange={handleSystemDefaultsToggle}
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor="use-system-defaults" className="text-sm text-foreground">
+                      Use System Defaults
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                    <FiDatabase className="w-3 h-3" />
+                    <span>{useSystemDefaults ? 'System Defaults' : 'Custom Settings'}</span>
+                  </div>
+                </div>
+                
+                {!useSystemDefaults && (
+                  <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10">
+                    <div className="flex items-center space-x-2 text-yellow-300 text-sm">
+                      <FiInfo className="w-4 h-4" />
+                      <span>Custom settings will be saved as your personal defaults</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Custom Limits */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -347,6 +414,7 @@ const TronSettingsScreen: React.FC = () => {
                       value={workItemLimits.maxEpics}
                       onChange={(e) => setWorkItemLimits({...workItemLimits, maxEpics: parseInt(e.target.value) || 1})}
                       className="glow-cyan"
+                      disabled={useSystemDefaults}
                     />
                   </div>
                   
@@ -361,6 +429,7 @@ const TronSettingsScreen: React.FC = () => {
                       value={workItemLimits.maxFeaturesPerEpic}
                       onChange={(e) => setWorkItemLimits({...workItemLimits, maxFeaturesPerEpic: parseInt(e.target.value) || 1})}
                       className="glow-cyan"
+                      disabled={useSystemDefaults}
                     />
                   </div>
                   
@@ -375,6 +444,7 @@ const TronSettingsScreen: React.FC = () => {
                       value={workItemLimits.maxUserStoriesPerFeature}
                       onChange={(e) => setWorkItemLimits({...workItemLimits, maxUserStoriesPerFeature: parseInt(e.target.value) || 1})}
                       className="glow-cyan"
+                      disabled={useSystemDefaults}
                     />
                   </div>
                   
@@ -389,6 +459,7 @@ const TronSettingsScreen: React.FC = () => {
                       value={workItemLimits.maxTasksPerUserStory}
                       onChange={(e) => setWorkItemLimits({...workItemLimits, maxTasksPerUserStory: parseInt(e.target.value) || 1})}
                       className="glow-cyan"
+                      disabled={useSystemDefaults}
                     />
                   </div>
                   
@@ -403,6 +474,7 @@ const TronSettingsScreen: React.FC = () => {
                       value={workItemLimits.maxTestCasesPerUserStory}
                       onChange={(e) => setWorkItemLimits({...workItemLimits, maxTestCasesPerUserStory: parseInt(e.target.value) || 1})}
                       className="glow-cyan"
+                      disabled={useSystemDefaults}
                     />
                   </div>
                 </div>

@@ -83,8 +83,52 @@ class SettingsManager:
         self.logger.info(f"Resolved work item limits for {user_id}: {resolved_limits}")
         return resolved_limits
     
+    def has_custom_work_item_limits(self, user_id: str) -> bool:
+        """
+        Check if a user has custom work item limits (not system defaults).
+        
+        Args:
+            user_id: User identifier
+            
+        Returns:
+            True if user has custom settings, False if using system defaults
+        """
+        return db.has_custom_settings(user_id, 'work_item_limits', 'user_default')
+    
+    def get_work_item_limits_with_flags(self, user_id: str, session_id: str = None) -> Dict[str, Any]:
+        """
+        Get work item limits with flags indicating if they are custom defaults.
+        
+        Args:
+            user_id: User identifier
+            session_id: Session identifier (optional)
+            
+        Returns:
+            Dictionary with limits and flags
+        """
+        # Get settings with flags
+        settings_with_flags = db.get_settings_with_flags(user_id, 'work_item_limits', 'user_default')
+        
+        # Get resolved limits
+        resolved_limits = self.get_work_item_limits(user_id, session_id)
+        
+        # Combine into result
+        result = {
+            'limits': {
+                'max_epics': resolved_limits.max_epics,
+                'max_features_per_epic': resolved_limits.max_features_per_epic,
+                'max_user_stories_per_feature': resolved_limits.max_user_stories_per_feature,
+                'max_tasks_per_user_story': resolved_limits.max_tasks_per_user_story,
+                'max_test_cases_per_user_story': resolved_limits.max_test_cases_per_user_story
+            },
+            'has_custom_settings': self.has_custom_work_item_limits(user_id),
+            'settings_detail': settings_with_flags
+        }
+        
+        return result
+    
     def save_work_item_limits(self, user_id: str, limits: Dict[str, Any], 
-                             scope: str = 'session', session_id: str = None) -> bool:
+                             scope: str = 'session', session_id: str = None, is_user_default: bool = False) -> bool:
         """
         Save work item limits to database.
         
@@ -93,6 +137,7 @@ class SettingsManager:
             limits: Dictionary of limits to save
             scope: 'session' or 'user_default'
             session_id: Session identifier (for session scope)
+            is_user_default: Whether these are custom user defaults (vs system defaults)
             
         Returns:
             True if saved successfully
@@ -104,13 +149,13 @@ class SettingsManager:
                 if key in ['max_epics', 'max_features_per_epic', 'max_user_stories_per_feature', 
                           'max_tasks_per_user_story', 'max_test_cases_per_user_story']:
                     success = db.save_user_setting(
-                        target_id, 'work_item_limits', key, str(value), scope
+                        target_id, 'work_item_limits', key, str(value), scope, is_user_default
                     )
                     if not success:
                         self.logger.error(f"Failed to save {key} = {value}")
                         return False
             
-            self.logger.info(f"Saved work item limits for {target_id} ({scope}): {limits}")
+            self.logger.info(f"Saved work item limits for {target_id} ({scope}, user_default={is_user_default}): {limits}")
             return True
             
         except Exception as e:

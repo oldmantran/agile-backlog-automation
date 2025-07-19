@@ -8,6 +8,16 @@ export interface WorkItemLimits {
   max_test_cases_per_user_story: number;
 }
 
+export interface WorkItemLimitsResponse {
+  limits: WorkItemLimits;
+  has_custom_settings: boolean;
+  settings_detail: Record<string, {
+    value: string;
+    is_user_default: boolean;
+    scope?: string;
+  }>;
+}
+
 export interface VisualSettings {
   glow_intensity: number;
 }
@@ -29,6 +39,7 @@ export interface WorkItemLimitsRequest {
   max_test_cases_per_user_story: number;
   scope: 'session' | 'user_default';
   session_id?: string;
+  is_user_default?: boolean;
 }
 
 export interface VisualSettingsRequest {
