@@ -3,8 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
+import { settingsApi, WorkItemLimitsRequest, VisualSettingsRequest } from '../../services/api/settingsApi';
+import { userApi, CurrentUser } from '../../services/api/userApi';
 import { 
   FiSettings, 
   FiMonitor, 
@@ -12,21 +18,101 @@ import {
   FiZap,
   FiSave,
   FiRefreshCw,
-  FiInfo
+  FiInfo,
+  FiList,
+  FiUser,
+  FiDatabase
 } from 'react-icons/fi';
 
 const TronSettingsScreen: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [glowIntensity, setGlowIntensity] = useState(70); // Default to 70% (30% reduction from 100%)
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  // Get initial values from localStorage or use defaults
+  const getInitialGlowIntensity = () => {
+    const saved = localStorage.getItem('tron-glow-intensity');
+    return saved ? parseInt(saved) : 70;
+  };
 
-  // Load saved settings on component mount
-  useEffect(() => {
-    const savedGlowIntensity = localStorage.getItem('tron-glow-intensity');
-    if (savedGlowIntensity) {
-      setGlowIntensity(parseInt(savedGlowIntensity));
+  const getInitialWorkItemLimits = () => {
+    const saved = localStorage.getItem('work-item-limits');
+    if (saved) {
+      return JSON.parse(saved);
     }
-  }, []);
+    return {
+      maxEpics: 2,
+      maxFeaturesPerEpic: 3,
+      maxUserStoriesPerFeature: 5,
+      maxTasksPerUserStory: 5,
+      maxTestCasesPerUserStory: 5
+    };
+  };
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [glowIntensity, setGlowIntensity] = useState(getInitialGlowIntensity);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  
+  // Work Item Limits State
+  const [workItemLimits, setWorkItemLimits] = useState(getInitialWorkItemLimits);
+  const [selectedPreset, setSelectedPreset] = useState('default');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [sessionId] = useState(`session_${Date.now()}`); // Generate unique session ID
+
+  // Initialize component
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get current user first
+        const userResponse = await userApi.getCurrentUser();
+        setCurrentUser(userResponse);
+        
+        if (!userResponse) {
+          throw new Error('Failed to get current user');
+        }
+        
+        // Load settings from backend
+        const [workItemLimitsResponse, visualSettingsResponse] = await Promise.all([
+          settingsApi.getWorkItemLimits(userResponse.user_id, sessionId),
+          settingsApi.getVisualSettings(userResponse.user_id, sessionId)
+        ]);
+        
+        if ((workItemLimitsResponse as any).success && (workItemLimitsResponse as any).data) {
+          const data = (workItemLimitsResponse as any).data;
+          setWorkItemLimits({
+            maxEpics: data.max_epics || 2,
+            maxFeaturesPerEpic: data.max_features_per_epic || 3,
+            maxUserStoriesPerFeature: data.max_user_stories_per_feature || 5,
+            maxTasksPerUserStory: data.max_tasks_per_user_story || 5,
+            maxTestCasesPerUserStory: data.max_test_cases_per_user_story || 5
+          });
+        }
+        
+        if ((visualSettingsResponse as any).success && (visualSettingsResponse as any).data) {
+          const data = (visualSettingsResponse as any).data;
+          setGlowIntensity(data.glow_intensity || 70);
+        }
+        
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        // Fall back to localStorage
+        const savedLimits = localStorage.getItem('work-item-limits');
+        if (savedLimits) {
+          setWorkItemLimits(JSON.parse(savedLimits));
+        }
+        const savedGlow = localStorage.getItem('tron-glow-intensity');
+        if (savedGlow) {
+          setGlowIntensity(parseInt(savedGlow));
+        }
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
+      }
+    };
+    
+    loadSettings();
+  }, [sessionId]);
 
   // Apply glow intensity to CSS custom properties
   useEffect(() => {
@@ -39,18 +125,132 @@ const TronSettingsScreen: React.FC = () => {
     root.style.setProperty('--glow-strong-opacity', (0.6 * intensity).toString());
     root.style.setProperty('--text-glow-opacity', (0.4 * intensity).toString());
     
-    // Mark as having unsaved changes if different from saved value
-    const savedValue = localStorage.getItem('tron-glow-intensity');
-    setUnsavedChanges(savedValue !== glowIntensity.toString());
-  }, [glowIntensity]);
+    // Only check for unsaved changes after initialization is complete
+    if (isInitialized) {
+      const savedGlowValue = localStorage.getItem('tron-glow-intensity');
+      const savedLimitsValue = localStorage.getItem('work-item-limits');
+      
+      if (savedGlowValue && savedLimitsValue) {
+        const savedLimits = JSON.parse(savedLimitsValue);
+        const glowChanged = savedGlowValue !== glowIntensity.toString();
+        const limitsChanged = JSON.stringify(savedLimits) !== JSON.stringify(workItemLimits);
+        
+        setUnsavedChanges(glowChanged || limitsChanged);
+      }
+    }
+  }, [glowIntensity, workItemLimits, isInitialized]);
 
-  const handleSaveSettings = () => {
-    localStorage.setItem('tron-glow-intensity', glowIntensity.toString());
-    setUnsavedChanges(false);
+  const handleSaveSettings = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (!currentUser) {
+        throw new Error('No current user available');
+      }
+      
+      const scope = saveAsDefault ? 'user_default' : 'session';
+      
+      // Save work item limits
+      const workItemLimitsRequest: WorkItemLimitsRequest = {
+        max_epics: workItemLimits.maxEpics,
+        max_features_per_epic: workItemLimits.maxFeaturesPerEpic,
+        max_user_stories_per_feature: workItemLimits.maxUserStoriesPerFeature,
+        max_tasks_per_user_story: workItemLimits.maxTasksPerUserStory,
+        max_test_cases_per_user_story: workItemLimits.maxTestCasesPerUserStory,
+        scope,
+        session_id: scope === 'session' ? sessionId : undefined
+      };
+      
+      // Save visual settings
+      const visualSettingsRequest: VisualSettingsRequest = {
+        glow_intensity: glowIntensity,
+        scope,
+        session_id: scope === 'session' ? sessionId : undefined
+      };
+      
+      // Save both settings
+      await Promise.all([
+        settingsApi.saveWorkItemLimits(currentUser.user_id, workItemLimitsRequest),
+        settingsApi.saveVisualSettings(currentUser.user_id, visualSettingsRequest)
+      ]);
+      
+      // Also save to localStorage as backup
+      localStorage.setItem('tron-glow-intensity', glowIntensity.toString());
+      localStorage.setItem('work-item-limits', JSON.stringify(workItemLimits));
+      
+      setUnsavedChanges(false);
+      console.log(`Settings saved successfully (${scope})`);
+      
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      // Fall back to localStorage only
+      localStorage.setItem('tron-glow-intensity', glowIntensity.toString());
+      localStorage.setItem('work-item-limits', JSON.stringify(workItemLimits));
+      setUnsavedChanges(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResetToDefault = () => {
     setGlowIntensity(70); // Reset to 70% (30% reduction)
+    setWorkItemLimits({
+      maxEpics: 2,
+      maxFeaturesPerEpic: 3,
+      maxUserStoriesPerFeature: 5,
+      maxTasksPerUserStory: 5,
+      maxTestCasesPerUserStory: 5
+    });
+    setSelectedPreset('default');
+  };
+  
+  const handlePresetChange = (preset: string) => {
+    setSelectedPreset(preset);
+    
+    const presets = {
+      small: {
+        maxEpics: 2,
+        maxFeaturesPerEpic: 3,
+        maxUserStoriesPerFeature: 4,
+        maxTasksPerUserStory: 4,
+        maxTestCasesPerUserStory: 3
+      },
+      medium: {
+        maxEpics: 3,
+        maxFeaturesPerEpic: 4,
+        maxUserStoriesPerFeature: 5,
+        maxTasksPerUserStory: 5,
+        maxTestCasesPerUserStory: 4
+      },
+      large: {
+        maxEpics: 5,
+        maxFeaturesPerEpic: 6,
+        maxUserStoriesPerFeature: 6,
+        maxTasksPerUserStory: 6,
+        maxTestCasesPerUserStory: 5
+      },
+      unlimited: {
+        maxEpics: 999,
+        maxFeaturesPerEpic: 999,
+        maxUserStoriesPerFeature: 999,
+        maxTasksPerUserStory: 999,
+        maxTestCasesPerUserStory: 999
+      }
+    };
+    
+    if (preset !== 'default' && presets[preset as keyof typeof presets]) {
+      setWorkItemLimits(presets[preset as keyof typeof presets]);
+    }
+  };
+  
+  const calculateMaxItems = () => {
+    const { maxEpics, maxFeaturesPerEpic, maxUserStoriesPerFeature, maxTasksPerUserStory, maxTestCasesPerUserStory } = workItemLimits;
+    const maxFeatures = maxEpics * maxFeaturesPerEpic;
+    const maxUserStories = maxFeatures * maxUserStoriesPerFeature;
+    const maxTasks = maxUserStories * maxTasksPerUserStory;
+    const maxTestCases = maxUserStories * maxTestCasesPerUserStory;
+    
+    return { maxFeatures, maxUserStories, maxTasks, maxTestCases };
   };
 
   const getGlowPreview = () => {
@@ -92,7 +292,7 @@ const TronSettingsScreen: React.FC = () => {
                 </h1>
               </div>
               <p className="text-muted-foreground text-lg">
-                Configure visual effects and system preferences
+                Configure visual effects, work item limits, and system preferences
               </p>
             </div>
 
@@ -105,6 +305,139 @@ const TronSettingsScreen: React.FC = () => {
                 </AlertDescription>
               </Alert>
             )}
+
+            {/* Work Item Limits Section */}
+            <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <FiList className="w-6 h-6 text-primary glow-cyan" />
+                  <CardTitle className="text-foreground glow-cyan">Work Item Limits</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Preset Selection */}
+                <div>
+                  <Label className="text-foreground font-medium glow-cyan mb-3 block">
+                    Quick Preset
+                  </Label>
+                  <Select value={selectedPreset} onValueChange={handlePresetChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a preset" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default (2 epics, 3 features/epic, 5 stories/feature)</SelectItem>
+                      <SelectItem value="small">Small (96 tasks, 72 test cases)</SelectItem>
+                      <SelectItem value="medium">Medium (300 tasks, 240 test cases)</SelectItem>
+                      <SelectItem value="large">Large (1,080 tasks, 900 test cases)</SelectItem>
+                      <SelectItem value="unlimited">Unlimited (No limits)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Custom Limits */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                      Max Epics
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={workItemLimits.maxEpics}
+                      onChange={(e) => setWorkItemLimits({...workItemLimits, maxEpics: parseInt(e.target.value) || 1})}
+                      className="glow-cyan"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                      Max Features per Epic
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={workItemLimits.maxFeaturesPerEpic}
+                      onChange={(e) => setWorkItemLimits({...workItemLimits, maxFeaturesPerEpic: parseInt(e.target.value) || 1})}
+                      className="glow-cyan"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                      Max User Stories per Feature
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="15"
+                      value={workItemLimits.maxUserStoriesPerFeature}
+                      onChange={(e) => setWorkItemLimits({...workItemLimits, maxUserStoriesPerFeature: parseInt(e.target.value) || 1})}
+                      className="glow-cyan"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                      Max Tasks per User Story
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={workItemLimits.maxTasksPerUserStory}
+                      onChange={(e) => setWorkItemLimits({...workItemLimits, maxTasksPerUserStory: parseInt(e.target.value) || 1})}
+                      className="glow-cyan"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                      Max Test Cases per User Story
+                    </Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="25"
+                      value={workItemLimits.maxTestCasesPerUserStory}
+                      onChange={(e) => setWorkItemLimits({...workItemLimits, maxTestCasesPerUserStory: parseInt(e.target.value) || 1})}
+                      className="glow-cyan"
+                    />
+                  </div>
+                </div>
+
+                {/* Max Items Preview */}
+                <div className="p-4 rounded-lg border border-primary/30 bg-card/20">
+                  <h4 className="text-sm font-medium text-foreground mb-3 glow-cyan">Maximum Items Generated:</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {(() => {
+                      const { maxFeatures, maxUserStories, maxTasks, maxTestCases } = calculateMaxItems();
+                      return (
+                        <>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-primary glow-cyan">{maxFeatures}</div>
+                            <div className="text-xs text-muted-foreground">Features</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-accent glow-cyan">{maxUserStories}</div>
+                            <div className="text-xs text-muted-foreground">User Stories</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-400 glow-cyan">{maxTasks}</div>
+                            <div className="text-xs text-muted-foreground">Tasks</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-400 glow-cyan">{maxTestCases}</div>
+                            <div className="text-xs text-muted-foreground">Test Cases</div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Visual Effects Section */}
             <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
@@ -184,20 +517,50 @@ const TronSettingsScreen: React.FC = () => {
                   </div>
                 </div>
 
+                {/* User Information */}
+                {currentUser && (
+                  <div className="flex items-center space-x-2 pt-4 border-t border-primary/20">
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <FiUser className="w-4 h-4" />
+                      <span>Settings for: <strong className="text-foreground">{currentUser.display_name}</strong></span>
+                      <span className="text-xs">({currentUser.email})</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Save as Default Toggle */}
+                <div className="flex items-center space-x-3 pt-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="save-as-default"
+                      checked={saveAsDefault}
+                      onCheckedChange={setSaveAsDefault}
+                    />
+                    <Label htmlFor="save-as-default" className="text-sm text-foreground">
+                      Save as Default for Future Sessions
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                    <FiUser className="w-3 h-3" />
+                    <span>{saveAsDefault ? 'User Default' : 'Session Only'}</span>
+                  </div>
+                </div>
+
                 {/* Action Buttons */}
-                <div className="flex space-x-4 pt-4 border-t border-primary/20">
+                <div className="flex space-x-4 pt-4">
                   <Button 
                     onClick={handleSaveSettings}
-                    disabled={!unsavedChanges}
+                    disabled={!unsavedChanges || isLoading}
                     className="bg-primary hover:bg-primary/80 text-primary-foreground glow-cyan"
                   >
                     <FiSave className="w-4 h-4 mr-2" />
-                    Save Settings
+                    {isLoading ? 'Saving...' : 'Save Settings'}
                   </Button>
                   
                   <Button 
                     onClick={handleResetToDefault}
                     variant="outline"
+                    disabled={isLoading}
                     className="border-accent text-accent hover:bg-accent hover:text-accent-foreground glow-cyan"
                   >
                     <FiRefreshCw className="w-4 h-4 mr-2" />

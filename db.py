@@ -1,226 +1,255 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.types import JSON as SQLAlchemyJSON
-import datetime
-import json
+#!/usr/bin/env python3
+"""
+Database setup and management for Agile Backlog Automation.
+"""
 
-Base = declarative_base()
-
-class BacklogJob(Base):
-    __tablename__ = 'backlog_jobs'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_email = Column(String, nullable=False)
-    project_name = Column(String, nullable=False)
-    creator = Column(String, default='user')  # 'user' or 'ai_generated'
-    epics_generated = Column(Integer, nullable=False)
-    features_generated = Column(Integer, nullable=False)
-    user_stories_generated = Column(Integer, nullable=False)
-    tasks_generated = Column(Integer, nullable=False)
-    test_cases_generated = Column(Integer, nullable=False)
-    execution_time_seconds = Column(Float, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    raw_summary = Column(Text, nullable=True)  # Store JSON as text with UTF-8 encoding
-    status = Column(String, default='completed')  # completed, failed, test_generated
-    is_deleted = Column(Integer, default=0)  # 0 = active, 1 = soft deleted
-
-# SQLite DB file - moved to data/database directory
+import sqlite3
 import os
+import logging
+from datetime import datetime
+from typing import Dict, Any, List, Optional
 
-# Ensure data directory exists
-os.makedirs('data/database', exist_ok=True)
+logger = logging.getLogger(__name__)
 
-# Database path
-DB_PATH = 'data/database/backlog_jobs.db'
-engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
-SessionLocal = sessionmaker(bind=engine)
-
-# Create tables if not exist
-def init_db():
-    Base.metadata.create_all(engine)
-
-# Helper to add a job
-def add_backlog_job(
-    user_email,
-    project_name,
-    epics_generated,
-    features_generated,
-    user_stories_generated,
-    tasks_generated,
-    test_cases_generated,
-    execution_time_seconds,
-    raw_summary,
-    status='completed',
-    creator='user'
-):
-    session = SessionLocal()
+class Database:
+    def __init__(self, db_path: str = "backlog_jobs.db"):
+        self.db_path = db_path
+        self.init_database()
     
-    # Ensure proper UTF-8 encoding for JSON data
-    if raw_summary:
-        # Sanitize any Unicode characters in the summary
-        sanitized_summary = _sanitize_json_for_storage(raw_summary)
-        raw_summary_json = json.dumps(sanitized_summary, ensure_ascii=False)
-    else:
-        raw_summary_json = None
-        
-    job = BacklogJob(
-        user_email=user_email,
-        project_name=project_name,
-        creator=creator,
-        epics_generated=epics_generated,
-        features_generated=features_generated,
-        user_stories_generated=user_stories_generated,
-        tasks_generated=tasks_generated,
-        test_cases_generated=test_cases_generated,
-        execution_time_seconds=execution_time_seconds,
-        raw_summary=raw_summary_json,
-        status=status
-    )
-    session.add(job)
-    session.commit()
-    session.close()
-
-def _sanitize_json_for_storage(data):
-    """Recursively sanitize JSON data for database storage."""
-    # Handle circular references and complex objects
-    if hasattr(data, '__dict__'):
-        # Convert objects to dict, but be careful of circular refs
+    def init_database(self):
+        """Initialize database with required tables."""
         try:
-            data = data.__dict__
-        except:
-            return str(data)
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Create jobs table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS jobs (
+                        id TEXT PRIMARY KEY,
+                        project_id TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        progress INTEGER DEFAULT 0,
+                        current_agent TEXT,
+                        current_action TEXT,
+                        start_time TIMESTAMP,
+                        end_time TIMESTAMP,
+                        error TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                # Create user settings table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS user_settings (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id TEXT NOT NULL,
+                        setting_type TEXT NOT NULL,
+                        setting_key TEXT NOT NULL,
+                        setting_value TEXT NOT NULL,
+                        scope TEXT NOT NULL CHECK (scope IN ('session', 'user_default', 'global_default')),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(user_id, setting_type, setting_key, scope)
+                    )
+                ''')
+                
+                # Create index for faster lookups
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_user_settings_lookup 
+                    ON user_settings(user_id, setting_type, scope)
+                ''')
+                
+                conn.commit()
+                logger.info("Database initialized successfully")
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize database: {e}")
+            raise
     
-    if isinstance(data, dict):
-        sanitized_dict = {}
-        for key, value in data.items():
-            try:
-                sanitized_dict[str(key)] = _sanitize_json_for_storage(value)
-            except (RecursionError, TypeError):
-                sanitized_dict[str(key)] = str(value)
-        return sanitized_dict
-    elif isinstance(data, list):
-        sanitized_list = []
-        for item in data:
-            try:
-                sanitized_list.append(_sanitize_json_for_storage(item))
-            except (RecursionError, TypeError):
-                sanitized_list.append(str(item))
-        return sanitized_list
-    elif isinstance(data, str):
-        # Sanitize Unicode characters in strings
-        import re
-        # Replace common Unicode characters
-        replacements = {
-            '✅': '[SUCCESS]',
-            '❌': '[FAILED]',
-            '⚠️': '[WARNING]',
-            '📊': '[STATS]',
-            '🔍': '[SEARCH]',
-            '📝': '[NOTE]',
-            '🎯': '[TARGET]',
-            '🚀': '[LAUNCH]',
-            '💡': '[IDEA]',
-            '🔧': '[TOOL]',
-            '📋': '[CHECKLIST]',
-            '🎨': '[DESIGN]',
-            '🔒': '[SECURE]',
-            '🌟': '[STAR]',
-            '⭐': '[STAR]',
-            '🎉': '[CELEBRATE]',
-            '🔄': '[REFRESH]',
-            '📈': '[TREND]',
-            '💾': '[SAVE]',
-            '🎪': '[EVENT]',
-            '🚨': '[ALERT]',
-            '📧': '[EMAIL]',
-            '📤': '[SEND]',
-            '📥': '[RECEIVE]'
-        }
-        
-        for unicode_char, replacement in replacements.items():
-            data = data.replace(unicode_char, replacement)
-        
-        # Remove any remaining problematic Unicode characters
-        data = re.sub(r'[^\x00-\x7F]+', '?', data)
-        return data
-    else:
-        return data
+    def save_job(self, job_id: str, project_id: str, status: str = "queued", progress: int = 0):
+        """Save or update a job."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT OR REPLACE INTO jobs 
+                    (id, project_id, status, progress, start_time) 
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (job_id, project_id, status, progress, datetime.now()))
+                conn.commit()
+                logger.info(f"Job {job_id} saved to database")
+        except Exception as e:
+            logger.error(f"Failed to save job {job_id}: {e}")
+            raise
+    
+    def update_job(self, job_id: str, **kwargs):
+        """Update job fields."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Build dynamic update query
+                fields = []
+                values = []
+                for key, value in kwargs.items():
+                    if key in ['status', 'progress', 'current_agent', 'current_action', 'error', 'end_time']:
+                        fields.append(f"{key} = ?")
+                        values.append(value)
+                
+                if fields:
+                    values.append(job_id)
+                    query = f"UPDATE jobs SET {', '.join(fields)} WHERE id = ?"
+                    cursor.execute(query, values)
+                    conn.commit()
+                    logger.info(f"Job {job_id} updated: {kwargs}")
+                    
+        except Exception as e:
+            logger.error(f"Failed to update job {job_id}: {e}")
+            raise
+    
+    def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
+        """Get job by ID."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM jobs WHERE id = ?', (job_id,))
+                row = cursor.fetchone()
+                
+                if row:
+                    return dict(row)
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to get job {job_id}: {e}")
+            return None
+    
+    def get_all_jobs(self) -> List[Dict[str, Any]]:
+        """Get all jobs."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM jobs ORDER BY created_at DESC')
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
+                
+        except Exception as e:
+            logger.error(f"Failed to get all jobs: {e}")
+            return []
+    
+    # User Settings Methods
+    def save_user_setting(self, user_id: str, setting_type: str, setting_key: str, 
+                         setting_value: str, scope: str = 'session') -> bool:
+        """Save or update a user setting."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT OR REPLACE INTO user_settings 
+                    (user_id, setting_type, setting_key, setting_value, scope, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (user_id, setting_type, setting_key, setting_value, scope, datetime.now()))
+                conn.commit()
+                logger.info(f"Setting saved: {user_id}.{setting_type}.{setting_key} = {setting_value} ({scope})")
+                return True
+        except Exception as e:
+            logger.error(f"Failed to save user setting: {e}")
+            return False
+    
+    def get_user_settings(self, user_id: str, setting_type: str, scope: str = None) -> Dict[str, str]:
+        """Get user settings for a specific type and scope."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                if scope:
+                    cursor.execute('''
+                        SELECT setting_key, setting_value 
+                        FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ? AND scope = ?
+                    ''', (user_id, setting_type, scope))
+                else:
+                    cursor.execute('''
+                        SELECT setting_key, setting_value, scope
+                        FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ?
+                        ORDER BY 
+                            CASE scope 
+                                WHEN 'session' THEN 1 
+                                WHEN 'user_default' THEN 2 
+                                WHEN 'global_default' THEN 3 
+                            END
+                    ''', (user_id, setting_type))
+                
+                rows = cursor.fetchall()
+                settings = {}
+                
+                for row in rows:
+                    if len(row) == 2:  # scope specified
+                        settings[row[0]] = row[1]
+                    else:  # scope not specified, use highest priority
+                        key, value, row_scope = row
+                        if key not in settings:  # Only take first occurrence (highest priority)
+                            settings[key] = value
+                
+                return settings
+                
+        except Exception as e:
+            logger.error(f"Failed to get user settings: {e}")
+            return {}
+    
+    def delete_user_settings(self, user_id: str, setting_type: str, scope: str = None) -> bool:
+        """Delete user settings."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                if scope:
+                    cursor.execute('''
+                        DELETE FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ? AND scope = ?
+                    ''', (user_id, setting_type, scope))
+                else:
+                    cursor.execute('''
+                        DELETE FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ?
+                    ''', (user_id, setting_type))
+                
+                conn.commit()
+                logger.info(f"Deleted settings for {user_id}.{setting_type}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to delete user settings: {e}")
+            return False
+    
+    def get_setting_history(self, user_id: str, setting_type: str = None) -> List[Dict[str, Any]]:
+        """Get setting change history for audit trail."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                if setting_type:
+                    cursor.execute('''
+                        SELECT * FROM user_settings 
+                        WHERE user_id = ? AND setting_type = ?
+                        ORDER BY updated_at DESC
+                    ''', (user_id, setting_type))
+                else:
+                    cursor.execute('''
+                        SELECT * FROM user_settings 
+                        WHERE user_id = ?
+                        ORDER BY updated_at DESC
+                    ''', (user_id,))
+                
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
+                
+        except Exception as e:
+            logger.error(f"Failed to get setting history: {e}")
+            return []
 
-# Helper to get jobs by user (filtered)
-def get_jobs_by_user(user_email, exclude_test_generated=True, exclude_failed=True, exclude_deleted=True):
-    session = SessionLocal()
-    query = session.query(BacklogJob).filter_by(user_email=user_email)
-    
-    if exclude_deleted:
-        query = query.filter_by(is_deleted=0)
-    
-    if exclude_test_generated:
-        # Exclude test-generated backlogs (identified by project name patterns)
-        query = query.filter(
-            ~BacklogJob.project_name.like('%Test%'),
-            ~BacklogJob.project_name.like('%test%'),
-            ~BacklogJob.project_name.like('%AI Generated Backlog%'),
-            ~BacklogJob.status.like('%test_generated%')
-        )
-    
-    if exclude_failed:
-        # Exclude failed backlogs
-        query = query.filter(
-            ~BacklogJob.status.like('%failed%'),
-            ~BacklogJob.status.like('%Failed%')
-        )
-    
-    jobs = query.order_by(BacklogJob.created_at.desc()).all()
-    session.close()
-    return jobs
-
-# Helper to get all jobs (filtered)
-def get_all_jobs(exclude_test_generated=True, exclude_failed=True, exclude_deleted=True):
-    session = SessionLocal()
-    query = session.query(BacklogJob)
-    
-    if exclude_deleted:
-        query = query.filter_by(is_deleted=0)
-    
-    if exclude_test_generated:
-        # Exclude test-generated backlogs
-        query = query.filter(
-            ~BacklogJob.project_name.like('%Test%'),
-            ~BacklogJob.project_name.like('%test%'),
-            ~BacklogJob.project_name.like('%AI Generated Backlog%'),
-            ~BacklogJob.status.like('%test_generated%')
-        )
-    
-    if exclude_failed:
-        # Exclude failed backlogs
-        query = query.filter(
-            ~BacklogJob.status.like('%failed%'),
-            ~BacklogJob.status.like('%Failed%')
-        )
-    
-    jobs = query.order_by(BacklogJob.created_at.desc()).all()
-    session.close()
-    return jobs
-
-# Helper to soft delete a job
-def soft_delete_job(job_id):
-    session = SessionLocal()
-    job = session.query(BacklogJob).filter_by(id=job_id).first()
-    if job:
-        job.is_deleted = 1
-        session.commit()
-        session.close()
-        return True
-    session.close()
-    return False
-
-# Helper to get job by ID
-def get_job_by_id(job_id):
-    session = SessionLocal()
-    job = session.query(BacklogJob).filter_by(id=job_id).first()
-    session.close()
-    return job
-
-if __name__ == "__main__":
-    init_db()
-    print("Database initialized.")
+# Global database instance
+db = Database()

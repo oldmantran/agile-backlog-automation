@@ -42,7 +42,9 @@ try:
     from utils.logger import setup_logger
     from utils.project_context import ProjectContext
     from utils.notifier import Notifier
-    from db import add_backlog_job
+    from db import db
+    from utils.settings_manager import SettingsManager
+    from utils.user_id_resolver import user_id_resolver
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Current directory: {current_dir}")
@@ -110,6 +112,10 @@ sse_connections: Dict[str, List[asyncio.Queue]] = {}
 background_processes: Dict[str, subprocess.Popen] = {}
 sweeper_status = {"isRunning": False, "progress": 0, "currentItem": "", "processedItems": 0, "totalItems": 0, "errors": [], "completedActions": [], "logs": []}
 
+# Initialize settings manager
+config = Config()
+settings_manager = SettingsManager(config.settings)
+
 # Thread pool for CPU-intensive AI tasks
 ai_thread_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="AI_Worker")
 
@@ -145,7 +151,7 @@ async def lifespan(app: FastAPI):
 
     # Start SSE progress distribution task
     asyncio.create_task(distribute_sse_progress())
-    
+
     logger.info("Unified API Server started successfully")
     
     yield
@@ -193,6 +199,29 @@ class ConfigData(BaseModel):
     azureDevOpsPat: str = ""
     azureDevOpsOrg: str = ""
     azureDevOpsProject: str = ""
+
+# Settings Request/Response Models
+class SettingsRequest(BaseModel):
+    settings: Dict[str, Any]
+    scope: str = "session"
+    session_id: Optional[str] = None
+
+class WorkItemLimitsRequest(BaseModel):
+    max_epics: Optional[int] = 2
+    max_features_per_epic: Optional[int] = 3
+    max_user_stories_per_feature: Optional[int] = 5
+    max_tasks_per_user_story: Optional[int] = 5
+    max_test_cases_per_user_story: Optional[int] = 5
+    scope: str = "session"
+    session_id: Optional[str] = None
+
+class VisualSettingsRequest(BaseModel):
+    glow_intensity: int = 70
+    scope: str = "session"
+    session_id: Optional[str] = None
+
+class SessionDeleteRequest(BaseModel):
+    session_id: str
     llmProvider: str = "openai"
     areaPath: str = ""
     openaiApiKey: str = ""
@@ -1587,6 +1616,177 @@ def open_browser():
         webbrowser.open("http://localhost:3000")
     except Exception as e:
         logger.error(f"Failed to open browser: {e}")
+
+# User Settings Endpoints
+@app.get("/api/settings/{user_id}")
+async def get_user_settings(user_id: str, session_id: str = None):
+    """Get all settings for a user/session."""
+    try:
+        settings = settings_manager.get_all_settings(user_id, session_id)
+        return {
+            "success": True,
+            "data": settings
+        }
+    except Exception as e:
+        logger.error(f"Failed to get settings for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings/{user_id}")
+async def save_user_settings(user_id: str, request: SettingsRequest):
+    """Save user settings."""
+    try:
+        success = settings_manager.save_all_settings(
+            user_id, request.settings, request.scope, request.session_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Settings saved successfully ({request.scope})"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save settings")
+            
+    except Exception as e:
+        logger.error(f"Failed to save settings for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/settings/{user_id}/work-item-limits")
+async def get_work_item_limits(user_id: str, session_id: str = None):
+    """Get work item limits for a user/session."""
+    try:
+        limits = settings_manager.get_work_item_limits(user_id, session_id)
+        return {
+            "success": True,
+            "data": {
+                "max_epics": limits.max_epics,
+                "max_features_per_epic": limits.max_features_per_epic,
+                "max_user_stories_per_feature": limits.max_user_stories_per_feature,
+                "max_tasks_per_user_story": limits.max_tasks_per_user_story,
+                "max_test_cases_per_user_story": limits.max_test_cases_per_user_story
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get work item limits for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings/{user_id}/work-item-limits")
+async def save_work_item_limits(user_id: str, request: WorkItemLimitsRequest):
+    """Save work item limits."""
+    try:
+        limits = {
+            'max_epics': request.max_epics,
+            'max_features_per_epic': request.max_features_per_epic,
+            'max_user_stories_per_feature': request.max_user_stories_per_feature,
+            'max_tasks_per_user_story': request.max_tasks_per_user_story,
+            'max_test_cases_per_user_story': request.max_test_cases_per_user_story
+        }
+        
+        success = settings_manager.save_work_item_limits(
+            user_id, limits, request.scope, request.session_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Work item limits saved successfully ({request.scope})"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save work item limits")
+            
+    except Exception as e:
+        logger.error(f"Failed to save work item limits for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/settings/{user_id}/visual-settings")
+async def get_visual_settings(user_id: str, session_id: str = None):
+    """Get visual settings for a user/session."""
+    try:
+        settings = settings_manager.get_visual_settings(user_id, session_id)
+        return {
+            "success": True,
+            "data": {
+                "glow_intensity": settings.glow_intensity
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get visual settings for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings/{user_id}/visual-settings")
+async def save_visual_settings(user_id: str, request: VisualSettingsRequest):
+    """Save visual settings."""
+    try:
+        settings = {
+            'glow_intensity': request.glow_intensity
+        }
+        
+        success = settings_manager.save_visual_settings(
+            user_id, settings, request.scope, request.session_id
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": f"Visual settings saved successfully ({request.scope})"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save visual settings")
+            
+    except Exception as e:
+        logger.error(f"Failed to save visual settings for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/settings/{user_id}/session")
+async def delete_session_settings(user_id: str, request: SessionDeleteRequest):
+    """Delete session-specific settings."""
+    try:
+        success = settings_manager.delete_session_settings(request.session_id)
+        
+        if success:
+            return {
+                "success": True,
+                "message": "Session settings deleted successfully"
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete session settings")
+            
+    except Exception as e:
+        logger.error(f"Failed to delete session settings for {request.session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/settings/{user_id}/history")
+async def get_setting_history(user_id: str, setting_type: str = None):
+    """Get setting change history for audit trail."""
+    try:
+        history = settings_manager.get_setting_history(user_id, setting_type)
+        return {
+            "success": True,
+            "data": history
+        }
+    except Exception as e:
+        logger.error(f"Failed to get setting history for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/user/current")
+async def get_current_user():
+    """Get current user information."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        user_email = user_id_resolver.get_user_email()
+        display_name = user_id_resolver.get_user_display_name()
+        
+        return {
+            "success": True,
+            "data": {
+                "user_id": user_id,
+                "email": user_email,
+                "display_name": display_name
+            }
+        }
+    except Exception as e:
+        logger.error(f"Failed to get current user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run(

@@ -125,3 +125,41 @@ notifications:
     send_to:
       - kevin.tran@c4workx.com
       - thaogtran@gmail.com
+
+# Work item limits configuration
+work_item_limits:
+  enabled: true
+  
+  # Maximum number of work items per job (null for unlimited)
+  max_epics: 2
+  max_features_per_epic: 3
+  max_user_stories_per_feature: 5
+  max_tasks_per_user_story: 5
+  max_test_cases_per_user_story: 5
+  
+  # Preset configurations for quick setup
+  presets:
+    small:
+      max_epics: 2
+      max_features_per_epic: 3
+      max_user_stories_per_feature: 4
+      max_tasks_per_user_story: 4
+      max_test_cases_per_user_story: 3
+    medium:
+      max_epics: 3
+      max_features_per_epic: 4
+      max_user_stories_per_feature: 5
+      max_tasks_per_user_story: 5
+      max_test_cases_per_user_story: 4
+    large:
+      max_epics: 5
+      max_features_per_epic: 6
+      max_user_stories_per_feature: 6
+      max_tasks_per_user_story: 6
+      max_test_cases_per_user_story: 5
+    unlimited:
+      max_epics: null
+      max_features_per_epic: null
+      max_user_stories_per_feature: null
+      max_tasks_per_user_story: null
+      max_test_cases_per_user_story: null

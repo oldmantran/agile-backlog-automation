@@ -17,6 +17,10 @@ A sophisticated multi-agent AI system that transforms product visions into struc
 - **Target**: Reduce job time to <30 minutes and cost to $10-20 per job
 
 ### **Recent Improvements**
+- **✅ Database-Based Settings Management**: Complete user settings system with session/user_default/global_default scopes
+- **✅ User ID Resolution**: Email-based user identification using `.env` configuration
+- **✅ Settings API**: Full REST API for managing work item limits and visual settings
+- **✅ Frontend Integration**: Tron Settings screen with real-time preview and save options
 - **SSE Implementation**: Server-Sent Events for real-time progress updates (needs testing)
 - **Multi-Provider Support**: Framework for rotating LLM providers (not implemented)
 - **Progress Persistence**: Framework for saving progress across failures (not implemented)
@@ -30,6 +34,9 @@ Frontend (React) ←→ API Server (FastAPI) ←→ AI Agents ←→ Azure DevOp
      ↑                    ↑                    ↑              ↑
   Real-time UI      SSE Progress      Multi-Agent      Work Items
   Monitoring        Streaming         Pipeline         Creation
+     ↑                    ↑                    ↑              ↑
+  Settings UI       Settings API      Settings        Database
+  Management        (Database)        Manager         Storage
 ```
 
 ### **AI Agent Pipeline**
@@ -83,8 +90,13 @@ agile-backlog-automation/
 ├── frontend/                # React-based UI
 │   ├── src/
 │   │   ├── screens/         # Application screens
+│   │   │   └── settings/    # Settings management screens
 │   │   ├── components/      # Reusable components
 │   │   ├── services/        # API services
+│   │   │   ├── api/         # API clients
+│   │   │   │   ├── settingsApi.ts  # Settings API client
+│   │   │   │   └── userApi.ts      # User API client
+│   │   │   └── ... (other services)
 │   │   └── hooks/           # Custom React hooks
 │   └── package.json
 ├── docs/                    # Documentation and analysis files
@@ -94,11 +106,14 @@ agile-backlog-automation/
 │   ├── COMPREHENSIVE_APPLICATION_ANALYSIS.md
 │   └── ... (other documentation)
 ├── unified_api_server.py    # Main FastAPI server (consolidated)
-├── db.py                    # Database operations
+├── db.py                    # Database operations (jobs + user settings)
 ├── config/                  # Configuration management
 │   ├── config_loader.py
 │   └── settings.yaml
 ├── utils/                   # Utility functions
+│   ├── settings_manager.py  # Database-based settings management
+│   ├── user_id_resolver.py  # User identification from .env
+│   └── ... (other utilities)
 ├── tools/                   # Development and debugging tools
 │   ├── api_server.py             # Original API server (reference/backup)
 │   ├── create_github_issues.py   # GitHub issue creation utility
@@ -165,6 +180,10 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 AZURE_DEVOPS_ORG=your_organization
 AZURE_DEVOPS_PROJECT=your_project
 AZURE_DEVOPS_PAT=your_personal_access_token
+
+# Required - User Identification (for settings management)
+EMAIL_TO=your_email@company.com
+EMAIL_FROM=your_email@company.com
 
 # Optional - Notification Configuration
 TEAMS_WEBHOOK_URL=your_teams_webhook_url
@@ -247,6 +266,68 @@ agents:
         max_tokens: 1500
 ```
 
+### **Spending Limits & Cost Control**
+```yaml
+spending_limits:
+  enabled: true
+  max_cost_per_job: 25.00  # USD - maximum cost per backlog generation job
+  
+  # Work item limits (null = unlimited, 0 = disabled)
+  max_epics: 5
+  max_features_per_epic: 8
+  max_user_stories_per_feature: 6
+  max_tasks_per_user_story: 8
+  max_test_cases_per_user_story: 10
+  
+  # Cost estimates per item type (USD)
+  cost_estimates:
+    epic_generation: 0.50
+    feature_decomposition: 0.30
+    user_story_generation: 0.20
+    task_generation: 0.15
+    test_case_generation: 0.10
+    test_plan_generation: 0.25
+    test_suite_generation: 0.20
+  
+  # Conflict resolution strategy
+  conflict_resolution:
+    priority: "cost_first"  # Options: "cost_first", "items_first", "balanced"
+    auto_adjust_limits: true  # Automatically adjust item limits based on cost budget
+    warn_on_conflicts: true  # Show warnings when limits conflict
+    max_adjustment_factor: 0.5  # Don't reduce limits by more than 50%
+  
+  # Budget presets for quick configuration
+  presets:
+    small:  # $10 budget
+      max_cost_per_job: 10.00
+      max_epics: 3
+      max_features_per_epic: 5
+      max_user_stories_per_feature: 4
+      max_tasks_per_user_story: 6
+      max_test_cases_per_user_story: 8
+    medium:  # $25 budget
+      max_cost_per_job: 25.00
+      max_epics: 5
+      max_features_per_epic: 8
+      max_user_stories_per_feature: 6
+      max_tasks_per_user_story: 8
+      max_test_cases_per_user_story: 10
+    large:  # $50 budget
+      max_cost_per_job: 50.00
+      max_epics: 10
+      max_features_per_epic: 12
+      max_user_stories_per_feature: 8
+      max_tasks_per_user_story: 10
+      max_test_cases_per_user_story: 12
+    unlimited:  # No cost limits
+      max_cost_per_job: null
+      max_epics: null
+      max_features_per_epic: null
+      max_user_stories_per_feature: null
+      max_tasks_per_user_story: null
+      max_test_cases_per_user_story: null
+```
+
 ### **QA Agent Hierarchy**
 The QA Lead Agent acts as a **sub-supervisor** with three specialized sub-agents:
 
@@ -264,6 +345,65 @@ The QA Lead Agent acts as a **sub-supervisor** with three specialized sub-agents
    - Generates positive, negative, and boundary test cases
    - Formats test cases in Gherkin or traditional format
    - Links test cases to appropriate test suites
+
+### **Database-Based Settings Management**
+
+The system now includes a comprehensive settings management system with user-specific configurations:
+
+#### **User Identification**
+- **Email-Based User ID**: Uses `EMAIL_TO` from `.env` file for user identification
+- **Normalized User ID**: Hash-based user ID for consistency (e.g., `user_d918da6e`)
+- **Display Name**: Extracted from email (e.g., "Kevin Tran" from `kevin.tran@c4workx.com`)
+- **Session Management**: Unique session IDs for temporary settings
+
+#### **Settings Scopes**
+1. **Session Settings** (highest priority) - Temporary settings for current browser session
+2. **User Defaults** (medium priority) - Persistent settings for all future sessions
+3. **Global Defaults** (lowest priority) - Fallback to `settings.yaml` configuration
+
+#### **Settings API Endpoints**
+- `GET /api/user/current` - Get current user information
+- `GET /api/settings/{user_id}` - Get all settings
+- `POST /api/settings/{user_id}` - Save all settings
+- `GET /api/settings/{user_id}/work-item-limits` - Get work item limits
+- `POST /api/settings/{user_id}/work-item-limits` - Save work item limits
+- `GET /api/settings/{user_id}/visual-settings` - Get visual settings
+- `POST /api/settings/{user_id}/visual-settings` - Save visual settings
+- `DELETE /api/settings/{user_id}/session` - Delete session settings
+- `GET /api/settings/{user_id}/history` - Get setting history
+
+#### **Frontend Integration**
+- **Tron Settings Screen**: Complete settings management UI
+- **Real-time Preview**: Live calculation of maximum items
+- **Session vs Default Toggle**: "Save as Default for Future Sessions"
+- **User Information Display**: Shows current user name and email
+- **Loading States**: Visual feedback during save operations
+- **Fallback Support**: localStorage backup if backend unavailable
+
+### **Work Item Limits**
+The system uses **simple work item limits** to control the scope of backlog generation:
+
+**Default Limits:**
+- **Max Epics**: 2
+- **Max Features per Epic**: 3
+- **Max User Stories per Feature**: 5
+- **Max Tasks per User Story**: 5
+- **Max Test Cases per User Story**: 5
+
+**Preset Configurations:**
+- **Small**: 2 epics, 3 features/epic, 4 stories/feature → **96 tasks, 72 test cases**
+- **Medium**: 3 epics, 4 features/epic, 5 stories/feature → **300 tasks, 240 test cases**
+- **Large**: 5 epics, 6 features/epic, 6 stories/feature → **1,080 tasks, 900 test cases**
+- **Unlimited**: No limits, full generation allowed
+
+**Features:**
+- ✅ **Simple configuration** - Just set item count limits
+- ✅ **Preset configurations** - Quick setup with small, medium, large, unlimited options
+- ✅ **Validation** - Prevents unreasonable limits (max 50 epics, 20 features/epic, etc.)
+- ✅ **Flexible** - Can be set to unlimited for full backlog generation
+- ✅ **User-specific** - Each user can have their own limits
+- ✅ **Session management** - Temporary settings for testing
+- ✅ **Database storage** - Persistent settings with audit trail
 
 ## 🛠️ Development Tools
 
@@ -288,6 +428,14 @@ python tools/debug_parallel_processing.py
 # Create GitHub issues
 tools/create_github_issues.bat
 python tools/create_github_issues.py
+
+# Test work item limits
+python tools/test_work_item_limits.py
+
+# Test settings management
+python tools/test_settings_database.py
+python tools/test_settings_api.py
+python tools/test_user_id_resolver.py
 
 # Original API server (WebSocket logging)
 python tools/api_server.py
@@ -339,9 +487,10 @@ python tools/check_db.py
 - **Total Time**: 1.5+ hours (target: <30 minutes)
 
 ### **Cost Analysis**
-- **Current Cost**: $50-100 per job
-- **Target Cost**: $10-20 per job
-- **Potential Savings**: 70-80% reduction
+- **Real-World Cost**: < $1.00 for 2 epics, 2-3 features/epic, 3-5 stories/feature
+- **Typical Job Cost**: $10-25 for substantial backlogs
+- **Cost Control**: Simple work item limits prevent runaway costs
+- **User Control**: Set limits based on your budget and needs
 
 ## 🚨 Known Issues & Limitations
 
@@ -449,13 +598,57 @@ python -m pytest tests/test_frontend/
 
 ## 📁 Data Organization
 
+### **Database Schema**
+
+The system uses SQLite for data storage with two main tables:
+
+#### **Jobs Table** (for backlog generation tracking)
+```sql
+CREATE TABLE jobs (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    progress INTEGER DEFAULT 0,
+    current_agent TEXT,
+    current_action TEXT,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    error TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### **User Settings Table** (for settings management)
+```sql
+CREATE TABLE user_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    setting_type TEXT NOT NULL,
+    setting_key TEXT NOT NULL,
+    setting_value TEXT NOT NULL,
+    scope TEXT NOT NULL CHECK (scope IN ('session', 'user_default', 'global_default')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, setting_type, setting_key, scope)
+);
+```
+
+**Setting Types:**
+- `work_item_limits` - Work item generation limits
+- `visual_settings` - UI appearance settings
+
+**Scopes:**
+- `session` - Temporary settings for current browser session
+- `user_default` - Persistent settings for all future sessions
+- `global_default` - System-wide default settings
+
 ### **Data Directory Structure**
 All data files are organized in the `data/` directory following best practices:
 
 ```
 data/
 ├── database/           # Database files
-│   └── backlog_jobs.db # SQLite database for job tracking
+│   └── backlog_jobs.db # SQLite database for job tracking and user settings
 ├── logs/               # Application logs
 │   └── supervisor.log  # Workflow execution logs
 └── output/             # Generated outputs
@@ -541,5 +734,5 @@ When reporting issues, please include:
 ---
 
 **Last Updated**: 2025-07-19
-**Version**: 2.0.0
-**Status**: Active Development with Critical Issues
+**Version**: 2.1.0
+**Status**: Active Development with Database-Based Settings Management
