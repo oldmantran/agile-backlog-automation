@@ -1,0 +1,25 @@
+2025-07-19 18:23:06 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250719_182306_proj_20250719_182306
+2025-07-19 18:23:06 - supervisor - INFO - Azure DevOps config for job_id=job_20250719_182306_proj_20250719_182306: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-19 18:23:08 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-19 18:23:08 - supervisor - INFO - Starting workflow execution at 2025-07-19 18:23:08.548601
+2025-07-19 18:23:08 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-19 18:23:08 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-19 18:23:08 - supervisor - INFO - Generating epics from product vision
+2025-07-19 18:23:08 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-19 18:23:59 - supervisor - INFO - Generated 10 epics
+2025-07-19 18:23:59 - supervisor - INFO - Validation completed: 10 epics checked, 0 errors.
+2025-07-19 18:23:59 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-19 18:23:59 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-19 18:23:59 - supervisor - INFO - Decomposing epic: Centralized End-to-End Transaction Dashboard
+2025-07-19 18:23:59 - supervisor - INFO - Decomposing epic: AI-Powered Property and Financing Recommendations
+2025-07-19 18:23:59 - supervisor - INFO - Decomposing epic: Transparent Real-Time Cost Breakdown Tool
+2025-07-19 18:23:59 - supervisor - INFO - Decomposing epic: Professional Collaboration and Service Booking Platform
+2025-07-19 18:24:13 - supervisor - INFO - Decomposing epic: Mobile-First Responsive Platform Experience
+2025-07-19 18:24:14 - supervisor - INFO - Decomposing epic: Self-Service Educational Resource Center
+2025-07-19 18:24:15 - supervisor - INFO - Decomposing epic: Automated Compliance and Error Prevention Engine
+2025-07-19 18:24:16 - supervisor - INFO - Decomposing epic: Integrated User Feedback and NPS Collection Module

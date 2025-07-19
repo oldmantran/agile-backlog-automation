@@ -1019,6 +1019,10 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
         
         logger.info(f"   Final azure_integration_enabled: {azure_integration_enabled}")
         
+        # Get current user ID for settings management
+        current_user_id = user_id_resolver.get_default_user_id()
+        logger.info(f"🔧 Using user ID for settings: {current_user_id}")
+        
         # Initialize supervisor with error handling for Azure DevOps
         try:
             logger.info(f"🔧 Initializing WorkflowSupervisor for job {job_id} with Azure config:")
@@ -1040,7 +1044,9 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                     personal_access_token=personal_access_token,
                     area_path=area_path,
                     iteration_path=iteration_path,
-                    job_id=job_id
+                    job_id=job_id,
+                    settings_manager=settings_manager,
+                    user_id=current_user_id
                 )
             else:
                 # Initialize without Azure DevOps integration
@@ -1051,7 +1057,9 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                     personal_access_token="",  # Empty to disable Azure integration
                     area_path="",
                     iteration_path="",
-                    job_id=job_id
+                    job_id=job_id,
+                    settings_manager=settings_manager,
+                    user_id=current_user_id
                 )
             
             # IMPORTANT: Set the project name in the supervisor's project context
@@ -1081,7 +1089,9 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                         personal_access_token="",
                         area_path="",
                         iteration_path="",
-                        job_id=job_id
+                        job_id=job_id,
+                        settings_manager=settings_manager,
+                        user_id=current_user_id
                     )
                     supervisor.project = project_name
                     supervisor.project_context.update_context({
@@ -1288,6 +1298,10 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
         
         logger.info(f"   Final azure_integration_enabled: {azure_integration_enabled}")
         
+        # Get current user ID for settings management
+        current_user_id = user_id_resolver.get_default_user_id()
+        logger.info(f"🔧 Using user ID for settings: {current_user_id}")
+        
         # Initialize supervisor with error handling for Azure DevOps
         try:
             logger.info(f"🔧 Initializing WorkflowSupervisor for job {job_id} with Azure config:")
@@ -1309,7 +1323,9 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                     personal_access_token=personal_access_token,
                     area_path=area_path,
                     iteration_path=iteration_path,
-                    job_id=job_id
+                    job_id=job_id,
+                    settings_manager=settings_manager,
+                    user_id=current_user_id
                 )
             else:
                 # Initialize without Azure DevOps integration
@@ -1320,7 +1336,9 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                     personal_access_token="",  # Empty to disable Azure integration
                     area_path="",
                     iteration_path="",
-                    job_id=job_id
+                    job_id=job_id,
+                    settings_manager=settings_manager,
+                    user_id=current_user_id
                 )
             
             # IMPORTANT: Set the project name in the supervisor's project context
@@ -1350,7 +1368,9 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                         personal_access_token="",
                         area_path="",
                         iteration_path="",
-                        job_id=job_id
+                        job_id=job_id,
+                        settings_manager=settings_manager,
+                        user_id=current_user_id
                     )
                     supervisor.project = project_name
                     supervisor.project_context.update_context({

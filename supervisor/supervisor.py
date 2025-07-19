@@ -265,7 +265,7 @@ class WorkflowSupervisor:
     - Provide human-in-the-loop capabilities
     """
     
-    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None, job_id: str = None):
+    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None, job_id: str = None, settings_manager: Any = None, user_id: str = None):
         """Initialize the supervisor with configuration and agents."""
         # Load configuration
         self.config = Config(config_path) if config_path else Config()
@@ -275,6 +275,10 @@ class WorkflowSupervisor:
         self.logger.info(f"Initializing WorkflowSupervisor for job_id={job_id}")
         if organization_url or project or area_path or iteration_path:
             self.logger.info(f"Azure DevOps config for job_id={job_id}: org_url={organization_url}, project={project}, area_path={area_path}, iteration_path={iteration_path}")
+        
+        # Store settings manager and user ID for work item limits
+        self.settings_manager = settings_manager
+        self.user_id = user_id
         
         # Initialize project context
         self.project_context = ProjectContext(self.config)
@@ -804,8 +808,20 @@ class WorkflowSupervisor:
             agent = self.agents['epic_strategist']
             context = self.project_context.get_context('epic_strategist')
             
-            # Get limits from configuration (null = unlimited)
-            max_epics = self.config.settings.get('workflow', {}).get('limits', {}).get('max_epics')
+            # Get limits from settings manager if available, otherwise fall back to config
+            max_epics = None
+            if self.settings_manager and self.user_id:
+                try:
+                    work_item_limits = self.settings_manager.get_work_item_limits(self.user_id)
+                    max_epics = work_item_limits.max_epics
+                    self.logger.info(f"Using settings manager limits for user {self.user_id}: max_epics={max_epics}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to get limits from settings manager: {e}, falling back to config")
+                    max_epics = self.config.settings.get('work_item_limits', {}).get('max_epics')
+            else:
+                # Fall back to work_item_limits config section (not workflow.limits)
+                max_epics = self.config.settings.get('work_item_limits', {}).get('max_epics')
+                self.logger.info(f"Using config limits: max_epics={max_epics}")
             
             # Generate epics from product vision
             product_vision = self.workflow_data.get('product_vision', '')
@@ -894,7 +910,22 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing epics into features (parallel mode: %s)", self.parallel_config['stages']['feature_decomposer_agent'])
         agent = self.agents['feature_decomposer_agent']
         context = self.project_context.get_context('feature_decomposer_agent')
-        max_features = self.config.settings.get('workflow', {}).get('limits', {}).get('max_features_per_epic')
+        
+        # Get limits from settings manager if available, otherwise fall back to config
+        max_features = None
+        if self.settings_manager and self.user_id:
+            try:
+                work_item_limits = self.settings_manager.get_work_item_limits(self.user_id)
+                max_features = work_item_limits.max_features_per_epic
+                self.logger.info(f"Using settings manager limits for user {self.user_id}: max_features_per_epic={max_features}")
+            except Exception as e:
+                self.logger.warning(f"Failed to get limits from settings manager: {e}, falling back to config")
+                max_features = self.config.settings.get('work_item_limits', {}).get('max_features_per_epic')
+        else:
+            # Fall back to work_item_limits config section (not workflow.limits)
+            max_features = self.config.settings.get('work_item_limits', {}).get('max_features_per_epic')
+            self.logger.info(f"Using config limits: max_features_per_epic={max_features}")
+        
         epics = self.workflow_data['epics']
         
         if self.parallel_config['enabled'] and self.parallel_config['stages']['feature_decomposer_agent'] and len(epics) > 1:
@@ -920,7 +951,22 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing features into user stories (parallel mode: %s)", self.parallel_config['stages']['user_story_decomposer_agent'])
         agent = self.agents['user_story_decomposer_agent']
         context = self.project_context.get_context('user_story_decomposer_agent')
-        max_user_stories = self.config.settings.get('workflow', {}).get('limits', {}).get('max_user_stories_per_feature')
+        
+        # Get limits from settings manager if available, otherwise fall back to config
+        max_user_stories = None
+        if self.settings_manager and self.user_id:
+            try:
+                work_item_limits = self.settings_manager.get_work_item_limits(self.user_id)
+                max_user_stories = work_item_limits.max_user_stories_per_feature
+                self.logger.info(f"Using settings manager limits for user {self.user_id}: max_user_stories_per_feature={max_user_stories}")
+            except Exception as e:
+                self.logger.warning(f"Failed to get limits from settings manager: {e}, falling back to config")
+                max_user_stories = self.config.settings.get('work_item_limits', {}).get('max_user_stories_per_feature')
+        else:
+            # Fall back to work_item_limits config section (not workflow.limits)
+            max_user_stories = self.config.settings.get('work_item_limits', {}).get('max_user_stories_per_feature')
+            self.logger.info(f"Using config limits: max_user_stories_per_feature={max_user_stories}")
+        
         features = [(epic, feature) for epic in self.workflow_data['epics'] for feature in epic.get('features', [])]
         
         if self.parallel_config['enabled'] and self.parallel_config['stages']['user_story_decomposer_agent'] and len(features) > 1:
