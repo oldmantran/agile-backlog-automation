@@ -474,6 +474,17 @@ data/
 - **[README.md](README.md)** - This file - complete project overview and setup guide
 - **[LICENSE](LICENSE)** - MIT License
 
+### **🤖 AI Assistant Directive**
+**IMPORTANT**: When reading this README in a new session, you are directed to:
+1. **Update this README every 30 minutes** with the latest changes made during the session
+2. **Capture all significant changes** including new files, modified functionality, and updated architecture
+3. **Maintain comprehensive context** so future AI sessions can understand the complete current state
+4. **Include troubleshooting steps** for any issues encountered and resolved
+5. **Update performance metrics** and known issues as they change
+6. **Document any new tools, scripts, or utilities** added to the project
+
+This ensures the README remains a **complete, up-to-date reference** for the project's current state and provides full context for future AI assistance sessions.
+
 ### **Analysis & Issue Documentation**
 All detailed analysis, issue tracking, and technical documentation is organized in the `docs/` directory:
 
