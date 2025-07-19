@@ -1,53 +1,46 @@
 # 🧠 Agile Backlog Automation
 
-A sophisticated multi-agent AI system that transforms product visions into structured, actionable backlogs. Built with Grok from xAI, this system generates epics, features, user stories, developer tasks, and QA test cases with full Azure DevOps integration and advanced work item management capabilities.
+A sophisticated multi-agent AI system that transforms product visions into structured, actionable backlogs. Built with modern AI models, this system generates epics, features, user stories, developer tasks, and QA test cases with full Azure DevOps integration and advanced work item management capabilities.
 
-## 🚨 Recent Updates (2025-07)
+## 🚨 Current Project Status (2025-07-19)
 
-- **Acceptance Criteria Architecture Refactoring (NEW):**
-  - **Azure DevOps Best Practices Alignment:** Acceptance criteria are now exclusively created and managed at the User Story level, following Azure DevOps best practices
-  - **Feature-Level Simplification:** Features no longer include acceptance criteria, focusing on high-level business value and requirements
-  - **Enhanced User Story Focus:** All QA testing, validation, and test case generation now operates at the User Story level for better traceability
-  - **Improved ADO Field Mapping:** User Stories now properly map acceptance criteria to the dedicated `Microsoft.VSTS.Common.AcceptanceCriteria` field
-  - **Cleaner Work Item Hierarchy:** Epic → Feature → User Story → Task/Test Case hierarchy now aligns with industry standards
+### **Critical Issues Identified**
+- **Issue #49**: QA Agent Critical Failure - System crashes and loses progress during test generation
+- **Issue #30**: Progress Bar Not Showing - Users can't monitor active jobs
+- **Issue #43**: Missing API Authentication - Security vulnerability
+- **Issue #50**: Parallel Processing Broken - Jobs taking 1.5+ hours instead of 30 minutes
 
-- **New Mobile-First Frontend:**
-  - Added React-based frontend with Chakra UI for a modern, responsive user interface
-  - Implemented project creation wizard for intuitive backlog setup
-  - Created dashboard for monitoring backlog generation progress
+### **Performance Issues**
+- **API Rate Limiting**: Single LLM provider hitting 10 calls/second limit
+- **Sequential Processing**: QA agent not using parallel processing despite configuration
+- **Cost Impact**: Current jobs cost $50-100 each due to timeouts and failures
+- **Target**: Reduce job time to <30 minutes and cost to $10-20 per job
 
-- **Test Case Hierarchy Analysis & Automation:**
-  - Added scripts to analyze and reorganize test cases, ensuring they are parented by User Stories (not Features) for best practice in Azure DevOps
-  - Created a script to identify test cases directly under Features and (optionally) auto-create User Stories to parent them
-  - Enhanced logging and dry-run support for all reorganization scripts
-  
-- **Environment Variable Handling:**
-  - Standardized on `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT`, and `AZURE_DEVOPS_PAT` for all scripts
-  - All scripts now robustly load the `.env` file from the project root, regardless of working directory
-  - Fixed Azure DevOps authentication to always use base64-encoded PATs
+### **Recent Improvements**
+- **SSE Implementation**: Server-Sent Events for real-time progress updates (needs testing)
+- **Multi-Provider Support**: Framework for rotating LLM providers (not implemented)
+- **Progress Persistence**: Framework for saving progress across failures (not implemented)
+- **Comprehensive Logging**: Enhanced logging and monitoring capabilities
 
-- **QA Tester Agent & Test Plan Automation:**
-  - Improved prompt and logic for the QA Tester Agent to support test case prioritization and grouping
-  - Prepared for automated creation of Test Plans and Suites based on a clean Feature → User Story → Test Case hierarchy
+## 🏗️ Architecture Overview
 
-- **Debugging & Validation:**
-  - Added scripts and debug tools to verify work item relationships and Azure DevOps API responses
-  - Improved error handling and step-by-step logging for all automation scripts
+### **Core Components**
+```
+Frontend (React) ←→ API Server (FastAPI) ←→ AI Agents ←→ Azure DevOps
+     ↑                    ↑                    ↑              ↑
+  Real-time UI      SSE Progress      Multi-Agent      Work Items
+  Monitoring        Streaming         Pipeline         Creation
+```
 
-## 🏗️ Architecture
-
-### AI Agents
+### **AI Agent Pipeline**
 1. **Epic Strategist** - Transforms product vision into high-level epics
-2. **Decomposition Agent** - Breaks epics into features and user stories with acceptance criteria
-3. **Developer Agent** - Creates technical tasks with time estimates  
-4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria (User Story level only)
+2. **Feature Decomposer** - Breaks epics into features with business value focus
+3. **User Story Decomposer** - Creates user stories with acceptance criteria
+4. **Developer Agent** - Generates technical tasks with time estimates
+5. **QA Lead Agent** - Orchestrates test generation
+6. **QA Tester Agent** - Creates test cases and validates acceptance criteria
 
-### Workflow
-```
-Product Vision → Epics → Features → User Stories (with Acceptance Criteria) → Developer Tasks → QA Test Cases & Validation
-```
-
-### Azure DevOps Work Item Hierarchy
+### **Work Item Hierarchy (Azure DevOps)**
 ```
 Epic
 ├── Feature (Business Value Focus)
@@ -61,118 +54,71 @@ Epic
     └── ...
 ```
 
-**Key Architecture Principles:**
-- **Features** focus on business value and high-level requirements without acceptance criteria
-- **User Stories** contain detailed acceptance criteria and are the primary unit for QA testing
+### **Key Architecture Principles**
+- **Features** focus on business value without acceptance criteria
+- **User Stories** contain detailed acceptance criteria and are QA testing units
 - **Test Cases** are always parented by User Stories for proper traceability
 - **Tasks** represent technical implementation work for User Stories
 
-### Work Item Management Tools
-- **Work Item Description Fixer** (`fix_work_item_descriptions.py`) - Fixes HTML formatting and section headers in work item descriptions
-- **Test Case Mover** (`move_test_cases.py`) - Organizes test cases into proper area paths
-- **Section Header Checker** (`check_section_headers.py`) - Validates and audits work item formatting
-- **ADO Cleanup Tools** (`tools/cleanup_ado_workitems.py`) - Bulk cleanup and management utilities
-- **Path Updater** (`tools/update_work_item_paths.py`) - Updates area and iteration paths for work items
+## 📁 Project Structure
 
-## 🛠️ Utility Tools
-
-The project includes several standalone utility tools for Azure DevOps work item management:
-
-### Work Item Management
-```bash
-# Fix work item descriptions with proper HTML formatting
-python fix_work_item_descriptions.py [--live] [--confirm]
-
-# Move all test cases to a specific area path
-python move_test_cases.py [--live] [--confirm]
-
-# Check what section headers exist in work items
-python check_section_headers.py
-
-# Update area and iteration paths for work items
-python tools/update_work_item_paths.py
-
-# Clean up all work items in a project
-python tools/cleanup_ado_workitems.py [--confirm]
 ```
-
-### Testing and Validation
-```bash
-# Test individual components
-python tools/test_config_loader.py
-python tools/test_epic_strategist.py
-python tools/test_feature_decomposer.py
-python tools/test_developer_agent.py
-python tools/test_qa_tester_agent.py
-
-# Test complete chains
-python tools/test_epic_to_feature_chain.py
-python tools/test_epic_feature_task_chain.py
-python tools/test_epic_feature_task_qa_chain.py
-
-# Test Azure DevOps integration
-python tools/test_azure_devops.py
-python tools/test_notifications.py
-```
-
-### Development and Debugging
-```bash
-# Debug specific components
-python tools/debug_agent_lockup.py
-python tools/debug_epic_output.py
-python tools/debug_feature_decomposer.py
-python tools/debug_work_item_creation.py
-
-# Demo and testing
-python tools/demo_prompt_system.py
-python tools/test_grit_system.py
-python tools/test_end_to_end.py
-```sticated multi-agent AI system that transforms product visions into structured, actionable backlogs. Built with Grok from xAI, this system generates epics, features, developer tasks, and QA test cases with full Azure DevOps integration and advanced work item management capabilities.
-
-## ✨ Features
-
-### Core AI Automation
-- **🤖 Multi-Agent Architecture**: Four specialized AI agents working in sequence
-- **🔄 Modular Execution**: Run individual stages or the complete pipeline
-- **📝 Flexible Input**: Support for interactive input or YAML configuration files
-- **💾 Multiple Output Formats**: JSON and YAML with timestamped outputs
-- **🎯 Human-in-the-Loop**: Review and approve at each stage
-- **⚙️ Configurable Workflows**: Customizable agent prompts and settings
-
-### Azure DevOps Integration
-- **🔗 Work Item Creation**: Automatic creation of Epics, Features, User Stories, Tasks, and Test Cases
-- **📋 Acceptance Criteria Management**: User Stories include dedicated acceptance criteria fields following ADO best practices
-- **🏗️ Proper Work Item Hierarchy**: Epic → Feature → User Story → Task/Test Case structure aligned with industry standards
-- **📊 Field Mapping**: Acceptance criteria properly mapped to `Microsoft.VSTS.Common.AcceptanceCriteria` field for User Stories
-- **🔧 Description Formatting**: Tools to fix and standardize work item descriptions with proper HTML
-- **📊 Project Analytics**: Tools to analyze and validate work item structures
-
-### Advanced Utilities
-- **📧 Smart Notifications**: Teams and email alerts with summary reports
-- **🧹 Cleanup Tools**: Bulk cleanup and management of Azure DevOps work items
-- **🔍 Validation Tools**: Structure validation and quality assessment
-- **📈 Estimation Tools**: Story point and time estimation capabilities
-- **🧪 Testing Framework**: Comprehensive test suites for all components
-
-## 🛠️ Architecture
-
-### AI Agents
-1. **Epic Strategist** - Transforms product vision into high-level epics
-2. **Decomposition Agent** - Breaks epics into features and user stories with acceptance criteria
-3. **Developer Agent** - Creates technical tasks with time estimates
-4. **QA Tester Agent** - Generates test cases, edge cases, and validates acceptance criteria at User Story level
-
-### Workflow
-```
-Product Vision → Epics → Features → Developer Tasks → QA Test Cases & Validation
+agile-backlog-automation/
+├── agents/                    # AI Agent implementations
+│   ├── base_agent.py         # Base agent class
+│   ├── epic_strategist.py    # Epic generation agent
+│   ├── feature_decomposer_agent.py
+│   ├── user_story_decomposer_agent.py
+│   ├── developer_agent.py    # Task generation agent
+│   ├── qa_lead_agent.py      # QA orchestration agent
+│   └── qa/                   # QA sub-agents
+├── supervisor/               # Workflow orchestration
+│   ├── supervisor.py        # Main workflow supervisor
+│   └── main.py              # Supervisor entry point
+├── frontend/                # React-based UI
+│   ├── src/
+│   │   ├── screens/         # Application screens
+│   │   ├── components/      # Reusable components
+│   │   ├── services/        # API services
+│   │   └── hooks/           # Custom React hooks
+│   └── package.json
+├── docs/                    # Documentation and analysis files
+│   ├── GITHUB_ISSUES_PRIORITIZATION_SUMMARY.md
+│   ├── PARALLEL_PROCESSING_ANALYSIS.md
+│   ├── SSE_TROUBLESHOOTING_GUIDE.md
+│   ├── COMPREHENSIVE_APPLICATION_ANALYSIS.md
+│   └── ... (other documentation)
+├── api_server.py            # Main FastAPI server
+├── unified_api_server.py    # Consolidated API server
+├── db.py                    # Database operations
+├── config/                  # Configuration management
+│   ├── config_loader.py
+│   └── settings.yaml
+├── utils/                   # Utility functions
+├── tools/                   # Development and debugging tools
+├── integrators/             # External integrations
+├── clients/                 # API clients
+├── logs/                    # Application logs
+├── output/                  # Generated outputs
+├── samples/                 # Sample configuration files
+├── kill_dev_processes.bat   # Process cleanup (Windows)
+├── quick_start.bat          # Quick startup script
+└── requirements.txt         # Python dependencies
 ```
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### **Prerequisites**
+- Python 3.8+
+- Node.js 16+ (for frontend)
+- Azure DevOps account with PAT
+- AI model API key (OpenAI, Anthropic, etc.)
+
+### **1. Installation**
 
 ```bash
-git clone https://github.com/your-username/agile-backlog-automation.git
+# Clone repository
+git clone https://github.com/oldmantran/agile-backlog-automation.git
 cd agile-backlog-automation
 
 # Create virtual environment
@@ -186,706 +132,325 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install frontend dependencies
+cd frontend
+npm install
+cd ..
 ```
 
-### 2. Configuration
+### **2. Configuration**
 
 Create a `.env` file in the project root:
 
 ```env
-# Required - Grok API Configuration
-GROK_API_KEY=your_grok_api_key_here
-GROK_MODEL=grok-3-latest
+# Required - AI Model Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-# Optional - Azure DevOps Integration
+# Required - Azure DevOps Configuration
+AZURE_DEVOPS_ORG=your_organization
+AZURE_DEVOPS_PROJECT=your_project
 AZURE_DEVOPS_PAT=your_personal_access_token
-AZURE_DEVOPS_ORG=https://dev.azure.com/your-org
-AZURE_DEVOPS_PROJECT=YourProjectName
 
-# Optional - Notifications
+# Optional - Notification Configuration
 TEAMS_WEBHOOK_URL=your_teams_webhook_url
-EMAIL_SMTP_SERVER=smtp.gmail.com
-EMAIL_SMTP_PORT=587
-EMAIL_USE_TLS=true
-EMAIL_USERNAME=your-email@domain.com
-EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=your-email@domain.com
-EMAIL_TO=recipient@domain.com
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
 ```
 
-### 3. Verify Configuration
+### **3. Start the Application**
 
 ```bash
-python tools/test_config_loader.py
+# Start backend server
+python api_server.py
+
+# In another terminal, start frontend
+cd frontend
+npm start
+
+# Or use the quick start script
+quick_start.bat
 ```
 
-## 🧩 CLI Usage
+### **4. Create Your First Backlog**
 
-### Main Pipeline
-The main entry point is `tools/run_pipeline.py` with flexible execution options:
-
-```bash
-python tools/run_pipeline.py [--run STAGE] [--input PATH] [--project-type TYPE] [--project-name NAME]
-```
-
-#### Command Options
-
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--run` | Execution stage: `all`, `epic`, `feature`, `developer`, `qa` | `all` |
-| `--input` | Path to YAML input file with product vision and/or existing data | Interactive prompt |
-| `--project-type` | Project context: `fintech`, `healthcare`, `ecommerce`, `education`, `mobile`, `saas` | None |
-| `--project-name` | Custom project name for context | None |
-
-### Standalone Utilities
-
-#### Work Item Management
-```bash
-# Fix formatting issues in work item descriptions
-python fix_work_item_descriptions.py              # Dry run mode
-python fix_work_item_descriptions.py --live       # Execute changes
-python fix_work_item_descriptions.py --live --confirm  # Skip confirmation
-
-# Move test cases to proper area path
-python move_test_cases.py                         # Dry run mode
-python move_test_cases.py --live --confirm        # Execute move
-
-# Analyze section headers in work items
-python check_section_headers.py
-
-# Clean up project work items
-python tools/cleanup_ado_workitems.py --confirm
-```
-
-#### Development and Testing
-```bash
-# Run comprehensive test suite
-python tools/test_complete_chain.py
-
-# Test specific components
-python tools/test_[component_name].py
-
-# Debug specific issues
-python tools/debug_[component_name].py
-```
-
-### Usage Examples
-
-#### AI Pipeline Examples
-```bash
-# Full pipeline with interactive input
-python tools/run_pipeline.py
-
-# Epic generation only with interactive input  
-python tools/run_pipeline.py --run epic
-
-# QA testing only with interactive input
-python tools/run_pipeline.py --run qa
-
-# Complete pipeline from vision file
-python tools/run_pipeline.py --run all --input samples/grit_vision.yaml
-
-# Generate epics only from vision
-python tools/run_pipeline.py --run epic --input samples/taskmaster_vision.yaml
-
-# Generate features from existing epics
-python tools/run_pipeline.py --run feature --input output/epics_20250701_153000.yaml
-
-# Generate developer tasks from existing features
-python tools/run_pipeline.py --run developer --input output/backlog_20250701_153000.yaml
-
-# Generate QA test cases from existing features
-python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
-```
-
-#### Work Item Management Examples
-```bash
-# Fix all work item descriptions (preview changes)
-python fix_work_item_descriptions.py
-
-# Actually fix work item descriptions
-python fix_work_item_descriptions.py --live --confirm
-
-# Move all test cases to "Backlog Automation\Grit" area path
-python move_test_cases.py --live --confirm
-
-# Check what section headers exist in your work items
-python check_section_headers.py
-
-# Update area paths for all work items
-python tools/update_work_item_paths.py
-
-# Clean up all work items in the project
-python tools/cleanup_ado_workitems.py --confirm
-```
-
-#### Project Context Examples
-```bash
-# Run with project type context
-python tools/run_pipeline.py --project-type fintech --project-name "CryptoWallet Pro"
-
-# Custom context variables  
-python tools/run_pipeline.py \
-  --project-name "MyApp" \
-  --project-type ecommerce \
-  --input samples/ecotracker_vision.yaml
-
-# Healthcare project with compliance focus
-python tools/run_pipeline.py --project-type healthcare --project-name "PatientPortal"
-```
-
-## 📁 Input File Formats
-
-### Sample Vision Files
-The project includes several sample vision files in the `samples/` directory:
-
-- `grit_vision.yaml` - Logistics management system
-- `taskmaster_vision.yaml` - Task management application
-- `ecotracker_vision.yaml` - Environmental tracking app
-- `oil_gas_visions.yaml` - Oil & gas industry applications
-- `shipping_logistics_visions.yaml` - Shipping and logistics solutions
-- `features_with_qa.yaml` - Feature examples with QA validation
-
-### 1. Vision Only (`samples/taskmaster_vision.yaml`)
-```yaml
-product_vision: >
-  Build a mobile-first task management app for remote teams
-  that enables seamless collaboration, real-time updates, and
-  productivity tracking across distributed workforces.
-```
-
-### 2. Complete Vision with Context (`samples/grit_vision.yaml`)
-```yaml
-product_vision: >
-  Empower enterprise logistics managers to achieve operational excellence
-  through intelligent shipment monitoring that reduces costs by 15-25%,
-  prevents delays through predictive analytics, and provides actionable
-  mid-tier intelligence.
-
-project_context:
-  industry: "logistics"
-  target_users: ["Logistics Managers", "Supply Chain Directors"]
-  tech_stack: "Python, React, Azure"
-  compliance_requirements: ["SOC2", "ISO27001"]
-```
-
-### 3. Complete Backlog Structure
-```yaml
-product_vision: "Your product vision here"
-epics:
-  - title: "Epic Title"
-    description: "Epic description"
-    priority: "High"
-    features:
-      - title: "Feature Title"
-        description: "Feature description"
-        acceptance_criteria:
-          - "Criterion 1"
-          - "Criterion 2"
-        tasks:
-          - title: "Task Title"
-            description: "Task description" 
-            estimated_hours: 8
-            type: "Development"
-            priority: "High"
-        test_cases:
-          - title: "Test Case Title"
-            type: "functional"
-            priority: "High"
-            gherkin:
-              scenario: "Test scenario description"
-              given: ["Precondition 1"]
-              when: ["Action 1"]
-              then: ["Expected result 1"]
-        edge_cases:
-          - title: "Edge Case Title"
-            category: "boundary_condition"
-            risk_level: "Medium"
-        qa_validation:
-          testability_score: 8
-          recommendations: ["Recommendation 1"]
-```
-
-## 🎯 Modular Prompt System
-
-The system features a powerful **modular, template-based prompt system** with dynamic context injection for role-specific, domain-aware outputs.
-
-### Context-Aware Generation
-```bash
-# Run with project type context
-python tools/run_pipeline.py --project-type fintech --project-name "CryptoWallet Pro"
-
-# Custom context variables  
-python tools/run_pipeline.py \
-  --project-name "MyApp" \
-  --domain "e-commerce" \
-  --tech-stack "React, Node.js, PostgreSQL" \
-  --timeline "6 months"
-
-# Healthcare project with compliance focus
-python tools/run_pipeline.py --project-type healthcare --project-name "PatientPortal"
-```
-
-### Supported Project Types
-- **Fintech**: Banking, payments, cryptocurrency (PCI DSS, SOX compliance)
-- **Healthcare**: Medical apps, patient management (HIPAA, FDA compliance)  
-- **E-commerce**: Online retail, marketplaces (PCI DSS, GDPR compliance)
-- **Education**: Learning platforms, student management (FERPA, COPPA compliance)
-- **Mobile App**: iOS/Android applications, cross-platform development
-- **SaaS**: Software as a Service, multi-tenant applications
-
-### Key Benefits
-- **Domain-Specific**: Agents understand industry terminology and requirements
-- **Compliance-Aware**: Automatically includes relevant regulatory considerations
-- **Technology-Focused**: Tailors recommendations to your tech stack
-- **User-Centric**: Adapts to your target user personas
-
-### Example Context Impact
-**Generic Output**: "Create user authentication system"
-**Fintech Context**: "Implement multi-factor authentication with PCI DSS compliance, fraud detection, and regulatory audit trails for financial transactions"
-
-📖 **[Complete Prompt System Guide](docs/PROMPT_SYSTEM_GUIDE.md)**
-
-## 📤 Output Structure
-
-The system generates timestamped outputs in both JSON and YAML formats:
-
-```
-output/
-├── backlog_20250630_171414.json    # Complete structured backlog
-├── backlog_20250630_171414.yaml    # Human-readable format
-├── epics_and_features_20250630_165816.json  # Intermediate outputs
-└── epics_and_features_20250630_165816.yaml
-```
-
-### Output Schema
-```yaml
-product_vision: "Your product vision"
-epics:
-  - title: "Epic Name"
-    description: "Epic description"
-    priority: "High|Medium|Low"
-    business_value: "Value statement"
-    features:
-      - title: "Feature Name"
-        description: "Feature description (business value focus)"
-        priority: "High|Medium|Low"
-        estimated_story_points: 8
-        user_stories:
-          - title: "User Story Name"
-            description: "User story description"
-            acceptance_criteria:
-              - "User can perform action X"
-              - "System validates input Y"
-            priority: "High|Medium|Low"
-            estimated_story_points: 5
-            tasks:
-              - title: "Task Name"
-                description: "Technical implementation details"
-                type: "Development|Testing|Design|Documentation"
-                estimated_hours: 4
-                priority: "High|Medium|Low"
-                dependencies: []
-            test_cases:
-              - title: "Test scenario name"
-                type: "functional|security|performance|boundary"
-                priority: "High|Medium|Low"
-                gherkin:
-                  feature: "User story name"
-                  scenario: "Specific test scenario"
-                  given: ["Precondition 1", "Precondition 2"]
-                  when: ["User action 1", "System action 2"]
-                  then: ["Expected outcome 1", "Validation 2"]
-                estimated_time_minutes: 10
-            edge_cases:
-              - title: "Edge case name"
-                category: "boundary_condition|security|performance|integration"
-                description: "Detailed edge case description"
-                risk_level: "High|Medium|Low|Critical"
-                test_scenario: "How to reproduce the edge case"
-                expected_behavior: "What should happen"
-            qa_validation:
-              testability_score: 8
-              enhanced_criteria: ["Enhanced criterion 1"]
-              recommendations: ["Improvement recommendation 1"]
-              missing_scenarios: ["Missing test scenario 1"]
-```
+1. Open the application in your browser
+2. Navigate to "Create New Project"
+3. Enter your product vision or use a sample configuration
+4. Configure Azure DevOps settings
+5. Start the backlog generation process
+6. Monitor progress in real-time
 
 ## ⚙️ Configuration
 
-### Agent Configuration (`config/settings.yaml`)
+### **Parallel Processing Settings**
 ```yaml
-project:
-  name: "Your Project Name"
-  default_area_path: "Project\\Area"
-  default_iteration_path: "Project\\Sprint 2025-07"
+# config/settings.yaml
+parallel_processing:
+  enabled: true
+  max_workers: 4
+  rate_limit_per_second: 10
+  feature_decomposition: true
+  user_story_decomposition: true
+  task_generation: true
+  qa_generation: true
+  qa_sub_agent_parallel: true
+```
 
+### **Agent Configuration**
+```yaml
 agents:
   epic_strategist:
-    prompt_file: "prompts/epic_strategist.txt"
-  decomposition_agent:
-    prompt_file: "prompts/decomposition_agent.txt"
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 4000
+  feature_decomposer:
+    model: gpt-4
+    temperature: 0.6
+    max_tokens: 3000
   developer_agent:
-    prompt_file: "prompts/developer_agent.txt"
-    estimation_unit: "hours"
-  qa_tester_agent:
-    prompt_file: "prompts/qa_tester_agent.txt"
-    test_case_format: "gherkin"
-
-workflow:
-  sequence:
-    - epic_strategist
-    - decomposition_agent
-    - developer_agent
-    - qa_tester_agent
-  output_format: "azure_devops"
-
-notifications:
-  enabled: true
-  channels: [teams, email]
-  summary_report:
-    format: markdown
-    send_to:
-      - "project-manager@company.com"
-      - "tech-lead@company.com"
+    model: gpt-4
+    temperature: 0.5
+    max_tokens: 2000
+  qa_lead_agent:
+    model: gpt-4
+    temperature: 0.6
+    max_tokens: 3000
 ```
 
-### Custom Agent Prompts
-Customize agent behavior by editing prompt files in the `prompts/` directory:
+## 🛠️ Development Tools
 
-- `epic_strategist.txt` - Controls epic generation strategy
-- `decomposition_agent.txt` - Defines feature breakdown and user story creation approach
-- `developer_agent.txt` - Shapes technical task creation
-- `qa_tester_agent.txt` - Guides test case generation (User Story level only)
-
-## 🔗 Integrations
-
-### Azure DevOps
-Automatically creates work items in Azure DevOps:
-- **Epics** → Azure DevOps Epics
-- **Features** → Azure DevOps Features (business value focus, no acceptance criteria)
-- **User Stories** → Azure DevOps User Stories (with acceptance criteria in dedicated field)
-- **Tasks** → Azure DevOps Tasks (parented by User Stories)
-- **Test Cases** → Azure DevOps Test Cases (parented by User Stories)
-
-### Notifications
-- **Microsoft Teams** - Real-time pipeline status updates
-- **Email** - Detailed summary reports with markdown formatting
-
-## 🔧 Work Item Management Features
-
-The system includes powerful utilities for managing Azure DevOps work items:
-
-### Description Formatting (`fix_work_item_descriptions.py`)
-- **HTML Formatting**: Converts plain text descriptions to proper HTML
-- **Section Header Formatting**: Ensures consistent formatting of section headers like **Acceptance Criteria:**, **Business Value:**, etc.
-- **Bullet Point Organization**: Properly formats bullet lists with appropriate line breaks
-- **Bulk Processing**: Can process hundreds of work items in a single operation
-- **Safe Operations**: Dry-run mode to preview changes before applying
-
-### Test Case Organization (`move_test_cases.py`)
-- **Area Path Management**: Moves test cases to proper organizational structure
-- **Bulk Operations**: Handles large numbers of test cases efficiently
-- **Safety Features**: Confirmation prompts and dry-run capabilities
-- **Progress Tracking**: Real-time progress updates during operations
-
-### Work Item Analysis (`check_section_headers.py`)
-- **Section Header Discovery**: Identifies all section headers used in work items
-- **Formatting Audit**: Analyzes formatting consistency across work items
-- **Quality Assessment**: Provides insights into work item structure quality
-
-### Project Maintenance Tools
-- **Path Updates** (`tools/update_work_item_paths.py`): Update area and iteration paths
-- **Bulk Cleanup** (`tools/cleanup_ado_workitems.py`): Remove all work items from a project
-- **Debug Tools**: Various debugging utilities for troubleshooting
-
-### Key Benefits
-- **Consistency**: Ensures all work items follow the same formatting standards
-- **Efficiency**: Bulk operations save hours of manual work
-- **Quality**: Improves readability and professionalism of work items
-- **Maintenance**: Simplifies ongoing project maintenance tasks
-
-## 🔬 QA Testing Capabilities
-
-The QA Tester Agent provides comprehensive testing analysis for each User Story (following Azure DevOps best practices):
-
-### Test Case Generation (User Story Level Only)
-- **Functional Testing** - Happy path and alternative flow scenarios in Gherkin format
-- **Security Testing** - SQL injection, XSS, and authentication bypass scenarios
-- **Performance Testing** - Load testing and response time validation scenarios
-- **Boundary Testing** - Edge cases with minimum/maximum values and input validation
-- **Integration Testing** - API endpoint and service connectivity testing
-- **Usability Testing** - Accessibility and user experience validation
-
-### Edge Case Identification
-- **Boundary Conditions** - Maximum/minimum limits and invalid inputs
-- **Error Handling** - System failure scenarios and recovery testing
-- **Security Vulnerabilities** - Malicious input and unauthorized access attempts
-- **Performance Edge Cases** - High load and resource constraint scenarios
-- **Integration Failures** - Service outages and connectivity issues
-
-### Acceptance Criteria Validation (User Story Level)
-- **Testability Scoring** - 1-10 scale assessment of how testable criteria are
-- **Enhancement Recommendations** - Specific suggestions for improving testability
-- **Missing Scenarios** - Identification of untested edge cases and workflows
-- **Risk Assessment** - Critical, High, Medium, Low risk categorization
-
-### Example QA Output
-```yaml
-features:
-  - title: "User Management"
-    description: "Manage user accounts and permissions"
-    user_stories:
-      - title: "User Authentication"
-        acceptance_criteria:
-          - "User can log in with valid credentials"
-          - "System displays error for invalid credentials"
-          - "User session expires after 30 minutes of inactivity"
-        test_cases:
-          - title: "Successful login with valid credentials"
-            type: "functional"
-            priority: "High"
-            gherkin:
-              scenario: "User logs in successfully"
-              given: ["User has valid account", "User is on login page"]
-              when: ["User enters correct email and password", "User clicks login"]
-              then: ["User is redirected to dashboard", "Welcome message appears"]
-        edge_cases:
-          - title: "SQL injection attempt in login field"
-            category: "security"
-            risk_level: "Critical"
-            description: "Test for SQL injection vulnerability in email field"
-        qa_validation:
-          testability_score: 9
-          recommendations: ["Add specific error message validation"]
-```
-
-## 🧪 Testing & Validation
-
-### Test Individual Components
+### **Core Scripts**
 ```bash
-# Test configuration loading
-python tools/test_config_loader.py
+# Start development environment
+quick_start.bat
 
-# Test individual agents
+# Kill all development processes
+kill_dev_processes.bat
+
+# Test SSE implementation
+python tools/test_sse_implementation.py
+
+# Check workflow data
+python tools/check_workflow_data.py
+
+# Debug parallel processing
+python tools/debug_parallel_processing.py
+```
+
+### **Testing and Validation**
+```bash
+# Test individual components
 python tools/test_epic_strategist.py
-python tools/test_feature_decomposer.py  
+python tools/test_feature_decomposer.py
 python tools/test_developer_agent.py
-python tools/test_qa_tester_agent.py
+python tools/test_qa_lead_agent.py
 
-# Test specialized capabilities
-python tools/test_qa_individual_capabilities.py
-python tools/test_qa_quality_assessment.py
-python tools/test_user_story_decomposition.py
-```
+# Test complete workflow
+python tools/test_complete_workflow.py
 
-### Test Agent Chains
-```bash
-# Test agent chains
-python tools/test_epic_to_feature_chain.py
-python tools/test_epic_feature_task_chain.py
-python tools/test_epic_feature_task_qa_chain.py
-python tools/test_complete_chain.py
-
-# Test end-to-end workflows
-python tools/test_end_to_end.py
-python tools/test_grit_system.py
-```
-
-### Test Integrations
-```bash
 # Test Azure DevOps integration
 python tools/test_azure_devops.py
-
-# Test notifications
-python tools/test_notifications.py
-
-# Test prompt system
-python tools/test_prompt_system.py
-python tools/demo_prompt_system.py
 ```
 
-### Validation and Debugging Tools
+### **Monitoring and Debugging**
 ```bash
-# Validate output structure
-python tools/validation_tool.py --input output/backlog_20250701_153000.yaml
+# Check job status
+python tools/check_job_status.py
 
-# Debug specific issues
-python tools/debug_agent_lockup.py
-python tools/debug_epic_output.py
-python tools/debug_feature_decomposer.py
-python tools/debug_work_item_creation.py
+# Monitor active jobs
+python tools/monitor_job.py
 
-# Test business value formats
-python tools/test_business_value_formats.py
+# Validate configuration
+python tools/check_config.py
 
-# Test structure validation
-python tools/test_structure_validation.py
+# Check database
+python tools/check_db.py
 ```
 
-## 📊 Example Workflows
+## 📊 Current Performance Metrics
 
-### Scenario 1: New Product Development (Complete Pipeline)
+### **Typical Job Execution**
+- **Epic Generation**: 2-3 minutes
+- **Feature Decomposition**: 5-8 minutes
+- **User Story Generation**: 10-15 minutes
+- **Task Generation**: 15-25 minutes
+- **QA Generation**: 30-60 minutes (BROKEN - needs parallel processing)
+- **Total Time**: 1.5+ hours (target: <30 minutes)
+
+### **Cost Analysis**
+- **Current Cost**: $50-100 per job
+- **Target Cost**: $10-20 per job
+- **Potential Savings**: 70-80% reduction
+
+## 🚨 Known Issues & Limitations
+
+### **Critical Issues**
+1. **QA Agent Failures**: System crashes during test generation, losing progress
+2. **Sequential Processing**: QA agent not using parallel processing
+3. **API Rate Limiting**: Single provider hitting rate limits
+4. **Progress Loss**: No persistence across failures
+
+### **Performance Issues**
+1. **Long Execution Times**: Jobs taking 1.5+ hours
+2. **Expensive API Calls**: High costs due to timeouts and retries
+3. **Memory Usage**: High memory consumption during large jobs
+
+### **User Experience Issues**
+1. **Progress Monitoring**: Progress bars not showing correctly
+2. **Error Handling**: Poor error messages and recovery
+3. **Navigation**: Some navigation issues in frontend
+
+## 🔧 Troubleshooting
+
+### **Common Issues**
+
+#### **QA Agent Timeout Errors**
+```
+ERROR - supervisor - developer_agent failed with exception: Request timeout after 3 attempts
+```
+**Solution**: Implement parallel processing and multi-provider rotation
+
+#### **Progress Bar Not Showing**
+**Symptoms**: My Projects screen doesn't show active jobs
+**Solution**: Fix SSE implementation and progress tracking
+
+#### **API Rate Limiting**
+**Symptoms**: "Timeout on attempt 1/3" errors
+**Solution**: Implement provider rotation and rate limiting
+
+#### **Memory Issues**
+**Symptoms**: System becomes unresponsive during large jobs
+**Solution**: Implement progress persistence and checkpointing
+
+### **Debug Commands**
 ```bash
-# Start with product vision - complete AI-driven backlog generation
-python tools/run_pipeline.py --run all --input samples/grit_vision.yaml --project-type saas
+# Check current job status
+python tools/check_job_status.py
 
-# Output: Complete backlog with epics, features, tasks, and test cases
+# Monitor system resources
+python tools/monitor_job.py
+
+# Validate configuration
+python tools/check_config.py
+
+# Test SSE connection
+python tools/test_sse_implementation.py
 ```
 
-### Scenario 2: Work Item Management & Organization
-```bash
-# Fix formatting issues in existing work items
-python fix_work_item_descriptions.py --live --confirm
+## 📈 Roadmap & Future Improvements
 
-# Organize test cases into proper area paths
-python move_test_cases.py --live --confirm
+### **Phase 1: Critical Fixes (Week 1)**
+- [ ] Fix QA Agent Critical Failure (Issue #49)
+- [ ] Fix Progress Display (Issue #30)
+- [ ] Add API Authentication (Issue #43)
 
-# Update area and iteration paths for all work items
-python tools/update_work_item_paths.py
+### **Phase 2: Performance Optimization (Week 2)**
+- [ ] Fix Parallel Processing (Issue #50)
+- [ ] Implement Multi-Provider Rotation
+- [ ] Add Progress Persistence
 
-# Audit and validate work item structure
-python check_section_headers.py
-```
+### **Phase 3: Quality & Monitoring (Week 3)**
+- [ ] Add Automated Testing Suite
+- [ ] Implement Real-time Monitoring
+- [ ] Add Error Tracking
 
-### Scenario 3: Epic Refinement & Feature Planning
-```bash  
-# Generate features for existing epics
-python tools/run_pipeline.py --run feature --input output/epics_20250701_153000.yaml
-
-# Generate comprehensive test cases for features
-python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
-```
-
-### Scenario 4: Sprint Planning & Task Generation
-```bash
-# Generate developer tasks for upcoming sprint
-python tools/run_pipeline.py --run developer --input output/features_ready_for_dev.yaml
-
-# Validate and estimate task complexity
-python tools/validation_tool.py --input output/backlog_with_tasks.yaml
-```
-
-### Scenario 5: Quality Assurance Focus
-```bash
-# Generate comprehensive test cases for existing features
-python tools/run_pipeline.py --run qa --input output/features_ready_for_testing.yaml
-
-# Test QA capabilities individually
-python tools/test_qa_individual_capabilities.py
-python tools/test_qa_quality_assessment.py
-```
-
-### Scenario 6: Project Cleanup & Maintenance
-```bash
-# Clean up test environment
-python tools/cleanup_ado_workitems.py --confirm
-
-# Debug issues with work item creation
-python tools/debug_work_item_creation.py
-
-# Validate project structure
-python tools/test_structure_validation.py
-```
-
-### Scenario 7: Iterative Development Process
-```bash
-# 1. Generate epics from vision
-python tools/run_pipeline.py --run epic --input samples/taskmaster_vision.yaml
-
-# 2. Review and refine epics, then generate features  
-python tools/run_pipeline.py --run feature --input output/epics_20250701_153000.yaml
-
-# 3. Generate tasks and organize work items
-python tools/run_pipeline.py --run developer --input output/backlog_20250701_153000.yaml
-python tools/update_work_item_paths.py
-
-# 4. Generate test cases and validate
-python tools/run_pipeline.py --run qa --input output/backlog_20250701_153000.yaml
-python tools/validation_tool.py --input output/final_backlog.yaml
-```
-
-## 🛠️ Development
-
-### Project Structure
-```
-agile-backlog-automation/
-├── agents/                    # AI agent implementations
-│   ├── base_agent.py         # Base class for all agents
-│   ├── epic_strategist.py    # Epic generation agent
-│   ├── decomposition_agent.py # Feature breakdown and user story creation agent
-│   ├── developer_agent.py    # Task creation agent
-│   └── qa_tester_agent.py    # Test case generation agent (User Story level)
-├── config/                   # Configuration management
-│   ├── config_loader.py      # Configuration loading utilities
-│   └── settings.yaml         # Agent and workflow settings
-├── docs/                     # Documentation
-│   ├── PROMPT_SYSTEM_GUIDE.md
-│   ├── QA_TESTER_AGENT_QUALITY_REPORT.md
-│   └── SUPERVISOR_IMPLEMENTATION.md
-├── integrators/              # External service integrations
-│   └── azure_devops_api.py   # Azure DevOps API integration
-├── logs/                     # Application logs
-├── output/                   # Generated backlog outputs
-├── prompts/                  # Agent prompt templates
-├── samples/                  # Sample input files
-│   ├── grit_vision.yaml
-│   ├── taskmaster_vision.yaml
-│   └── ecotracker_vision.yaml
-├── supervisor/               # Pipeline orchestration
-├── tools/                    # CLI tools and utilities
-│   ├── run_pipeline.py       # Main pipeline runner
-│   ├── cleanup_ado_workitems.py # ADO cleanup utility
-│   ├── update_work_item_paths.py # Path management
-│   └── test_*.py             # Test suites
-├── utils/                    # Shared utilities
-│   ├── prompt_manager.py     # Prompt template management
-│   ├── project_context.py    # Project context handling
-│   ├── notifier.py           # Notification system
-│   └── logger.py             # Logging utilities
-├── fix_work_item_descriptions.py # Work item formatter
-├── move_test_cases.py        # Test case organizer
-├── check_section_headers.py  # Work item auditor
-├── requirements.txt          # Python dependencies
-└── README.md                 # This file
-```
-
-### Adding Custom Agents
-1. Create agent class in `agents/` inheriting from `BaseAgent`
-2. Add prompt file in `prompts/`
-3. Update `config/settings.yaml` workflow sequence
-4. Register agent in pipeline supervisor
-
-### Environment Variables
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GROK_API_KEY` | Yes | xAI Grok API authentication |
-| `GROK_MODEL` | No | Model version (default: grok-3-latest) |
-| `AZURE_DEVOPS_PAT` | No | Azure DevOps Personal Access Token |
-| `AZURE_DEVOPS_ORG` | No | Azure DevOps Organization URL |
-| `AZURE_DEVOPS_PROJECT` | No | Azure DevOps Project Name |
-| `TEAMS_WEBHOOK_URL` | No | Microsoft Teams webhook for notifications |
-| `EMAIL_*` | No | SMTP configuration for email notifications |
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### **Phase 4: User Experience (Week 4)**
+- [ ] Fix Navigation Issues
+- [ ] Improve Error Handling
+- [ ] Add Health Check Endpoints
 
 ## 🤝 Contributing
 
+### **Development Setup**
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
-## 🤝 Support
+### **Code Standards**
+- Follow PEP 8 for Python code
+- Use TypeScript for frontend code
+- Add comprehensive docstrings
+- Include error handling
+- Write unit tests for new features
 
-For questions, issues, or feature requests:
-- Open an issue on GitHub
-- Check existing documentation in `/docs`
-- Review test files in `/tools` for usage examples
+### **Testing**
+```bash
+# Run all tests
+python -m pytest
+
+# Run specific test categories
+python -m pytest tests/test_agents/
+python -m pytest tests/test_integration/
+python -m pytest tests/test_frontend/
+```
+
+## 📚 Documentation
+
+### **Core Documentation**
+- **[README.md](README.md)** - This file - complete project overview and setup guide
+- **[LICENSE](LICENSE)** - MIT License
+
+### **Analysis & Issue Documentation**
+All detailed analysis, issue tracking, and technical documentation is organized in the `docs/` directory:
+
+#### **Critical Issues & Prioritization**
+- **[GITHUB_ISSUES_PRIORITIZATION_SUMMARY.md](docs/GITHUB_ISSUES_PRIORITIZATION_SUMMARY.md)** - Complete issue prioritization and execution plan
+- **[GITHUB_ISSUES_PARALLEL_QA_FIXES.md](docs/GITHUB_ISSUES_PARALLEL_QA_FIXES.md)** - Detailed GitHub issues for critical fixes
+
+#### **Performance Analysis**
+- **[PARALLEL_PROCESSING_ANALYSIS.md](docs/PARALLEL_PROCESSING_ANALYSIS.md)** - Why tasks appear sequential despite parallel config
+- **[PARALLEL_PROCESSING_IMPLEMENTATION.md](docs/PARALLEL_PROCESSING_IMPLEMENTATION.md)** - Parallel processing implementation details
+
+#### **Technical Troubleshooting**
+- **[SSE_TROUBLESHOOTING_GUIDE.md](docs/SSE_TROUBLESHOOTING_GUIDE.md)** - Server-Sent Events implementation guide
+- **[PROGRESS_BAR_DEBUG_SUMMARY.md](docs/PROGRESS_BAR_DEBUG_SUMMARY.md)** - Progress monitoring fixes
+
+#### **System Analysis**
+- **[COMPREHENSIVE_APPLICATION_ANALYSIS.md](docs/COMPREHENSIVE_APPLICATION_ANALYSIS.md)** - Complete system architecture analysis
+- **[BUG_FIXES_SUMMARY.md](docs/BUG_FIXES_SUMMARY.md)** - Historical bug fixes and improvements
+
+#### **Feature Implementation**
+- **[QA_TESTER_AGENT_QUALITY_REPORT.md](docs/QA_TESTER_AGENT_QUALITY_REPORT.md)** - QA agent capabilities and improvements
+- **[PROMPT_SYSTEM_GUIDE.md](docs/PROMPT_SYSTEM_GUIDE.md)** - AI prompt system documentation
+- **[FRONTEND_BACKEND_INTEGRATION.md](docs/FRONTEND_BACKEND_INTEGRATION.md)** - Frontend-backend integration details
+
+### **Quick Reference**
+- **Current Issues**: See [GITHUB_ISSUES_PRIORITIZATION_SUMMARY.md](docs/GITHUB_ISSUES_PRIORITIZATION_SUMMARY.md)
+- **Performance Problems**: See [PARALLEL_PROCESSING_ANALYSIS.md](docs/PARALLEL_PROCESSING_ANALYSIS.md)
+- **Troubleshooting**: See [SSE_TROUBLESHOOTING_GUIDE.md](docs/SSE_TROUBLESHOOTING_GUIDE.md)
+- **System Architecture**: See [COMPREHENSIVE_APPLICATION_ANALYSIS.md](docs/COMPREHENSIVE_APPLICATION_ANALYSIS.md)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+### **Getting Help**
+- Check the [GitHub Issues](https://github.com/oldmantran/agile-backlog-automation/issues) for known problems
+- Review the troubleshooting section above
+- Use the debugging tools in the `tools/` directory
+
+### **Reporting Issues**
+When reporting issues, please include:
+- Error messages and logs
+- Steps to reproduce
+- Environment details (OS, Python version, etc.)
+- Configuration files (with sensitive data removed)
+
+### **Feature Requests**
+- Use GitHub Issues for feature requests
+- Provide detailed use cases and requirements
+- Consider contributing the implementation
 
 ---
 
-**Built with ❤️ using Grok AI and Python**
+**Last Updated**: 2025-07-19
+**Version**: 2.0.0
+**Status**: Active Development with Critical Issues
