@@ -88,20 +88,28 @@ agile-backlog-automation/
 │   ├── SSE_TROUBLESHOOTING_GUIDE.md
 │   ├── COMPREHENSIVE_APPLICATION_ANALYSIS.md
 │   └── ... (other documentation)
-├── api_server.py            # Main FastAPI server
-├── unified_api_server.py    # Consolidated API server
+├── unified_api_server.py    # Main FastAPI server (consolidated)
 ├── db.py                    # Database operations
 ├── config/                  # Configuration management
 │   ├── config_loader.py
 │   └── settings.yaml
 ├── utils/                   # Utility functions
 ├── tools/                   # Development and debugging tools
+│   ├── api_server.py             # Original API server (reference/backup)
+│   ├── create_github_issues.py   # GitHub issue creation utility
+│   ├── create_github_issues.bat  # GitHub issue creation batch file
+│   ├── kill_dev_processes.bat    # Kill development processes (batch)
+│   ├── kill_dev_processes.ps1    # Kill development processes (PowerShell)
+│   ├── test_*.py                 # Test scripts
+│   ├── check_*.py                # Validation scripts
+│   └── debug_*.py                # Debugging utilities
 ├── integrators/             # External integrations
 ├── clients/                 # API clients
-├── logs/                    # Application logs
-├── output/                  # Generated outputs
+├── data/                    # All data files
+│   ├── database/           # Database files
+│   ├── logs/               # Application logs
+│   └── output/             # Generated outputs
 ├── samples/                 # Sample configuration files
-├── kill_dev_processes.bat   # Process cleanup (Windows)
 ├── quick_start.bat          # Quick startup script
 └── requirements.txt         # Python dependencies
 ```
@@ -165,7 +173,7 @@ SMTP_PASSWORD=your_app_password
 
 ```bash
 # Start backend server
-python api_server.py
+python unified_api_server.py
 
 # In another terminal, start frontend
 cd frontend
@@ -229,7 +237,8 @@ agents:
 quick_start.bat
 
 # Kill all development processes
-kill_dev_processes.bat
+tools/kill_dev_processes.bat
+tools/kill_dev_processes.ps1
 
 # Test SSE implementation
 python tools/test_sse_implementation.py
@@ -239,6 +248,13 @@ python tools/check_workflow_data.py
 
 # Debug parallel processing
 python tools/debug_parallel_processing.py
+
+# Create GitHub issues
+tools/create_github_issues.bat
+python tools/create_github_issues.py
+
+# Original API server (WebSocket logging)
+python tools/api_server.py
 ```
 
 ### **Testing and Validation**
@@ -390,9 +406,30 @@ python -m pytest tests/test_integration/
 python -m pytest tests/test_frontend/
 ```
 
-## 📚 Documentation
+## 📁 Data Organization
 
-### **Core Documentation**
+### **Data Directory Structure**
+All data files are organized in the `data/` directory following best practices:
+
+```
+data/
+├── database/           # Database files
+│   └── backlog_jobs.db # SQLite database for job tracking
+├── logs/               # Application logs
+│   └── supervisor.log  # Workflow execution logs
+└── output/             # Generated outputs
+    ├── *.json          # JSON format outputs
+    └── *.yaml          # YAML format outputs
+```
+
+### **Benefits of Data Organization**
+- **Separation of Concerns**: Data separated from code
+- **Easy Backup**: Backup entire `data/` directory
+- **Version Control**: Database files excluded from git
+- **Deployment**: Clear distinction between code and data
+- **Security**: Isolated sensitive data files
+
+## 📚 Documentation
 - **[README.md](README.md)** - This file - complete project overview and setup guide
 - **[LICENSE](LICENSE)** - MIT License
 

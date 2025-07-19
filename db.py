@@ -24,8 +24,15 @@ class BacklogJob(Base):
     status = Column(String, default='completed')  # completed, failed, test_generated
     is_deleted = Column(Integer, default=0)  # 0 = active, 1 = soft deleted
 
-# SQLite DB file
-engine = create_engine('sqlite:///backlog_jobs.db', echo=False)
+# SQLite DB file - moved to data/database directory
+import os
+
+# Ensure data directory exists
+os.makedirs('data/database', exist_ok=True)
+
+# Database path
+DB_PATH = 'data/database/backlog_jobs.db'
+engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
 SessionLocal = sessionmaker(bind=engine)
 
 # Create tables if not exist
