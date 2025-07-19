@@ -1,7 +1,17 @@
 import json
+import signal
+import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.content_enhancer import ContentEnhancer
+
+class TimeoutError(Exception):
+    """Custom timeout exception"""
+    pass
+
+def timeout_handler(signum, frame):
+    """Signal handler for timeout"""
+    raise TimeoutError("Operation timed out")
 
 class EpicStrategist(Agent):
     def __init__(self, config: Config):
@@ -31,7 +41,16 @@ class EpicStrategist(Agent):
             user_input = f"Product Vision: {product_vision}"
         print(f"📊 [EpicStrategist] Generating epics for: {product_vision[:100]}...")
         
-        response = self.run(user_input, prompt_context)
+        # Add timeout protection
+        try:
+            # Set a 60-second timeout for the entire epic generation process
+            response = self._run_with_timeout(user_input, prompt_context, timeout=60)
+        except TimeoutError:
+            print("⚠️ Epic generation timed out, returning empty list")
+            return []
+        except Exception as e:
+            print(f"❌ Epic generation failed: {e}")
+            return []
 
         try:
             if not response:
@@ -59,6 +78,31 @@ class EpicStrategist(Agent):
             print("🔎 Raw response:")
             print(response)
             return []
+
+    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
+        """Run the agent with a timeout to prevent hanging."""
+        result = [None]
+        exception = [None]
+        
+        def target():
+            try:
+                result[0] = self.run(user_input, context)
+            except Exception as e:
+                exception[0] = e
+        
+        thread = threading.Thread(target=target)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout)
+        
+        if thread.is_alive():
+            print(f"⚠️ Epic generation timed out after {timeout} seconds")
+            return None
+        
+        if exception[0]:
+            raise exception[0]
+        
+        return result[0]
 
     def _extract_json_from_response(self, response: str) -> str:
         """Extract JSON content from AI response with improved bracket counting and validation."""

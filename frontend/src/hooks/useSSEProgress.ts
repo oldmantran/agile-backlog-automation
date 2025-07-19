@@ -23,30 +23,41 @@ export const useSSEProgress = (): UseSSEProgressReturn => {
   const [lastUpdate, setLastUpdate] = useState<ProgressUpdate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const connect = useCallback((jobId: string) => {
     // Disconnect any existing connection
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
 
     try {
       console.log(`🔗 Connecting to SSE stream for job: ${jobId}`);
       
-      // Create EventSource connection
-      const eventSource = new EventSource(`http://localhost:8000/api/progress/stream/${jobId}`);
+      // Create EventSource connection with proper error handling
+      const eventSource = new EventSource(`http://localhost:8000/api/progress/stream/${jobId}`, {
+        withCredentials: false // Important: disable credentials for CORS
+      });
       eventSourceRef.current = eventSource;
 
-      eventSource.onopen = () => {
-        console.log(`✅ SSE connection opened for job: ${jobId}`);
+      eventSource.onopen = (event) => {
+        console.log(`✅ SSE connection opened for job: ${jobId}`, event);
         setIsConnected(true);
         setError(null);
       };
 
       eventSource.onmessage = (event) => {
         try {
+          console.log(`📡 Raw SSE message: ${event.data}`);
           const data: ProgressUpdate = JSON.parse(event.data);
-          console.log(`📡 SSE update for job ${jobId}:`, data);
+          console.log(`📊 Parsed SSE update for job ${jobId}:`, data);
           
           setLastUpdate(data);
           
@@ -70,19 +81,27 @@ export const useSSEProgress = (): UseSSEProgressReturn => {
               break;
           }
         } catch (parseError) {
-          console.error('Failed to parse SSE message:', parseError);
+          console.error('Failed to parse SSE message:', parseError, 'Raw data:', event.data);
           setError('Failed to parse server message');
         }
       };
 
       eventSource.onerror = (event) => {
         console.error(`❌ SSE connection error for job ${jobId}:`, event);
-        setError('SSE connection failed');
-        setIsConnected(false);
         
-        // Close the connection
-        eventSource.close();
-        eventSourceRef.current = null;
+        // Check if the connection is actually closed
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('SSE connection is closed');
+          setError('SSE connection closed');
+          setIsConnected(false);
+        } else if (eventSource.readyState === EventSource.CONNECTING) {
+          console.log('SSE connection is reconnecting...');
+          setError('SSE connection lost, attempting to reconnect...');
+          setIsConnected(false);
+        } else {
+          console.log('SSE connection error, but still open');
+          setError('SSE connection error');
+        }
       };
 
     } catch (err) {
@@ -100,6 +119,11 @@ export const useSSEProgress = (): UseSSEProgressReturn => {
       setIsConnected(false);
       setError(null);
     }
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
   }, []);
 
   // Cleanup on unmount
@@ -107,6 +131,9 @@ export const useSSEProgress = (): UseSSEProgressReturn => {
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
     };
   }, []);

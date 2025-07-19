@@ -177,18 +177,23 @@ Focus on quality assurance and test coverage."""
             "Content-Type": "application/json"
         }
         
-        max_retries = 5
-        base_delay = 2      
+        max_retries = 3  # Reduced from 5 to prevent long hangs
+        base_delay = 1   # Reduced from 2 to faster recovery
+        timeout = 30     # Reduced from 60 to prevent long hangs
+        
         for attempt in range(max_retries):
             try:
+                logger.info(f"Making API request to {self.llm_provider} (attempt {attempt + 1}/{max_retries})")
                 response = requests.post(
                     self.api_url, 
                     headers=headers, 
                     json=payload, 
-                    timeout=60                )
+                    timeout=timeout
+                )
                 
                 # Handle different response status codes
                 if response.status_code == 200:
+                    logger.info(f"✅ API request successful on attempt {attempt + 1}")
                     return response
                 elif response.status_code == 401:
                     raise CommunicationError(f"Authentication failed for {self.llm_provider}")
@@ -218,6 +223,7 @@ Focus on quality assurance and test coverage."""
                     raise CommunicationError(f"API error: {error_msg}")
                     
             except requests.exceptions.Timeout:
+                logger.warning(f"Timeout on attempt {attempt + 1}/{max_retries}")
                 if attempt < max_retries - 1:
                     wait_time = base_delay * (2 ** attempt)
                     logger.warning(f"Timeout, retrying in {wait_time}s")
@@ -225,9 +231,10 @@ Focus on quality assurance and test coverage."""
                     time.sleep(wait_time)
                     continue
                 else:
-                    raise CommunicationError(f"Request timeout after {max_retries} attempts")
+                    raise CommunicationError(f"Request timeout after {max_retries} attempts (timeout: {timeout}s)")
                     
             except requests.exceptions.ConnectionError:
+                logger.warning(f"Connection error on attempt {attempt + 1}/{max_retries}")
                 if attempt < max_retries - 1:
                     wait_time = base_delay * (2 ** attempt)
                     logger.warning(f"Connection error, retrying in {wait_time}s")

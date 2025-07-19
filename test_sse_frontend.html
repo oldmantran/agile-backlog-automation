@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .log {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .connect { background: #28a745; color: white; }
+        .disconnect { background: #dc3545; color: white; }
+        .test { background: #007bff; color: white; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SSE Connection Test</h1>
+    
+    <div>
+        <button class="test" onclick="createTestJob()">Create Test Job</button>
+        <button class="connect" onclick="connectSSE()">Connect to SSE</button>
+        <button class="disconnect" onclick="disconnectSSE()">Disconnect</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div>
+        <label for="jobId">Job ID:</label>
+        <input type="text" id="jobId" placeholder="Enter job ID or leave empty to use current active job">
+    </div>
+    
+    <div id="status" class="status info">Ready to test SSE connection</div>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        let eventSource = null;
+        let isConnected = false;
+        let currentJobId = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toISOString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        async function createTestJob() {
+            try {
+                log('🔄 Creating test job...');
+                updateStatus('Creating test job...', 'info');
+                
+                const response = await fetch('http://localhost:8000/api/test/create-job', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                log(`📡 Response status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`❌ Response error: ${errorText}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                }
+                
+                const data = await response.json();
+                currentJobId = data.jobId;
+                
+                document.getElementById('jobId').value = currentJobId;
+                log(`✅ Test job created: ${currentJobId}`);
+                updateStatus(`Test job created: ${currentJobId}`, 'connected');
+                
+            } catch (error) {
+                log(`❌ Failed to create test job: ${error.message}`);
+                log(`❌ Error details: ${error.stack || 'No stack trace'}`);
+                updateStatus(`Failed to create test job: ${error.message}`, 'error');
+                
+                // Try to provide helpful debugging info
+                if (error.message.includes('Failed to fetch')) {
+                    log('💡 Hint: Make sure the server is running on http://localhost:8000');
+                    log('💡 Hint: Check if there are CORS issues');
+                }
+            }
+        }
+
+        async function getActiveJob() {
+            try {
+                const response = await fetch('http://localhost:8000/api/jobs');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                if (data.success && data.data.length > 0) {
+                    return data.data[0].jobId;
+                }
+                return null;
+            } catch (error) {
+                log(`❌ Failed to get active job: ${error.message}`);
+                return null;
+            }
+        }
+
+        async function connectSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            log('🔗 Attempting to connect to SSE...');
+            updateStatus('Connecting to SSE...', 'info');
+
+            try {
+                // Get job ID from input or use active job
+                let jobId = document.getElementById('jobId').value.trim();
+                
+                if (!jobId) {
+                    log('🔍 No job ID provided, getting active job...');
+                    jobId = await getActiveJob();
+                    if (!jobId) {
+                        throw new Error('No active job found. Please create a test job first.');
+                    }
+                    document.getElementById('jobId').value = jobId;
+                }
+                
+                const url = `http://localhost:8000/api/progress/stream/${jobId}`;
+                log(`📡 Connecting to: ${url}`);
+                
+                eventSource = new EventSource(url);
+
+                eventSource.onopen = function(event) {
+                    log('✅ SSE connection opened');
+                    updateStatus('SSE Connected', 'connected');
+                    isConnected = true;
+                };
+
+                eventSource.onmessage = function(event) {
+                    log(`📨 Received message: ${event.data}`);
+                    
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📊 Parsed data: ${JSON.stringify(data, null, 2)}`);
+                        
+                        if (data.type === 'connected') {
+                            log('🔗 SSE connection confirmed');
+                        } else if (data.type === 'progress') {
+                            log(`📈 Progress: ${data.progress}% - ${data.currentAction}`);
+                        } else if (data.type === 'final') {
+                            log(`🏁 Job ${data.status}: ${data.message}`);
+                            updateStatus(`Job ${data.status}`, data.status === 'completed' ? 'connected' : 'error');
+                        } else if (data.type === 'error') {
+                            log(`❌ SSE error: ${data.message}`);
+                            updateStatus(`SSE Error: ${data.message}`, 'error');
+                        }
+                    } catch (e) {
+                        log(`❌ Failed to parse message: ${e.message}`);
+                    }
+                };
+
+                eventSource.onerror = function(event) {
+                    log(`❌ SSE connection error: ${JSON.stringify(event)}`);
+                    updateStatus('SSE Connection Error', 'error');
+                    isConnected = false;
+                };
+
+            } catch (error) {
+                log(`❌ Failed to create EventSource: ${error.message}`);
+                updateStatus(`Failed to create EventSource: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnectSSE() {
+            if (eventSource) {
+                log('🔌 Disconnecting SSE...');
+                eventSource.close();
+                eventSource = null;
+                isConnected = false;
+                updateStatus('SSE Disconnected', 'info');
+            }
+        }
+
+        // Test connection on page load
+        window.onload = function() {
+            log('🚀 SSE Test Page Loaded');
+            log('1. Click "Create Test Job" to create a job');
+            log('2. Click "Connect to SSE" to test the connection');
+            log('3. Or enter a job ID manually and connect');
+        };
+    </script>
+</body>
+</html> 

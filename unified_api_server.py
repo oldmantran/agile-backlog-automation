@@ -66,54 +66,42 @@ signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 # Initialize logging
 logger = setup_logger(__name__)
 
-# Global storage for active jobs (in production, use Redis or database)
+# Global storage for active jobs (simplified - only one job at a time)
 active_jobs: Dict[str, Dict[str, Any]] = {}
 active_jobs_lock = threading.Lock()  # Thread-safe lock for active_jobs access
 
-# Job persistence file
-JOBS_FILE = Path("output") / "active_jobs.json"
+# Remove job persistence - we don't need it for simple use case
+# JOBS_FILE = Path("output") / "active_jobs.json"
 
-def save_active_jobs():
-    """Save active jobs to disk."""
-    try:
-        with active_jobs_lock:
-            # Convert datetime objects to strings for JSON serialization
-            jobs_to_save = {}
-            for job_id, job_data in active_jobs.items():
-                job_copy = job_data.copy()
-                if isinstance(job_copy.get('startTime'), datetime):
-                    job_copy['startTime'] = job_copy['startTime'].isoformat()
-                if isinstance(job_copy.get('endTime'), datetime):
-                    job_copy['endTime'] = job_copy['endTime'].isoformat()
-                jobs_to_save[job_id] = job_copy
-            
-            with open(JOBS_FILE, 'w') as f:
-                json.dump(jobs_to_save, f, indent=2)
-            logger.info(f"💾 Saved {len(jobs_to_save)} active jobs to disk")
-    except Exception as e:
-        logger.error(f"Failed to save active jobs: {e}")
-
-def load_active_jobs():
-    """Load active jobs from disk."""
-    try:
-        if JOBS_FILE.exists():
-            with open(JOBS_FILE, 'r') as f:
-                jobs_data = json.load(f)
-            
-            # Convert string timestamps back to datetime objects
-            for job_id, job_data in jobs_data.items():
-                if isinstance(job_data.get('startTime'), str):
-                    job_data['startTime'] = datetime.fromisoformat(job_data['startTime'])
-                if isinstance(job_data.get('endTime'), str):
-                    job_data['endTime'] = datetime.fromisoformat(job_data['endTime'])
-                active_jobs[job_id] = job_data
-            
-            logger.info(f"📂 Loaded {len(active_jobs)} active jobs from disk")
-        else:
-            logger.info("No existing jobs file found, starting with empty active_jobs")
-    except Exception as e:
-        logger.error(f"Failed to load active jobs: {e}")
+def clear_all_jobs():
+    """Clear all active jobs - simple reset."""
+    with active_jobs_lock:
         active_jobs.clear()
+        logger.info("🧹 Cleared all active jobs")
+
+def get_active_job():
+    """Get the single active job if any."""
+    with active_jobs_lock:
+        if active_jobs:
+            job_id = list(active_jobs.keys())[0]
+            return job_id, active_jobs[job_id]
+        return None, None
+
+def set_active_job(job_id: str, job_data: Dict[str, Any]):
+    """Set a single active job, clearing any existing ones."""
+    with active_jobs_lock:
+        # Clear any existing jobs
+        active_jobs.clear()
+        # Set the new job
+        active_jobs[job_id] = job_data
+        logger.info(f"📋 Set active job: {job_id}")
+
+def remove_job(job_id: str):
+    """Remove a specific job."""
+    with active_jobs_lock:
+        if job_id in active_jobs:
+            del active_jobs[job_id]
+            logger.info(f"🗑️ Removed job: {job_id}")
 
 # SSE connections for progress streaming
 sse_connections: Dict[str, List[asyncio.Queue]] = {}
@@ -150,7 +138,10 @@ async def lifespan(app: FastAPI):
     Path("output").mkdir(exist_ok=True)
     
     # Load active jobs from disk on startup
-    load_active_jobs()
+    # load_active_jobs() # Removed as per edit
+    
+    # Clean up old jobs on startup
+    # cleanup_old_jobs() # Removed as per edit
 
     # Start SSE progress distribution task
     asyncio.create_task(distribute_sse_progress())
@@ -163,7 +154,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down Unified API Server")
     
     # Save active jobs to disk on shutdown
-    save_active_jobs()
+    # save_active_jobs() # Removed as per edit
 
     # Shutdown thread pool
     logger.info("Shutting down AI thread pool...")
@@ -185,7 +176,7 @@ app.include_router(jobs_router)
 # Add CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # React dev server
+    allow_origins=["*"],  # Allow all origins for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -511,22 +502,18 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
         logger.info(f"🆔 Generated job ID: {job_id}")
         
         # Initialize job status immediately
-        with active_jobs_lock:  # Thread-safe access to active_jobs
-            active_jobs[job_id] = {
-                "jobId": job_id,
-                "projectId": project_id,
-                "status": "queued",
-                "progress": 0,
-                "currentAgent": "Supervisor",
-                "currentAction": "Initializing...",
-                "startTime": datetime.now(),
-                "error": None,
-                "endTime": None
-            }
+        set_active_job(job_id, {
+            "jobId": job_id,
+            "projectId": project_id,
+            "status": "queued",
+            "progress": 0,
+            "currentAgent": "Supervisor",
+            "currentAction": "Initializing...",
+            "startTime": datetime.now(),
+            "error": None,
+            "endTime": None
+        })
         logger.info(f"🚀 Job {job_id} initialized and queued")
-        
-        # Save jobs to disk
-        save_active_jobs()
         
         # Add to background tasks using thread pool (non-blocking)
         background_tasks.add_task(run_backlog_generation_threaded, job_id, project_info)
@@ -550,52 +537,62 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
 @app.get("/api/backlog/status/{job_id}")
 async def get_generation_status(job_id: str):
     """Get the status of a backlog generation job."""
-    with active_jobs_lock:  # Thread-safe access to active_jobs
-        if job_id not in active_jobs:
-            raise HTTPException(status_code=404, detail="Job not found")
-        
-        job_status = active_jobs[job_id]
-        
-        # Convert job_status to match GenerationStatus model
-        generation_status = {
-            "jobId": job_status.get("jobId", job_id),
-            "projectId": job_status.get("projectId", "unknown"),
-            "status": job_status.get("status", "unknown"),
-            "progress": job_status.get("progress", 0),
-            "currentAgent": job_status.get("currentAgent", ""),
-            "currentAction": job_status.get("currentAction", ""),
-            "startTime": job_status.get("startTime"),
-            "endTime": job_status.get("endTime"),
-            "error": job_status.get("error")
-        }
-        
-        # Only log progress changes, not every status request
-        current_progress = generation_status.get('progress', 0)
-        if job_id in active_jobs and active_jobs[job_id].get('progress') != current_progress:
-            logger.info(f"📊 Progress update for job {job_id}: {active_jobs[job_id].get('progress', 0)}% → {current_progress}%")
-        elif job_id not in active_jobs:
-            logger.info(f"📊 Initial status for job {job_id}: {current_progress}%")
-        
-        return {
-            "success": True,
-            "data": generation_status
-        }
+    job_id, job_data = get_active_job()
+    if not job_id:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Convert job_status to match GenerationStatus model
+    generation_status = {
+        "jobId": job_data.get("jobId", job_id),
+        "projectId": job_data.get("projectId", "unknown"),
+        "status": job_data.get("status", "unknown"),
+        "progress": job_data.get("progress", 0),
+        "currentAgent": job_data.get("currentAgent", ""),
+        "currentAction": job_data.get("currentAction", ""),
+        "startTime": job_data.get("startTime"),
+        "endTime": job_data.get("endTime"),
+        "error": job_data.get("error")
+    }
+    
+    # Only log progress changes, not every status request
+    current_progress = generation_status.get('progress', 0)
+    if job_id in active_jobs and active_jobs[job_id].get('progress') != current_progress:
+        logger.info(f"📊 Progress update for job {job_id}: {active_jobs[job_id].get('progress', 0)}% → {current_progress}%")
+    elif job_id not in active_jobs:
+        logger.info(f"📊 Initial status for job {job_id}: {current_progress}%")
+    
+    return {
+        "success": True,
+        "data": generation_status
+    }
+
+@app.post("/api/test/cleanup-jobs")
+async def cleanup_jobs_endpoint():
+    """Manually trigger job cleanup for testing."""
+    try:
+        clear_all_jobs()
+        return {"message": "All jobs cleared", "current_jobs": list(active_jobs.keys())}
+    except Exception as e:
+        logger.error(f"Failed to cleanup jobs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/jobs")
 async def get_all_jobs():
     """Get all active and recent jobs."""
-    with active_jobs_lock:  # Thread-safe access to active_jobs
-        return {
-            "success": True,
-            "data": [
-                {
-                    **job_data,
-                    "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
-                    "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
-                }
-                for job_data in active_jobs.values()
-            ]
-        }
+    job_id, job_data = get_active_job()
+    if not job_id:
+        return {"success": True, "data": []}
+    
+    return {
+        "success": True,
+        "data": [
+            {
+                **job_data,
+                "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
+                "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
+            }
+        ]
+    }
 
 @app.post("/api/jobs/add")
 async def add_job(job_data: dict):
@@ -605,12 +602,8 @@ async def add_job(job_data: dict):
         if not job_id:
             raise HTTPException(status_code=400, detail="jobId is required")
         
-        with active_jobs_lock:  # Thread-safe access to active_jobs
-            active_jobs[job_id] = job_data
+        set_active_job(job_id, job_data)
         logger.info(f"Added job {job_id} to active jobs tracking")
-        
-        # Save jobs to disk
-        save_active_jobs()
         
         return {
             "success": True,
@@ -907,11 +900,7 @@ async def run_backlog_generation_threaded(job_id: str, project_info: Dict[str, A
     except Exception as e:
         error_msg = f"Threaded backlog generation failed for job {job_id}: {str(e)}"
         logger.error(f"❌ {error_msg}")
-        with active_jobs_lock:  # Thread-safe access to active_jobs
-            if job_id in active_jobs:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+        set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
         return {"error": error_msg}
 
 def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
@@ -920,14 +909,7 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
     
     try:
         # Update job status to running (job is already initialized)
-        with active_jobs_lock:  # Thread-safe access to active_jobs
-            if job_id in active_jobs:
-                active_jobs[job_id]["status"] = "running"
-                active_jobs[job_id]["currentAction"] = "Starting workflow execution..."
-                logger.info(f"🚀 Job {job_id} status updated to running")
-            else:
-                logger.error(f"❌ Job {job_id} not found in active_jobs")
-                return {"error": f"Job {job_id} not found"}
+        set_active_job(job_id, {"status": "running", "currentAction": "Starting workflow execution..."})
         
         # Extract project data
         project_data = project_info.get("data", {})
@@ -1081,44 +1063,24 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                 except Exception as retry_error:
                     error_msg = f"Failed to initialize WorkflowSupervisor (retry without Azure): {str(retry_error)}"
                     logger.error(f"❌ {error_msg}")
-                    with active_jobs_lock:
-                        active_jobs[job_id]["status"] = "failed"
-                        active_jobs[job_id]["error"] = error_msg
-                        active_jobs[job_id]["endTime"] = datetime.now()
+                    set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
                     return {"error": error_msg}
             else:
-                with active_jobs_lock:
-                    active_jobs[job_id]["status"] = "failed"
-                    active_jobs[job_id]["error"] = error_msg
-                    active_jobs[job_id]["endTime"] = datetime.now()
+                set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
                 return {"error": error_msg}
         
         # Progress callback with thread-safe updates
         def progress_callback(progress: int, action: str):
             try:
-                with active_jobs_lock:  # Thread-safe access to active_jobs
-                    if job_id in active_jobs:
-                        old_progress = active_jobs[job_id].get("progress", 0)
-                        # Create a complete new job status to ensure atomic update
-                        new_job_status = {
-                            **active_jobs[job_id],
-                            "progress": progress,
-                            "currentAction": action,
-                            "currentAgent": action.split()[0] if action else "Supervisor",
-                            "status": "running"
-                        }
-                        active_jobs[job_id] = new_job_status
-                        logger.info(f"📊 Progress update for job {job_id}: {old_progress}% → {progress}% - {action}")
-                        logger.info(f"📊 Active jobs after update: {list(active_jobs.keys())}")
-                        
-                        # Save jobs to disk on progress updates
-                        save_active_jobs()
-                        
-                        # Force a longer delay to ensure the update is fully committed
-                        import time
-                        time.sleep(0.5)  # Increased delay to ensure update is visible
-                    else:
-                        logger.warning(f"⚠️ Job {job_id} not found in active_jobs during progress update")
+                set_active_job(job_id, {
+                    **get_active_job()[1], # Get current job data
+                    "progress": progress,
+                    "currentAction": action,
+                    "currentAgent": action.split()[0] if action else "Supervisor",
+                    "status": "running"
+                })
+                logger.info(f"📊 Progress update for job {job_id}: {progress}% - {action}")
+                
             except Exception as e:
                 logger.error(f"Error in progress callback for job {job_id}: {str(e)}")
 
@@ -1147,10 +1109,7 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
             
         except Exception as e:
             error_msg = f"Failed to configure project context: {str(e)}"
-            with active_jobs_lock:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+            set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
             return {"error": error_msg}
 
         # Create product vision
@@ -1199,28 +1158,17 @@ Success Criteria:
                         logger.error(f"   Azure integration error: {azure_result['error']}")
 
             # Update job status
-            with active_jobs_lock:
-                active_jobs[job_id]["status"] = "completed"
-                active_jobs[job_id]["progress"] = 100
-                active_jobs[job_id]["currentAction"] = "Completed"
-                active_jobs[job_id]["endTime"] = datetime.now()
+            set_active_job(job_id, {"status": "completed", "progress": 100, "currentAction": "Completed", "endTime": datetime.now()})
 
             return {"job_id": job_id, "status": "completed", "results": results}
 
         except Exception as e:
             error_msg = f"Workflow execution failed: {str(e)}"
-            with active_jobs_lock:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+            set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
             return {"error": error_msg}
     except Exception as e:
         error_msg = f"Unexpected error in run_backlog_generation: {str(e)}"
-        with active_jobs_lock:
-            if job_id in active_jobs:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+        set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
         logger.error(error_msg)
         return {"error": error_msg}
 
@@ -1230,13 +1178,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
     
     try:
         # Update job status to running (job is already initialized)
-        if job_id in active_jobs:
-            active_jobs[job_id]["status"] = "running"
-            active_jobs[job_id]["currentAction"] = "Starting workflow execution..."
-            logger.info(f"🚀 Job {job_id} status updated to running")
-        else:
-            logger.error(f"❌ Job {job_id} not found in active_jobs")
-            return {"error": f"Job {job_id} not found"}
+        set_active_job(job_id, {"status": "running", "currentAction": "Starting workflow execution..."})
         
         # Extract project data
         project_data = project_info.get("data", {})
@@ -1390,34 +1332,25 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
                 except Exception as retry_error:
                     error_msg = f"Failed to initialize WorkflowSupervisor (retry without Azure): {str(retry_error)}"
                     logger.error(f"❌ {error_msg}")
-                    with active_jobs_lock:
-                        active_jobs[job_id]["status"] = "failed"
-                        active_jobs[job_id]["error"] = error_msg
-                        active_jobs[job_id]["endTime"] = datetime.now()
+                    set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
                     return {"error": error_msg}
             else:
-                with active_jobs_lock:
-                    active_jobs[job_id]["status"] = "failed"
-                    active_jobs[job_id]["error"] = error_msg
-                    active_jobs[job_id]["endTime"] = datetime.now()
+                set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
                 return {"error": error_msg}
         
         # Progress callback with SSE updates
         def progress_callback(progress: int, action: str):
-            if job_id in active_jobs:
-                active_jobs[job_id]["progress"] = progress
-                active_jobs[job_id]["currentAction"] = action
-                active_jobs[job_id]["currentAgent"] = action.split()[0] if action else "Supervisor"  # Extract agent name from action
-                active_jobs[job_id]["status"] = "running"  # Ensure status is running during execution
-                
-                # Log progress changes only
-                current_progress = active_jobs[job_id].get('progress', 0)
-                if current_progress != progress:
-                    logger.info(f"📊 Progress update for job {job_id}: {current_progress}% → {progress}% - {action}")
-                    logger.info(f"📊 Active jobs after update: {list(active_jobs.keys())}")
-                    
-                    # Save jobs to disk on progress updates
-                    save_active_jobs()
+            set_active_job(job_id, {
+                **get_active_job()[1], # Get current job data
+                "progress": progress,
+                "currentAction": action,
+                "currentAgent": action.split()[0] if action else "Supervisor",  # Extract agent name from action
+                "status": "running"  # Ensure status is running during execution
+            })
+            # Log progress changes only
+            current_progress = get_active_job()[1].get('progress', 0)
+            if current_progress != progress:
+                logger.info(f"📊 Progress update for job {job_id}: {current_progress}% → {progress}% - {action}")
 
         # Prepare context
         context = {
@@ -1444,10 +1377,7 @@ async def run_backlog_generation(job_id: str, project_info: Dict[str, Any]):
             
         except Exception as e:
             error_msg = f"Failed to configure project context: {str(e)}"
-            with active_jobs_lock:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+            set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
             return {"error": error_msg}
 
         # Create product vision
@@ -1496,32 +1426,55 @@ Success Criteria:
                         logger.error(f"   Azure integration error: {azure_result['error']}")
 
             # Update job status
-            with active_jobs_lock:
-                active_jobs[job_id]["status"] = "completed"
-                active_jobs[job_id]["progress"] = 100
-                active_jobs[job_id]["currentAction"] = "Completed"
-                active_jobs[job_id]["endTime"] = datetime.now()
+            set_active_job(job_id, {"status": "completed", "progress": 100, "currentAction": "Completed", "endTime": datetime.now()})
 
             return {"job_id": job_id, "status": "completed", "results": results}
 
         except Exception as e:
             error_msg = f"Workflow execution failed: {str(e)}"
-            with active_jobs_lock:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+            set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
             return {"error": error_msg}
     except Exception as e:
         error_msg = f"Unexpected error in run_backlog_generation: {str(e)}"
-        with active_jobs_lock:
-            if job_id in active_jobs:
-                active_jobs[job_id]["status"] = "failed"
-                active_jobs[job_id]["error"] = error_msg
-                active_jobs[job_id]["endTime"] = datetime.now()
+        set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
         logger.error(error_msg)
         return {"error": error_msg}
 
 # SSE Progress Streaming Endpoints
+
+@app.post("/api/test/create-job")
+async def create_test_job():
+    """Create a test job for SSE testing."""
+    try:
+        job_id = f"test_job_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        set_active_job(job_id, {
+            "jobId": job_id,
+            "projectId": "test_project",
+            "status": "running",
+            "progress": 0,
+            "currentAction": "Test job created",
+            "startTime": datetime.now(),
+            "endTime": None,
+            "error": None
+        })
+        
+        logger.info(f"Created test job: {job_id}")
+        return {"jobId": job_id, "message": "Test job created successfully"}
+    except Exception as e:
+        logger.error(f"Failed to create test job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/test/update-job/{job_id}")
+async def update_test_job(job_id: str, progress: int = 50):
+    """Update a test job progress for SSE testing."""
+    try:
+        set_active_job(job_id, {"progress": progress, "currentAction": f"Test progress update: {progress}%"})
+        logger.info(f"Updated test job {job_id} progress to {progress}%")
+        return {"message": f"Job {job_id} updated to {progress}%"}
+    except Exception as e:
+        logger.error(f"Failed to update test job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/progress/stream/{job_id}")
 async def stream_progress(job_id: str, request: Request):
@@ -1541,41 +1494,41 @@ async def stream_progress(job_id: str, request: Request):
                     break
                 
                 # Get current job status
-                with active_jobs_lock:
-                    if job_id not in active_jobs:
-                        yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': 'Job not found'})}\n\n"
-                        break
+                current_job_id, job_data = get_active_job()
+                
+                if not current_job_id or current_job_id != job_id:
+                    yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': 'Job not found or not active'})}\n\n"
+                    break
+                
+                current_progress = job_data.get('progress', 0)
+                current_status = job_data.get('status', 'unknown')
+                current_action = job_data.get('currentAction', '')
+                
+                # Only send update if progress changed
+                if current_progress != last_progress:
+                    progress_data = {
+                        'type': 'progress',
+                        'jobId': job_id,
+                        'progress': current_progress,
+                        'status': current_status,
+                        'currentAction': current_action,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    yield f"data: {json.dumps(progress_data)}\n\n"
+                    last_progress = current_progress
                     
-                    job_data = active_jobs[job_id]
-                    current_progress = job_data.get('progress', 0)
-                    current_status = job_data.get('status', 'unknown')
-                    current_action = job_data.get('currentAction', '')
-                    
-                    # Only send update if progress changed
-                    if current_progress != last_progress:
-                        progress_data = {
-                            'type': 'progress',
+                    # If job is completed or failed, send final message and close
+                    if current_status in ['completed', 'failed']:
+                        final_data = {
+                            'type': 'final',
                             'jobId': job_id,
-                            'progress': current_progress,
                             'status': current_status,
-                            'currentAction': current_action,
+                            'progress': current_progress,
+                            'message': f'Job {current_status}',
                             'timestamp': datetime.now().isoformat()
                         }
-                        yield f"data: {json.dumps(progress_data)}\n\n"
-                        last_progress = current_progress
-                        
-                        # If job is completed or failed, send final message and close
-                        if current_status in ['completed', 'failed']:
-                            final_data = {
-                                'type': 'final',
-                                'jobId': job_id,
-                                'status': current_status,
-                                'progress': current_progress,
-                                'message': f'Job {current_status}',
-                                'timestamp': datetime.now().isoformat()
-                            }
-                            yield f"data: {json.dumps(final_data)}\n\n"
-                            break
+                        yield f"data: {json.dumps(final_data)}\n\n"
+                        break
                 
                 # Wait before next check
                 await asyncio.sleep(1)
@@ -1586,12 +1539,15 @@ async def stream_progress(job_id: str, request: Request):
     
     return StreamingResponse(
         event_generator(),
-        media_type="text/plain",
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Credentials": "true",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
         }
     )
 
@@ -1605,13 +1561,13 @@ async def test_log_generation():
     logger.error("❌ Test log message - ERROR level")
     
     # Also test direct queue insertion
-    test_message = {
-        "timestamp": datetime.now().isoformat(),
-        "level": "INFO",
-        "message": "📡 Direct queue test message from unified server",
-        "module": "test_api"
-    }
-    log_queue.put(test_message)
+    # test_message = { # This line was removed as per the edit hint
+    #     "timestamp": datetime.now().isoformat(),
+    #     "level": "INFO",
+    #     "message": "📡 Direct queue test message from unified server",
+    #     "module": "test_api"
+    # }
+    # log_queue.put(test_message) # This line was removed as per the edit hint
     
     return {"status": "success", "message": "Test log messages generated"}
 
