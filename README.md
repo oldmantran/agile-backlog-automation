@@ -37,8 +37,10 @@ Frontend (React) ←→ API Server (FastAPI) ←→ AI Agents ←→ Azure DevOp
 2. **Feature Decomposer** - Breaks epics into features with business value focus
 3. **User Story Decomposer** - Creates user stories with acceptance criteria
 4. **Developer Agent** - Generates technical tasks with time estimates
-5. **QA Lead Agent** - Orchestrates test generation
-6. **QA Tester Agent** - Creates test cases and validates acceptance criteria
+5. **QA Lead Agent** - Orchestrates test generation with sub-agents:
+   - **Test Plan Agent** - Creates test plans for features
+   - **Test Suite Agent** - Creates test suites for user stories  
+   - **Test Case Agent** - Creates individual test cases
 
 ### **Work Item Hierarchy (Azure DevOps)**
 ```
@@ -70,8 +72,11 @@ agile-backlog-automation/
 │   ├── feature_decomposer_agent.py
 │   ├── user_story_decomposer_agent.py
 │   ├── developer_agent.py    # Task generation agent
-│   ├── qa_lead_agent.py      # QA orchestration agent
+│   ├── qa_lead_agent.py      # QA orchestration agent (supervisor)
 │   └── qa/                   # QA sub-agents
+│       ├── test_plan_agent.py    # Test plan creation agent
+│       ├── test_suite_agent.py   # Test suite creation agent
+│       └── test_case_agent.py    # Test case creation agent
 ├── supervisor/               # Workflow orchestration
 │   ├── supervisor.py        # Main workflow supervisor
 │   └── main.py              # Supervisor entry point
@@ -227,7 +232,38 @@ agents:
     model: gpt-4
     temperature: 0.6
     max_tokens: 3000
+    sub_agents:
+      test_plan_agent:
+        model: gpt-4
+        temperature: 0.5
+        max_tokens: 2000
+      test_suite_agent:
+        model: gpt-4
+        temperature: 0.5
+        max_tokens: 2000
+      test_case_agent:
+        model: gpt-4
+        temperature: 0.4
+        max_tokens: 1500
 ```
+
+### **QA Agent Hierarchy**
+The QA Lead Agent acts as a **sub-supervisor** with three specialized sub-agents:
+
+1. **Test Plan Agent** - Creates comprehensive test plans for features
+   - Analyzes feature requirements and user stories
+   - Determines test strategy and approach
+   - Sets area paths and iterations
+
+2. **Test Suite Agent** - Creates test suites for user stories
+   - Organizes test cases within suites
+   - Links suites to appropriate test plans
+   - Maintains suite hierarchy and relationships
+
+3. **Test Case Agent** - Creates individual test cases
+   - Generates positive, negative, and boundary test cases
+   - Formats test cases in Gherkin or traditional format
+   - Links test cases to appropriate test suites
 
 ## 🛠️ Development Tools
 
@@ -264,6 +300,11 @@ python tools/test_epic_strategist.py
 python tools/test_feature_decomposer.py
 python tools/test_developer_agent.py
 python tools/test_qa_lead_agent.py
+
+# Test QA sub-agents
+python tools/test_test_plan_agent.py
+python tools/test_test_suite_agent.py
+python tools/test_test_case_agent.py
 
 # Test complete workflow
 python tools/test_complete_workflow.py
