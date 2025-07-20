@@ -106,24 +106,51 @@ class TestPlanAgent(Agent):
                                    context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Generate test plan content using LLM."""
         try:
-            # Prepare context for LLM
-            feature_context = {
+            # Prepare context for LLM using the proper template system
+            template_context = {
+                'project_name': context.get('project_name', 'Unknown Project'),
+                'domain': context.get('domain', 'dynamic'),
                 'epic_title': epic.get('title', ''),
                 'epic_description': epic.get('description', ''),
                 'feature_title': feature.get('title', ''),
                 'feature_description': feature.get('description', ''),
                 'user_stories': feature.get('user_stories', []),
                 'project_context': context.get('project_context', {}),
-                'domain': context.get('project_context', {}).get('domain', ''),
                 'project_type': context.get('project_context', {}).get('project_type', '')
             }
             
-            # Create test plan generation prompt
-            prompt = self._build_test_plan_prompt(feature_context)
+            # Build user stories text for the prompt
+            user_stories_text = ""
+            for i, story in enumerate(feature.get('user_stories', []), 1):
+                user_stories_text += f"{i}. {story.get('title', '')}\n"
+                if story.get('description'):
+                    user_stories_text += f"   Description: {story.get('description')}\n"
+                if story.get('acceptance_criteria'):
+                    user_stories_text += f"   Acceptance Criteria: {', '.join(story.get('acceptance_criteria', []))}\n"
+                user_stories_text += "\n"
+            
+            # Add user stories to context
+            template_context['user_stories_text'] = user_stories_text
+            
+            # Get the prompt using the template system
+            try:
+                prompt = self.get_prompt(template_context)
+                self.logger.info(f"Generated prompt using template system for feature: {feature.get('title', 'Unknown')}")
+            except Exception as e:
+                self.logger.warning(f"Template system failed, using fallback prompt: {e}")
+                prompt = self._build_test_plan_prompt({
+                    'epic_title': epic.get('title', ''),
+                    'epic_description': epic.get('description', ''),
+                    'feature_title': feature.get('title', ''),
+                    'feature_description': feature.get('description', ''),
+                    'user_stories': feature.get('user_stories', []),
+                    'domain': context.get('domain', ''),
+                    'project_type': context.get('project_context', {}).get('project_type', '')
+                })
             
             # Call LLM to generate test plan with timeout handling
             try:
-                self.logger.info(f"Calling LLM for test plan generation for feature: {feature_context.get('feature_title', 'Unknown')}")
+                self.logger.info(f"Calling LLM for test plan generation for feature: {feature.get('title', 'Unknown')}")
                 response = self.run(prompt)
                 self.logger.info(f"LLM response received, length: {len(response) if response else 0}")
             except Exception as e:

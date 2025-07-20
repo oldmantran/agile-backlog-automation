@@ -16,7 +16,8 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiDatabase,
-  FiCpu
+  FiCpu,
+  FiInfo
 } from 'react-icons/fi';
 
 interface ConfigData {
@@ -27,6 +28,8 @@ interface ConfigData {
   areaPath: string;
   openaiApiKey: string;
   grokApiKey: string;
+  ollamaModel?: string;
+  ollamaUrl?: string;
 }
 
 const TronConfigScreen: React.FC = () => {
@@ -317,6 +320,7 @@ const TronConfigScreen: React.FC = () => {
                       <SelectContent className="bg-card border-primary/30">
                         <SelectItem value="openai">OpenAI (GPT-4)</SelectItem>
                         <SelectItem value="grok">Grok (xAI)</SelectItem>
+                        <SelectItem value="ollama">Ollama (Local LLM)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -368,6 +372,52 @@ const TronConfigScreen: React.FC = () => {
                           {showTokens.grok ? <FiEyeOff /> : <FiEye />}
                         </Button>
                       </div>
+                    </div>
+                  )}
+
+                  {config.llmProvider === 'ollama' && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="ollama-model" className="text-foreground">Ollama Model</Label>
+                        <Select
+                          value={config.ollamaModel || "llama3.1:8b"}
+                          onValueChange={(value) => setConfig(prev => ({ ...prev, ollamaModel: value }))}
+                        >
+                          <SelectTrigger className="tron-input">
+                            <SelectValue placeholder="Select Ollama model" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-primary/30">
+                            <SelectItem value="llama3.1:8b">Llama 3.1 8B (Fast)</SelectItem>
+                            <SelectItem value="llama3.1:70b">Llama 3.1 70B (High Quality)</SelectItem>
+                            <SelectItem value="codellama:34b">CodeLlama 34B (Code Focused)</SelectItem>
+                            <SelectItem value="mistral:7b">Mistral 7B (Balanced)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground">
+                          Select the local model to use for inference
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="ollama-url" className="text-foreground">Ollama Server URL</Label>
+                        <Input
+                          id="ollama-url"
+                          value={config.ollamaUrl || "http://localhost:11434"}
+                          onChange={(e) => setConfig(prev => ({ ...prev, ollamaUrl: e.target.value }))}
+                          placeholder="http://localhost:11434"
+                          className="tron-input"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          URL where Ollama server is running
+                        </p>
+                      </div>
+
+                      <Alert className="border-blue-500/50 bg-blue-500/10">
+                        <FiInfo className="h-4 w-4 text-blue-500" />
+                        <AlertDescription className="text-blue-400">
+                          Make sure Ollama is installed and running. No API key required for local inference.
+                        </AlertDescription>
+                      </Alert>
                     </div>
                   )}
 

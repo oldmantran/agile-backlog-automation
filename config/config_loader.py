@@ -25,6 +25,10 @@ class Config:
             # OpenAI
             "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
             "OPENAI_MODEL": os.getenv("OPENAI_MODEL", "gpt-4.1"),
+            # Ollama (Local LLM)
+            "OLLAMA_MODEL": os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+            "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+            "OLLAMA_PRESET": os.getenv("OLLAMA_PRESET", "balanced"),
             # LLM Provider
             "LLM_PROVIDER": os.getenv("LLM_PROVIDER", "openai"),
             # Notifications

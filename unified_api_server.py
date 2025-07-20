@@ -199,6 +199,13 @@ class ConfigData(BaseModel):
     azureDevOpsPat: str = ""
     azureDevOpsOrg: str = ""
     azureDevOpsProject: str = ""
+    llmProvider: str = "openai"
+    areaPath: str = ""
+    openaiApiKey: str = ""
+    grokApiKey: str = ""
+    ollamaModel: str = "llama3.1:8b"
+    ollamaUrl: str = "http://localhost:11434"
+    ollamaPreset: str = "fast"
 
 # Settings Request/Response Models
 class SettingsRequest(BaseModel):
@@ -388,7 +395,10 @@ async def get_config():
         "llmProvider": env_config.get("LLM_PROVIDER", "openai"),
         "areaPath": env_config.get("AREA_PATH", ""),
         "openaiApiKey": env_config.get("OPENAI_API_KEY", ""),
-        "grokApiKey": env_config.get("GROK_API_KEY", "")
+        "grokApiKey": env_config.get("GROK_API_KEY", ""),
+        "ollamaModel": env_config.get("OLLAMA_MODEL", "llama3.1:8b"),
+        "ollamaUrl": env_config.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+        "ollamaPreset": env_config.get("OLLAMA_PRESET", "fast")
     }
 
 @app.post("/api/config")
@@ -401,7 +411,10 @@ async def save_config(config: ConfigData):
         "LLM_PROVIDER": config.llmProvider,
         "AREA_PATH": config.areaPath,
         "OPENAI_API_KEY": config.openaiApiKey,
-        "GROK_API_KEY": config.grokApiKey
+        "GROK_API_KEY": config.grokApiKey,
+        "OLLAMA_MODEL": config.ollamaModel,
+        "OLLAMA_BASE_URL": config.ollamaUrl,
+        "OLLAMA_PRESET": config.ollamaPreset
     }
     
     # Remove empty values
@@ -1803,6 +1816,48 @@ async def get_setting_history(user_id: str, setting_type: str = None):
     except Exception as e:
         logger.error(f"Failed to get setting history for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ollama/models")
+async def get_ollama_models():
+    """Get available Ollama models"""
+    try:
+        import subprocess
+        import json
+        
+        # Use the full path to ollama
+        import os
+        username = os.getenv('USERNAME', '')
+        ollama_path = f"C:\\Users\\{username}\\AppData\\Local\\Programs\\Ollama\\ollama.exe"
+        
+        # Check if the path exists
+        if not os.path.exists(ollama_path):
+            return {"models": [], "error": f"Ollama not found at {ollama_path}"}
+        
+        result = subprocess.run(
+            [ollama_path, "list"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if result.returncode == 0:
+            # Parse the text output
+            lines = result.stdout.strip().split('\n')
+            models = []
+            
+            # Skip header line and parse model names
+            for line in lines[1:]:  # Skip "NAME ID SIZE MODIFIED" header
+                if line.strip():
+                    parts = line.split()
+                    if parts:
+                        models.append(parts[0])  # First column is the model name
+            
+            return {"models": models}
+        else:
+            return {"models": [], "error": f"Failed to get models: {result.stderr}"}
+            
+    except Exception as e:
+        return {"models": [], "error": str(e)}
 
 @app.get("/api/user/current")
 async def get_current_user():

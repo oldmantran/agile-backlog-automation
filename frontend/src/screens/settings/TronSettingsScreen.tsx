@@ -21,7 +21,9 @@ import {
   FiInfo,
   FiList,
   FiUser,
-  FiDatabase
+  FiDatabase,
+  FiCpu,
+  FiServer
 } from 'react-icons/fi';
 
 const TronSettingsScreen: React.FC = () => {
@@ -59,6 +61,16 @@ const TronSettingsScreen: React.FC = () => {
   const [sessionId] = useState(`session_${Date.now()}`);
   const [hasCustomSettings, setHasCustomSettings] = useState(false);
   const [useSystemDefaults, setUseSystemDefaults] = useState(false); // Generate unique session ID
+  
+  // LLM Configuration State
+  const [llmConfig, setLlmConfig] = useState({
+    provider: 'openai',
+    model: 'llama3.1:8b',
+    serverUrl: 'http://localhost:11434',
+    preset: 'fast'
+  });
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   // Initialize component
   useEffect(() => {
@@ -123,6 +135,7 @@ const TronSettingsScreen: React.FC = () => {
     };
     
     loadSettings();
+    loadLlmConfig();
   }, [sessionId]);
 
   // Apply glow intensity to CSS custom properties
@@ -242,6 +255,77 @@ const TronSettingsScreen: React.FC = () => {
       setSaveAsDefault(true); // Automatically enable save as default
     }
   };
+
+  // Load LLM configuration from environment
+  const loadLlmConfig = async () => {
+    try {
+      const response = await fetch('/api/config');
+      if (response.ok) {
+        const data = await response.json();
+        setLlmConfig({
+          provider: data.llmProvider || 'openai',
+          model: data.ollamaModel || 'llama3.1:8b',
+          serverUrl: data.ollamaUrl || 'http://localhost:11434',
+          preset: data.ollamaPreset || 'fast'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load LLM configuration:', error);
+    }
+  };
+
+  // Save LLM configuration to environment
+  const saveLlmConfig = async () => {
+    try {
+      const configData = {
+        llmProvider: llmConfig.provider,
+        ...(llmConfig.provider === 'ollama' && {
+          ollamaModel: llmConfig.model,
+          ollamaUrl: llmConfig.serverUrl,
+          ollamaPreset: llmConfig.preset
+        })
+      };
+
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData)
+      });
+
+      if (response.ok) {
+        console.log('LLM configuration saved successfully');
+      } else {
+        console.error('Failed to save LLM configuration');
+      }
+    } catch (error) {
+      console.error('Failed to save LLM configuration:', error);
+    }
+  };
+
+  // Load available Ollama models
+  const loadAvailableModels = async () => {
+    if (llmConfig.provider !== 'ollama') return;
+    
+    setIsLoadingModels(true);
+    try {
+      const response = await fetch('/api/ollama/models');
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableModels(data.models || []);
+      }
+    } catch (error) {
+      console.error('Failed to load available models:', error);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // Load models when provider changes to Ollama
+  useEffect(() => {
+    if (llmConfig.provider === 'ollama') {
+      loadAvailableModels();
+    }
+  }, [llmConfig.provider]);
   
   const handlePresetChange = (preset: string) => {
     setSelectedPreset(preset);
@@ -637,6 +721,146 @@ const TronSettingsScreen: React.FC = () => {
                   >
                     <FiRefreshCw className="w-4 h-4 mr-2" />
                     Reset to Default
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* LLM Configuration Section */}
+            <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <FiCpu className="w-6 h-6 text-primary glow-cyan" />
+                  <CardTitle className="text-foreground glow-cyan">LLM Configuration</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* LLM Provider Selection */}
+                <div>
+                  <Label className="text-foreground font-medium glow-cyan mb-3 block">
+                    LLM Provider
+                  </Label>
+                  <Select 
+                    value={llmConfig.provider} 
+                    onValueChange={(value) => setLlmConfig(prev => ({ ...prev, provider: value }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select LLM provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI (GPT-4)</SelectItem>
+                      <SelectItem value="grok">Grok (xAI)</SelectItem>
+                      <SelectItem value="ollama">Ollama (Local LLM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Choose your preferred language model provider
+                  </p>
+                </div>
+
+                {/* Ollama-specific Configuration */}
+                {llmConfig.provider === 'ollama' && (
+                  <div className="space-y-4 p-4 rounded-lg border border-primary/30 bg-card/20">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FiServer className="w-4 h-4 text-accent" />
+                      <span className="text-sm font-medium text-foreground">Ollama Configuration</span>
+                    </div>
+
+                    {/* Model Selection */}
+                    <div>
+                      <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                        Model Selection
+                      </Label>
+                      <Select 
+                        value={llmConfig.model} 
+                        onValueChange={(value) => setLlmConfig(prev => ({ ...prev, model: value }))}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="llama3.1:8b">Llama 3.1 8B (Fast Development)</SelectItem>
+                          <SelectItem value="llama3.1:70b">Llama 3.1 70B (High Quality)</SelectItem>
+                          <SelectItem value="codellama:34b">CodeLlama 34B (Code Focused)</SelectItem>
+                          <SelectItem value="mistral:7b">Mistral 7B (Balanced)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Recommended: Start with 8B for development, switch to 70B for production
+                      </p>
+                    </div>
+
+                    {/* Preset Selection */}
+                    <div>
+                      <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                        Generation Preset
+                      </Label>
+                      <Select 
+                        value={llmConfig.preset} 
+                        onValueChange={(value) => setLlmConfig(prev => ({ ...prev, preset: value }))}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select preset" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fast">Fast (Quick responses)</SelectItem>
+                          <SelectItem value="balanced">Balanced (Good quality/speed)</SelectItem>
+                          <SelectItem value="high_quality">High Quality (Best output)</SelectItem>
+                          <SelectItem value="code_focused">Code Focused (For CodeLlama)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Controls generation speed vs quality trade-off
+                      </p>
+                    </div>
+
+                    {/* Server URL */}
+                    <div>
+                      <Label className="text-foreground font-medium glow-cyan mb-2 block">
+                        Ollama Server URL
+                      </Label>
+                      <Input
+                        value={llmConfig.serverUrl}
+                        onChange={(e) => setLlmConfig(prev => ({ ...prev, serverUrl: e.target.value }))}
+                        placeholder="http://localhost:11434"
+                        className="glow-cyan"
+                      />
+                      <p className="text-sm text-muted-foreground mt-2">
+                        URL where Ollama server is running (default: localhost:11434)
+                      </p>
+                    </div>
+
+                    {/* Model Status */}
+                    <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
+                      <div className="flex items-center space-x-2 text-blue-300 text-sm">
+                        <FiInfo className="w-4 h-4" />
+                        <span>
+                          {isLoadingModels ? 'Loading models...' : 
+                           availableModels.length > 0 ? 
+                           `Available models: ${availableModels.join(', ')}` :
+                           'No models found. Please install models using: ollama pull llama3.1:8b'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Environment Variable Info */}
+                <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10">
+                  <div className="flex items-center space-x-2 text-yellow-300 text-sm">
+                    <FiInfo className="w-4 h-4" />
+                    <span>These settings will update your .env file with LLM_PROVIDER and related variables</span>
+                  </div>
+                </div>
+
+                {/* Save LLM Configuration Button */}
+                <div className="flex justify-end pt-4">
+                  <Button 
+                    onClick={saveLlmConfig}
+                    className="bg-primary hover:bg-primary/80 text-primary-foreground glow-cyan"
+                  >
+                    <FiSave className="w-4 h-4 mr-2" />
+                    Save LLM Configuration
                   </Button>
                 </div>
               </CardContent>

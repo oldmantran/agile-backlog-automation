@@ -52,11 +52,23 @@ class Agent:
             self.model = self.config.get_env("GROK_MODEL") or "grok-beta"
             self.api_key = self.config.get_env("GROK_API_KEY")
             self.api_url = "https://api.x.ai/v1/chat/completions"
+        elif self.llm_provider == "ollama":
+            self.model = self.config.get_env("OLLAMA_MODEL") or "llama3.1:8b"
+            self.api_key = None  # No API key needed for local Ollama
+            self.api_url = self.config.get_env("OLLAMA_BASE_URL") or "http://localhost:11434"
+            # Import Ollama provider
+            try:
+                from utils.ollama_client import create_ollama_provider
+                self.ollama_provider = create_ollama_provider(
+                    preset=self.config.get_env("OLLAMA_PRESET") or "balanced"
+                )
+            except ImportError:
+                raise AgentError("Ollama client not available. Install with: pip install ollama-python")
         else:
             raise AgentError(f"Unsupported LLM provider: {self.llm_provider}")
         
-        # Validate API key
-        if not self.api_key:
+        # Validate API key (except for Ollama)
+        if self.llm_provider != "ollama" and not self.api_key:
             raise AgentError(f"API key not found for provider: {self.llm_provider}")
     
     def _validate_prompt_template(self):
@@ -132,17 +144,21 @@ Focus on quality assurance and test coverage."""
             # Generate prompt with context
             system_prompt = self.get_prompt(context)
             
-            # Prepare request payload
-            payload = self._prepare_request_payload(system_prompt, user_input)
+            logger.info(f"Executing {self.name} (attempt {self.execution_count}) with {self.llm_provider}")
             
-            logger.info(f"Executing {self.name} (attempt {self.execution_count})")
-            logger.debug(f"Request payload for {self.name}: {json.dumps(payload, indent=2)}")
-            
-            # Make API request with retry logic
-            response = self._make_api_request(payload)
-            
-            # Process response
-            result = self._process_response(response)
+            # Handle Ollama differently
+            if self.llm_provider == "ollama":
+                result = self._run_ollama(system_prompt, user_input)
+            else:
+                # Prepare request payload for cloud providers
+                payload = self._prepare_request_payload(system_prompt, user_input)
+                logger.debug(f"Request payload for {self.name}: {json.dumps(payload, indent=2)}")
+                
+                # Make API request with retry logic
+                response = self._make_api_request(payload)
+                
+                # Process response
+                result = self._process_response(response)
             
             # Update success tracking
             self.success_count += 1
@@ -157,6 +173,20 @@ Focus on quality assurance and test coverage."""
             
             logger.error(f"Error executing {self.name}: {e}")
             raise CommunicationError(f"Agent {self.name} failed: {str(e)}")
+    
+    def _run_ollama(self, system_prompt: str, user_input: str) -> str:
+        """Run inference using local Ollama."""
+        try:
+            logger.info(f"🤖 Using local Ollama model: {self.model}")
+            return self.ollama_provider.generate_response(
+                system_prompt=system_prompt,
+                user_input=user_input,
+                temperature=0.7,
+                max_tokens=4000
+            )
+        except Exception as e:
+            logger.error(f"❌ Ollama inference failed: {e}")
+            raise CommunicationError(f"Ollama inference failed: {str(e)}")
     
     def _prepare_request_payload(self, system_prompt: str, user_input: str) -> dict:
         """Prepare the request payload for the LLM API."""

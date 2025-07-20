@@ -294,6 +294,11 @@ class AzureDevOpsIntegrator:
             self.logger.error(f"Failed to create work items: {e}")
             raise
     
+    def create_epic(self, epic_data: Dict[str, Any]) -> int:
+        """Create an Epic work item and return its ID."""
+        epic_item = self._create_epic(epic_data)
+        return epic_item['id']
+    
     def _create_epic(self, epic_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create an Epic work item."""
         fields = {
@@ -327,6 +332,11 @@ class AzureDevOpsIntegrator:
             fields['/fields/System.IterationPath'] = self.iteration_path
         
         return self._create_work_item('Epic', fields)
+    
+    def create_feature(self, feature_data: Dict[str, Any], parent_epic_id: int) -> int:
+        """Create a Feature work item and return its ID."""
+        feature_item = self._create_feature(feature_data, parent_epic_id)
+        return feature_item['id']
     
     def _create_feature(self, feature_data: Dict[str, Any], parent_epic_id: int) -> Dict[str, Any]:
         """Create a Feature work item."""
@@ -367,6 +377,11 @@ class AzureDevOpsIntegrator:
         
         return feature_item
     
+    def create_user_story(self, story_data: Dict[str, Any], parent_feature_id: int) -> int:
+        """Create a User Story work item and return its ID."""
+        story_item = self._create_user_story(story_data, parent_feature_id)
+        return story_item['id']
+    
     def _create_task(self, task_data: Dict[str, Any], parent_user_story_id: int) -> Dict[str, Any]:
         """Create a Task work item under a User Story."""
         fields = {
@@ -388,6 +403,11 @@ class AzureDevOpsIntegrator:
         self._create_parent_link(task_item['id'], parent_user_story_id)
         
         return task_item
+    
+    def create_task(self, task_data: Dict[str, Any], parent_user_story_id: int) -> int:
+        """Create a Task work item and return its ID."""
+        task_item = self._create_task(task_data, parent_user_story_id)
+        return task_item['id']
     
     def _create_test_case(self, test_case_data: Dict[str, Any], parent_id: int, suite_id: int = None) -> Dict[str, Any]:
         """Create a Test Case work item and optionally assign to a test suite."""
@@ -843,6 +863,11 @@ class AzureDevOpsIntegrator:
             raise ValueError("Test client not available - Azure DevOps integration disabled")
         
         return self.test_client.create_test_case_work_item(title, description, steps, area_path=self.area_path)
+    
+    def create_test_case_with_data(self, test_case_data: Dict[str, Any], parent_id: int, suite_id: int = None) -> int:
+        """Create a Test Case work item from data and return its ID."""
+        test_case_item = self._create_test_case(test_case_data, parent_id, suite_id)
+        return test_case_item['id']
 
     # Helper methods for Azure DevOps API operations
     def _get_auth(self) -> HTTPBasicAuth:

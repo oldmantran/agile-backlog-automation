@@ -683,7 +683,7 @@ class WorkflowSupervisor:
                         elif stage == 'azure_integration':
                             self.logger.info(f"🔗 Executing Azure integration stage (integrate_azure flag: {integrate_azure})")
                             if integrate_azure:
-                                self._execute_azure_integration(update_progress, stage_index + 1)
+                                self._integrate_with_azure_devops()
                             else:
                                 self.logger.warning("❌ Azure integration stage skipped (integrate_azure=False)")
                                 self.workflow_data['azure_integration'] = {
@@ -771,10 +771,8 @@ class WorkflowSupervisor:
             try:
                 self._finalize_workflow_data()
                 
-                # Azure DevOps integration
-                if integrate_azure:
-                    update_progress(total_stages + 1, "Integrating with Azure DevOps")
-                    self._integrate_with_azure_devops()
+                # Azure DevOps integration is now handled in the stage execution
+                # No need to duplicate the call here
                 
                 # Set end time before sending notifications
                 self.execution_metadata['end_time'] = datetime.now()
@@ -787,7 +785,7 @@ class WorkflowSupervisor:
                     self._save_final_output()
                 
                 # Final progress update
-                update_progress(total_stages + 2, "Backlog generation completed")
+                update_progress(total_stages + 1, "Backlog generation completed")
                 return self.workflow_data
                 
             except Exception as e:
@@ -1077,7 +1075,7 @@ class WorkflowSupervisor:
                 for future in as_completed(future_to_feature):
                     feature_index = future_to_feature[future]
                     feature, result = future.result()
-                    feature['test_plan'] = result.get('test_plan')
+                    # Test plan is already set on the feature object by _process_feature_qa
                     processed_qa_items += 1
                     if update_progress_callback and total_qa_items > 0:
                         sub_progress = processed_qa_items / total_qa_items
@@ -1086,7 +1084,7 @@ class WorkflowSupervisor:
             for epic, feature in features:
                 self.logger.info(f"Processing QA for feature: {feature.get('title', 'Untitled')}")
                 result = agent._process_feature_qa(epic, feature, context, area_path, 0, 0)
-                feature['test_plan'] = result.get('test_plan')
+                # Test plan is already set on the feature object by _process_feature_qa
                 processed_qa_items += 1
                 if update_progress_callback and total_qa_items > 0:
                     sub_progress = processed_qa_items / total_qa_items
@@ -1119,6 +1117,8 @@ class WorkflowSupervisor:
             text = text.replace('📈', '[TREND]')
             text = text.replace('💾', '[SAVE]')
             text = text.replace('🎪', '[EVENT]')
+            text = text.replace('\U0001f517', '[LINK]')  # 🔗
+            text = text.replace('\u2705', '[SUCCESS]')    # ✅
             
             # Remove any remaining Unicode characters that might cause issues
             text = re.sub(r'[^\x00-\x7F]+', '?', text)
@@ -1209,7 +1209,7 @@ class WorkflowSupervisor:
     
     def _integrate_with_azure_devops(self):
         """Integrate generated backlog with Azure DevOps with pre-integration validation."""
-        self.logger.info("🔗 Preparing for Azure DevOps integration")
+        self.logger.info(self._sanitize_unicode_for_logging("🔗 Preparing for Azure DevOps integration"))
         
         # Check if Azure integration is enabled
         if self.azure_integrator is None:
@@ -1224,7 +1224,7 @@ class WorkflowSupervisor:
             }
             return
         
-        self.logger.info("✅ Azure DevOps integrator is available")
+        self.logger.info(self._sanitize_unicode_for_logging("✅ Azure DevOps integrator is available"))
         self.logger.info(f"   Organization: {self.organization_url}")
         self.logger.info(f"   Project: {self.project}")
         self.logger.info(f"   Area Path: {self.area_path}")
@@ -2179,93 +2179,7 @@ class WorkflowSupervisor:
         except Exception as e:
             self.logger.error(f"Failed to write completeness report: {e}")
 
-    def _execute_azure_integration(self, update_progress_callback=None, stage_index=6):
-        """Execute Azure DevOps integration as part of the continuous workflow."""
-        self.logger.info("🔗 _execute_azure_integration method called")
-        self.logger.info("Starting Azure DevOps integration")
-        
-        if not self.azure_integrator:
-            self.logger.warning("❌ Azure DevOps integration not configured, skipping")
-            if update_progress_callback:
-                update_progress_callback(stage_index, "Azure integration skipped (not configured)", 1.0)
-            return
-        
-        self.logger.info("✅ Azure DevOps integrator is available in _execute_azure_integration")
-        
-        try:
-            # Count total work items to create for progress tracking
-            total_work_items = 0
-            for epic in self.workflow_data.get('epics', []):
-                total_work_items += 1  # Epic
-                for feature in epic.get('features', []):
-                    total_work_items += 1  # Feature
-                    for user_story in feature.get('user_stories', []):
-                        total_work_items += 1  # User Story
-                        total_work_items += len(user_story.get('tasks', []))  # Tasks
-                        total_work_items += len(user_story.get('test_cases', []))  # Test Cases
-            
-            self.logger.info(f"Creating {total_work_items} work items in Azure DevOps")
-            
-            created_items = 0
-            
-            def integration_progress_callback(item_type: str, item_name: str, completed: bool = False):
-                nonlocal created_items
-                if completed:
-                    created_items += 1
-                
-                if update_progress_callback and total_work_items > 0:
-                    sub_progress = created_items / total_work_items
-                    update_progress_callback(stage_index, f"Creating {item_type} ({created_items}/{total_work_items})", sub_progress)
-                
-                self.logger.info(f"ADO: {item_type} '{item_name}' - {'created' if completed else 'creating'}")
-            
-            # Create epics
-            for epic in self.workflow_data.get('epics', []):
-                integration_progress_callback("epic", epic.get('title', 'Unknown Epic'), False)
-                epic_id = self.azure_integrator.create_epic(epic)
-                if epic_id:
-                    epic['azure_id'] = epic_id
-                    integration_progress_callback("epic", epic.get('title', 'Unknown Epic'), True)
-                
-                # Create features
-                for feature in epic.get('features', []):
-                    integration_progress_callback("feature", feature.get('title', 'Unknown Feature'), False)
-                    feature_id = self.azure_integrator.create_feature(feature, epic_id)
-                    if feature_id:
-                        feature['azure_id'] = feature_id
-                        integration_progress_callback("feature", feature.get('title', 'Unknown Feature'), True)
-                    
-                    # Create user stories
-                    for user_story in feature.get('user_stories', []):
-                        integration_progress_callback("user story", user_story.get('title', 'Unknown User Story'), False)
-                        story_id = self.azure_integrator.create_user_story(user_story, feature_id)
-                        if story_id:
-                            user_story['azure_id'] = story_id
-                            integration_progress_callback("user story", user_story.get('title', 'Unknown User Story'), True)
-                        
-                        # Create tasks
-                        for task in user_story.get('tasks', []):
-                            integration_progress_callback("task", task.get('title', 'Unknown Task'), False)
-                            task_id = self.azure_integrator.create_task(task, story_id)
-                            if task_id:
-                                task['azure_id'] = task_id
-                                integration_progress_callback("task", task.get('title', 'Unknown Task'), True)
-                        
-                        # Create test cases
-                        for test_case in user_story.get('test_cases', []):
-                            integration_progress_callback("test case", test_case.get('title', 'Unknown Test Case'), False)
-                            test_case_id = self.azure_integrator.create_test_case(test_case, story_id)
-                            if test_case_id:
-                                test_case['azure_id'] = test_case_id
-                                integration_progress_callback("test case", test_case.get('title', 'Unknown Test Case'), True)
-            
-            # Final progress update
-            if update_progress_callback:
-                update_progress_callback(stage_index, "Azure DevOps integration completed", 1.0)
-                
-        except Exception as e:
-            self.logger.error(f"Azure DevOps integration failed: {e}")
-            raise
+
     
     def _execute_final_validation(self, update_progress_callback=None, stage_index=7):
         """Execute final validation and cleanup as part of the continuous workflow."""

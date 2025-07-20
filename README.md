@@ -22,6 +22,8 @@ A sophisticated multi-agent AI system that transforms product visions into struc
   - Domain-specific fallback test plans
   - Fallback test suites and test cases
   - Lenient validation (50% completion threshold)
+  - **Fixed Test Plan Generation**: Test plan agent now properly uses template system
+  - **Template-Based Prompts**: All QA agents use domain-specific prompt templates
 - **✅ System Defaults Toggle**: New UI feature for settings management
   - Toggle between system defaults and custom settings
   - Visual indicators for current mode
@@ -373,6 +375,8 @@ The QA Lead Agent acts as a **sub-supervisor** with three specialized sub-agents
 - **✅ Lenient Validation**: 50% completion threshold instead of 100% requirement
 - **✅ Graceful Degradation**: Always provides valid structures instead of failing completely
 - **✅ Better Error Handling**: Comprehensive logging and error recovery
+- **✅ Template-Based Prompts**: All QA agents now use proper prompt templates with domain-specific context
+- **✅ Fixed Test Plan Generation**: Test plan agent now properly uses template system and generates high-quality test plans
 
 ### **Database-Based Settings Management**
 

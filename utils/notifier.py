@@ -104,6 +104,13 @@ class Notifier:
         elif azure_integration.get('warning'):
             warning = f"\n\n⚠️ {azure_integration['warning']}"
         
+        # Add warnings from execution metadata
+        execution_metadata = workflow_data.get('metadata', {}).get('execution_metadata', {})
+        errors = execution_metadata.get('errors', [])
+        if errors:
+            error_list = "\n".join([f"• {error}" for error in errors])
+            warning += f"\n\n⚠️ *Warnings/Issues Encountered:*\n{error_list}"
+        
         # Add Azure DevOps integration info if available
         ado_summary = ""
         if azure_integration.get('work_items_created'):
