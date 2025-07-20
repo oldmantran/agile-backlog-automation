@@ -56,7 +56,13 @@ class TestPlanAgent(Agent):
             # Generate test plan content using LLM
             test_plan_content = self._generate_test_plan_content(epic, feature, context)
             
+            # Debug logging to understand what's happening
+            self.logger.info(f"Test plan content generated: {test_plan_content is not None}")
+            if test_plan_content:
+                self.logger.info(f"Test plan content keys: {list(test_plan_content.keys())}")
+            
             if not test_plan_content:
+                self.logger.error("Failed to generate test plan content - this should not happen with fallback mechanisms")
                 return {
                     'success': False,
                     'error': 'Failed to generate test plan content'
@@ -117,118 +123,36 @@ class TestPlanAgent(Agent):
             
             # Call LLM to generate test plan with timeout handling
             try:
+                self.logger.info(f"Calling LLM for test plan generation for feature: {feature_context.get('feature_title', 'Unknown')}")
                 response = self.run(prompt)
+                self.logger.info(f"LLM response received, length: {len(response) if response else 0}")
             except Exception as e:
                 self.logger.warning(f"LLM call failed for test plan generation: {e}")
-                # Return fallback test plan instead of None
-                return self._create_fallback_test_plan(feature_context)
+                self.logger.warning(f"Exception type: {type(e).__name__}")
+                # Skip this item instead of creating fallback
+                return None
             
             if not response:
                 self.logger.warning("LLM returned empty response for test plan generation")
-                return self._create_fallback_test_plan(feature_context)
+                # Skip this item instead of creating fallback
+                return None
             
             # Parse the response to extract test plan components
             test_plan_content = self._parse_test_plan_response(response)
             
-            # If parsing failed, use fallback
+            # If parsing failed, skip this item
             if not test_plan_content:
-                self.logger.warning("Failed to parse test plan response, using fallback")
-                return self._create_fallback_test_plan(feature_context)
+                self.logger.warning("Failed to parse test plan response, skipping this feature")
+                return None
             
             return test_plan_content
             
         except Exception as e:
             self.logger.error(f"Error generating test plan content: {e}")
-            # Always return a fallback instead of None
-            return self._create_fallback_test_plan({
-                'feature_title': feature.get('title', 'Unknown Feature'),
-                'domain': context.get('project_context', {}).get('domain', 'general')
-            })
+            # Skip this item instead of creating fallback
+            return None
     
-    def _create_fallback_test_plan(self, feature_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a fallback test plan when LLM generation fails."""
-        feature_title = feature_context.get('feature_title', 'Unknown Feature')
-        domain = feature_context.get('domain', 'general')
-        
-        self.logger.info(f"Creating fallback test plan for feature: {feature_title}")
-        
-        # Domain-specific fallback content
-        domain_fallbacks = {
-            'real_estate': {
-                'description': f"Comprehensive testing plan for {feature_title} in real estate domain, focusing on transaction management, user workflows, and data integrity.",
-                'test_approach': "Risk-based testing with emphasis on user acceptance and integration testing",
-                'test_types': ["Functional Testing", "User Acceptance Testing", "Integration Testing", "Data Validation Testing"],
-                'entry_criteria': [
-                    "Feature development completed and unit tested",
-                    "Test environment configured with real estate data",
-                    "User acceptance criteria defined and reviewed"
-                ],
-                'exit_criteria': [
-                    "All functional test cases passed",
-                    "User acceptance testing completed successfully",
-                    "Integration with other real estate modules verified",
-                    "Performance requirements met"
-                ]
-            },
-            'ecommerce': {
-                'description': f"Comprehensive testing plan for {feature_title} in e-commerce domain, focusing on user experience, payment processing, and inventory management.",
-                'test_approach': "User-centric testing with automated regression and performance validation",
-                'test_types': ["Functional Testing", "User Experience Testing", "Payment Integration Testing", "Performance Testing"],
-                'entry_criteria': [
-                    "Feature development completed and unit tested",
-                    "Test environment with payment gateway integration",
-                    "User journey scenarios defined"
-                ],
-                'exit_criteria': [
-                    "All user journeys tested successfully",
-                    "Payment processing validated",
-                    "Performance benchmarks met",
-                    "Security requirements verified"
-                ]
-            }
-        }
-        
-        # Get domain-specific content or use general fallback
-        fallback_content = domain_fallbacks.get(domain, {
-            'description': f"Comprehensive testing plan for {feature_title}, ensuring quality and reliability through systematic testing approach.",
-            'test_approach': "Systematic testing approach with functional, integration, and user acceptance testing",
-            'test_types': ["Functional Testing", "Integration Testing", "User Acceptance Testing"],
-            'entry_criteria': [
-                "Feature development completed",
-                "Test environment prepared",
-                "Test data available"
-            ],
-            'exit_criteria': [
-                "All test cases executed successfully",
-                "Critical defects resolved",
-                "Acceptance criteria verified"
-            ]
-        })
-        
-        return {
-            'description': fallback_content['description'],
-            'test_approach': fallback_content['test_approach'],
-            'test_types': fallback_content['test_types'],
-            'entry_criteria': fallback_content['entry_criteria'],
-            'exit_criteria': fallback_content['exit_criteria'],
-            'test_environment': {
-                'description': 'Standard test environment with appropriate test data',
-                'data_requirements': 'Representative test data covering normal and edge cases',
-                'tools_required': ['Test management tool', 'Automation framework']
-            },
-            'risks_and_mitigations': [
-                {
-                    'risk': 'Test environment unavailability',
-                    'impact': 'Medium',
-                    'mitigation': 'Prepare backup environment and early validation'
-                },
-                {
-                    'risk': 'Incomplete test data',
-                    'impact': 'Medium', 
-                    'mitigation': 'Create comprehensive test data sets and validate coverage'
-                }
-            ]
-        }
+    # Fallback methods removed - we now skip items instead of creating generic fallbacks
     
     def _build_test_plan_prompt(self, feature_context: Dict[str, Any]) -> str:
         """Build the prompt for test plan generation."""

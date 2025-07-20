@@ -160,17 +160,17 @@ class QALeadAgent(Agent):
                 epic, feature, context, area_path
             )
             
-            # Always try to create test plan, but don't fail the entire process if it fails
+            # Try to create test plan, skip feature if it fails
             if test_plan_result.get('success'):
                 result['test_plans_created'] = 1
                 feature['test_plan'] = test_plan_result['test_plan']
                 self.logger.info(f"Generated test plan for feature: {feature_name}")
             else:
-                # Create a minimal fallback test plan to prevent validation failures
-                self.logger.warning(f"Test plan creation failed for feature: {feature_name}, creating fallback")
-                feature['test_plan'] = self._create_fallback_test_plan(feature_name, context)
-                result['test_plans_created'] = 1
-                result['errors'].append(f"Used fallback test plan for feature: {feature_name}")
+                # Skip this feature instead of creating fallback
+                self.logger.warning(f"Test plan creation failed for feature: {feature_name}, skipping this feature")
+                result['errors'].append(f"Skipped feature due to test plan generation failure: {feature_name}")
+                # Return early to skip this feature entirely
+                return result
             
             # Step 2: Create test suites for each user story (always proceed)
             self.logger.info(f"Creating test suites for feature: {feature_name}")
@@ -195,44 +195,7 @@ class QALeadAgent(Agent):
         
         return result
     
-    def _create_fallback_test_plan(self, feature_name: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a minimal fallback test plan when the main test plan creation fails."""
-        domain = context.get('project_context', {}).get('domain', 'general')
-        
-        # Create a basic test plan structure
-        fallback_plan = {
-            'name': f"Test Plan - {feature_name} (Fallback)",
-            'description': f"Fallback test plan for {feature_name} due to generation failure",
-            'area_path': context.get('area_path', ''),
-            'iteration_path': context.get('iteration_path', ''),
-            'test_approach': "Basic functional testing with manual validation",
-            'test_types': ["Functional Testing", "User Acceptance Testing"],
-            'entry_criteria': [
-                "Feature development completed",
-                "Basic test environment available"
-            ],
-            'exit_criteria': [
-                "Core functionality verified",
-                "Critical user paths tested"
-            ],
-            'test_environment': {
-                'description': 'Basic test environment',
-                'data_requirements': 'Minimal test data',
-                'tools_required': ['Manual testing tools']
-            },
-            'risks_and_mitigations': [
-                {
-                    'risk': 'Limited test coverage',
-                    'impact': 'Medium',
-                    'mitigation': 'Focus on critical user journeys'
-                }
-            ],
-            'status': 'Active',
-            'is_fallback': True
-        }
-        
-        self.logger.info(f"Created fallback test plan for feature: {feature_name}")
-        return fallback_plan
+    # Fallback methods removed - we now skip items instead of creating generic fallbacks
     
     def _create_feature_test_plan(self, 
                                  epic: Dict[str, Any], 
@@ -279,10 +242,9 @@ class QALeadAgent(Agent):
                         self.logger.info(f"Created test suite for user story: {story_name}")
                         return {'success': True, 'user_story': user_story}
                     else:
-                        # Create a fallback test suite instead of failing
-                        self.logger.warning(f"Test suite creation failed for user story: {story_name}, creating fallback")
-                        user_story['test_suite'] = self._create_fallback_test_suite(story_name, context)
-                        return {'success': True, 'user_story': user_story}
+                        # Skip this user story instead of creating fallback
+                        self.logger.warning(f"Test suite creation failed for user story: {story_name}, skipping this user story")
+                        return {'success': False, 'error': f'Test suite creation failed for {story_name}'}
                         
                 except Exception as e:
                     error_msg = f"Error creating test suite for user story {story_name}: {e}"
@@ -322,11 +284,9 @@ class QALeadAgent(Agent):
                         user_story['test_suite'] = suite_result['test_suite']
                         self.logger.info(f"Created test suite for user story: {story_name}")
                     else:
-                        # Create a fallback test suite instead of failing
-                        self.logger.warning(f"Test suite creation failed for user story: {story_name}, creating fallback")
-                        user_story['test_suite'] = self._create_fallback_test_suite(story_name, context)
-                        suites_created += 1
-                        errors.append(f"Used fallback test suite for user story: {story_name}")
+                        # Skip this user story instead of creating fallback
+                        self.logger.warning(f"Test suite creation failed for user story: {story_name}, skipping this user story")
+                        errors.append(f"Skipped user story due to test suite creation failure: {story_name}")
                         
                 except Exception as e:
                     error_msg = f"Error creating test suite for user story {story_name}: {e}"
@@ -338,20 +298,7 @@ class QALeadAgent(Agent):
             'errors': errors
         }
     
-    def _create_fallback_test_suite(self, story_name: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a minimal fallback test suite when the main test suite creation fails."""
-        fallback_suite = {
-            'name': f"Test Suite - {story_name} (Fallback)",
-            'description': f"Fallback test suite for {story_name} due to generation failure",
-            'area_path': context.get('area_path', ''),
-            'iteration_path': context.get('iteration_path', ''),
-            'test_cases': [],
-            'status': 'Active',
-            'is_fallback': True
-        }
-        
-        self.logger.info(f"Created fallback test suite for user story: {story_name}")
-        return fallback_suite
+    # Fallback methods removed - we now skip items instead of creating generic fallbacks
     
     def _create_user_story_test_cases(self, 
                                      feature: Dict[str, Any], 
@@ -395,15 +342,9 @@ class QALeadAgent(Agent):
                             'cases_created': story_cases_created
                         }
                     else:
-                        # Create fallback test cases instead of failing
-                        self.logger.warning(f"Test case creation failed for user story: {story_name}, creating fallback")
-                        fallback_cases = self._create_fallback_test_cases(story_name, context)
-                        user_story['test_cases'] = fallback_cases
-                        return {
-                            'success': True, 
-                            'user_story': user_story, 
-                            'cases_created': len(fallback_cases)
-                        }
+                        # Skip this user story instead of creating fallback
+                        self.logger.warning(f"Test case creation failed for user story: {story_name}, skipping this user story")
+                        return {'success': False, 'error': f'Test case creation failed for {story_name}'}
                         
                 except Exception as e:
                     error_msg = f"Error creating test cases for user story {story_name}: {e}"
@@ -451,12 +392,9 @@ class QALeadAgent(Agent):
                         user_story['test_cases'] = test_cases
                         self.logger.info(f"Created {len(test_cases)} test cases for user story: {story_name}")
                     else:
-                        # Create fallback test cases instead of failing
-                        self.logger.warning(f"Test case creation failed for user story: {story_name}, creating fallback")
-                        fallback_cases = self._create_fallback_test_cases(story_name, context)
-                        user_story['test_cases'] = fallback_cases
-                        cases_created += len(fallback_cases)
-                        errors.append(f"Used fallback test cases for user story: {story_name}")
+                        # Skip this user story instead of creating fallback
+                        self.logger.warning(f"Test case creation failed for user story: {story_name}, skipping this user story")
+                        errors.append(f"Skipped user story due to test case creation failure: {story_name}")
                         
                 except Exception as e:
                     error_msg = f"Error creating test cases for user story {story_name}: {e}"
@@ -468,41 +406,7 @@ class QALeadAgent(Agent):
             'errors': errors
         }
     
-    def _create_fallback_test_cases(self, story_name: str, context: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Create minimal fallback test cases when the main test case creation fails."""
-        fallback_cases = [
-            {
-                'title': f"Verify basic functionality for {story_name}",
-                'description': f"Basic functional test to ensure {story_name} works as expected",
-                'test_type': 'Functional',
-                'priority': 'High',
-                'steps': [
-                    "Navigate to the feature",
-                    "Perform basic user actions",
-                    "Verify expected behavior",
-                    "Check for any obvious errors"
-                ],
-                'expected_result': "Feature functions correctly without errors",
-                'is_fallback': True
-            },
-            {
-                'title': f"Validate user acceptance criteria for {story_name}",
-                'description': f"User acceptance test to validate core requirements for {story_name}",
-                'test_type': 'User Acceptance',
-                'priority': 'High',
-                'steps': [
-                    "Review acceptance criteria",
-                    "Execute user scenarios",
-                    "Validate business requirements",
-                    "Document any issues found"
-                ],
-                'expected_result': "All acceptance criteria are met",
-                'is_fallback': True
-            }
-        ]
-        
-        self.logger.info(f"Created {len(fallback_cases)} fallback test cases for user story: {story_name}")
-        return fallback_cases
+    # Fallback methods removed - we now skip items instead of creating generic fallbacks
     
     def _determine_area_path(self, context: Dict[str, Any]) -> str:
         """Determine area path based on context and strategy."""
