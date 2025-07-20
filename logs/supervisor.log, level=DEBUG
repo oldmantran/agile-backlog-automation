@@ -90,3 +90,97 @@ To transform the home buying e...
 2025-07-19 18:37:38 - supervisor - INFO - Generating tasks for user story: Display personalized property recommendations based on user preferences
 2025-07-19 18:37:44 - supervisor - INFO - Generating tasks for user story: Explain rationale for recommended properties to users
 2025-07-19 18:37:48 - supervisor - INFO - Generating tasks for user story: Refine recommendations in real time based on user interactions
+2025-07-19 18:57:26 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250719_185726_proj_20250719_185726
+2025-07-19 18:57:26 - supervisor - INFO - Azure DevOps config for job_id=job_20250719_185726_proj_20250719_185726: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=Real Estate, iteration_path=Sprint 2025-07
+2025-07-19 18:57:27 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-19 18:57:27 - supervisor - INFO - Starting workflow execution at 2025-07-19 18:57:27.203660
+2025-07-19 18:57:27 - supervisor - INFO - Updated project context with extracted domain: finance
+2025-07-19 18:57:27 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-19 18:57:27 - supervisor - INFO - Generating epics from product vision
+2025-07-19 18:57:27 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-19 18:57:27 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Vision
+To transform the home buying e...
+2025-07-19 18:57:31 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-19 18:57:31 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-19 18:57:31 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-19 18:57:31 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-19 18:57:31 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-19 18:57:31 - supervisor - INFO - Decomposing epic: Launch End-to-End Digital Transaction Management
+2025-07-19 18:57:31 - supervisor - INFO - Decomposing epic: Enable Professional and Service Provider Integration
+2025-07-19 18:57:42 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-19 18:57:42 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-19 18:57:42 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-19 18:57:42 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-19 18:57:42 - supervisor - INFO - Decomposing feature to user stories: Unified Transaction Lifecycle Dashboard
+2025-07-19 18:57:42 - supervisor - INFO - Decomposing feature to user stories: Integrated Document Management & E-Signature
+2025-07-19 18:57:42 - supervisor - INFO - Decomposing feature to user stories: Collaborative Task & Communication Hub
+2025-07-19 18:57:42 - supervisor - INFO - Decomposing feature to user stories: Professional and Service Provider Self-Onboarding Portal
+2025-07-19 18:58:00 - supervisor - INFO - Decomposing feature to user stories: Lead Management and Booking Dashboard for Professionals
+2025-07-19 18:58:01 - supervisor - INFO - Decomposing feature to user stories: Secure Document Exchange and Collaboration Workspace
+2025-07-19 18:58:19 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-19 18:58:19 - supervisor - INFO - Executing stage: developer_agent
+2025-07-19 18:58:19 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-19 18:58:19 - supervisor - INFO - Generating tasks for user story: Buyer views consolidated transaction dashboard with visual timeline
+2025-07-19 18:58:19 - supervisor - INFO - Generating tasks for user story: Seller receives task notifications and actionable next steps in dashboard
+2025-07-19 18:58:19 - supervisor - INFO - Generating tasks for user story: Professional user manages simultaneous transactions and receives bottleneck alerts
+2025-07-19 18:58:19 - supervisor - INFO - Generating tasks for user story: User receives real-time status updates with fallback messaging for connectivity issues
+2025-07-19 18:58:31 - supervisor - INFO - Generating tasks for user story: Administrator configures role-based permissions and dashboard visibility controls
+2025-07-19 18:58:35 - supervisor - INFO - Generating tasks for user story: End users can securely upload and organize transaction documents
+2025-07-19 18:58:36 - supervisor - INFO - Generating tasks for user story: End users can digitally sign required documents using integrated e-signature
+2025-07-19 18:58:37 - supervisor - INFO - Generating tasks for user story: Users and admins can track document status and history with version control
+2025-07-19 18:58:47 - supervisor - INFO - Generating tasks for user story: Platform enforces role-based access control for document visibility and actions
+2025-07-19 18:58:52 - supervisor - INFO - Generating tasks for user story: Users receive real-time notifications on document updates and required actions
+2025-07-19 18:58:53 - supervisor - INFO - Generating tasks for user story: Buyer assigns a task with deadline and attaches documents
+2025-07-19 18:58:54 - supervisor - INFO - Generating tasks for user story: User receives automated reminders and push notifications for assigned tasks
+2025-07-19 18:59:00 - supervisor - INFO - Generating tasks for user story: Users collaborate through secure in-app messaging within transactions
+2025-07-19 18:59:06 - supervisor - INFO - Generating tasks for user story: Seller reassigns a task or raises a dispute over assigned responsibility
+2025-07-19 18:59:14 - supervisor - INFO - Generating tasks for user story: Admin monitors collaboration activity and resolves communication issues
+2025-07-19 18:59:16 - supervisor - INFO - Generating tasks for user story: Real estate agent initiates onboarding and profile creation
+2025-07-19 18:59:20 - supervisor - INFO - Generating tasks for user story: Service provider uploads credentials and documents for verification
+2025-07-19 18:59:26 - supervisor - INFO - Generating tasks for user story: Lenders configure service offerings with pricing and regional coverage
+2025-07-19 18:59:27 - supervisor - INFO - Generating tasks for user story: Platform verifies uploaded documents and notifies provider of status
+2025-07-19 18:59:29 - supervisor - INFO - Generating tasks for user story: Detect and handle duplicate or previously registered provider accounts
+2025-07-19 18:59:38 - supervisor - INFO - Generating tasks for user story: Professional views and filters actionable leads in the dashboard
+2025-07-19 18:59:41 - supervisor - INFO - Generating tasks for user story: Professional accepts or declines service requests with optional message
+2025-07-19 18:59:44 - supervisor - INFO - Generating tasks for user story: Professional schedules, reschedules, or cancels appointments with calendar integration
+2025-07-19 18:59:45 - supervisor - INFO - Generating tasks for user story: Professional tracks transaction status and updates progress on engagements
+2025-07-19 18:59:50 - supervisor - INFO - Generating tasks for user story: Dashboard handles edge cases: conflicting appointments and unavailable professionals
+2025-07-19 18:59:56 - supervisor - INFO - Generating tasks for user story: End user uploads documents securely via drag-and-drop interface
+2025-07-19 19:00:00 - supervisor - INFO - Generating tasks for user story: Professional user reviews, annotates, and requests additional documents
+2025-07-19 19:00:01 - supervisor - INFO - Generating tasks for user story: End user electronically signs documents with audit trail
+2025-07-19 19:00:03 - supervisor - INFO - Generating tasks for user story: Workspace manages document permissions and access control for all roles
+2025-07-19 19:00:14 - supervisor - INFO - Generating tasks for user story: Workspace provides real-time notifications and activity feed for collaboration events
+2025-07-19 19:00:35 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-19 19:00:35 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-19 19:00:35 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-19 19:00:35 - supervisor - INFO - Processing QA for feature: Unified Transaction Lifecycle Dashboard
+2025-07-19 19:00:35 - supervisor - INFO - Processing QA for feature: Integrated Document Management & E-Signature
+2025-07-19 19:00:35 - supervisor - INFO - Processing QA for feature: Collaborative Task & Communication Hub
+2025-07-19 19:00:35 - supervisor - INFO - Processing QA for feature: Professional and Service Provider Self-Onboarding Portal
+2025-07-19 19:01:31 - supervisor - INFO - Processing QA for feature: Lead Management and Booking Dashboard for Professionals
+2025-07-19 19:01:34 - supervisor - INFO - Processing QA for feature: Secure Document Exchange and Collaboration Workspace
+2025-07-19 19:02:36 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Unified Transaction Lifecycle Dashboard'. Skipping invalid test plan.
+2025-07-19 19:02:36 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Integrated Document Management & E-Signature'. Skipping invalid test plan.
+2025-07-19 19:02:36 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Collaborative Task & Communication Hub'. Skipping invalid test plan.
+2025-07-19 19:02:36 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Professional and Service Provider Self-Onboarding Portal'. Skipping invalid test plan.
+2025-07-19 19:02:36 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Lead Management and Booking Dashboard for Professionals'. Skipping invalid test plan.
+2025-07-19 19:02:36 - supervisor - ERROR - QA Tester Agent did not generate a test plan for feature 'Secure Document Exchange and Collaboration Workspace'. Skipping invalid test plan.
+2025-07-19 19:02:36 - supervisor - WARNING - Validation completed with 6 test case errors.
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] Retrying incomplete item Unified Transaction Lifecycle Dashboard for stage qa_lead_agent (attempt 1/5)
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] Retrying incomplete item Integrated Document Management & E-Signature for stage qa_lead_agent (attempt 1/5)
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative Task & Communication Hub for stage qa_lead_agent (attempt 1/5)
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] Retrying incomplete item Professional and Service Provider Self-Onboarding Portal for stage qa_lead_agent (attempt 1/5)
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] Retrying incomplete item Lead Management and Booking Dashboard for Professionals for stage qa_lead_agent (attempt 1/5)
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] Retrying incomplete item Secure Document Exchange and Collaboration Workspace for stage qa_lead_agent (attempt 1/5)
+2025-07-19 19:02:36 - supervisor - INFO - [DEBUG] 6 items remain incomplete after this retry round in stage qa_lead_agent.
+2025-07-19 19:02:36 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-19 19:02:36 - supervisor - INFO - Processing QA for feature: Unified Transaction Lifecycle Dashboard
+2025-07-19 19:02:36 - supervisor - INFO - Processing QA for feature: Integrated Document Management & E-Signature
+2025-07-19 19:02:36 - supervisor - INFO - Processing QA for feature: Collaborative Task & Communication Hub
+2025-07-19 19:02:36 - supervisor - INFO - Processing QA for feature: Professional and Service Provider Self-Onboarding Portal
+2025-07-19 19:03:31 - supervisor - INFO - Processing QA for feature: Lead Management and Booking Dashboard for Professionals
+2025-07-19 19:03:33 - supervisor - INFO - Processing QA for feature: Secure Document Exchange and Collaboration Workspace
