@@ -159,11 +159,77 @@ Focus on strategic thinking and business value.""",
             
             'feature_decomposer_agent': f"""You are a Feature Decomposer working on {project_name} in the {domain} domain.
 Your role is to break down epics into manageable features with clear business value.
-Focus on user-centric design and business outcomes.""",
+Focus on user-centric design and business outcomes.
+
+CRITICAL: You must respond with ONLY a valid JSON array of features. No markdown formatting, no explanations, no additional text.
+
+REQUIRED JSON STRUCTURE:
+[
+  {{
+    "title": "Feature Title",
+    "description": "Detailed description of the feature",
+    "priority": "High|Medium|Low",
+    "estimated_story_points": 13,
+    "success_criteria": ["Criterion 1", "Criterion 2", "Criterion 3"],
+    "dependencies": ["Dependency 1", "Dependency 2"],
+    "business_value": "Clear statement of business value"
+  }}
+]
+
+EXAMPLE RESPONSE:
+[
+  {{
+    "title": "Vision Statement Editor",
+    "description": "Interactive editor for creating and refining product vision statements with AI assistance",
+    "priority": "High",
+    "estimated_story_points": 13,
+    "success_criteria": [
+      "Users can create vision statements",
+      "AI provides improvement suggestions",
+      "Statements can be saved and edited"
+    ],
+    "dependencies": ["AI integration completed"],
+    "business_value": "Enables faster and higher quality vision statement creation"
+  }}
+]
+
+CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.""",
             
             'user_story_decomposer_agent': f"""You are a User Story Decomposer working on {project_name} in the {domain} domain.
 Your role is to create detailed user stories with acceptance criteria.
-Focus on user value and testable requirements.""",
+Focus on user value and testable requirements.
+
+CRITICAL: You must respond with ONLY a valid JSON array of user stories. No markdown formatting, no explanations, no additional text.
+
+REQUIRED JSON STRUCTURE:
+[
+  {{
+    "title": "User Story Title",
+    "user_story": "As a [user type], I want [goal] so that [benefit]",
+    "description": "Detailed description of the user story",
+    "story_points": 5,
+    "priority": "High|Medium|Low",
+    "acceptance_criteria": ["Criterion 1", "Criterion 2", "Criterion 3"]
+  }}
+]
+
+EXAMPLE RESPONSE:
+[
+  {{
+    "title": "Vision Statement Creation",
+    "user_story": "As a product manager, I want to create a vision statement so that I can clearly communicate the product goals",
+    "description": "Allow product managers to create and edit vision statements with AI assistance",
+    "story_points": 5,
+    "priority": "High",
+    "acceptance_criteria": [
+      "User can input initial vision statement",
+      "AI provides suggestions for improvement",
+      "User can save and edit the statement"
+    ]
+  }}
+]
+
+CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.""",
             
             'developer_agent': f"""You are a Developer Agent working on {project_name} in the {domain} domain.
 Your role is to create technical tasks and provide time estimates.

@@ -111,13 +111,28 @@ Edge Cases: {feature.get('edge_cases', [])}
             cleaned_response = self._extract_json_from_response(response)
             print(f"🔍 [UserStoryDecomposerAgent] Raw response: {response[:200]}...")
             print(f"🔍 [UserStoryDecomposerAgent] Cleaned response: {cleaned_response[:200]}...")
-            user_stories = json.loads(cleaned_response)
+            
+            # Safety check for empty or invalid JSON
+            if not cleaned_response or cleaned_response.strip() == "[]":
+                print("⚠️ Empty or invalid JSON response")
+                return self._extract_user_stories_from_text(response, feature, max_user_stories)
+            
+            try:
+                user_stories = json.loads(cleaned_response)
+            except (json.JSONDecodeError, TypeError):
+                print("⚠️ Failed to parse JSON response")
+                return self._extract_user_stories_from_text(response, feature, max_user_stories)
+            
+            # Safety check for None or empty user_stories
+            if not user_stories:
+                print("⚠️ Empty or None user_stories after JSON parsing")
+                return self._extract_user_stories_from_text(response, feature, max_user_stories)
             
             # Handle different response formats
             if isinstance(user_stories, list) and len(user_stories) > 0:
                 # Check if these look like user stories or features
                 first_item = user_stories[0]
-                if 'user_stories' in first_item:
+                if first_item and isinstance(first_item, dict) and 'user_stories' in first_item:
                     # This is actually a list of features, extract the user stories
                     print("🔄 Response contains features, extracting user stories...")
                     extracted_stories = []
