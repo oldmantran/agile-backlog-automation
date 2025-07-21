@@ -48,8 +48,12 @@ class Agent:
         try:
             # Try to get configuration from database first (force refresh for latest config)
             from utils.llm_config_manager import LLMConfigManager
+            from utils.user_id_resolver import user_id_resolver
             config_manager = LLMConfigManager()
-            provider_config = config_manager.force_refresh_configuration()
+            user_id = user_id_resolver.get_default_user_id()
+            logger.info(f"🔍 Debug: Using user_id: {user_id}")
+            provider_config = config_manager.force_refresh_configuration(user_id)
+            logger.info(f"🔍 Debug: Loaded provider_config: {provider_config}")
             self.llm_provider = provider_config['provider']
             
             if self.llm_provider == "openai":
@@ -80,6 +84,8 @@ class Agent:
             logger.warning(f"Failed to load LLM config from database: {e}. Falling back to environment variables.")
             
             # Fallback to environment variables
+            self.llm_provider = self.config.get_env("LLM_PROVIDER") or "openai"
+            
             if self.llm_provider == "openai":
                 self.model = self.config.get_env("OPENAI_MODEL") or "gpt-4"
                 self.api_key = self.config.get_env("OPENAI_API_KEY")

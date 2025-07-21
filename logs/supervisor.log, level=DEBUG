@@ -963,3 +963,10 @@ Domain: dynamic
 Vision Statement:
 IDEA.me Product Vision Statement
 Prod...
+2025-07-21 08:23:20 - supervisor - WARNING - No valid epics generated, using fallback
+2025-07-21 08:23:20 - supervisor - INFO - Generated 1 epics (limited to 2)
+2025-07-21 08:23:20 - supervisor - INFO - Validation completed: 1 epics checked, 0 errors.
+2025-07-21 08:23:20 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 08:23:20 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 08:23:20 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 08:23:20 - supervisor - INFO - Decomposing epic: Core System Implementation

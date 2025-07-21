@@ -347,6 +347,17 @@ class WorkflowSupervisor:
         self.logger.info(f"Initialized {len(agents)} agents successfully")
         return agents
     
+    def _refresh_agent_configurations(self):
+        """Refresh LLM configurations for all agents."""
+        self.logger.info("🔄 Refreshing agent configurations...")
+        for agent_name, agent in self.agents.items():
+            try:
+                # Force refresh the configuration for each agent
+                agent._setup_llm_config()
+                self.logger.info(f"✅ Refreshed config for {agent_name}: {agent.llm_provider} ({agent.model})")
+            except Exception as e:
+                self.logger.warning(f"⚠️ Failed to refresh config for {agent_name}: {e}")
+    
     def _get_parallel_config(self) -> Dict[str, Any]:
         """Get parallel processing configuration from settings."""
         workflow_config = self.config.settings.get('workflow', {})
@@ -584,6 +595,9 @@ class WorkflowSupervisor:
             
         # Initial progress update
         update_progress(0, "Initializing workflow")
+        
+        # Refresh agent configurations to ensure latest LLM settings are used
+        self._refresh_agent_configurations()
         
         # Update project context with actual project name if available
         if self.project:
