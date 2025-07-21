@@ -769,3 +769,72 @@ Prod...
 2025-07-20 23:58:33 - supervisor - INFO - Generating tasks for user story: System generates test cases from user stories
 2025-07-20 23:58:42 - supervisor - INFO - Generating tasks for user story: System generates test cases from tasks and requirements
 2025-07-20 23:58:42 - supervisor - INFO - Generating tasks for user story: User can view, edit, and delete test cases
+2025-07-21 00:17:28 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_001728_proj_20250721_001728
+2025-07-21 00:17:28 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_001728_proj_20250721_001728: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA, iteration_path=Sprint 2025-07
+2025-07-21 00:17:46 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 00:17:46 - supervisor - INFO - Starting workflow execution at 2025-07-21 00:17:46.350463
+2025-07-21 00:17:46 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 00:17:46 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 00:17:46 - supervisor - INFO - Generating epics from product vision
+2025-07-21 00:17:46 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 00:17:46 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 00:17:49 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-21 00:17:49 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-21 00:17:49 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 00:17:49 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 00:17:49 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 00:17:49 - supervisor - INFO - Decomposing epic: Vision Refinement and Planning
+2025-07-21 00:17:49 - supervisor - INFO - Decomposing epic: Backlog Generation and Export
+2025-07-21 00:17:53 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-21 00:17:53 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 00:17:53 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Vision Refinement and Planning
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing feature to user stories: Hierarchical Structure Generation
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing feature to user stories: Automated Test Case Generation
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing feature to user stories: Prioritization and Dependency Mapping via AI Insights
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing feature to user stories: Backlog Generation from AI Model Output
+2025-07-21 00:17:53 - supervisor - INFO - Decomposing feature to user stories: Spreadsheet Export with Integration Support
+2025-07-21 00:17:53 - supervisor - ERROR - user_story_decomposer_agent failed with exception: UserStoryDecomposerAgent.decompose_feature_to_user_stories() got multiple values for argument 'max_user_stories'
+2025-07-21 00:17:55 - supervisor - INFO - Error notifications sent
+2025-07-21 00:17:55 - supervisor - INFO - Executing stage: developer_agent
+2025-07-21 00:17:55 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-21 00:17:55 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-21 00:17:55 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-21 00:17:55 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-21 00:17:55 - supervisor - INFO - Processing QA for feature: AI-Driven Vision Refinement and Planning
+2025-07-21 00:17:55 - supervisor - INFO - Processing QA for feature: Hierarchical Structure Generation
+2025-07-21 00:17:55 - supervisor - INFO - Processing QA for feature: Automated Test Case Generation
+2025-07-21 00:17:55 - supervisor - INFO - Processing QA for feature: Backlog Generation from AI Model Output
+2025-07-21 00:17:58 - supervisor - INFO - Processing QA for feature: Prioritization and Dependency Mapping via AI Insights
+2025-07-21 00:18:00 - supervisor - INFO - Processing QA for feature: Spreadsheet Export with Integration Support
+2025-07-21 00:18:06 - supervisor - INFO - Validation passed: All user stories have test cases and all features have test plans.
+2025-07-21 00:18:06 - supervisor - INFO - Executing stage: azure_integration
+2025-07-21 00:18:06 - supervisor - INFO - [LINK] Preparing for Azure DevOps integration
+2025-07-21 00:18:06 - supervisor - INFO - [SUCCESS] Azure DevOps integrator is available
+2025-07-21 00:18:06 - supervisor - INFO -    Organization: https://dev.azure.com/c4workx
+2025-07-21 00:18:06 - supervisor - INFO -    Project: Backlog Automation
+2025-07-21 00:18:06 - supervisor - INFO -    Area Path: IDEA
+2025-07-21 00:18:06 - supervisor - INFO -    Iteration Path: Sprint 2025-07
+2025-07-21 00:18:06 - supervisor - INFO - Running pre-integration validation...
+2025-07-21 00:18:06 - supervisor - INFO - Pre-integration validation passed successfully
+2025-07-21 00:18:06 - supervisor - INFO - Starting Azure DevOps work item creation...
+2025-07-21 00:18:14 - supervisor - INFO - Successfully created 8 work items in Azure DevOps
+2025-07-21 00:18:14 - supervisor - WARNING - WARNING: The following artifact types were not created in this run: user stories, tasks, test cases, test plans. Please check agent outputs and integration logic.
+2025-07-21 00:18:14 - supervisor - INFO - Executing stage: final_validation
+2025-07-21 00:18:14 - supervisor - INFO - Starting final validation and cleanup
+2025-07-21 00:18:14 - supervisor - INFO - Cleaning up temporary data
+2025-07-21 00:18:14 - supervisor - INFO - Generated final report: {'workflow_id': 'workflow_20250721_001746', 'completion_time': '2025-07-21T00:18:14.918333', 'total_epics': 2, 'total_features': 6, 'total_user_stories': 0, 'total_tasks': 0, 'total_test_cases': 0, 'azure_integration_enabled': True}
+2025-07-21 00:18:14 - supervisor - INFO - Adding Azure DevOps integration info to notifications: {'status': 'success', 'work_items_created': [{'id': 7055, 'type': 'Epic', 'title': 'Vision Refinement and Planning', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7055', 'state': 'New'}, {'id': 7056, 'type': 'Feature', 'title': 'AI-Driven Vision Refinement and Planning', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7056', 'state': 'New'}, {'id': 7057, 'type': 'Feature', 'title': 'Hierarchical Structure Generation', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7057', 'state': 'New'}, {'id': 7058, 'type': 'Feature', 'title': 'Automated Test Case Generation', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7058', 'state': 'New'}, {'id': 7059, 'type': 'Epic', 'title': 'Backlog Generation and Export', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7059', 'state': 'New'}, {'id': 7060, 'type': 'Feature', 'title': 'Backlog Generation from AI Model Output', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7060', 'state': 'New'}, {'id': 7061, 'type': 'Feature', 'title': 'Prioritization and Dependency Mapping via AI Insights', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7061', 'state': 'New'}, {'id': 7062, 'type': 'Feature', 'title': 'Spreadsheet Export with Integration Support', 'url': 'https://dev.azure.com/c4workx/d34ef592-0545-41ba-9b2a-36baaf72eb99/_workitems/edit/7062', 'state': 'New'}], 'timestamp': '2025-07-21T00:18:14.917286', 'missing_artifacts': ['user stories', 'tasks', 'test cases', 'test plans'], 'warning': 'WARNING: The following artifact types were not created in this run: user stories, tasks, test cases, test plans. Please check agent outputs and integration logic.'}
+2025-07-21 00:18:14 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 2, 'features_generated': 6, 'user_stories_generated': 0, 'tasks_generated': 0, 'test_cases_generated': 0, 'execution_time_seconds': None, 'stages_completed': 0, 'errors_encountered': 1}
+2025-07-21 00:18:16 - supervisor - INFO - Completion notifications sent
+2025-07-21 00:18:16 - supervisor - INFO - Workflow execution completed successfully at 2025-07-21 00:18:16.362856
+2025-07-21 00:18:16 - supervisor - INFO - Output saved: output/backlog_20250721_001816.json, output/backlog_20250721_001816.yaml
+2025-07-21 00:18:16 - supervisor - INFO - Final workflow execution time: 30.01 seconds
+2025-07-21 00:18:16 - supervisor - INFO - Parallel processing was enabled with 4 workers
+2025-07-21 00:18:16 - supervisor - INFO - Parallel stages: ['feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_lead_agent']

@@ -122,9 +122,6 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
                 print(response)
                 raise ValueError("LLM response was not a valid JSON array")
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
             raise ValueError(f"LLM returned invalid JSON: {e}")
 
 
@@ -136,8 +133,6 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
         import re
         import json
         
-        print("🔍 Extracting JSON from markdown...")
-        
         # Try to find JSON in markdown code blocks first
         json_block_pattern = r'```json\s*(.*?)\s*```'
         match = re.search(json_block_pattern, response, re.DOTALL)
@@ -146,18 +141,16 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
             # Try to parse and validate the JSON
             try:
                 json.loads(content)
-                print("✅ Found valid JSON in markdown block")
                 return content
             except json.JSONDecodeError as e:
-                print(f"⚠️ JSON in markdown block has syntax error: {e}")
+                pass
                 # Try to fix common JSON issues
                 fixed_content = self._fix_json_syntax(content)
                 try:
                     json.loads(fixed_content)
-                    print("✅ Fixed JSON syntax in markdown block")
                     return fixed_content
                 except json.JSONDecodeError:
-                    print("❌ Could not fix JSON syntax in markdown block")
+                    pass
         
         # Try to find JSON in generic code blocks
         code_block_pattern = r'```\s*(.*?)\s*```'
@@ -168,18 +161,16 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
             if content.strip().startswith(('[', '{')):
                 try:
                     json.loads(content)
-                    print("✅ Found valid JSON in generic code block")
                     return content
                 except json.JSONDecodeError as e:
-                    print(f"⚠️ JSON in generic code block has syntax error: {e}")
+                    pass
                     # Try to fix common JSON issues
                     fixed_content = self._fix_json_syntax(content)
                     try:
                         json.loads(fixed_content)
-                        print("✅ Fixed JSON syntax in generic code block")
                         return fixed_content
                     except json.JSONDecodeError:
-                        print("❌ Could not fix JSON syntax in generic code block")
+                        pass
         
         # If no code blocks, try to find JSON by looking for array/object patterns
         # Look for the largest JSON structure in the response
@@ -195,23 +186,18 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
             best_match = max(all_matches, key=lambda x: x[1])
             try:
                 json.loads(best_match[0])
-                print("✅ Found valid JSON using pattern matching")
                 return best_match[0].strip()
             except json.JSONDecodeError as e:
-                print(f"⚠️ JSON from pattern matching has syntax error: {e}")
+                pass
                 # Try to fix common JSON issues
                 fixed_content = self._fix_json_syntax(best_match[0])
                 try:
                     json.loads(fixed_content)
-                    print("✅ Fixed JSON syntax from pattern matching")
                     return fixed_content
                 except json.JSONDecodeError:
-                    print("❌ Could not fix JSON syntax from pattern matching")
+                    pass
         
         # If all else fails, raise an error - the LLM should return valid JSON
-        print("❌ No valid JSON found in LLM response")
-        print("🔎 Raw response:")
-        print(response)
         raise ValueError("LLM did not return valid JSON. Expected JSON array format.")
 
     def _fix_json_syntax(self, json_str: str) -> str:

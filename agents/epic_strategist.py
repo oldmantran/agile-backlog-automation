@@ -74,9 +74,6 @@ class EpicStrategist(Agent):
                 print("⚠️ Grok response was not a list.")
                 return []
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
             return []
 
     def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):

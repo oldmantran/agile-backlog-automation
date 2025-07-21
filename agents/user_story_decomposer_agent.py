@@ -14,7 +14,7 @@ class UserStoryDecomposerAgent(Agent):
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
-    def decompose_feature_to_user_stories(self, feature: dict, max_user_stories: int = 5) -> list[dict]:
+    def decompose_feature_to_user_stories(self, feature: dict, context: dict = None, max_user_stories: int = 5) -> list[dict]:
         """Decompose a feature into user stories."""
         # Remove redundant print - supervisor already logs this
         # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
@@ -25,7 +25,7 @@ class UserStoryDecomposerAgent(Agent):
         
         # Build context for prompt template
         prompt_context = {
-            'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
+            'domain': context.get('domain', 'dynamic') if context else 'dynamic',
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
@@ -87,10 +87,6 @@ Edge Cases: {feature.get('edge_cases', [])}
                 return self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
                 
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
-            print("🔎 Raw response:")
-            print(response)
-            print("🔄 Attempting alternative parsing...")
             # Try to extract user stories from the raw response text
             return self._extract_user_stories_from_text(response, feature, max_user_stories)
 

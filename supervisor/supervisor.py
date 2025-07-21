@@ -681,7 +681,7 @@ class WorkflowSupervisor:
                             self._execute_qa_generation(update_progress, stage_index + 1)
                             self._validate_test_cases_and_plans()
                         elif stage == 'azure_integration':
-                            self.logger.info(f"🔗 Executing Azure integration stage (integrate_azure flag: {integrate_azure})")
+                            self.logger.info(f"Executing Azure integration stage (integrate_azure flag: {integrate_azure})")
                             if integrate_azure:
                                 self._integrate_with_azure_devops()
                             else:
@@ -996,7 +996,7 @@ class WorkflowSupervisor:
             def process_feature(args):
                 epic, feature = args
                 self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
-                user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
+                user_stories = agent.decompose_feature_to_user_stories(feature, context=context, max_user_stories=max_user_stories)
                 return feature, user_stories
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
                 # Use indices instead of dictionaries as keys
@@ -1008,7 +1008,7 @@ class WorkflowSupervisor:
         else:
             for epic, feature in features:
                 self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
-                user_stories = agent.decompose_feature_to_user_stories(feature, context, max_user_stories=max_user_stories)
+                user_stories = agent.decompose_feature_to_user_stories(feature, context=context, max_user_stories=max_user_stories)
                 feature['user_stories'] = user_stories
     
     def _execute_task_generation(self, update_progress_callback=None, stage_index=4):
