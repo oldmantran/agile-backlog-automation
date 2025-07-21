@@ -1058,3 +1058,28 @@ Domain: dynamic
 Vision Statement:
 IDEA.me Product Vision Statement
 Prod...
+2025-07-21 09:00:00 - supervisor - ERROR - Epic generation timed out after 90 seconds
+2025-07-21 09:00:00 - supervisor - WARNING - Using fallback epic due to timeout
+2025-07-21 09:00:00 - supervisor - INFO - Generated 1 epics (limited to 2)
+2025-07-21 09:00:00 - supervisor - INFO - Validation completed: 1 epics checked, 0 errors.
+2025-07-21 09:00:00 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 09:00:00 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 09:00:00 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 09:00:00 - supervisor - INFO - Decomposing epic: Core System Implementation
+2025-07-21 09:12:27 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=test_job_001
+2025-07-21 09:12:43 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 09:12:43 - supervisor - INFO - Generating epics from product vision
+2025-07-21 09:12:43 - supervisor - INFO - Using settings manager limits for user test_user: max_epics=2
+2025-07-21 09:12:43 - supervisor - INFO - Generating epics from product vision: 
+    IDEA.me Product Vision Statement
+    
+    Product Overview:
+    IDEA.me is a comprehensive proj...
+2025-07-21 09:12:43 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-07-21 09:12:43 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-07-21 09:12:43 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-07-21 09:12:43 - supervisor - INFO - DEBUG: Agent model: llama3.1:70b
+2025-07-21 09:12:43 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-07-21 09:12:43 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-07-21 09:14:43 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-07-21 09:14:43 - supervisor - INFO - Generated 2 epics (limited to 2)

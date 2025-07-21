@@ -876,8 +876,21 @@ class WorkflowSupervisor:
             
             def generate_epics_thread():
                 try:
+                    self.logger.info("DEBUG: Starting epic generation in thread")
+                    self.logger.info(f"DEBUG: Agent type: {type(agent)}")
+                    self.logger.info(f"DEBUG: Agent LLM provider: {agent.llm_provider}")
+                    self.logger.info(f"DEBUG: Agent model: {agent.model}")
+                    self.logger.info(f"DEBUG: Agent ollama_provider exists: {hasattr(agent, 'ollama_provider')}")
+                    if hasattr(agent, 'ollama_provider') and agent.ollama_provider:
+                        self.logger.info(f"DEBUG: Agent ollama_provider type: {type(agent.ollama_provider)}")
+                    
                     epics[0] = agent.generate_epics(product_vision, context, max_epics=max_epics)
+                    self.logger.info("DEBUG: Epic generation completed successfully")
                 except Exception as e:
+                    self.logger.error(f"DEBUG: Epic generation exception: {e}")
+                    self.logger.error(f"DEBUG: Epic generation exception type: {type(e)}")
+                    import traceback
+                    self.logger.error(f"DEBUG: Epic generation traceback: {traceback.format_exc()}")
                     exception[0] = e
             
             # Start epic generation in a separate thread with timeout
@@ -885,11 +898,12 @@ class WorkflowSupervisor:
             thread.daemon = True
             thread.start()
             
-            # Wait for completion with timeout (90 seconds)
-            thread.join(90)
+            # Wait for completion with timeout (longer for larger models)
+            timeout = 300  # 5 minutes for 70B models
+            thread.join(timeout)
             
             if thread.is_alive():
-                self.logger.error("Epic generation timed out after 90 seconds")
+                self.logger.error(f"Epic generation timed out after {timeout} seconds")
                 # Create a fallback epic to prevent workflow failure
                 fallback_epic = {
                     "title": "Core System Implementation",

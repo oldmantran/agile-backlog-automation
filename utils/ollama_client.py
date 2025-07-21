@@ -87,12 +87,15 @@ class OllamaClient:
             
             # Make request
             start_time = time.time()
+            logger.info(f"DEBUG: About to make HTTP request to {self.base_url}/api/chat")
             response = self.session.post(
                 f"{self.base_url}/api/chat",
                 json=payload,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for 70B models
             )
             
+            logger.info(f"DEBUG: HTTP request completed with status {response.status_code}")
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
             
