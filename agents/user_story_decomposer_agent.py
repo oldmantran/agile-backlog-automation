@@ -122,34 +122,9 @@ Edge Cases: {feature.get('edge_cases', [])}
             extracted_stories.append(story)
         
         if not extracted_stories:
-            # Create a basic user story to avoid empty results - but make it feature-specific
-            feature_title = feature.get('title', 'Feature') if feature else 'Feature'
-            feature_description = feature.get('description', '') if feature else ''
-            
-            # Ensure feature_title is a string
-            if isinstance(feature_title, dict):
-                feature_title = str(feature_title)
-            elif not isinstance(feature_title, str):
-                feature_title = str(feature_title)
-            
-            # Ensure feature_description is a string
-            if isinstance(feature_description, dict):
-                feature_description = str(feature_description)
-            elif not isinstance(feature_description, str):
-                feature_description = str(feature_description)
-            
-            extracted_stories.append({
-                'title': f"Implement {feature_title}",
-                'user_story': f"As a user, I want to access {feature_title.lower()} so that I can {feature_description[:50] if feature_description else 'accomplish my objectives'}",
-                'description': f"Implementation of {feature_title} functionality as described in feature requirements",
-                'story_points': 5,
-                'priority': 'Medium',
-                'acceptance_criteria': [
-                    f"{feature_title} functionality is accessible to authorized users",
-                    f"{feature_title} operates as specified in requirements",
-                    "System provides appropriate feedback and error handling"
-                ]
-            })
+            # No fallback - return empty list instead of creating generic work items
+            print("🔍 [UserStoryDecomposerAgent] No user stories extracted, returning empty list")
+            return []
         
         print(f"🔍 [UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from format")
         return self._validate_and_enhance_user_stories(extracted_stories, max_user_stories)
@@ -166,16 +141,7 @@ Edge Cases: {feature.get('edge_cases', [])}
                 'priority': item.get('priority', 'Medium'),
                 'acceptance_criteria': item.get('acceptance_criteria', item.get('criteria', []))
             }
-        elif isinstance(item, str):
-            # Convert string to user story structure
-            return {
-                'title': item[:50] + '...' if len(item) > 50 else item,
-                'user_story': item,
-                'description': f"Converted from text: {item}",
-                'story_points': 5,
-                'priority': 'Medium',
-                'acceptance_criteria': []
-            }
+        # No fallback for strings or other types - return None
         return None
 
     def _extract_user_stories_from_text(self, response_text: str, feature: dict, max_user_stories: int = None) -> list[dict]:
@@ -220,19 +186,12 @@ Edge Cases: {feature.get('edge_cases', [])}
                     }
                     extracted_stories.append(story)
         
-        # If still no stories found, create one based on the feature
+        # If still no stories found, return empty list instead of creating generic work items
         if not extracted_stories:
-            story = {
-                'title': f"Implement {feature.get('title', 'Feature')}",
-                'user_story': f"As a user, I want to use {feature.get('title', 'the feature')} so that I can {feature.get('description', 'accomplish my goals')}",
-                'description': feature.get('description', f"Generated from feature: {feature.get('title', 'Unknown')}"),
-                'story_points': feature.get('estimated_story_points', 8),
-                'priority': feature.get('priority', 'Medium'),
-                'acceptance_criteria': []
-            }
-            extracted_stories.append(story)
+            print("🔍 [UserStoryDecomposerAgent] No user stories found in text, returning empty list")
+            return []
         
-        print(f"� [UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from text")
+        print(f"🔍 [UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from text")
         return self._validate_and_enhance_user_stories(extracted_stories, max_user_stories)
 
     def _validate_and_enhance_user_stories(self, user_stories: list, max_user_stories: int = None) -> list:

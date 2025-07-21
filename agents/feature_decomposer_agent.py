@@ -98,46 +98,9 @@ Dependencies: {epic.get('dependencies', [])}
 
     def _extract_features_from_text(self, text: str, epic: dict) -> list[dict]:
         """Extract features from unstructured text using pattern matching."""
-        features = []
-        epic_title = epic.get('title', 'Epic')
-        
-        # Common patterns that indicate feature titles
-        feature_patterns = [
-            r"(?:Feature|FEATURE)\s*\d*[:\-\s]*(.+?)(?=\n|$)",
-            r"##\s*(.+?)(?=\n|$)",
-            r"\d+\.\s*(.+?)(?=\n|$)",
-            r"\*\s*(.+?)(?=\n|$)",
-            r"\-\s*(.+?)(?=\n|$)"
-        ]
-        
-        for pattern in feature_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
-            for match in matches:
-                title = match.strip()
-                if len(title) > 5 and len(title) < 100:  # Reasonable title length
-                    feature = {
-                        "title": title,
-                        "description": f"Feature extracted from LLM response: {title}",
-                        "priority": "Medium",
-                        "estimated_story_points": 5,
-                        "dependencies": [],
-                        "ui_ux_requirements": ["User-friendly interface"],
-                        "technical_considerations": ["Performance optimization"],
-                        "business_value": f"Supports {epic_title} objectives",
-                        "edge_cases": ["Input validation", "Error handling"]
-                    }
-                    
-                    # Avoid duplicates
-                    if not any(f['title'].lower() == title.lower() for f in features):
-                        features.append(feature)
-                        
-                    if len(features) >= 5:  # Reasonable limit
-                        break
-            
-            if features:
-                break
-        
-        return features
+        # No fallback - return empty list instead of creating generic work items
+        self.logger.info("No features extracted from text, returning empty list")
+        return []
 
     def _validate_and_enhance_features(self, features: list) -> list[dict]:
         """Validate and enhance features to meet quality standards."""

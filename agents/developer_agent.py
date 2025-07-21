@@ -66,6 +66,7 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         Extract JSON content from a response that might be wrapped in text or code blocks.
         """
         import re
+        import json
         
         print("🔍 Extracting JSON from markdown...")
         
@@ -73,8 +74,22 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         json_block_pattern = r'```json\s*(.*?)\s*```'
         match = re.search(json_block_pattern, response, re.DOTALL)
         if match:
-            print("✅ Found JSON in markdown block")
-            return match.group(1).strip()
+            content = match.group(1).strip()
+            # Try to parse and validate the JSON
+            try:
+                json.loads(content)
+                print("✅ Found valid JSON in markdown block")
+                return content
+            except json.JSONDecodeError as e:
+                print(f"⚠️ JSON in markdown block has syntax error: {e}")
+                # Try to fix common JSON issues
+                fixed_content = self._fix_json_syntax(content)
+                try:
+                    json.loads(fixed_content)
+                    print("✅ Fixed JSON syntax in markdown block")
+                    return fixed_content
+                except json.JSONDecodeError:
+                    print("❌ Could not fix JSON syntax in markdown block")
         
         # Try to find JSON in generic code blocks
         code_block_pattern = r'```\s*(.*?)\s*```'
@@ -83,8 +98,20 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
             content = match.group(1).strip()
             # Check if it looks like JSON (starts with [ or {)
             if content.strip().startswith(('[', '{')):
-                print("✅ Found JSON in generic code block")
-                return content
+                try:
+                    json.loads(content)
+                    print("✅ Found valid JSON in generic code block")
+                    return content
+                except json.JSONDecodeError as e:
+                    print(f"⚠️ JSON in generic code block has syntax error: {e}")
+                    # Try to fix common JSON issues
+                    fixed_content = self._fix_json_syntax(content)
+                    try:
+                        json.loads(fixed_content)
+                        print("✅ Fixed JSON syntax in generic code block")
+                        return fixed_content
+                    except json.JSONDecodeError:
+                        print("❌ Could not fix JSON syntax in generic code block")
         
         # If no code blocks, try to find JSON by looking for array/object patterns
         # Look for the largest JSON structure in the response
@@ -98,12 +125,46 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         all_matches = [(match, len(match)) for match in array_matches + object_matches]
         if all_matches:
             best_match = max(all_matches, key=lambda x: x[1])
-            print("✅ Found JSON using pattern matching")
-            return best_match[0].strip()
+            try:
+                json.loads(best_match[0])
+                print("✅ Found valid JSON using pattern matching")
+                return best_match[0].strip()
+            except json.JSONDecodeError as e:
+                print(f"⚠️ JSON from pattern matching has syntax error: {e}")
+                # Try to fix common JSON issues
+                fixed_content = self._fix_json_syntax(best_match[0])
+                try:
+                    json.loads(fixed_content)
+                    print("✅ Fixed JSON syntax from pattern matching")
+                    return fixed_content
+                except json.JSONDecodeError:
+                    print("❌ Could not fix JSON syntax from pattern matching")
         
-        # If all else fails, return the original response
-        print("⚠️ No JSON found, returning original response")
-        return response.strip()
+        # If all else fails, return empty array to prevent fallback generation
+        print("❌ No valid JSON found, returning empty array")
+        return "[]"
+
+    def _fix_json_syntax(self, json_str: str) -> str:
+        """
+        Attempt to fix common JSON syntax errors.
+        """
+        # Remove trailing commas before closing brackets/braces
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        
+        # Fix missing commas between objects in arrays
+        json_str = re.sub(r'}(\s*){', r'},\1{', json_str)
+        
+        # Fix missing quotes around property names
+        json_str = re.sub(r'([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'\1 "\2":', json_str)
+        
+        # Fix single quotes to double quotes
+        json_str = json_str.replace("'", '"')
+        
+        # Remove comments (JSON doesn't support comments)
+        json_str = re.sub(r'//.*$', '', json_str, flags=re.MULTILINE)
+        json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)
+        
+        return json_str
 
     def _validate_and_enhance_tasks(self, tasks: list) -> list:
         """
