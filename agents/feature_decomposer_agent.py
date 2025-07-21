@@ -43,7 +43,8 @@ Dependencies: {epic.get('dependencies', [])}
 {f'IMPORTANT: Generate a maximum of {feature_limit} features only.' if feature_limit else ''}
 """
         
-        print(f"🏗️ [FeatureDecomposerAgent] Decomposing epic: {epic.get('title', 'Unknown')}")
+        # Remove redundant print - supervisor already logs this
+        # print(f"🏗️ [FeatureDecomposerAgent] Decomposing epic: {epic.get('title', 'Unknown')}")
         response = self.run(user_input, prompt_context)
 
         try:
@@ -127,14 +128,18 @@ Dependencies: {epic.get('dependencies', [])}
             
         title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "Feature")
         if not title_valid:
-            print(f"⚠️ Feature title issues: {', '.join(title_issues)}")
+            # Only show critical title issues
+            if not title or len(title.strip()) < 5:
+                print(f"⚠️ Critical feature title issue: {', '.join(title_issues)}")
             if not title:
                 enhanced_feature['title'] = f"Feature: {feature.get('description', 'Undefined')[:50]}..."
         
         # Validate and fix description
         description = feature.get('description', '')
         if not description or len(description.strip()) < 20:
-            print(f"⚠️ Feature description too short, enhancing...")
+            # Only show critical description issues
+            if not description or len(description.strip()) < 10:
+                print(f"⚠️ Critical feature description issue: description too short")
             enhanced_feature['description'] = f"Feature providing: {title}. " + (description or "Details to be defined during user story creation.")
         
         # Ensure required fields exist
@@ -178,8 +183,6 @@ Dependencies: {epic.get('dependencies', [])}
         try:
             # Try to use the specific template
             prompt = self.project_context.generate_prompt(template_to_use, context) if hasattr(self, 'project_context') else self.get_prompt(context)
-            print(f"📤 Sending to {self.llm_provider.capitalize()} with {template_to_use} template...")
-            
             # Use the proper method based on provider
             if self.llm_provider == "ollama":
                 # Use the Ollama provider for local inference

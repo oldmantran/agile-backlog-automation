@@ -677,3 +677,95 @@ Prod...
 2025-07-20 23:45:11 - supervisor - INFO - Generating tasks for user story: AI Agent Generates Initial Requirements
 2025-07-20 23:45:14 - supervisor - INFO - Generating tasks for user story: User Can Refine Initial Requirements through Collaboration Tools
 2025-07-20 23:45:20 - supervisor - INFO - Generating tasks for user story: Automated Export Capabilities to Product Management Tools
+2025-07-20 23:54:00 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250720_235400_proj_20250720_235400
+2025-07-20 23:54:00 - supervisor - INFO - Azure DevOps config for job_id=job_20250720_235400_proj_20250720_235400: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA, iteration_path=Sprint 2025-07
+2025-07-20 23:54:18 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-20 23:54:18 - supervisor - INFO - Starting workflow execution at 2025-07-20 23:54:18.477121
+2025-07-20 23:54:18 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-20 23:54:18 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-20 23:54:18 - supervisor - INFO - Generating epics from product vision
+2025-07-20 23:54:18 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-20 23:54:18 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-20 23:54:30 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-20 23:54:30 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-20 23:54:30 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-20 23:54:30 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-20 23:54:30 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-20 23:54:30 - supervisor - INFO - Decomposing epic: Epic 1: Vision Refinement and Backlog Generation
+2025-07-20 23:54:30 - supervisor - INFO - Decomposing epic: Epic 2: Automated Testing Framework and Exportable Deliverables
+2025-07-20 23:54:37 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-20 23:54:37 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-20 23:54:37 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-20 23:54:37 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-20 23:54:37 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Vision Refinement
+2025-07-20 23:54:37 - supervisor - INFO - Decomposing feature to user stories: Comprehensive Backlog Generation
+2025-07-20 23:54:37 - supervisor - INFO - Decomposing feature to user stories: Backlog Import and Validation
+2025-07-20 23:54:37 - supervisor - INFO - Decomposing feature to user stories: Automated Testing Framework
+2025-07-20 23:54:50 - supervisor - INFO - Decomposing feature to user stories: Test Case Generation and Management
+2025-07-20 23:54:50 - supervisor - INFO - Decomposing feature to user stories: Exportable Deliverables
+2025-07-20 23:55:22 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-07-20 23:55:22 - supervisor - INFO - Executing stage: developer_agent
+2025-07-20 23:55:22 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-20 23:55:22 - supervisor - INFO - Generating tasks for user story: User can initiate AI-driven coaching session
+2025-07-20 23:55:22 - supervisor - INFO - Generating tasks for user story: AI agents provide expert guidance during coaching sessions
+2025-07-20 23:55:22 - supervisor - INFO - Generating tasks for user story: Users receive real-time feedback on vision refinement progress
+2025-07-20 23:55:22 - supervisor - INFO - Generating tasks for user story: Error handling scenarios for AI-driven coaching sessions
+2025-07-20 23:55:31 - supervisor - INFO - Generating tasks for user story: AI Agent Generates Initial Requirements from Vision Statement
+2025-07-20 23:55:35 - supervisor - INFO - Generating tasks for user story: User Prioritizes Requirements using Weighted Scoring System
+2025-07-20 23:55:42 - supervisor - INFO - Generating tasks for user story: Comprehensive Backlog Generation with Error Handling Scenarios
+2025-07-20 23:55:49 - supervisor - INFO - Generating tasks for user story: Automated Export Capabilities to Target Product Management Tools
+2025-07-20 23:55:53 - supervisor - INFO - Generating tasks for user story: Easy-to-Understand Backlog Visualization for Users
+2025-07-20 23:56:01 - supervisor - INFO - Generating tasks for user story: User can select target product management tool
+2025-07-20 23:56:02 - supervisor - INFO - Generating tasks for user story: User can import generated backlogs into target tool
+2025-07-20 23:56:12 - supervisor - INFO - Generating tasks for user story: Error handling and edge case validation implemented
+2025-07-20 23:56:13 - supervisor - INFO - Generating tasks for user story: User can generate test cases for user stories automatically
+2025-07-20 23:56:21 - supervisor - INFO - Generating tasks for user story: User can execute automated tests for user stories with ease
+2025-07-20 23:56:22 - supervisor - INFO - Generating tasks for user story: User can view detailed reports on test case execution results
+2025-07-20 23:56:31 - supervisor - INFO - Generating tasks for user story: Automated testing framework is responsive and accessible
+2025-07-20 23:56:33 - supervisor - INFO - Generating tasks for user story: Error handling and edge case validation are comprehensive
+2025-07-20 23:56:41 - supervisor - INFO - Generating tasks for user story: System generates test cases from user stories
+2025-07-20 23:56:44 - supervisor - INFO - Generating tasks for user story: System generates test cases from tasks and requirements
+2025-07-20 23:56:49 - supervisor - INFO - Generating tasks for user story: User can view, edit, and delete test cases
+2025-07-20 23:56:54 - supervisor - INFO - Generating tasks for user story: System handles edge cases and error scenarios for test case generation
+2025-07-20 23:57:00 - supervisor - INFO - Generating tasks for user story: As a project manager, I want to export a hierarchical spreadsheet document with all project data so that my team can collaborate and plan efficiently
+2025-07-20 23:57:03 - supervisor - INFO - Generating tasks for user story: As a team member, I want to export only specific tasks or resources so that I can focus on individual responsibilities without overwhelming myself with extraneous information
+2025-07-20 23:57:10 - supervisor - INFO - Generating tasks for user story: As a system administrator, I want to configure export settings so that users can customize the exported data according to their needs
+2025-07-20 23:57:12 - supervisor - INFO - Generating tasks for user story: As a project manager, I want to receive notifications when exports are completed so that I can track and monitor the status of exported files
+2025-07-20 23:57:25 - supervisor - ERROR - Developer Agent did not generate valid tasks for user story 'User Prioritizes Requirements using Weighted Scoring System'. Skipping this user story.
+2025-07-20 23:57:25 - supervisor - ERROR - Developer Agent did not generate valid tasks for user story 'Comprehensive Backlog Generation with Error Handling Scenarios'. Skipping this user story.
+2025-07-20 23:57:25 - supervisor - ERROR - Developer Agent did not generate valid tasks for user story 'User can select target product management tool'. Skipping this user story.
+2025-07-20 23:57:25 - supervisor - ERROR - Developer Agent did not generate valid tasks for user story 'User can view detailed reports on test case execution results'. Skipping this user story.
+2025-07-20 23:57:25 - supervisor - ERROR - Developer Agent did not generate valid tasks for user story 'Automated testing framework is responsive and accessible'. Skipping this user story.
+2025-07-20 23:57:25 - supervisor - WARNING - Validation completed with 5 user story errors.
+2025-07-20 23:57:25 - supervisor - INFO - [DEBUG] Retrying incomplete item User Prioritizes Requirements using Weighted Scoring System for stage developer_agent (attempt 1/5)
+2025-07-20 23:57:25 - supervisor - INFO - [DEBUG] Retrying incomplete item Comprehensive Backlog Generation with Error Handling Scenarios for stage developer_agent (attempt 1/5)
+2025-07-20 23:57:25 - supervisor - INFO - [DEBUG] Retrying incomplete item User can select target product management tool for stage developer_agent (attempt 1/5)
+2025-07-20 23:57:25 - supervisor - INFO - [DEBUG] Retrying incomplete item User can view detailed reports on test case execution results for stage developer_agent (attempt 1/5)
+2025-07-20 23:57:25 - supervisor - INFO - [DEBUG] Retrying incomplete item Automated testing framework is responsive and accessible for stage developer_agent (attempt 1/5)
+2025-07-20 23:57:25 - supervisor - INFO - [DEBUG] 5 items remain incomplete after this retry round in stage developer_agent.
+2025-07-20 23:57:25 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-20 23:57:25 - supervisor - INFO - Generating tasks for user story: User can initiate AI-driven coaching session
+2025-07-20 23:57:25 - supervisor - INFO - Generating tasks for user story: AI agents provide expert guidance during coaching sessions
+2025-07-20 23:57:25 - supervisor - INFO - Generating tasks for user story: Users receive real-time feedback on vision refinement progress
+2025-07-20 23:57:25 - supervisor - INFO - Generating tasks for user story: Error handling scenarios for AI-driven coaching sessions
+2025-07-20 23:57:34 - supervisor - INFO - Generating tasks for user story: AI Agent Generates Initial Requirements from Vision Statement
+2025-07-20 23:57:35 - supervisor - INFO - Generating tasks for user story: User Prioritizes Requirements using Weighted Scoring System
+2025-07-20 23:57:45 - supervisor - INFO - Generating tasks for user story: Comprehensive Backlog Generation with Error Handling Scenarios
+2025-07-20 23:57:47 - supervisor - INFO - Generating tasks for user story: Automated Export Capabilities to Target Product Management Tools
+2025-07-20 23:57:54 - supervisor - INFO - Generating tasks for user story: Easy-to-Understand Backlog Visualization for Users
+2025-07-20 23:57:55 - supervisor - INFO - Generating tasks for user story: User can select target product management tool
+2025-07-20 23:58:03 - supervisor - INFO - Generating tasks for user story: User can import generated backlogs into target tool
+2025-07-20 23:58:07 - supervisor - INFO - Generating tasks for user story: Error handling and edge case validation implemented
+2025-07-20 23:58:13 - supervisor - INFO - Generating tasks for user story: User can generate test cases for user stories automatically
+2025-07-20 23:58:15 - supervisor - INFO - Generating tasks for user story: User can execute automated tests for user stories with ease
+2025-07-20 23:58:22 - supervisor - INFO - Generating tasks for user story: User can view detailed reports on test case execution results
+2025-07-20 23:58:25 - supervisor - INFO - Generating tasks for user story: Automated testing framework is responsive and accessible
+2025-07-20 23:58:33 - supervisor - INFO - Generating tasks for user story: Error handling and edge case validation are comprehensive
+2025-07-20 23:58:33 - supervisor - INFO - Generating tasks for user story: System generates test cases from user stories
+2025-07-20 23:58:42 - supervisor - INFO - Generating tasks for user story: System generates test cases from tasks and requirements
+2025-07-20 23:58:42 - supervisor - INFO - Generating tasks for user story: User can view, edit, and delete test cases

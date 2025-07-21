@@ -14,8 +14,14 @@ class UserStoryDecomposerAgent(Agent):
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
-    def decompose_feature_to_user_stories(self, feature: dict, context: dict = None, max_user_stories: int = None) -> list[dict]:
-        """Break down a feature into detailed user stories with acceptance criteria and story points."""
+    def decompose_feature_to_user_stories(self, feature: dict, max_user_stories: int = 5) -> list[dict]:
+        """Decompose a feature into user stories."""
+        # Remove redundant print - supervisor already logs this
+        # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
+        
+        # Get the feature description and title
+        feature_description = feature.get('description', '')
+        feature_title = feature.get('title', 'Feature')
         
         # Build context for prompt template
         prompt_context = {
@@ -38,7 +44,7 @@ UI/UX Requirements: {feature.get('ui_ux_requirements', [])}
 Edge Cases: {feature.get('edge_cases', [])}
 """
         
-        print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
+        # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
         
         # Use the user story decomposer template
         response = self.run_with_template(user_input, prompt_context, template_name="user_story_decomposer")
@@ -222,7 +228,9 @@ Edge Cases: {feature.get('edge_cases', [])}
         title = story.get('title', '')
         title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "User Story")
         if not title_valid:
-            print(f"⚠️ Story title issues: {', '.join(title_issues)}")
+            # Only show critical title issues
+            if not title or len(title.strip()) < 5:
+                print(f"⚠️ Critical story title issue: {', '.join(title_issues)}")
             if not title:
                 enhanced_story['title'] = f"User Story: {story.get('description', 'Undefined')[:50]}..."
         
@@ -230,7 +238,9 @@ Edge Cases: {feature.get('edge_cases', [])}
         description = story.get('description', '') or story.get('user_story', '')
         desc_valid, desc_issues = self.quality_validator.validate_user_story_description(description)
         if not desc_valid:
-            print(f"⚠️ Story description issues: {', '.join(desc_issues)}")
+            # Only show critical description issues
+            if not description or len(description.strip()) < 20:
+                print(f"⚠️ Critical story description issue: {', '.join(desc_issues)}")
             # Try to fix the description
             if 'As a' not in description and 'As an' not in description:
                 user_type = story.get('user_type', 'user')
@@ -245,7 +255,9 @@ Edge Cases: {feature.get('edge_cases', [])}
         criteria = story.get('acceptance_criteria', [])
         criteria_valid, criteria_issues = self.quality_validator.validate_acceptance_criteria(criteria, title)
         if not criteria_valid or criteria_issues:
-            print(f"📋 Enhancing acceptance criteria: {', '.join(criteria_issues)}")
+            # Only show critical criteria issues
+            if len(criteria) < 2:
+                print(f"📋 Critical acceptance criteria issue: {', '.join(criteria_issues)}")
             enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
                 criteria, 
                 {'title': enhanced_story['title'], 'description': enhanced_story['description']}
@@ -303,8 +315,6 @@ Edge Cases: {feature.get('edge_cases', [])}
             
             # Try to use the specific template
             prompt = prompt_manager.get_prompt(template_to_use, context)
-            print(f"📤 Sending to {self.llm_provider.capitalize()} with {template_to_use} template...")
-            
             # Use the proper method based on provider
             if self.llm_provider == "ollama":
                 # Use the Ollama provider for local inference

@@ -18,12 +18,12 @@ class DeveloperAgent(Agent):
         """Set the Azure DevOps integrator for this agent."""
         self.azure_api = azure_integrator
 
-    def generate_tasks(self, feature: dict, context: dict = None) -> list[dict]:
-        """Generate technical tasks from a feature description with contextual information."""
+    def generate_tasks(self, user_story: dict, context: dict = None) -> list[dict]:
+        """Generate technical tasks from a user story with contextual information."""
         
         # Build context for prompt template
         prompt_context = {
-            'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
+            'domain': context.get('domain', 'dynamic') if context else 'dynamic',
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'tech_stack': context.get('tech_stack', 'Modern Web Stack') if context else 'Modern Web Stack',
             'architecture_pattern': context.get('architecture_pattern', 'MVC') if context else 'MVC',
@@ -33,15 +33,79 @@ class DeveloperAgent(Agent):
             'sprint_duration': context.get('sprint_duration', '2 weeks') if context else '2 weeks'
         }
         
+        # Format acceptance criteria for better prompt
+        acceptance_criteria = user_story.get('acceptance_criteria', [])
+        if isinstance(acceptance_criteria, list):
+            criteria_text = '\n'.join([f"- {criterion}" for criterion in acceptance_criteria])
+        else:
+            criteria_text = str(acceptance_criteria)
+        
         user_input = f"""
-Feature: {feature.get('title', 'Unknown Feature')}
-Description: {feature.get('description', 'No description provided')}
-Acceptance Criteria: {feature.get('acceptance_criteria', [])}
-Priority: {feature.get('priority', 'Medium')}
-Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
+You are a technical developer tasked with breaking down a user story into specific, actionable development tasks.
+
+USER STORY:
+Title: {user_story.get('title', 'Unknown User Story')}
+Description: {user_story.get('description', user_story.get('user_story', 'No description provided'))}
+Acceptance Criteria:
+{criteria_text}
+Story Points: {user_story.get('story_points', 'Not specified')}
+Priority: {user_story.get('priority', 'Medium')}
+User Type: {user_story.get('user_type', 'user')}
+
+REQUIREMENTS:
+- Generate exactly 3-8 technical tasks
+- Each task must be specific and actionable
+- Include estimated hours (1-8 hours per task)
+- Include the type of work (frontend, backend, database, testing, devops, etc.)
+- Include acceptance criteria for each task
+
+RESPONSE FORMAT:
+You MUST respond with ONLY a valid JSON array. No markdown, no explanations, no additional text.
+
+REQUIRED JSON STRUCTURE:
+[
+  {{
+    "title": "Task title",
+    "description": "Detailed task description",
+    "estimated_hours": 4,
+    "category": "frontend|backend|database|testing|devops",
+    "priority": "High|Medium|Low",
+    "acceptance_criteria": ["Criteria 1", "Criteria 2", "Criteria 3"]
+  }}
+]
+
+EXAMPLE RESPONSE:
+[
+  {{
+    "title": "Design user interface components",
+    "description": "Create wireframes and mockups for the user interface",
+    "estimated_hours": 6,
+    "category": "frontend",
+    "priority": "High",
+    "acceptance_criteria": [
+      "Wireframes created for all user flows",
+      "Mockups approved by stakeholders",
+      "Design system components documented"
+    ]
+  }},
+  {{
+    "title": "Implement API endpoints",
+    "description": "Develop REST API endpoints for data operations",
+    "estimated_hours": 8,
+    "category": "backend",
+    "priority": "High",
+    "acceptance_criteria": [
+      "All endpoints return correct HTTP status codes",
+      "Input validation implemented",
+      "Error handling covers all edge cases"
+    ]
+  }}
+]
+
+CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.
 """
         
-        print(f"💻 [DeveloperAgent] Generating tasks for: {feature.get('title', 'Unknown')}")
+        print(f"💻 [DeveloperAgent] Generating tasks for user story: {user_story.get('title', 'Unknown')}")
         response = self.run(user_input, prompt_context)
 
         try:
@@ -53,14 +117,18 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
                 enhanced_tasks = self._validate_and_enhance_tasks(tasks)
                 return enhanced_tasks
             else:
-                print("⚠️ Grok response was not a list.")
-                return []
+                print("⚠️ Response was not a list.")
+                print("🔎 Raw response:")
+                print(response)
+                raise ValueError("LLM response was not a valid JSON array")
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse JSON: {e}")
             print("🔎 Raw response:")
             print(response)
-            return []
-    
+            raise ValueError(f"LLM returned invalid JSON: {e}")
+
+
+
     def _extract_json_from_response(self, response: str) -> str:
         """
         Extract JSON content from a response that might be wrapped in text or code blocks.
@@ -140,9 +208,11 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
                 except json.JSONDecodeError:
                     print("❌ Could not fix JSON syntax from pattern matching")
         
-        # If all else fails, return empty array to prevent fallback generation
-        print("❌ No valid JSON found, returning empty array")
-        return "[]"
+        # If all else fails, raise an error - the LLM should return valid JSON
+        print("❌ No valid JSON found in LLM response")
+        print("🔎 Raw response:")
+        print(response)
+        raise ValueError("LLM did not return valid JSON. Expected JSON array format.")
 
     def _fix_json_syntax(self, json_str: str) -> str:
         """
@@ -165,6 +235,81 @@ Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
         json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)
         
         return json_str
+
+    def _create_fallback_tasks(self, user_story: dict) -> list[dict]:
+        """Create basic fallback tasks when JSON parsing fails."""
+        title = user_story.get('title', 'Unknown User Story')
+        description = user_story.get('description', user_story.get('user_story', ''))
+        
+        # Create basic tasks based on the user story
+        fallback_tasks = [
+            {
+                'title': f'Analyze requirements for {title}',
+                'description': f'Review and understand the requirements for: {description}',
+                'estimated_hours': 2,
+                'category': 'analysis',
+                'priority': 'High'
+            },
+            {
+                'title': f'Design solution for {title}',
+                'description': f'Create technical design and architecture for: {description}',
+                'estimated_hours': 4,
+                'category': 'design',
+                'priority': 'High'
+            },
+            {
+                'title': f'Implement {title}',
+                'description': f'Develop the core functionality for: {description}',
+                'estimated_hours': 8,
+                'category': 'development',
+                'priority': 'High'
+            },
+            {
+                'title': f'Test {title}',
+                'description': f'Create and execute tests for: {description}',
+                'estimated_hours': 4,
+                'category': 'testing',
+                'priority': 'Medium'
+            }
+        ]
+        
+        print(f"📋 Created {len(fallback_tasks)} fallback tasks for: {title}")
+        return self._validate_and_enhance_tasks(fallback_tasks)
+
+    def _create_fallback_tasks_from_response(self, response: str) -> str:
+        """Create fallback JSON when no valid JSON is found in response."""
+        # Return a basic task structure as JSON string
+        fallback_json = '''[
+            {
+                "title": "Analyze requirements",
+                "description": "Review and understand the user story requirements",
+                "estimated_hours": 2,
+                "category": "analysis",
+                "priority": "High"
+            },
+            {
+                "title": "Design solution",
+                "description": "Create technical design and architecture",
+                "estimated_hours": 4,
+                "category": "design",
+                "priority": "High"
+            },
+            {
+                "title": "Implement functionality",
+                "description": "Develop the core functionality",
+                "estimated_hours": 8,
+                "category": "development",
+                "priority": "High"
+            },
+            {
+                "title": "Test implementation",
+                "description": "Create and execute tests",
+                "estimated_hours": 4,
+                "category": "testing",
+                "priority": "Medium"
+            }
+        ]'''
+        return fallback_json
 
     def _validate_and_enhance_tasks(self, tasks: list) -> list:
         """
