@@ -349,14 +349,14 @@ class WorkflowSupervisor:
     
     def _refresh_agent_configurations(self):
         """Refresh LLM configurations for all agents."""
-        self.logger.info("🔄 Refreshing agent configurations...")
+        self.logger.info("Refreshing agent configurations...")
         for agent_name, agent in self.agents.items():
             try:
                 # Force refresh the configuration for each agent
                 agent._setup_llm_config()
-                self.logger.info(f"✅ Refreshed config for {agent_name}: {agent.llm_provider} ({agent.model})")
+                self.logger.info(f"Refreshed config for {agent_name}: {agent.llm_provider} ({agent.model})")
             except Exception as e:
-                self.logger.warning(f"⚠️ Failed to refresh config for {agent_name}: {e}")
+                self.logger.warning(f"Failed to refresh config for {agent_name}: {e}")
     
     def _get_parallel_config(self) -> Dict[str, Any]:
         """Get parallel processing configuration from settings."""

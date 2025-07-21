@@ -43,8 +43,9 @@ class EpicStrategist(Agent):
         
         # Add timeout protection
         try:
-            # Set a 60-second timeout for the entire epic generation process
-            response = self._run_with_timeout(user_input, prompt_context, timeout=60)
+            # Set a longer timeout for larger models (70B needs more time)
+            timeout = 180 if self.model and "70b" in self.model.lower() else 60
+            response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
         except TimeoutError:
             print("⚠️ Epic generation timed out, returning empty list")
             return []
@@ -54,7 +55,7 @@ class EpicStrategist(Agent):
 
         try:
             if not response:
-                print("⚠️ Empty response from Grok")
+                print("⚠️ Empty response from LLM")
                 return []
             
             # Check for markdown code blocks
@@ -71,7 +72,7 @@ class EpicStrategist(Agent):
                 else:
                     return epics
             else:
-                print("⚠️ Grok response was not a list.")
+                print("⚠️ LLM response was not a list.")
                 return []
         except json.JSONDecodeError as e:
             return []

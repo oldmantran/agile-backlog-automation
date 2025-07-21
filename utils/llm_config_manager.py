@@ -112,7 +112,7 @@ class LLMConfigManager:
         Returns:
             Fresh configuration from database
         """
-        logger.info("🔄 Forcing configuration refresh from database")
+        logger.info("Forcing configuration refresh from database")
         return self.get_active_configuration(user_id, force_refresh=True)
     
     def get_provider_config(self, user_id: str = None) -> Dict[str, Any]:

@@ -51,9 +51,9 @@ class Agent:
             from utils.user_id_resolver import user_id_resolver
             config_manager = LLMConfigManager()
             user_id = user_id_resolver.get_default_user_id()
-            logger.info(f"🔍 Debug: Using user_id: {user_id}")
+            logger.info(f"Debug: Using user_id: {user_id}")
             provider_config = config_manager.force_refresh_configuration(user_id)
-            logger.info(f"🔍 Debug: Loaded provider_config: {provider_config}")
+            logger.info(f"Debug: Loaded provider_config: {provider_config}")
             self.llm_provider = provider_config['provider']
             
             if self.llm_provider == "openai":

@@ -970,3 +970,91 @@ Prod...
 2025-07-21 08:23:20 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
 2025-07-21 08:23:20 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
 2025-07-21 08:23:20 - supervisor - INFO - Decomposing epic: Core System Implementation
+2025-07-21 08:36:21 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_083621_proj_20250721_083621
+2025-07-21 08:36:21 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_083621_proj_20250721_083621: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-70B, iteration_path=Sprint 2025-07
+2025-07-21 08:36:39 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 08:36:39 - supervisor - INFO - Starting workflow execution at 2025-07-21 08:36:39.362635
+2025-07-21 08:36:49 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 08:36:49 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 08:36:49 - supervisor - INFO - Generating epics from product vision
+2025-07-21 08:36:49 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 08:36:49 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 08:40:37 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_084037_proj_20250721_084037
+2025-07-21 08:40:37 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_084037_proj_20250721_084037: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-70B, iteration_path=Sprint 2025-07
+2025-07-21 08:40:54 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 08:40:54 - supervisor - INFO - Starting workflow execution at 2025-07-21 08:40:54.728458
+2025-07-21 08:40:54 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 08:40:56 - supervisor - INFO - Refreshed config for epic_strategist: ollama (llama3.1:70b)
+2025-07-21 08:40:58 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (llama3.1:70b)
+2025-07-21 08:41:00 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (llama3.1:70b)
+2025-07-21 08:41:02 - supervisor - INFO - Refreshed config for developer_agent: ollama (llama3.1:70b)
+2025-07-21 08:41:04 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (llama3.1:70b)
+2025-07-21 08:41:04 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 08:41:04 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 08:41:04 - supervisor - INFO - Generating epics from product vision
+2025-07-21 08:41:04 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 08:41:04 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 08:42:04 - supervisor - WARNING - No valid epics generated, using fallback
+2025-07-21 08:42:04 - supervisor - INFO - Generated 1 epics (limited to 2)
+2025-07-21 08:42:04 - supervisor - INFO - Validation completed: 1 epics checked, 0 errors.
+2025-07-21 08:42:04 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 08:42:05 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 08:42:05 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 08:42:05 - supervisor - INFO - Decomposing epic: Core System Implementation
+2025-07-21 08:47:49 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_084749_proj_20250721_084749
+2025-07-21 08:47:49 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_084749_proj_20250721_084749: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-70B, iteration_path=Sprint 2025-07
+2025-07-21 08:48:06 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 08:48:06 - supervisor - INFO - Starting workflow execution at 2025-07-21 08:48:06.369970
+2025-07-21 08:48:06 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 08:48:08 - supervisor - INFO - Refreshed config for epic_strategist: ollama (llama3.1:70b)
+2025-07-21 08:48:10 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (llama3.1:70b)
+2025-07-21 08:48:12 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (llama3.1:70b)
+2025-07-21 08:48:14 - supervisor - INFO - Refreshed config for developer_agent: ollama (llama3.1:70b)
+2025-07-21 08:48:16 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (llama3.1:70b)
+2025-07-21 08:48:16 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 08:48:16 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 08:48:16 - supervisor - INFO - Generating epics from product vision
+2025-07-21 08:48:16 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 08:48:16 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 08:49:16 - supervisor - WARNING - No valid epics generated, using fallback
+2025-07-21 08:49:16 - supervisor - INFO - Generated 1 epics (limited to 2)
+2025-07-21 08:49:16 - supervisor - INFO - Validation completed: 1 epics checked, 0 errors.
+2025-07-21 08:49:16 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 08:49:16 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 08:49:16 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 08:49:16 - supervisor - INFO - Decomposing epic: Core System Implementation
+2025-07-21 08:58:02 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_085802_proj_20250721_085802
+2025-07-21 08:58:02 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_085802_proj_20250721_085802: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-70B, iteration_path=Sprint 2025-07
+2025-07-21 08:58:20 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 08:58:20 - supervisor - INFO - Starting workflow execution at 2025-07-21 08:58:20.671141
+2025-07-21 08:58:20 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 08:58:22 - supervisor - INFO - Refreshed config for epic_strategist: ollama (llama3.1:70b)
+2025-07-21 08:58:24 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (llama3.1:70b)
+2025-07-21 08:58:26 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (llama3.1:70b)
+2025-07-21 08:58:28 - supervisor - INFO - Refreshed config for developer_agent: ollama (llama3.1:70b)
+2025-07-21 08:58:30 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (llama3.1:70b)
+2025-07-21 08:58:30 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 08:58:30 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 08:58:30 - supervisor - INFO - Generating epics from product vision
+2025-07-21 08:58:30 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 08:58:30 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
