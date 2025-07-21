@@ -21,12 +21,6 @@ class EpicStrategist(Agent):
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
         """Generate epics from a product vision with contextual information."""
         
-        print(f"DEBUG: EpicStrategist.generate_epics() called with vision length: {len(product_vision)}")
-        print(f"DEBUG: EpicStrategist context: {context}")
-        print(f"DEBUG: EpicStrategist max_epics: {max_epics}")
-        print(f"DEBUG: EpicStrategist self.llm_provider: {self.llm_provider}")
-        print(f"DEBUG: EpicStrategist self.model: {self.model}")
-        
         # Apply max_epics constraint if specified (null = unlimited)
         epic_limit = max_epics if max_epics is not None else None  # None = unlimited
         
@@ -85,20 +79,13 @@ class EpicStrategist(Agent):
 
     def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
         """Run the agent with a timeout to prevent hanging."""
-        print(f"DEBUG: _run_with_timeout called with timeout: {timeout}")
-        print(f"DEBUG: _run_with_timeout user_input length: {len(user_input)}")
-        print(f"DEBUG: _run_with_timeout context: {context}")
-        
         result = [None]
         exception = [None]
         
         def target():
             try:
-                print("DEBUG: target() function called - about to call self.run()")
                 result[0] = self.run(user_input, context)
-                print("DEBUG: self.run() completed successfully")
             except Exception as e:
-                print(f"DEBUG: self.run() failed with exception: {e}")
                 exception[0] = e
         
         thread = threading.Thread(target=target)

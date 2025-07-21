@@ -1,0 +1,17 @@
+# Optimized Modelfile for RTX 4090
+FROM llama3.1:70b
+
+# GPU optimization settings
+PARAMETER num_gpu 1
+PARAMETER num_thread 16
+PARAMETER num_ctx 4096
+PARAMETER gpu_layers 100
+PARAMETER rope_freq_base 10000
+PARAMETER rope_freq_scale 0.5
+
+# Generation settings
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER repeat_penalty 1.1
+PARAMETER seed -1

@@ -1,7 +1,13 @@
 import json
+import re
+import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
+
+class TimeoutError(Exception):
+    """Custom timeout exception."""
+    pass
 
 class UserStoryDecomposerAgent(Agent):
     """
@@ -46,8 +52,66 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
         
-        # Use the user story decomposer template
-        response = self.run_with_template(user_input, prompt_context, template_name="user_story_decomposer")
+        # Smart model selection with fallback strategy for user stories
+        models_to_try = []
+        
+        # Smart model selection with fallback strategy for user stories
+        if self.model and "70b" in self.model.lower():
+            # 70B model detected - use faster alternatives due to memory constraints
+            models_to_try = [
+                ("llama3.1:8b", 20),    # 8B model: 20 seconds
+                ("llama3.1:34b", 40),   # 34B model: 40 seconds  
+            ]
+        elif self.model and "34b" in self.model.lower():
+            # 34B model - use it with fallback to 8B
+            models_to_try = [
+                ("llama3.1:34b", 40),   # 34B model: 40 seconds
+                ("llama3.1:8b", 20),    # 8B model: 20 seconds fallback
+            ]
+        else:
+            # Use current model with standard timeout
+            models_to_try = [(self.model, 60)]
+        
+        # Try each model until one succeeds
+        for model_name, timeout in models_to_try:
+            try:
+                print(f"🔄 Trying {model_name} for user stories with {timeout}s timeout...")
+                
+                # Temporarily switch to this model
+                original_model = self.model
+                self.model = model_name
+                
+                # Update Ollama provider if needed
+                if hasattr(self, 'ollama_provider') and self.llm_provider == "ollama":
+                    try:
+                        from utils.ollama_client import create_ollama_provider
+                        self.ollama_provider = create_ollama_provider(preset='balanced')
+                    except Exception as e:
+                        print(f"⚠️ Failed to switch to {model_name}: {e}")
+                        continue
+                
+                response = self._run_with_timeout(user_input, prompt_context, timeout=timeout, template_name="user_story_decomposer")
+                
+                # Restore original model
+                self.model = original_model
+                
+                print(f"✅ Successfully generated user stories using {model_name}")
+                break
+                
+            except TimeoutError:
+                print(f"⏱️ {model_name} timed out after {timeout}s, trying next model...")
+                # Restore original model before continuing
+                self.model = original_model
+                continue
+            except Exception as e:
+                print(f"❌ {model_name} failed: {e}, trying next model...")
+                # Restore original model before continuing
+                self.model = original_model
+                continue
+        else:
+            # All models failed
+            print("❌ All models failed for user story generation")
+            return []
 
         try:
             # Extract JSON with improved parsing
@@ -337,7 +401,9 @@ Edge Cases: {feature.get('edge_cases', [])}
                 }
                 
                 import requests
-                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                # Use longer timeout for 70B models
+                timeout = 300 if self.model and "70b" in self.model.lower() else 60
+                response = requests.post(url, headers=headers, json=payload, timeout=timeout)
                 response.raise_for_status()
                 data = response.json()
                 
@@ -346,7 +412,16 @@ Edge Cases: {feature.get('edge_cases', [])}
         except Exception as e:
             print(f"⚠️ Template {template_to_use} failed: {e}")
             print("🔄 Falling back to default prompt...")
-            return self.run(user_input, context)
+            # Use timeout protection for fallback call
+            try:
+                timeout = 180 if self.model and "70b" in self.model.lower() else 60
+                return self._run_with_timeout(user_input, context, timeout=timeout)
+            except TimeoutError:
+                print("⚠️ Fallback generation timed out")
+                return ""
+            except Exception as fallback_e:
+                print(f"❌ Fallback generation failed: {fallback_e}")
+                return ""
 
     def _extract_json_from_response(self, response: str) -> str:
         """
@@ -463,3 +538,31 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # Fallback: return everything from start to end of response
         return response[start_idx:].strip()
+
+    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60, template_name: str = None):
+        """Run the agent with a timeout to prevent hanging."""
+        result = [None]
+        exception = [None]
+        
+        def target():
+            try:
+                if template_name:
+                    result[0] = self.run_with_template(user_input, context, template_name)
+                else:
+                    result[0] = self.run(user_input, context)
+            except Exception as e:
+                exception[0] = e
+        
+        thread = threading.Thread(target=target)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout)
+        
+        if thread.is_alive():
+            print(f"⚠️ User story generation timed out after {timeout} seconds")
+            return None
+        
+        if exception[0]:
+            raise exception[0]
+        
+        return result[0]

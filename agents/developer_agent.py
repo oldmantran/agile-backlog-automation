@@ -1,7 +1,12 @@
 import json
+import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
+
+class TimeoutError(Exception):
+    """Custom timeout exception."""
+    pass
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 class DeveloperAgent(Agent):
@@ -106,7 +111,67 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
 """
         
         print(f"💻 [DeveloperAgent] Generating tasks for user story: {user_story.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
+        
+        # Smart model selection with fallback strategy for task generation
+        models_to_try = []
+        
+        # Smart model selection with fallback strategy for task generation
+        if self.model and "70b" in self.model.lower():
+            # 70B model detected - use faster alternatives due to memory constraints
+            models_to_try = [
+                ("llama3.1:8b", 15),    # 8B model: 15 seconds
+                ("llama3.1:34b", 30),   # 34B model: 30 seconds  
+            ]
+        elif self.model and "34b" in self.model.lower():
+            # 34B model - use it with fallback to 8B
+            models_to_try = [
+                ("llama3.1:34b", 30),   # 34B model: 30 seconds
+                ("llama3.1:8b", 15),    # 8B model: 15 seconds fallback
+            ]
+        else:
+            # Use current model with standard timeout
+            models_to_try = [(self.model, 60)]
+        
+        # Try each model until one succeeds
+        for model_name, timeout in models_to_try:
+            try:
+                print(f"🔄 Trying {model_name} for tasks with {timeout}s timeout...")
+                
+                # Temporarily switch to this model
+                original_model = self.model
+                self.model = model_name
+                
+                # Update Ollama provider if needed
+                if hasattr(self, 'ollama_provider') and self.llm_provider == "ollama":
+                    try:
+                        from utils.ollama_client import create_ollama_provider
+                        self.ollama_provider = create_ollama_provider(preset='balanced')
+                    except Exception as e:
+                        print(f"⚠️ Failed to switch to {model_name}: {e}")
+                        continue
+                
+                response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
+                
+                # Restore original model
+                self.model = original_model
+                
+                print(f"✅ Successfully generated tasks using {model_name}")
+                break
+                
+            except TimeoutError:
+                print(f"⏱️ {model_name} timed out after {timeout}s, trying next model...")
+                # Restore original model before continuing
+                self.model = original_model
+                continue
+            except Exception as e:
+                print(f"❌ {model_name} failed: {e}, trying next model...")
+                # Restore original model before continuing
+                self.model = original_model
+                continue
+        else:
+            # All models failed
+            print("❌ All models failed for task generation")
+            return []
 
         try:
             # Extract JSON from response if it's wrapped in text/code blocks
@@ -489,3 +554,28 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
         except Exception as e:
             print(f"❌ Failed to update work item {work_item_id} field {field_path}: {e}")
             return False
+
+    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
+        """Run the agent with a timeout to prevent hanging."""
+        result = [None]
+        exception = [None]
+        
+        def target():
+            try:
+                result[0] = self.run(user_input, context)
+            except Exception as e:
+                exception[0] = e
+        
+        thread = threading.Thread(target=target)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout)
+        
+        if thread.is_alive():
+            print(f"⚠️ Task generation timed out after {timeout} seconds")
+            return None
+        
+        if exception[0]:
+            raise exception[0]
+        
+        return result[0]

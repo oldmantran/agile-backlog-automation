@@ -1,8 +1,13 @@
 import json
 import re
+import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
+
+class TimeoutError(Exception):
+    """Custom timeout exception."""
+    pass
 
 class FeatureDecomposerAgent(Agent):
     """
@@ -45,12 +50,72 @@ Dependencies: {epic.get('dependencies', [])}
         
         # Remove redundant print - supervisor already logs this
         # print(f"🏗️ [FeatureDecomposerAgent] Decomposing epic: {epic.get('title', 'Unknown')}")
-        response = self.run(user_input, prompt_context)
+        
+        # Smart model selection with fallback strategy
+        models_to_try = []
+        
+        # Smart model selection with fallback strategy
+        if self.model and "70b" in self.model.lower():
+            # 70B model detected - use faster alternatives due to memory constraints
+            models_to_try = [
+                ("llama3.1:8b", 30),    # 8B model: 30 seconds
+                ("llama3.1:34b", 60),   # 34B model: 60 seconds  
+            ]
+        elif self.model and "34b" in self.model.lower():
+            # 34B model - use it with fallback to 8B
+            models_to_try = [
+                ("llama3.1:34b", 60),   # 34B model: 60 seconds
+                ("llama3.1:8b", 30),    # 8B model: 30 seconds fallback
+            ]
+        else:
+            # Use current model with standard timeout
+            models_to_try = [(self.model, 60)]
+        
+        # Try each model until one succeeds
+        for model_name, timeout in models_to_try:
+            try:
+                print(f"🔄 Trying {model_name} with {timeout}s timeout...")
+                
+                # Temporarily switch to this model
+                original_model = self.model
+                self.model = model_name
+                
+                # Update Ollama provider if needed
+                if hasattr(self, 'ollama_provider') and self.llm_provider == "ollama":
+                    try:
+                        from utils.ollama_client import create_ollama_provider
+                        self.ollama_provider = create_ollama_provider(preset='balanced')
+                    except Exception as e:
+                        print(f"⚠️ Failed to switch to {model_name}: {e}")
+                        continue
+                
+                response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
+                
+                # Restore original model
+                self.model = original_model
+                
+                print(f"✅ Successfully generated features using {model_name}")
+                break
+                
+            except TimeoutError:
+                print(f"⏱️ {model_name} timed out after {timeout}s, trying next model...")
+                # Restore original model before continuing
+                self.model = original_model
+                continue
+            except Exception as e:
+                print(f"❌ {model_name} failed: {e}, trying next model...")
+                # Restore original model before continuing
+                self.model = original_model
+                continue
+        else:
+            # All models failed
+            print("❌ All models failed for feature generation")
+            return []
 
         try:
             # Handle empty response
             if not response or not response.strip():
-                self.logger.warning("Empty response from LLM")
+                print("⚠️ Empty response from LLM")
                 return self._extract_features_from_any_format("", epic, feature_limit)
             
             # Check for markdown code blocks
@@ -68,18 +133,18 @@ Dependencies: {epic.get('dependencies', [])}
                     enhanced_features = self._validate_and_enhance_features(features)
                 return enhanced_features
             else:
-                self.logger.warning("LLM response was not a valid list")
+                print("⚠️ LLM response was not a valid list")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
                 
         except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse JSON: {e}")
-            self.logger.debug(f"Raw response: {response}")
+            print(f"❌ Failed to parse JSON: {e}")
+            print(f"Raw response: {response}")
             return self._extract_features_from_any_format(response, epic, feature_limit)
 
     def _extract_features_from_any_format(self, response: str, epic: dict, max_features: int = None) -> list[dict]:
         """Extract features from LLM response in any format using intelligent parsing."""
         if not response or not response.strip():
-            self.logger.error("Empty response received")
+            print("❌ Empty response received")
             return []
         
         # Try to extract features from text format
@@ -88,19 +153,19 @@ Dependencies: {epic.get('dependencies', [])}
         # Apply limit if specified
         if max_features and len(extracted_features) > max_features:
             extracted_features = extracted_features[:max_features]
-            self.logger.info(f"Limited features to {max_features}")
+            print(f"ℹ️ Limited features to {max_features}")
         
         if extracted_features:
-            self.logger.info(f"Successfully extracted {len(extracted_features)} features from response")
+            print(f"✅ Successfully extracted {len(extracted_features)} features from response")
             return self._validate_and_enhance_features(extracted_features)
         else:
-            self.logger.error("Failed to extract any features from response")
+            print("❌ Failed to extract any features from response")
             return []
 
     def _extract_features_from_text(self, text: str, epic: dict) -> list[dict]:
         """Extract features from unstructured text using pattern matching."""
         # No fallback - return empty list instead of creating generic work items
-        self.logger.info("No features extracted from text, returning empty list")
+        print("ℹ️ No features extracted from text, returning empty list")
         return []
 
     def _validate_and_enhance_features(self, features: list) -> list[dict]:
@@ -209,7 +274,9 @@ Dependencies: {epic.get('dependencies', [])}
                 }
                 
                 import requests
-                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                # Use longer timeout for 70B models
+                timeout = 300 if self.model and "70b" in self.model.lower() else 60
+                response = requests.post(url, headers=headers, json=payload, timeout=timeout)
                 response.raise_for_status()
                 data = response.json()
                 
@@ -218,7 +285,16 @@ Dependencies: {epic.get('dependencies', [])}
         except Exception as e:
             print(f"⚠️ Template {template_to_use} failed: {e}")
             print("🔄 Falling back to default prompt...")
-            return self.run(user_input, context)
+            # Use timeout protection for fallback call
+            try:
+                timeout = 180 if self.model and "70b" in self.model.lower() else 60
+                return self._run_with_timeout(user_input, context, timeout=timeout)
+            except TimeoutError:
+                print("⚠️ Fallback generation timed out")
+                return ""
+            except Exception as fallback_e:
+                print(f"❌ Fallback generation failed: {fallback_e}")
+                return ""
 
     def _extract_json_from_response(self, response: str) -> str:
         """Extract JSON content from AI response with improved bracket counting and validation."""
@@ -297,3 +373,28 @@ Dependencies: {epic.get('dependencies', [])}
                             return response[start_idx:i+1]
         
         return response[start_idx:].strip()
+
+    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
+        """Run the agent with a timeout to prevent hanging."""
+        result = [None]
+        exception = [None]
+        
+        def target():
+            try:
+                result[0] = self.run(user_input, context)
+            except Exception as e:
+                exception[0] = e
+        
+        thread = threading.Thread(target=target)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout)
+        
+        if thread.is_alive():
+            print(f"⚠️ Feature generation timed out after {timeout} seconds")
+            return None
+        
+        if exception[0]:
+            raise exception[0]
+        
+        return result[0]
