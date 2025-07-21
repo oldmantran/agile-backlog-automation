@@ -54,6 +54,25 @@ class Database:
                     )
                 ''')
                 
+                # Create LLM configuration table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS llm_configurations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        provider TEXT NOT NULL CHECK (provider IN ('openai', 'grok', 'ollama')),
+                        model TEXT,
+                        api_key TEXT,
+                        base_url TEXT,
+                        preset TEXT,
+                        is_default BOOLEAN DEFAULT FALSE,
+                        is_active BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(user_id, name)
+                    )
+                ''')
+                
                 # Create index for faster lookups
                 cursor.execute('''
                     CREATE INDEX IF NOT EXISTS idx_user_settings_lookup 
@@ -326,6 +345,193 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to get settings with flags: {e}")
             return {}
+
+    # LLM Configuration Methods
+    def save_llm_configuration(self, user_id: str, name: str, provider: str, 
+                              model: str = None, api_key: str = None, 
+                              base_url: str = None, preset: str = None,
+                              is_default: bool = False, is_active: bool = False) -> bool:
+        """Save or update an LLM configuration."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # If this is being set as default, unset other defaults for this user
+                if is_default:
+                    cursor.execute('''
+                        UPDATE llm_configurations 
+                        SET is_default = FALSE 
+                        WHERE user_id = ?
+                    ''', (user_id,))
+                
+                # If this is being set as active, unset other active configs for this user
+                if is_active:
+                    cursor.execute('''
+                        UPDATE llm_configurations 
+                        SET is_active = FALSE 
+                        WHERE user_id = ?
+                    ''', (user_id,))
+                
+                cursor.execute('''
+                    INSERT OR REPLACE INTO llm_configurations 
+                    (user_id, name, provider, model, api_key, base_url, preset, is_default, is_active, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (user_id, name, provider, model, api_key, base_url, preset, is_default, is_active, datetime.now()))
+                
+                conn.commit()
+                logger.info(f"LLM configuration '{name}' saved for user {user_id}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to save LLM configuration: {e}")
+            return False
+
+    def get_llm_configurations(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all LLM configurations for a user."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM llm_configurations 
+                    WHERE user_id = ?
+                    ORDER BY is_default DESC, is_active DESC, name ASC
+                ''', (user_id,))
+                
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
+                
+        except Exception as e:
+            logger.error(f"Failed to get LLM configurations: {e}")
+            return []
+
+    def get_active_llm_configuration(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get the currently active LLM configuration for a user."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM llm_configurations 
+                    WHERE user_id = ? AND is_active = TRUE
+                    LIMIT 1
+                ''', (user_id,))
+                
+                row = cursor.fetchone()
+                return dict(row) if row else None
+                
+        except Exception as e:
+            logger.error(f"Failed to get active LLM configuration: {e}")
+            return None
+
+    def get_default_llm_configuration(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get the default LLM configuration for a user."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM llm_configurations 
+                    WHERE user_id = ? AND is_default = TRUE
+                    LIMIT 1
+                ''', (user_id,))
+                
+                row = cursor.fetchone()
+                return dict(row) if row else None
+                
+        except Exception as e:
+            logger.error(f"Failed to get default LLM configuration: {e}")
+            return None
+
+    def delete_llm_configuration(self, user_id: str, name: str) -> bool:
+        """Delete an LLM configuration."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    DELETE FROM llm_configurations 
+                    WHERE user_id = ? AND name = ?
+                ''', (user_id, name))
+                
+                conn.commit()
+                logger.info(f"LLM configuration '{name}' deleted for user {user_id}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to delete LLM configuration: {e}")
+            return False
+
+    def set_active_llm_configuration(self, user_id: str, name: str) -> bool:
+        """Set an LLM configuration as active."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # First, deactivate all other configurations for this user
+                cursor.execute('''
+                    UPDATE llm_configurations 
+                    SET is_active = FALSE 
+                    WHERE user_id = ?
+                ''', (user_id,))
+                
+                # Then activate the specified configuration
+                cursor.execute('''
+                    UPDATE llm_configurations 
+                    SET is_active = TRUE, updated_at = ?
+                    WHERE user_id = ? AND name = ?
+                ''', (datetime.now(), user_id, name))
+                
+                conn.commit()
+                logger.info(f"LLM configuration '{name}' set as active for user {user_id}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to set active LLM configuration: {e}")
+            return False
+
+    def create_default_llm_configurations(self, user_id: str) -> bool:
+        """Create default LLM configurations for a new user."""
+        try:
+            # Create Ollama configuration
+            self.save_llm_configuration(
+                user_id=user_id,
+                name="Ollama Local (8B)",
+                provider="ollama",
+                model="llama3.1:8b",
+                base_url="http://localhost:11434",
+                preset="fast",
+                is_default=True,
+                is_active=True
+            )
+            
+            # Create OpenAI configuration
+            self.save_llm_configuration(
+                user_id=user_id,
+                name="OpenAI GPT-4",
+                provider="openai",
+                model="gpt-4",
+                api_key="",  # User will need to set this
+                is_default=False,
+                is_active=False
+            )
+            
+            # Create Grok configuration
+            self.save_llm_configuration(
+                user_id=user_id,
+                name="Grok (xAI)",
+                provider="grok",
+                model="grok-4-latest",
+                api_key="",  # User will need to set this
+                is_default=False,
+                is_active=False
+            )
+            
+            logger.info(f"Default LLM configurations created for user {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to create default LLM configurations: {e}")
+            return False
 
 # Global database instance
 db = Database()

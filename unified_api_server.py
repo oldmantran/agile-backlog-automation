@@ -1879,6 +1879,137 @@ async def get_current_user():
         logger.error(f"Failed to get current user: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# LLM Configuration API Endpoints
+class LLMConfigurationRequest(BaseModel):
+    name: str
+    provider: str
+    model: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    preset: Optional[str] = None
+    is_default: bool = False
+    is_active: bool = False
+
+@app.get("/api/llm/configurations")
+async def get_llm_configurations():
+    """Get all LLM configurations for the current user."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        configurations = db.get_llm_configurations(user_id)
+        return {"configurations": configurations}
+    except Exception as e:
+        logger.error(f"Failed to get LLM configurations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get LLM configurations")
+
+@app.get("/api/llm/configurations/active")
+async def get_active_llm_configuration():
+    """Get the currently active LLM configuration for the current user."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        configuration = db.get_active_llm_configuration(user_id)
+        if not configuration:
+            # Return default configuration from environment
+            env_config = load_env_config()
+            return {
+                "name": "Environment Default",
+                "provider": env_config.get("LLM_PROVIDER", "openai"),
+                "model": env_config.get("OLLAMA_MODEL", "llama3.1:8b"),
+                "base_url": env_config.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+                "preset": env_config.get("OLLAMA_PRESET", "fast"),
+                "is_default": True,
+                "is_active": True
+            }
+        
+        return configuration
+    except Exception as e:
+        logger.error(f"Failed to get active LLM configuration: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get active LLM configuration")
+
+@app.post("/api/llm/configurations")
+async def save_llm_configuration(config: LLMConfigurationRequest):
+    """Save or update an LLM configuration."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        success = db.save_llm_configuration(
+            user_id=user_id,
+            name=config.name,
+            provider=config.provider,
+            model=config.model,
+            api_key=config.api_key,
+            base_url=config.base_url,
+            preset=config.preset,
+            is_default=config.is_default,
+            is_active=config.is_active
+        )
+        
+        if success:
+            return {"message": "LLM configuration saved successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to save LLM configuration")
+    except Exception as e:
+        logger.error(f"Failed to save LLM configuration: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save LLM configuration")
+
+@app.post("/api/llm/configurations/{name}/activate")
+async def activate_llm_configuration(name: str):
+    """Set an LLM configuration as active."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        success = db.set_active_llm_configuration(user_id, name)
+        if success:
+            return {"message": f"LLM configuration '{name}' activated successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to activate LLM configuration")
+    except Exception as e:
+        logger.error(f"Failed to activate LLM configuration: {e}")
+        raise HTTPException(status_code=500, detail="Failed to activate LLM configuration")
+
+@app.delete("/api/llm/configurations/{name}")
+async def delete_llm_configuration(name: str):
+    """Delete an LLM configuration."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        success = db.delete_llm_configuration(user_id, name)
+        if success:
+            return {"message": f"LLM configuration '{name}' deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete LLM configuration")
+    except Exception as e:
+        logger.error(f"Failed to delete LLM configuration: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete LLM configuration")
+
+@app.post("/api/llm/configurations/initialize")
+async def initialize_default_llm_configurations():
+    """Initialize default LLM configurations for the current user."""
+    try:
+        user_id = user_id_resolver.get_default_user_id()
+        if not user_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        success = db.create_default_llm_configurations(user_id)
+        if success:
+            return {"message": "Default LLM configurations created successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create default LLM configurations")
+    except Exception as e:
+        logger.error(f"Failed to initialize LLM configurations: {e}")
+        raise HTTPException(status_code=500, detail="Failed to initialize LLM configurations")
+
 if __name__ == "__main__":
     uvicorn.run(
         "unified_api_server:app",
