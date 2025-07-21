@@ -384,3 +384,43 @@ To transform the home buying e...
 2025-07-19 20:05:15 - supervisor - INFO - Running pre-integration validation...
 2025-07-19 20:05:15 - supervisor - INFO - Pre-integration validation passed successfully
 2025-07-19 20:05:15 - supervisor - INFO - Starting Azure DevOps work item creation...
+2025-07-20 23:17:35 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250720_231735_proj_20250720_231735
+2025-07-20 23:17:35 - supervisor - INFO - Azure DevOps config for job_id=job_20250720_231735_proj_20250720_231735: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA, iteration_path=Sprint 2025-07
+2025-07-20 23:17:53 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-20 23:17:53 - supervisor - INFO - Starting workflow execution at 2025-07-20 23:17:53.457762
+2025-07-20 23:17:53 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-20 23:17:53 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-20 23:17:53 - supervisor - INFO - Generating epics from product vision
+2025-07-20 23:17:53 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-20 23:17:53 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-20 23:17:59 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-20 23:17:59 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-20 23:17:59 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-20 23:17:59 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-20 23:17:59 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-20 23:17:59 - supervisor - INFO - Decomposing epic: Epic 1: Vision Refinement and Backlog Generation
+2025-07-20 23:17:59 - supervisor - INFO - Decomposing epic: Epic 2: Automated Testing Framework and Exportable Deliverables
+2025-07-20 23:18:06 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-20 23:18:06 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-20 23:18:06 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-20 23:18:06 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-20 23:18:06 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Vision Refinement
+2025-07-20 23:18:06 - supervisor - INFO - Decomposing feature to user stories: Comprehensive Backlog Generation
+2025-07-20 23:18:06 - supervisor - INFO - Decomposing feature to user stories: Backlog Import and Validation
+2025-07-20 23:18:06 - supervisor - INFO - Decomposing feature to user stories: Automated Testing Framework
+2025-07-20 23:18:21 - supervisor - INFO - Decomposing feature to user stories: Test Cases, Test Suites, and Test Plans Generation
+2025-07-20 23:18:25 - supervisor - INFO - Decomposing feature to user stories: Exportable Deliverables (Hierarchical Spreadsheet Document)
+2025-07-20 23:18:50 - supervisor - ERROR - user_story_decomposer_agent failed with exception: 'dict' object has no attribute 'lower'
+2025-07-20 23:18:52 - supervisor - INFO - Error notifications sent
+2025-07-20 23:18:52 - supervisor - INFO - Executing stage: developer_agent
+2025-07-20 23:18:52 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-20 23:18:52 - supervisor - INFO - Generating tasks for user story: As a user, I want to input my initial vision statement for refinement so that I can receive AI-driven feedback
+2025-07-20 23:18:52 - supervisor - INFO - Generating tasks for user story: As a user, I want to receive real-time feedback on my vision refinement progress so that I can track the improvement of my plan
+2025-07-20 23:18:52 - supervisor - INFO - Generating tasks for user story: As a user, I want to interact with the AI-driven coach through multiple agents so that I can get diverse perspectives on my vision refinement
+2025-07-20 23:18:52 - supervisor - INFO - Generating tasks for user story: As a user, I want to review the refined plan in detail so that I can make informed decisions about my project planning
+2025-07-20 23:19:04 - supervisor - INFO - Generating tasks for user story: As a user, I want error handling and edge case scenarios implemented so that I can understand and resolve potential issues with my vision refinement

@@ -334,27 +334,37 @@ Edge Cases: {feature.get('edge_cases', [])}
             prompt = prompt_manager.get_prompt(template_to_use, context)
             print(f"📤 Sending to {self.llm_provider.capitalize()} with {template_to_use} template...")
             
-            # Direct API call since we have the processed prompt
-            url = self.api_url
-            headers = {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            payload = {
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": user_input}
-                ]
-            }
-            
-            import requests
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-            response.raise_for_status()
-            data = response.json()
-            
-            return data["choices"][0]["message"]["content"].strip()
+            # Use the proper method based on provider
+            if self.llm_provider == "ollama":
+                # Use the Ollama provider for local inference
+                return self.ollama_provider.generate_response(
+                    system_prompt=prompt,
+                    user_input=user_input,
+                    temperature=0.7,
+                    max_tokens=4000
+                )
+            else:
+                # Use direct API call for cloud providers
+                url = self.api_url
+                headers = {
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": self.model,
+                    "messages": [
+                        {"role": "system", "content": prompt},
+                        {"role": "user", "content": user_input}
+                    ]
+                }
+                
+                import requests
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                response.raise_for_status()
+                data = response.json()
+                
+                return data["choices"][0]["message"]["content"].strip()
             
         except Exception as e:
             print(f"⚠️ Template {template_to_use} failed: {e}")

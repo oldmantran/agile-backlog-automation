@@ -7,6 +7,7 @@ from datetime import datetime
 
 from config.config_loader import Config
 from utils.prompt_manager import prompt_manager
+from utils.llm_config_manager import get_llm_provider_config
 
 logger = logging.getLogger(__name__)
 
@@ -43,29 +44,64 @@ class Agent:
         logger.info(f"Initialized agent: {name} with provider: {self.llm_provider}")
     
     def _setup_llm_config(self):
-        """Setup LLM provider configuration."""
-        if self.llm_provider == "openai":
-            self.model = self.config.get_env("OPENAI_MODEL") or "gpt-4"
-            self.api_key = self.config.get_env("OPENAI_API_KEY")
-            self.api_url = "https://api.openai.com/v1/chat/completions"
-        elif self.llm_provider == "grok":
-            self.model = self.config.get_env("GROK_MODEL") or "grok-beta"
-            self.api_key = self.config.get_env("GROK_API_KEY")
-            self.api_url = "https://api.x.ai/v1/chat/completions"
-        elif self.llm_provider == "ollama":
-            self.model = self.config.get_env("OLLAMA_MODEL") or "llama3.1:8b"
-            self.api_key = None  # No API key needed for local Ollama
-            self.api_url = self.config.get_env("OLLAMA_BASE_URL") or "http://localhost:11434"
-            # Import Ollama provider
-            try:
-                from utils.ollama_client import create_ollama_provider
-                self.ollama_provider = create_ollama_provider(
-                    preset=self.config.get_env("OLLAMA_PRESET") or "balanced"
-                )
-            except ImportError:
-                raise AgentError("Ollama client not available. Install with: pip install ollama-python")
-        else:
-            raise AgentError(f"Unsupported LLM provider: {self.llm_provider}")
+        """Setup LLM provider configuration from database with environment fallback."""
+        try:
+            # Try to get configuration from database first
+            provider_config = get_llm_provider_config()
+            self.llm_provider = provider_config['provider']
+            
+            if self.llm_provider == "openai":
+                self.model = provider_config.get('model', 'gpt-4')
+                self.api_key = provider_config.get('api_key', '')
+                self.api_url = "https://api.openai.com/v1/chat/completions"
+            elif self.llm_provider == "grok":
+                self.model = provider_config.get('model', 'grok-4-latest')
+                self.api_key = provider_config.get('api_key', '')
+                self.api_url = "https://api.x.ai/v1/chat/completions"
+            elif self.llm_provider == "ollama":
+                self.model = provider_config.get('model', 'llama3.1:8b')
+                self.api_key = None  # No API key needed for local Ollama
+                self.api_url = provider_config.get('base_url', 'http://localhost:11434')
+                # Import Ollama provider
+                try:
+                    from utils.ollama_client import create_ollama_provider
+                    preset = provider_config.get('preset', 'balanced')
+                    self.ollama_provider = create_ollama_provider(preset=preset)
+                except ImportError:
+                    raise AgentError("Ollama client not available. Install with: pip install ollama-python")
+            else:
+                raise AgentError(f"Unsupported LLM provider: {self.llm_provider}")
+            
+            logger.info(f"📋 Loaded LLM config from database: {self.llm_provider} ({self.model})")
+            
+        except Exception as e:
+            logger.warning(f"Failed to load LLM config from database: {e}. Falling back to environment variables.")
+            
+            # Fallback to environment variables
+            if self.llm_provider == "openai":
+                self.model = self.config.get_env("OPENAI_MODEL") or "gpt-4"
+                self.api_key = self.config.get_env("OPENAI_API_KEY")
+                self.api_url = "https://api.openai.com/v1/chat/completions"
+            elif self.llm_provider == "grok":
+                self.model = self.config.get_env("GROK_MODEL") or "grok-beta"
+                self.api_key = self.config.get_env("GROK_API_KEY")
+                self.api_url = "https://api.x.ai/v1/chat/completions"
+            elif self.llm_provider == "ollama":
+                self.model = self.config.get_env("OLLAMA_MODEL") or "llama3.1:8b"
+                self.api_key = None  # No API key needed for local Ollama
+                self.api_url = self.config.get_env("OLLAMA_BASE_URL") or "http://localhost:11434"
+                # Import Ollama provider
+                try:
+                    from utils.ollama_client import create_ollama_provider
+                    self.ollama_provider = create_ollama_provider(
+                        preset=self.config.get_env("OLLAMA_PRESET") or "balanced"
+                    )
+                except ImportError:
+                    raise AgentError("Ollama client not available. Install with: pip install ollama-python")
+            else:
+                raise AgentError(f"Unsupported LLM provider: {self.llm_provider}")
+            
+            logger.info(f"📋 Loaded LLM config from environment: {self.llm_provider} ({self.model})")
         
         # Validate API key (except for Ollama)
         if self.llm_provider != "ollama" and not self.api_key:

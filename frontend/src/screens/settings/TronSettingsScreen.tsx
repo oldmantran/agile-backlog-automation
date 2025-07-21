@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
@@ -71,6 +71,7 @@ const TronSettingsScreen: React.FC = () => {
   });
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [llmSaveStatus, setLlmSaveStatus] = useState<{success?: boolean, message?: string} | null>(null);
 
   // Initialize component
   useEffect(() => {
@@ -137,6 +138,42 @@ const TronSettingsScreen: React.FC = () => {
     loadSettings();
     loadLlmConfig();
   }, [sessionId]);
+
+  // Load available Ollama models
+  const loadAvailableModels = useCallback(async (provider?: string) => {
+    const currentProvider = provider || llmConfig.provider;
+    if (currentProvider !== 'ollama') {
+      console.log('loadAvailableModels: Provider is not ollama, skipping. Current provider:', currentProvider);
+      return;
+    }
+    
+    console.log('loadAvailableModels: Loading models for ollama provider...');
+    setIsLoadingModels(true);
+    try {
+      const response = await fetch('/api/ollama/models');
+      console.log('loadAvailableModels: Response status:', response.status);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('loadAvailableModels: Received data:', data);
+        setAvailableModels(data.models || []);
+      } else {
+        console.error('loadAvailableModels: Response not ok:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Failed to load available models:', error);
+    } finally {
+      setIsLoadingModels(false);
+    }
+  }, []);
+
+  // Check if models need to be loaded on mount
+  useEffect(() => {
+    console.log('Component mount check: llmConfig.provider =', llmConfig.provider);
+    if (llmConfig.provider === 'ollama' && availableModels.length === 0) {
+      console.log('Component mount: Provider is ollama but no models loaded, loading models...');
+      loadAvailableModels('ollama');
+    }
+  }, [llmConfig.provider, availableModels.length, loadAvailableModels]);
 
   // Apply glow intensity to CSS custom properties
   useEffect(() => {
@@ -259,71 +296,95 @@ const TronSettingsScreen: React.FC = () => {
   // Load LLM configuration from environment
   const loadLlmConfig = async () => {
     try {
-      const response = await fetch('/api/config');
-      if (response.ok) {
-        const data = await response.json();
+      // First try to get active configuration from database
+      const activeResponse = await fetch('/api/llm/configurations/active');
+      if (activeResponse.ok) {
+        const activeData = await activeResponse.json();
+        console.log('Active LLM config from database:', activeData);
         setLlmConfig({
-          provider: data.llmProvider || 'openai',
-          model: data.ollamaModel || 'llama3.1:8b',
-          serverUrl: data.ollamaUrl || 'http://localhost:11434',
-          preset: data.ollamaPreset || 'fast'
+          provider: activeData.provider || 'openai',
+          model: activeData.model || 'llama3.1:8b',
+          serverUrl: activeData.base_url || 'http://localhost:11434',
+          preset: activeData.preset || 'fast'
         });
+        
+        // If provider is ollama, load available models immediately
+        if (activeData.provider === 'ollama') {
+          console.log('Provider is ollama, loading available models...');
+          loadAvailableModels(activeData.provider);
+        }
+      } else {
+        // Fallback to environment config
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('LLM config from environment:', data);
+          setLlmConfig({
+            provider: data.llmProvider || 'openai',
+            model: data.ollamaModel || 'llama3.1:8b',
+            serverUrl: data.ollamaUrl || 'http://localhost:11434',
+            preset: data.ollamaPreset || 'fast'
+          });
+          
+          // If provider is ollama, load available models immediately
+          if (data.llmProvider === 'ollama') {
+            console.log('Provider is ollama, loading available models...');
+            loadAvailableModels(data.llmProvider);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load LLM configuration:', error);
     }
   };
 
-  // Save LLM configuration to environment
+  // Save LLM configuration to database
   const saveLlmConfig = async () => {
     try {
+      setLlmSaveStatus(null); // Clear previous status
+      
       const configData = {
-        llmProvider: llmConfig.provider,
-        ...(llmConfig.provider === 'ollama' && {
-          ollamaModel: llmConfig.model,
-          ollamaUrl: llmConfig.serverUrl,
-          ollamaPreset: llmConfig.preset
-        })
+        name: `${llmConfig.provider.charAt(0).toUpperCase() + llmConfig.provider.slice(1)} ${llmConfig.model || 'Configuration'}`,
+        provider: llmConfig.provider,
+        model: llmConfig.model,
+        api_key: llmConfig.provider === 'openai' || llmConfig.provider === 'grok' ? '' : undefined,
+        base_url: llmConfig.provider === 'ollama' ? llmConfig.serverUrl : undefined,
+        preset: llmConfig.provider === 'ollama' ? llmConfig.preset : undefined,
+        is_default: true,
+        is_active: true
       };
 
-      const response = await fetch('/api/config', {
+      const response = await fetch('/api/llm/configurations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(configData)
       });
 
       if (response.ok) {
+        const result = await response.json();
+        setLlmSaveStatus({ success: true, message: result.message || 'LLM configuration saved successfully' });
         console.log('LLM configuration saved successfully');
+        // Reload the configuration to show updated state
+        await loadLlmConfig();
+        // Clear success message after 3 seconds
+        setTimeout(() => setLlmSaveStatus(null), 3000);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        setLlmSaveStatus({ success: false, message: errorData.detail || 'Failed to save LLM configuration' });
         console.error('Failed to save LLM configuration');
       }
     } catch (error) {
+      setLlmSaveStatus({ success: false, message: 'Network error while saving configuration' });
       console.error('Failed to save LLM configuration:', error);
-    }
-  };
-
-  // Load available Ollama models
-  const loadAvailableModels = async () => {
-    if (llmConfig.provider !== 'ollama') return;
-    
-    setIsLoadingModels(true);
-    try {
-      const response = await fetch('/api/ollama/models');
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableModels(data.models || []);
-      }
-    } catch (error) {
-      console.error('Failed to load available models:', error);
-    } finally {
-      setIsLoadingModels(false);
     }
   };
 
   // Load models when provider changes to Ollama
   useEffect(() => {
+    console.log('useEffect: Provider changed to:', llmConfig.provider);
     if (llmConfig.provider === 'ollama') {
-      loadAvailableModels();
+      console.log('useEffect: Provider is ollama, calling loadAvailableModels...');
+      loadAvailableModels(llmConfig.provider);
     }
   }, [llmConfig.provider]);
   
@@ -779,14 +840,27 @@ const TronSettingsScreen: React.FC = () => {
                           <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="llama3.1:8b">Llama 3.1 8B (Fast Development)</SelectItem>
-                          <SelectItem value="llama3.1:70b">Llama 3.1 70B (High Quality)</SelectItem>
-                          <SelectItem value="codellama:34b">CodeLlama 34B (Code Focused)</SelectItem>
-                          <SelectItem value="mistral:7b">Mistral 7B (Balanced)</SelectItem>
+                          {availableModels.length > 0 ? (
+                            availableModels.map((model) => (
+                              <SelectItem key={model} value={model}>
+                                {model}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <>
+                              <SelectItem value="llama3.1:8b">Llama 3.1 8B (Fast Development)</SelectItem>
+                              <SelectItem value="llama3.1:70b">Llama 3.1 70B (High Quality)</SelectItem>
+                              <SelectItem value="codellama:34b">CodeLlama 34B (Code Focused)</SelectItem>
+                              <SelectItem value="mistral:7b">Mistral 7B (Balanced)</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                       <p className="text-sm text-muted-foreground mt-2">
-                        Recommended: Start with 8B for development, switch to 70B for production
+                        {availableModels.length > 0 
+                          ? `Available models: ${availableModels.join(', ')}`
+                          : 'Recommended: Start with 8B for development, switch to 70B for production'
+                        }
                       </p>
                     </div>
 
@@ -837,19 +911,35 @@ const TronSettingsScreen: React.FC = () => {
                         <span>
                           {isLoadingModels ? 'Loading models...' : 
                            availableModels.length > 0 ? 
-                           `Available models: ${availableModels.join(', ')}` :
-                           'No models found. Please install models using: ollama pull llama3.1:8b'}
+                           `✅ ${availableModels.length} models available: ${availableModels.join(', ')}` :
+                           '⚠️ No models found. Please install models using: ollama pull llama3.1:8b'}
                         </span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Environment Variable Info */}
-                <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10">
-                  <div className="flex items-center space-x-2 text-yellow-300 text-sm">
+                {/* Save Status */}
+                {llmSaveStatus && (
+                  <div className={`p-3 rounded-lg border ${
+                    llmSaveStatus.success 
+                      ? 'border-green-500/30 bg-green-500/10' 
+                      : 'border-red-500/30 bg-red-500/10'
+                  }`}>
+                    <div className={`flex items-center space-x-2 text-sm ${
+                      llmSaveStatus.success ? 'text-green-300' : 'text-red-300'
+                    }`}>
+                      <FiInfo className="w-4 h-4" />
+                      <span>{llmSaveStatus.message}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Configuration Info */}
+                <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
+                  <div className="flex items-center space-x-2 text-blue-300 text-sm">
                     <FiInfo className="w-4 h-4" />
-                    <span>These settings will update your .env file with LLM_PROVIDER and related variables</span>
+                    <span>These settings will be saved to your user profile and used for all future sessions</span>
                   </div>
                 </div>
 

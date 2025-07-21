@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Configuration API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 LLM Configuration API Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Active LLM Configuration</h3>
+        <button onclick="testActiveConfig()">Get Active Configuration</button>
+        <div id="activeConfigResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Available Ollama Models</h3>
+        <button onclick="testOllamaModels()">Get Available Models</button>
+        <div id="ollamaModelsResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Save LLM Configuration</h3>
+        <button onclick="testSaveConfig()">Save Test Configuration</button>
+        <div id="saveConfigResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test All Configurations</h3>
+        <button onclick="testAllConfigs()">Get All Configurations</button>
+        <div id="allConfigsResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = isError ? 'error' : 'success';
+            element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.className = 'loading';
+            element.innerHTML = '<p>Loading...</p>';
+        }
+
+        async function testActiveConfig() {
+            showLoading('activeConfigResult');
+            try {
+                const response = await fetch(`${API_BASE}/api/llm/configurations/active`);
+                const data = await response.json();
+                showResult('activeConfigResult', data, !response.ok);
+            } catch (error) {
+                showResult('activeConfigResult', { error: error.message }, true);
+            }
+        }
+
+        async function testOllamaModels() {
+            showLoading('ollamaModelsResult');
+            try {
+                const response = await fetch(`${API_BASE}/api/ollama/models`);
+                const data = await response.json();
+                showResult('ollamaModelsResult', data, !response.ok);
+            } catch (error) {
+                showResult('ollamaModelsResult', { error: error.message }, true);
+            }
+        }
+
+        async function testSaveConfig() {
+            showLoading('saveConfigResult');
+            try {
+                const configData = {
+                    name: "Test Configuration",
+                    provider: "ollama",
+                    model: "llama3.1:8b",
+                    base_url: "http://localhost:11434",
+                    preset: "fast",
+                    is_default: false,
+                    is_active: false
+                };
+
+                const response = await fetch(`${API_BASE}/api/llm/configurations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(configData)
+                });
+                const data = await response.json();
+                showResult('saveConfigResult', data, !response.ok);
+            } catch (error) {
+                showResult('saveConfigResult', { error: error.message }, true);
+            }
+        }
+
+        async function testAllConfigs() {
+            showLoading('allConfigsResult');
+            try {
+                const response = await fetch(`${API_BASE}/api/llm/configurations`);
+                const data = await response.json();
+                showResult('allConfigsResult', data, !response.ok);
+            } catch (error) {
+                showResult('allConfigsResult', { error: error.message }, true);
+            }
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            console.log('🧪 Running LLM Configuration API tests...');
+            setTimeout(testActiveConfig, 500);
+            setTimeout(testOllamaModels, 1000);
+            setTimeout(testAllConfigs, 1500);
+        };
+    </script>
+</body>
+</html> 
