@@ -126,6 +126,18 @@ Edge Cases: {feature.get('edge_cases', [])}
             feature_title = feature.get('title', 'Feature') if feature else 'Feature'
             feature_description = feature.get('description', '') if feature else ''
             
+            # Ensure feature_title is a string
+            if isinstance(feature_title, dict):
+                feature_title = str(feature_title)
+            elif not isinstance(feature_title, str):
+                feature_title = str(feature_title)
+            
+            # Ensure feature_description is a string
+            if isinstance(feature_description, dict):
+                feature_description = str(feature_description)
+            elif not isinstance(feature_description, str):
+                feature_description = str(feature_description)
+            
             extracted_stories.append({
                 'title': f"Implement {feature_title}",
                 'user_story': f"As a user, I want to access {feature_title.lower()} so that I can {feature_description[:50] if feature_description else 'accomplish my objectives'}",

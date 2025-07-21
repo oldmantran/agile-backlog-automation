@@ -155,6 +155,13 @@ Dependencies: {epic.get('dependencies', [])}
         
         # Validate and fix title
         title = feature.get('title', '')
+        
+        # Ensure title is a string
+        if isinstance(title, dict):
+            title = str(title)
+        elif not isinstance(title, str):
+            title = str(title)
+            
         title_valid, title_issues = self.quality_validator.validate_work_item_title(title, "Feature")
         if not title_valid:
             print(f"⚠️ Feature title issues: {', '.join(title_issues)}")
