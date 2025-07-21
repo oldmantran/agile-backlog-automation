@@ -128,11 +128,16 @@ Edge Cases: {feature.get('edge_cases', [])}
                 print("⚠️ Empty or None user_stories after JSON parsing")
                 return self._extract_user_stories_from_text(response, feature, max_user_stories)
             
+            # Additional safety check - ensure user_stories is not None
+            if user_stories is None:
+                print("⚠️ user_stories is None after JSON parsing")
+                return self._extract_user_stories_from_text(response, feature, max_user_stories)
+            
             # Handle different response formats
             if isinstance(user_stories, list) and len(user_stories) > 0:
                 # Check if these look like user stories or features
                 first_item = user_stories[0]
-                if first_item and isinstance(first_item, dict) and 'user_stories' in first_item:
+                if first_item is not None and isinstance(first_item, dict) and 'user_stories' in first_item:
                     # This is actually a list of features, extract the user stories
                     print("🔄 Response contains features, extracting user stories...")
                     extracted_stories = []
@@ -453,7 +458,19 @@ Edge Cases: {feature.get('edge_cases', [])}
         json_match = re.search(json_pattern, response, re.IGNORECASE)
         
         if json_match:
-            return json_match.group(1).strip()
+            content = json_match.group(1).strip()
+            # Try to clean and validate the JSON
+            try:
+                json.loads(content)
+                return content
+            except json.JSONDecodeError:
+                # Try to fix common JSON issues
+                cleaned = self._fix_json_syntax(content)
+                try:
+                    json.loads(cleaned)
+                    return cleaned
+                except json.JSONDecodeError:
+                    pass
         
         # Look for JSON inside ``` blocks (without language specifier)
         code_pattern = r'```\s*([\s\S]*?)\s*```'
@@ -548,6 +565,45 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # Fallback: return everything from start to end of response
         return response[start_idx:].strip()
+    
+    def _fix_json_syntax(self, json_str: str) -> str:
+        """
+        Fix common JSON syntax issues that LLMs often produce.
+        """
+        if not json_str:
+            return "[]"
+        
+        import re
+        
+        # Remove comments and extra text
+        lines = json_str.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            line = line.strip()
+            # Skip comment lines and empty lines
+            if line.startswith('#') or line.startswith('//') or not line:
+                continue
+            # Remove inline comments
+            if '#' in line:
+                line = line.split('#')[0].strip()
+            if '//' in line:
+                line = line.split('//')[0].strip()
+            if line:
+                cleaned_lines.append(line)
+        
+        cleaned_json = '\n'.join(cleaned_lines)
+        
+        # Fix common issues
+        cleaned_json = re.sub(r',\s*}', '}', cleaned_json)  # Remove trailing commas
+        cleaned_json = re.sub(r',\s*]', ']', cleaned_json)  # Remove trailing commas in arrays
+        
+        # Fix unquoted property names
+        cleaned_json = re.sub(r'(\w+):', r'"\1":', cleaned_json)
+        
+        # Fix single quotes to double quotes
+        cleaned_json = cleaned_json.replace("'", '"')
+        
+        return cleaned_json
 
     def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60, template_name: str = None):
         """Run the agent with a timeout to prevent hanging."""

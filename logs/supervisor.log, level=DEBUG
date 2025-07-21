@@ -1553,3 +1553,191 @@ Prod...
 2025-07-21 13:18:35 - supervisor - INFO - Decomposing feature to user stories: Multi-AI Agent Backlog Generator
 2025-07-21 13:18:49 - supervisor - INFO - Decomposing feature to user stories: Epic Decomposition
 2025-07-21 13:19:18 - supervisor - INFO - Decomposing feature to user stories: Feature Decomposition
+2025-07-21 13:19:37 - supervisor - ERROR - user_story_decomposer_agent failed with exception: 'NoneType' object is not subscriptable
+2025-07-21 13:19:38 - supervisor - INFO - Error notifications sent
+2025-07-21 13:19:38 - supervisor - INFO - Executing stage: developer_agent
+2025-07-21 13:19:38 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-21 13:19:38 - supervisor - INFO - Generating tasks for user story: User can access vision refinement coach
+2025-07-21 13:19:38 - supervisor - INFO - Generating tasks for user story: User can answer probing questions in the vision refinement coach
+2025-07-21 13:19:38 - supervisor - INFO - Generating tasks for user story: User can submit their refined vision statement in the vision refinement coach
+2025-07-21 13:19:38 - supervisor - INFO - Generating tasks for user story: User Story 1: to [action]
+2025-07-21 13:20:14 - supervisor - INFO - Generating tasks for user story: User Story 2: to be able to add items to my cart and check out with ease
+2025-07-21 13:20:15 - supervisor - INFO - Generating tasks for user story: Epic: Multi-AI Agent Backlog Generator
+2025-07-21 13:20:34 - supervisor - INFO - Generating tasks for user story: Feature: Hierarchical Structure
+2025-07-21 13:20:40 - supervisor - INFO - Generating tasks for user story: User Story: Decompose Refined Vision Statement
+2025-07-21 13:21:00 - supervisor - INFO - Generating tasks for user story: Task: Create User Stories
+2025-07-21 13:21:14 - supervisor - INFO - Generating tasks for user story: User Story 1: to be able to decompose an epic into smaller features
+2025-07-21 13:22:04 - supervisor - ERROR - developer_agent failed with exception: expected string or bytes-like object, got 'NoneType'
+2025-07-21 13:22:06 - supervisor - INFO - Error notifications sent
+2025-07-21 13:22:06 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-21 13:22:06 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-21 13:22:06 - supervisor - INFO - Processing QA for feature: Vision Refinement Coach
+2025-07-21 13:22:06 - supervisor - INFO - Processing QA for feature: Vision Statement Management
+2025-07-21 13:22:06 - supervisor - INFO - Processing QA for feature: AI-Driven Questionnaire
+2025-07-21 13:22:06 - supervisor - INFO - Processing QA for feature: Multi-AI Agent Backlog Generator
+2025-07-21 13:22:26 - supervisor - INFO - Processing QA for feature: Epic Decomposition
+2025-07-21 13:22:51 - supervisor - INFO - Processing QA for feature: Feature Decomposition
+2025-07-21 13:26:38 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_132638_proj_20250721_132638
+2025-07-21 13:26:38 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_132638_proj_20250721_132638: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-34B, iteration_path=Sprint 2025-07
+2025-07-21 13:26:55 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 13:26:55 - supervisor - INFO - Starting workflow execution at 2025-07-21 13:26:55.498097
+2025-07-21 13:26:55 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 13:26:57 - supervisor - INFO - Refreshed config for epic_strategist: ollama (codellama:34b)
+2025-07-21 13:26:59 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (codellama:34b)
+2025-07-21 13:27:01 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (codellama:34b)
+2025-07-21 13:27:03 - supervisor - INFO - Refreshed config for developer_agent: ollama (codellama:34b)
+2025-07-21 13:27:05 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (codellama:34b)
+2025-07-21 13:27:05 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 13:27:05 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 13:27:05 - supervisor - INFO - Generating epics from product vision
+2025-07-21 13:27:05 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 13:27:05 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 13:27:05 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-07-21 13:27:05 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-07-21 13:27:05 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-07-21 13:27:05 - supervisor - INFO - DEBUG: Agent model: codellama:34b
+2025-07-21 13:27:05 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-07-21 13:27:05 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-07-21 13:27:13 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-07-21 13:27:13 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-21 13:27:13 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-21 13:27:13 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 13:27:13 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 13:27:13 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 13:27:13 - supervisor - INFO - Decomposing epic: Vision Refinement Coach
+2025-07-21 13:27:13 - supervisor - INFO - Decomposing epic: Multi-AI Agent Backlog Generator
+2025-07-21 13:27:26 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-21 13:27:26 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-21 13:27:26 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 13:27:26 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 13:27:26 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 13:27:26 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Editor
+2025-07-21 13:27:26 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Analytics
+2025-07-21 13:27:26 - supervisor - INFO - Decomposing feature to user stories: AI-Generated Backlog
+2025-07-21 13:27:57 - supervisor - INFO - Decomposing feature to user stories: Backlog Hierarchy Management
+2025-07-21 13:28:01 - supervisor - INFO - Decomposing feature to user stories: Backlog Item Dependencies and Relationships
+2025-07-21 13:28:52 - supervisor - ERROR - user_story_decomposer_agent failed with exception: 'NoneType' object is not subscriptable
+2025-07-21 13:28:53 - supervisor - INFO - Error notifications sent
+2025-07-21 13:28:53 - supervisor - INFO - Executing stage: developer_agent
+2025-07-21 13:28:53 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-21 13:28:53 - supervisor - INFO - Generating tasks for user story: User Story 1: to be able to access the vision refinement coach
+2025-07-21 13:28:53 - supervisor - INFO - Generating tasks for user story: User Story 2: to be able to complete the vision refinement questionnaire
+2025-07-21 13:28:53 - supervisor - INFO - Generating tasks for user story: User can edit their vision statement
+2025-07-21 13:28:53 - supervisor - INFO - Generating tasks for user story: User can receive AI-powered suggestions for their vision statement
+2025-07-21 13:29:24 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_132924_proj_20250721_132924
+2025-07-21 13:29:24 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_132924_proj_20250721_132924: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-34B, iteration_path=Sprint 2025-07
+2025-07-21 13:29:42 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 13:29:42 - supervisor - INFO - Starting workflow execution at 2025-07-21 13:29:42.469711
+2025-07-21 13:29:42 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 13:29:44 - supervisor - INFO - Refreshed config for epic_strategist: ollama (codellama:34b)
+2025-07-21 13:29:46 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (codellama:34b)
+2025-07-21 13:29:48 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (codellama:34b)
+2025-07-21 13:29:50 - supervisor - INFO - Refreshed config for developer_agent: ollama (codellama:34b)
+2025-07-21 13:29:52 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (codellama:34b)
+2025-07-21 13:29:52 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 13:29:52 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 13:29:52 - supervisor - INFO - Generating epics from product vision
+2025-07-21 13:29:52 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 13:29:52 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 13:29:52 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-07-21 13:29:52 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-07-21 13:29:52 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-07-21 13:29:52 - supervisor - INFO - DEBUG: Agent model: codellama:34b
+2025-07-21 13:29:52 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-07-21 13:29:52 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-07-21 13:29:58 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-07-21 13:29:58 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-21 13:29:58 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-21 13:29:58 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 13:29:58 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 13:29:58 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 13:29:58 - supervisor - INFO - Decomposing epic: Vision Refinement Coach
+2025-07-21 13:29:58 - supervisor - INFO - Decomposing epic: Multi-AI Agent Backlog Generator
+2025-07-21 13:30:10 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-21 13:30:10 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-21 13:30:10 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 13:30:10 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 13:30:10 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 13:30:10 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Editor
+2025-07-21 13:30:10 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Analytics
+2025-07-21 13:30:10 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Backlog Generation
+2025-07-21 13:30:39 - supervisor - INFO - Decomposing feature to user stories: Collaborative AI System
+2025-07-21 13:30:47 - supervisor - INFO - Decomposing feature to user stories: Natural Language Processing
+2025-07-21 13:31:16 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'AI-Driven Backlog Generation'. Skipping invalid user stories.
+2025-07-21 13:31:16 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Collaborative AI System'. Skipping invalid user stories.
+2025-07-21 13:31:16 - supervisor - INFO - Validation completed: All features checked for user stories, 2 errors.
+2025-07-21 13:31:16 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Backlog Generation for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 13:31:16 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative AI System for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 13:31:16 - supervisor - INFO - [DEBUG] Retrying incomplete item Natural Language Processing for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 13:31:16 - supervisor - INFO - [DEBUG] 3 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-07-21 13:31:16 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 13:31:16 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 13:31:16 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 13:31:16 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Editor
+2025-07-21 13:31:16 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Analytics
+2025-07-21 13:31:16 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Backlog Generation
+2025-07-21 13:31:25 - supervisor - INFO - Decomposing feature to user stories: Collaborative AI System
+2025-07-21 13:31:35 - supervisor - INFO - Decomposing feature to user stories: Natural Language Processing
+2025-07-21 13:32:24 - supervisor - ERROR - user_story_decomposer_agent failed with exception: 'NoneType' object is not subscriptable
+2025-07-21 13:32:26 - supervisor - INFO - Error notifications sent
+2025-07-21 13:32:26 - supervisor - INFO - Executing stage: developer_agent
+2025-07-21 13:32:26 - supervisor - INFO - Generating developer tasks (parallel mode: True)
+2025-07-21 13:32:26 - supervisor - INFO - Generating tasks for user story: User Story 1: to access the Vision Refinement Coach
+2025-07-21 13:32:26 - supervisor - INFO - Generating tasks for user story: User Story 2: to have access to a responsive design
+2025-07-21 13:32:26 - supervisor - INFO - Generating tasks for user story: User Story 3: to receive error handling scenarios and edge case validation
+2025-07-21 13:32:26 - supervisor - INFO - Generating tasks for user story: User Story 1: to be able to edit my vision statement with the help of AI-powered suggestions
+2025-07-21 13:32:46 - supervisor - INFO - Generating tasks for user story: User Story 2: to be able to see AI-powered suggestions for my vision statement
+2025-07-21 13:33:11 - supervisor - INFO - Generating tasks for user story: User Story 1: to access the Vision Refinement Analytics dashboard
+2025-07-21 13:33:20 - supervisor - INFO - Generating tasks for user story: User Story 2: to see a visual representation of how my vision statement has evolved over time
+2025-07-21 13:33:25 - supervisor - INFO - Generating tasks for user story: User Story 3: to be able to filter the visual representation by date range
+2025-07-21 13:33:48 - supervisor - INFO - Generating tasks for user story: User Story 4: to receive notifications when my vision statement has changed
+2025-07-21 13:33:49 - supervisor - INFO - Generating tasks for user story: User Story 5: to be able to view the analytics in different languages
+2025-07-21 13:34:06 - supervisor - INFO - Generating tasks for user story: Collaborative AI System
+2025-07-21 13:34:08 - supervisor - INFO - Generating tasks for user story: User can extract relevant information from refined vision statement
+2025-07-21 13:34:23 - supervisor - INFO - Generating tasks for user story: User can extract relevant information from other project artifacts
+2025-07-21 13:35:02 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-07-21 13:35:02 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-07-21 13:35:02 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: True)
+2025-07-21 13:35:02 - supervisor - INFO - Processing QA for feature: Vision Refinement Coach
+2025-07-21 13:35:02 - supervisor - INFO - Processing QA for feature: Vision Statement Editor
+2025-07-21 13:35:02 - supervisor - INFO - Processing QA for feature: Vision Refinement Analytics
+2025-07-21 13:35:02 - supervisor - INFO - Processing QA for feature: AI-Driven Backlog Generation
+2025-07-21 13:35:22 - supervisor - INFO - Processing QA for feature: Collaborative AI System
+2025-07-21 13:38:23 - supervisor - INFO - Processing QA for feature: Natural Language Processing
+2025-07-21 13:40:14 - supervisor - INFO - Validation passed: All user stories have test cases and all features have test plans.
+2025-07-21 13:40:14 - supervisor - INFO - Executing stage: azure_integration
+2025-07-21 13:40:14 - supervisor - INFO - Executing Azure integration stage (integrate_azure flag: True)
+2025-07-21 13:40:14 - supervisor - INFO - [LINK] Preparing for Azure DevOps integration
+2025-07-21 13:40:14 - supervisor - INFO - [SUCCESS] Azure DevOps integrator is available
+2025-07-21 13:40:14 - supervisor - INFO -    Organization: https://dev.azure.com/c4workx
+2025-07-21 13:40:14 - supervisor - INFO -    Project: Backlog Automation
+2025-07-21 13:40:14 - supervisor - INFO -    Area Path: IDEA-34B
+2025-07-21 13:40:14 - supervisor - INFO -    Iteration Path: Sprint 2025-07
+2025-07-21 13:40:14 - supervisor - INFO - Running pre-integration validation...
+2025-07-21 13:40:14 - supervisor - INFO - Pre-integration validation passed successfully
+2025-07-21 13:40:14 - supervisor - INFO - Starting Azure DevOps work item creation...
+2025-07-21 13:45:39 - supervisor - ERROR - Azure DevOps integration failed: HTTPSConnectionPool(host='dev.azure.com', port=443): Read timed out. (read timeout=None)
+2025-07-21 13:45:39 - supervisor - ERROR - azure_integration failed with exception: HTTPSConnectionPool(host='dev.azure.com', port=443): Read timed out. (read timeout=None)
+2025-07-21 13:45:41 - supervisor - INFO - Error notifications sent
+2025-07-21 13:45:41 - supervisor - INFO - Executing stage: final_validation
+2025-07-21 13:45:41 - supervisor - INFO - Starting final validation and cleanup
+2025-07-21 13:45:41 - supervisor - INFO - Cleaning up temporary data
+2025-07-21 13:45:41 - supervisor - INFO - Generated final report: {'workflow_id': 'workflow_20250721_132942', 'completion_time': '2025-07-21T13:45:41.070567', 'total_epics': 2, 'total_features': 6, 'total_user_stories': 13, 'total_tasks': 70, 'total_test_cases': 184, 'azure_integration_enabled': True}
+2025-07-21 13:45:41 - supervisor - INFO - Adding Azure DevOps integration info to notifications: {'status': 'failed', 'error': "HTTPSConnectionPool(host='dev.azure.com', port=443): Read timed out. (read timeout=None)", 'timestamp': '2025-07-21T13:45:39.413380'}
+2025-07-21 13:45:41 - supervisor - INFO - Sending notifications with stats: {'epics_generated': 2, 'features_generated': 6, 'user_stories_generated': 13, 'tasks_generated': 70, 'test_cases_generated': 184, 'execution_time_seconds': None, 'stages_completed': 0, 'errors_encountered': 2}
+2025-07-21 13:45:42 - supervisor - INFO - Completion notifications sent
+2025-07-21 13:45:42 - supervisor - INFO - Workflow execution completed successfully at 2025-07-21 13:45:42.443685
+2025-07-21 13:45:42 - supervisor - ERROR - Error in final processing: Circular reference detected
+2025-07-21 13:45:42 - supervisor - INFO - Final workflow execution time: 959.97 seconds
+2025-07-21 13:45:42 - supervisor - INFO - Parallel processing was enabled with 4 workers
+2025-07-21 13:45:42 - supervisor - INFO - Parallel stages: ['feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_lead_agent']

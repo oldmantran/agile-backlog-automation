@@ -169,7 +169,23 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
         try:
             # Extract JSON from response if it's wrapped in text/code blocks
             json_content = self._extract_json_from_response(response)
-            tasks = json.loads(json_content)
+            
+            # Safety check for None or empty JSON content
+            if not json_content:
+                print("⚠️ Empty or None JSON content extracted")
+                return self._create_fallback_tasks(user_story)
+            
+            try:
+                tasks = json.loads(json_content)
+            except (json.JSONDecodeError, TypeError):
+                print("⚠️ Failed to parse JSON response")
+                return self._create_fallback_tasks(user_story)
+            
+            # Safety check for None or empty tasks
+            if not tasks:
+                print("⚠️ Empty or None tasks after JSON parsing")
+                return self._create_fallback_tasks(user_story)
+            
             if isinstance(tasks, list):
                 # Validate and enhance tasks for quality compliance
                 enhanced_tasks = self._validate_and_enhance_tasks(tasks)
@@ -178,9 +194,10 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
                 print("⚠️ Response was not a list.")
                 print("🔎 Raw response:")
                 print(response)
-                raise ValueError("LLM response was not a valid JSON array")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"LLM returned invalid JSON: {e}")
+                return self._create_fallback_tasks(user_story)
+        except Exception as e:
+            print(f"⚠️ Error processing response: {e}")
+            return self._create_fallback_tasks(user_story)
 
 
 

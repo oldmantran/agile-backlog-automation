@@ -115,7 +115,17 @@ Dependencies: {epic.get('dependencies', [])}
             # Check for markdown code blocks
             # Extract JSON with improved parsing
             cleaned_response = self._extract_json_from_response(response)
-            features = json.loads(cleaned_response)
+            
+            # Safety check for empty or invalid JSON
+            if not cleaned_response or cleaned_response.strip() == "[]":
+                print("⚠️ Empty or invalid JSON response")
+                return self._extract_features_from_any_format(response, epic, feature_limit)
+            
+            try:
+                features = json.loads(cleaned_response)
+            except (json.JSONDecodeError, TypeError):
+                print("⚠️ Failed to parse JSON response")
+                return self._extract_features_from_any_format(response, epic, feature_limit)
             if isinstance(features, list) and len(features) > 0:
                 # Apply the feature limit constraint if specified
                 if feature_limit:

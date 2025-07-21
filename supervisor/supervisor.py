@@ -758,12 +758,8 @@ class WorkflowSupervisor:
                                     print(traceback.format_exc())
                                     continue
                             else:
-                                self.logger.error(f"[DEBUG] Item {item_id} in stage {stage} failed after {max_retries} attempts. Logging and notifying.")
-                                self.notifier.send_error_notification(
-                                    Exception(f"Item {item_id} in stage {stage} incomplete after {max_retries} retries: {item.get('description','')}") ,
-                                    self.execution_metadata
-                                )
-                                # Log persistent failure
+                                self.logger.error(f"[DEBUG] Item {item_id} in stage {stage} failed after {max_retries} attempts. Logging warning.")
+                                # Log persistent failure as warning instead of sending immediate notification
                                 self.execution_metadata['errors'].append(f"Item {item_id} in {stage} failed after {max_retries} retries: {item.get('description','')}")
                             # Only retry items that have not hit max_retries
                             if self.sweeper_retry_tracker[stage].get(item_id, 0) < max_retries:
@@ -778,7 +774,7 @@ class WorkflowSupervisor:
                     except Exception as e:
                         self.logger.error(f"{stage} failed with exception: {e}")
                         self.execution_metadata['errors'].append(f"{stage} failed: {e}")
-                        self._send_error_notifications(e)
+                        # Don't send immediate error notification - collect as warning
                         completed = True  # Move to next stage even on error
             
             # Final processing
@@ -819,8 +815,10 @@ class WorkflowSupervisor:
                 execution_time = (self.execution_metadata['end_time'] - self.execution_metadata['start_time']).total_seconds()
                 self.logger.info(f"Workflow execution time before failure: {execution_time:.2f} seconds")
             
-            # Send error notifications
-            self._send_error_notifications(e)
+            # Only send error notification for critical workflow failures
+            # For individual stage failures, collect as warnings in final notification
+            if len(self.execution_metadata['errors']) > 5:  # Only if too many errors
+                self._send_error_notifications(e)
             raise
         finally:
             if not self.execution_metadata['end_time']:

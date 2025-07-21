@@ -61,7 +61,17 @@ class EpicStrategist(Agent):
             # Check for markdown code blocks
             # Extract JSON with improved parsing
             cleaned_response = self._extract_json_from_response(response)
-            epics = json.loads(cleaned_response)
+            
+            # Safety check for empty or invalid JSON
+            if not cleaned_response or cleaned_response.strip() == "[]":
+                print("⚠️ Empty or invalid JSON response")
+                return []
+            
+            try:
+                epics = json.loads(cleaned_response)
+            except (json.JSONDecodeError, TypeError):
+                print("⚠️ Failed to parse JSON response")
+                return []
             if isinstance(epics, list):
                 # Apply the epic limit constraint if specified
                 if epic_limit:
