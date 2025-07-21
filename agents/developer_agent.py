@@ -115,18 +115,11 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
         # Smart model selection with fallback strategy for task generation
         models_to_try = []
         
-        # Smart model selection with fallback strategy for task generation
-        if self.model and "70b" in self.model.lower():
-            # 70B model detected - use faster alternatives due to memory constraints
+        # Smart model selection optimized for 8B model
+        if self.model and ("70b" in self.model.lower() or "34b" in self.model.lower()):
+            # Large models detected - use 8B due to memory constraints
             models_to_try = [
-                ("llama3.1:8b", 15),    # 8B model: 15 seconds
-                ("llama3.1:34b", 30),   # 34B model: 30 seconds  
-            ]
-        elif self.model and "34b" in self.model.lower():
-            # 34B model - use it with fallback to 8B
-            models_to_try = [
-                ("llama3.1:34b", 30),   # 34B model: 30 seconds
-                ("llama3.1:8b", 15),    # 8B model: 15 seconds fallback
+                ("llama3.1:8b", 15),    # 8B model: 15 seconds (works with 15GB RAM)
             ]
         else:
             # Use current model with standard timeout

@@ -55,18 +55,11 @@ Edge Cases: {feature.get('edge_cases', [])}
         # Smart model selection with fallback strategy for user stories
         models_to_try = []
         
-        # Smart model selection with fallback strategy for user stories
-        if self.model and "70b" in self.model.lower():
-            # 70B model detected - use faster alternatives due to memory constraints
+        # Smart model selection optimized for 8B model
+        if self.model and ("70b" in self.model.lower() or "34b" in self.model.lower()):
+            # Large models detected - use 8B due to memory constraints
             models_to_try = [
-                ("llama3.1:8b", 20),    # 8B model: 20 seconds
-                ("llama3.1:34b", 40),   # 34B model: 40 seconds  
-            ]
-        elif self.model and "34b" in self.model.lower():
-            # 34B model - use it with fallback to 8B
-            models_to_try = [
-                ("llama3.1:34b", 40),   # 34B model: 40 seconds
-                ("llama3.1:8b", 20),    # 8B model: 20 seconds fallback
+                ("llama3.1:8b", 20),    # 8B model: 20 seconds (works with 15GB RAM)
             ]
         else:
             # Use current model with standard timeout
