@@ -20,14 +20,15 @@ class LLMConfigManager:
     def __init__(self):
         self._cached_config = None
         self._cache_timestamp = None
-        self._cache_duration = 60  # Cache for 60 seconds
+        self._cache_duration = 5  # Cache for 5 seconds (much shorter for responsiveness)
     
-    def get_active_configuration(self, user_id: str = None) -> Dict[str, Any]:
+    def get_active_configuration(self, user_id: str = None, force_refresh: bool = False) -> Dict[str, Any]:
         """
         Get the active LLM configuration for a user.
         
         Args:
             user_id: User ID (if None, uses current user)
+            force_refresh: If True, bypass cache and reload from database
             
         Returns:
             Dictionary with LLM configuration
@@ -35,8 +36,8 @@ class LLMConfigManager:
         if not user_id:
             user_id = user_id_resolver.get_default_user_id()
         
-        # Check cache first
-        if self._is_cache_valid():
+        # Check cache first (unless force_refresh is True)
+        if not force_refresh and self._is_cache_valid():
             return self._cached_config
         
         # Try to get from database
@@ -100,6 +101,19 @@ class LLMConfigManager:
         self._cached_config = None
         self._cache_timestamp = None
         logger.info("🧹 Cleared LLM configuration cache")
+    
+    def force_refresh_configuration(self, user_id: str = None) -> Dict[str, Any]:
+        """
+        Force refresh the configuration from database, bypassing cache.
+        
+        Args:
+            user_id: User ID (if None, uses current user)
+            
+        Returns:
+            Fresh configuration from database
+        """
+        logger.info("🔄 Forcing configuration refresh from database")
+        return self.get_active_configuration(user_id, force_refresh=True)
     
     def get_provider_config(self, user_id: str = None) -> Dict[str, Any]:
         """

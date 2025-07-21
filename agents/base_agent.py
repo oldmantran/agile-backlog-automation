@@ -46,8 +46,10 @@ class Agent:
     def _setup_llm_config(self):
         """Setup LLM provider configuration from database with environment fallback."""
         try:
-            # Try to get configuration from database first
-            provider_config = get_llm_provider_config()
+            # Try to get configuration from database first (force refresh for latest config)
+            from utils.llm_config_manager import LLMConfigManager
+            config_manager = LLMConfigManager()
+            provider_config = config_manager.force_refresh_configuration()
             self.llm_provider = provider_config['provider']
             
             if self.llm_provider == "openai":
@@ -65,7 +67,7 @@ class Agent:
                 # Import Ollama provider
                 try:
                     from utils.ollama_client import create_ollama_provider
-                    preset = provider_config.get('preset', 'balanced')
+                    preset = provider_config.get('preset', 'high_quality')
                     self.ollama_provider = create_ollama_provider(preset=preset)
                 except ImportError:
                     raise AgentError("Ollama client not available. Install with: pip install ollama-python")
