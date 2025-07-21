@@ -52,17 +52,17 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
         
-        # Smart model selection with fallback strategy for user stories
+        # Use configured model with appropriate timeout
         models_to_try = []
         
-        # Smart model selection optimized for 8B model
-        if self.model and ("70b" in self.model.lower() or "34b" in self.model.lower()):
-            # Large models detected - use 8B due to memory constraints
-            models_to_try = [
-                ("llama3.1:8b", 20),    # 8B model: 20 seconds (works with 15GB RAM)
-            ]
+        if self.model and ("70b" in self.model.lower()):
+            # 70B model needs longer timeout
+            models_to_try = [(self.model, 120)]
+        elif self.model and ("34b" in self.model.lower()):
+            # 34B model with standard timeout
+            models_to_try = [(self.model, 60)]
         else:
-            # Use current model with standard timeout
+            # 8B or other models with standard timeout
             models_to_try = [(self.model, 60)]
         
         # Try each model until one succeeds
@@ -109,6 +109,8 @@ Edge Cases: {feature.get('edge_cases', [])}
         try:
             # Extract JSON with improved parsing
             cleaned_response = self._extract_json_from_response(response)
+            print(f"🔍 [UserStoryDecomposerAgent] Raw response: {response[:200]}...")
+            print(f"🔍 [UserStoryDecomposerAgent] Cleaned response: {cleaned_response[:200]}...")
             user_stories = json.loads(cleaned_response)
             
             # Handle different response formats

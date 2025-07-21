@@ -1152,3 +1152,133 @@ Prod...
 2025-07-21 09:49:47 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Vision Refinement Coach
 2025-07-21 09:49:47 - supervisor - INFO - Decomposing feature to user stories: Multi-AI Agent Backlog Generator
 2025-07-21 09:49:47 - supervisor - INFO - Decomposing feature to user stories: Backlog Review and Refinement Interface
+2025-07-21 12:48:32 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_124832_proj_20250721_124832
+2025-07-21 12:48:32 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_124832_proj_20250721_124832: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-34B, iteration_path=Sprint 2025-07
+2025-07-21 12:48:51 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 12:48:51 - supervisor - INFO - Starting workflow execution at 2025-07-21 12:48:51.124671
+2025-07-21 12:48:51 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 12:48:53 - supervisor - INFO - Refreshed config for epic_strategist: ollama (codellama:34b)
+2025-07-21 12:48:55 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (codellama:34b)
+2025-07-21 12:48:57 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (codellama:34b)
+2025-07-21 12:48:59 - supervisor - INFO - Refreshed config for developer_agent: ollama (codellama:34b)
+2025-07-21 12:49:01 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (codellama:34b)
+2025-07-21 12:49:01 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 12:49:01 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 12:49:01 - supervisor - INFO - Generating epics from product vision
+2025-07-21 12:49:01 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 12:49:01 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 12:49:01 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-07-21 12:49:01 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-07-21 12:49:01 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-07-21 12:49:01 - supervisor - INFO - DEBUG: Agent model: codellama:34b
+2025-07-21 12:49:01 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-07-21 12:49:01 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-07-21 12:49:21 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-07-21 12:49:21 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-21 12:49:21 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-21 12:49:21 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 12:49:21 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 12:49:21 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 12:49:21 - supervisor - INFO - Decomposing epic: Vision Refinement Coach
+2025-07-21 12:49:21 - supervisor - INFO - Decomposing epic: Multi-AI Agent Backlog Generator
+2025-07-21 12:49:35 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-21 12:49:35 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-21 12:49:35 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 12:49:35 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 12:49:35 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 12:49:35 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Management
+2025-07-21 12:49:35 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Questionnaire Engine
+2025-07-21 12:49:35 - supervisor - INFO - Decomposing feature to user stories: AI-Generated Backlog
+2025-07-21 12:51:47 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250721_125147_proj_20250721_125147
+2025-07-21 12:51:47 - supervisor - INFO - Azure DevOps config for job_id=job_20250721_125147_proj_20250721_125147: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=IDEA-34B, iteration_path=Sprint 2025-07
+2025-07-21 12:52:04 - supervisor - INFO - Initialized 5 agents successfully
+2025-07-21 12:52:04 - supervisor - INFO - Starting workflow execution at 2025-07-21 12:52:04.798134
+2025-07-21 12:52:04 - supervisor - INFO - Refreshing agent configurations...
+2025-07-21 12:52:06 - supervisor - INFO - Refreshed config for epic_strategist: ollama (codellama:34b)
+2025-07-21 12:52:08 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (codellama:34b)
+2025-07-21 12:52:10 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (codellama:34b)
+2025-07-21 12:52:12 - supervisor - INFO - Refreshed config for developer_agent: ollama (codellama:34b)
+2025-07-21 12:52:15 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (codellama:34b)
+2025-07-21 12:52:15 - supervisor - INFO - Updated project context with extracted domain: manufacturing
+2025-07-21 12:52:15 - supervisor - INFO - Executing stage: epic_strategist
+2025-07-21 12:52:15 - supervisor - INFO - Generating epics from product vision
+2025-07-21 12:52:15 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-07-21 12:52:15 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+IDEA.me Product Vision Statement
+Prod...
+2025-07-21 12:52:15 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-07-21 12:52:15 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-07-21 12:52:15 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-07-21 12:52:15 - supervisor - INFO - DEBUG: Agent model: codellama:34b
+2025-07-21 12:52:15 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-07-21 12:52:15 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-07-21 12:52:20 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-07-21 12:52:20 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-07-21 12:52:20 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-07-21 12:52:20 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-07-21 12:52:20 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-07-21 12:52:20 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-07-21 12:52:21 - supervisor - INFO - Decomposing epic: Vision Refinement Coach
+2025-07-21 12:52:21 - supervisor - INFO - Decomposing epic: Multi-AI Agent Backlog Generator
+2025-07-21 12:52:34 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-07-21 12:52:34 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-07-21 12:52:34 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 12:52:34 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 12:52:34 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 12:52:34 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Editor
+2025-07-21 12:52:34 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Analytics
+2025-07-21 12:52:34 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Backlog Generation
+2025-07-21 12:52:52 - supervisor - INFO - Decomposing feature to user stories: Collaborative AI System
+2025-07-21 12:52:58 - supervisor - INFO - Decomposing feature to user stories: Hierarchical Backlog Structure
+2025-07-21 12:53:45 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Vision Refinement Coach'. Skipping invalid user stories.
+2025-07-21 12:53:45 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Vision Statement Editor'. Skipping invalid user stories.
+2025-07-21 12:53:45 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Vision Refinement Analytics'. Skipping invalid user stories.
+2025-07-21 12:53:45 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'AI-Driven Backlog Generation'. Skipping invalid user stories.
+2025-07-21 12:53:45 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Collaborative AI System'. Skipping invalid user stories.
+2025-07-21 12:53:45 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Hierarchical Backlog Structure'. Skipping invalid user stories.
+2025-07-21 12:53:45 - supervisor - INFO - Validation completed: All features checked for user stories, 6 errors.
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Vision Refinement Coach for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Vision Statement Editor for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Vision Refinement Analytics for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Backlog Generation for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative AI System for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] Retrying incomplete item Hierarchical Backlog Structure for stage user_story_decomposer_agent (attempt 1/5)
+2025-07-21 12:53:45 - supervisor - INFO - [DEBUG] 6 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-07-21 12:53:45 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 12:53:45 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 12:53:45 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 12:53:45 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Editor
+2025-07-21 12:53:45 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Analytics
+2025-07-21 12:53:45 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Backlog Generation
+2025-07-21 12:54:03 - supervisor - INFO - Decomposing feature to user stories: Collaborative AI System
+2025-07-21 12:54:10 - supervisor - INFO - Decomposing feature to user stories: Hierarchical Backlog Structure
+2025-07-21 12:54:57 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Vision Refinement Coach'. Skipping invalid user stories.
+2025-07-21 12:54:57 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Vision Statement Editor'. Skipping invalid user stories.
+2025-07-21 12:54:57 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Vision Refinement Analytics'. Skipping invalid user stories.
+2025-07-21 12:54:57 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'AI-Driven Backlog Generation'. Skipping invalid user stories.
+2025-07-21 12:54:57 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Collaborative AI System'. Skipping invalid user stories.
+2025-07-21 12:54:57 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Hierarchical Backlog Structure'. Skipping invalid user stories.
+2025-07-21 12:54:57 - supervisor - INFO - Validation completed: All features checked for user stories, 6 errors.
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Vision Refinement Coach for stage user_story_decomposer_agent (attempt 2/5)
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Vision Statement Editor for stage user_story_decomposer_agent (attempt 2/5)
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Vision Refinement Analytics for stage user_story_decomposer_agent (attempt 2/5)
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Driven Backlog Generation for stage user_story_decomposer_agent (attempt 2/5)
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Collaborative AI System for stage user_story_decomposer_agent (attempt 2/5)
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] Retrying incomplete item Hierarchical Backlog Structure for stage user_story_decomposer_agent (attempt 2/5)
+2025-07-21 12:54:57 - supervisor - INFO - [DEBUG] 6 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-07-21 12:54:57 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-07-21 12:54:57 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-07-21 12:54:57 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Coach
+2025-07-21 12:54:57 - supervisor - INFO - Decomposing feature to user stories: Vision Statement Editor
+2025-07-21 12:54:57 - supervisor - INFO - Decomposing feature to user stories: Vision Refinement Analytics
+2025-07-21 12:54:57 - supervisor - INFO - Decomposing feature to user stories: AI-Driven Backlog Generation
+2025-07-21 12:55:06 - supervisor - INFO - Decomposing feature to user stories: Collaborative AI System
+2025-07-21 12:55:20 - supervisor - INFO - Decomposing feature to user stories: Hierarchical Backlog Structure
