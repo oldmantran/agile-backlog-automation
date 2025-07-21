@@ -535,3 +535,49 @@ class Database:
 
 # Global database instance
 db = Database()
+
+def add_backlog_job(user_email: str, project_name: str, epics_generated: int = 0, 
+                   features_generated: int = 0, user_stories_generated: int = 0,
+                   tasks_generated: int = 0, test_cases_generated: int = 0,
+                   execution_time_seconds: float = None, raw_summary: dict = None):
+    """
+    Add a backlog job to the database.
+    
+    Args:
+        user_email: Email of the user who ran the job
+        project_name: Name of the project
+        epics_generated: Number of epics generated
+        features_generated: Number of features generated
+        user_stories_generated: Number of user stories generated
+        tasks_generated: Number of tasks generated
+        test_cases_generated: Number of test cases generated
+        execution_time_seconds: Execution time in seconds
+        raw_summary: Raw summary data as dictionary
+    """
+    try:
+        # Create a unique job ID
+        job_id = f"backlog_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_email.replace('@', '_').replace('.', '_')}"
+        
+        # Save the job using the existing save_job method
+        db.save_job(
+            job_id=job_id,
+            project_id=project_name,
+            status="completed",
+            progress=100
+        )
+        
+        # Update with additional details
+        db.update_job(
+            job_id=job_id,
+            current_agent="completed",
+            current_action="backlog_generation_complete",
+            end_time=datetime.now(),
+            error=None
+        )
+        
+        logger.info(f"Backlog job logged successfully: {job_id}")
+        return job_id
+        
+    except Exception as e:
+        logger.error(f"Failed to add backlog job: {e}")
+        raise

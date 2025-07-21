@@ -39,7 +39,7 @@ class EpicStrategist(Agent):
             user_input = f"Product Vision: {product_vision}\n\nIMPORTANT: Generate a maximum of {epic_limit} epics only."
         else:
             user_input = f"Product Vision: {product_vision}"
-        print(f"📊 [EpicStrategist] Generating epics for: {product_vision[:100]}...")
+
         
         # Add timeout protection
         try:
