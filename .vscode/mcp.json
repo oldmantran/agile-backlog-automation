@@ -6,15 +6,23 @@
         "run",
         "-i",
         "--rm",
+        "-p",
+        "8787:8080",
+        "-v",
+        "${MCP_STORAGE_PATH:-X:/Programs/agile-backlog-automation}:/app/data",
         "--env-file",
         ".env",
         "-e",
-        "GITHUB_TOOLSETS=repos,issues,pull_requests,code,actions,projects",
-        "ghcr.io/github/github-mcp-server"
-      ]
-    },
-    "context_file_reader": {
-      "command": "context_file_reader"
+        "GITHUB_TOOLSETS=repos,issues,context_file_reader,pull_requests,code,actions,projects",
+        "-e",
+        "MCP_MEMORY_STORAGE_PATH=/app/data",
+        "-e",
+        "MCP_MODE=local",
+        "mem0/openmemory-mcp:latest"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
     }
   }
 }
