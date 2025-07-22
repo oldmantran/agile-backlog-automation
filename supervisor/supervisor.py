@@ -1428,10 +1428,15 @@ class WorkflowSupervisor:
     
     def _finalize_workflow_data(self):
         """Add final metadata and processing to workflow data."""
+        # Ensure end_time is set before calculating stats
+        if not self.execution_metadata.get('end_time'):
+            self.execution_metadata['end_time'] = datetime.now()
+        
         self.workflow_data['metadata'].update({
             'execution_summary': self._calculate_workflow_stats(),
             'completion_timestamp': datetime.now().isoformat(),
-            'stages_executed': self.execution_metadata['stages_completed']
+            'stages_executed': self.execution_metadata['stages_completed'],
+            'execution_metadata': self.execution_metadata  # Include errors for notifications
         })
     
     def _save_intermediate_output(self, stage: str):
@@ -1454,15 +1459,29 @@ class WorkflowSupervisor:
         """Save data to JSON and YAML files."""
         os.makedirs("output", exist_ok=True)
         
+        # Create a serializable copy to avoid circular references
+        def make_serializable(obj):
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_serializable(item) for item in obj]
+            elif hasattr(obj, '__dict__'):
+                # Convert objects to dict representation
+                return str(obj)
+            else:
+                return obj
+        
+        serializable_data = make_serializable(data)
+        
         # Save JSON
         json_path = f"output/{filename}.json"
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+            json.dump(serializable_data, f, indent=2, ensure_ascii=False, default=str)
         
         # Save YAML
         yaml_path = f"output/{filename}.yaml"
         with open(yaml_path, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, sort_keys=False, allow_unicode=True, default_flow_style=False)
+            yaml.dump(serializable_data, f, sort_keys=False, allow_unicode=True, default_flow_style=False)
         
         self.logger.info(f"Output saved: {json_path}, {yaml_path}")
     

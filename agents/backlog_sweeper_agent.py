@@ -530,6 +530,12 @@ class BacklogSweeperAgent:
             
             # Check for orphaned work items (except Epics)
             if wi_type in ['Feature', 'User Story', 'Task', 'Test Case'] and not parents:
+                # Assign orphaned test cases to QA lead agent, others to feature decomposer
+                if wi_type == 'Test Case':
+                    suggested_agent = 'qa_lead_agent'
+                else:
+                    suggested_agent = self.agent_assignments.get('orphaned_work_item', 'feature_decomposer_agent')
+                
                 discrepancies.append({
                     'type': 'orphaned_work_item',
                     'work_item_id': wi_id,
@@ -537,7 +543,7 @@ class BacklogSweeperAgent:
                     'title': title,
                     'description': f'{wi_type} has no parent work item.',
                     'severity': 'high',
-                    'suggested_agent': self.agent_assignments.get('orphaned_work_item', 'feature_decomposer_agent')
+                    'suggested_agent': suggested_agent
                 })
         
         return discrepancies

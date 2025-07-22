@@ -83,6 +83,11 @@ class AzureDevOpsIntegrator:
             'Content-Type': 'application/json-patch+json',
             'Accept': 'application/json'
         }
+        # Headers for WIQL queries (different content type)
+        self.wiql_headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
         
         # Area/iteration path must be provided by API payload
         if not area_path or not iteration_path:
@@ -1397,7 +1402,7 @@ class AzureDevOpsIntegrator:
         
         try:
             # Execute the query
-            response = requests.post(url, json=wiql_query, auth=self.auth, headers=self.headers)
+            response = requests.post(url, json=wiql_query, auth=self.auth, headers=self.wiql_headers)
             response.raise_for_status()
             query_result = response.json()
             
@@ -1415,3 +1420,481 @@ class AzureDevOpsIntegrator:
         except requests.exceptions.RequestException as e:
             self.logger.error(f"Failed to retrieve work items of type {work_item_type}: {e}")
             raise
+
+    def query_work_items(self, work_item_type: str, area_path: str = None) -> List[int]:
+        """
+        Query work items by type and optionally filter by area path.
+        Returns a list of work item IDs.
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        # Build WIQL query
+        query_parts = [
+            f"SELECT [System.Id] FROM workitems",
+            f"WHERE [System.TeamProject] = '{self.project}'",
+            f"AND [System.WorkItemType] = '{work_item_type}'"
+        ]
+        
+        # Add area path filter if specified
+        if area_path:
+            # Ensure area path includes project name
+            if not area_path.startswith(self.project + "\\"):
+                area_path = f"{self.project}\\{area_path}"
+            query_parts.append(f"AND [System.AreaPath] = '{area_path}'")
+        
+        wiql_query = {
+            "query": " ".join(query_parts)
+        }
+        
+        url = f"{self.project_base_url}/wit/wiql?api-version=7.0"
+        
+        try:
+            # Execute the query
+            response = requests.post(url, json=wiql_query, auth=self.auth, headers=self.wiql_headers)
+            response.raise_for_status()
+            query_result = response.json()
+            
+            # Extract work item IDs
+            work_item_ids = []
+            if 'workItems' in query_result:
+                work_item_ids = [item['id'] for item in query_result['workItems']]
+            
+            return work_item_ids
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Failed to query work items of type {work_item_type}: {e}")
+            return []
+
+    def get_work_item_parent(self, work_item_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get the parent work item using the relations field.
+        Returns the parent work item details or None if no parent found.
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        relations = self.get_work_item_relations(work_item_id)
+        
+        for relation in relations:
+            if relation.get('rel') == 'System.LinkTypes.Hierarchy-Reverse':
+                # Extract parent ID from the URL
+                parent_url = relation.get('url', '')
+                if parent_url:
+                    try:
+                        parent_id = int(parent_url.split('/')[-1])
+                        parent_work_item = self.get_work_item(parent_id)
+                        return parent_work_item
+                    except (ValueError, IndexError) as e:
+                        self.logger.warning(f"Failed to extract parent ID from URL {parent_url}: {e}")
+                        continue
+        
+        return None
+
+    def find_potential_parents_for_orphaned_work_item(self, work_item: Dict[str, Any], 
+                                                     search_strategy: str = 'comprehensive') -> List[Dict[str, Any]]:
+        """
+        Find potential parents for an orphaned work item using multiple strategies.
+        
+        Args:
+            work_item: The orphaned work item
+            search_strategy: 'comprehensive', 'title_similarity', 'area_path', or 'recent_activity'
+        
+        Returns:
+            List of potential parent work items with confidence scores
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        work_item_type = work_item.get('fields', {}).get('System.WorkItemType', '')
+        work_item_title = work_item.get('fields', {}).get('System.Title', '')
+        work_item_area_path = work_item.get('fields', {}).get('System.AreaPath', '')
+        
+        potential_parents = []
+        
+        # Determine expected parent type based on work item type
+        expected_parent_type = self._get_expected_parent_type(work_item_type)
+        if not expected_parent_type:
+            return []
+        
+        if search_strategy in ['comprehensive', 'title_similarity']:
+            # Strategy 1: Title similarity search
+            title_similarity_parents = self._find_parents_by_title_similarity(
+                work_item_title, expected_parent_type, work_item_area_path
+            )
+            potential_parents.extend(title_similarity_parents)
+        
+        if search_strategy in ['comprehensive', 'area_path']:
+            # Strategy 2: Area path matching
+            area_path_parents = self._find_parents_by_area_path(
+                work_item_area_path, expected_parent_type
+            )
+            potential_parents.extend(area_path_parents)
+        
+        if search_strategy in ['comprehensive', 'recent_activity']:
+            # Strategy 3: Recent activity and state
+            recent_parents = self._find_parents_by_recent_activity(
+                expected_parent_type, work_item_area_path
+            )
+            potential_parents.extend(recent_parents)
+        
+        # Remove duplicates and sort by confidence score
+        unique_parents = self._deduplicate_and_rank_parents(potential_parents)
+        
+        return unique_parents[:10]  # Return top 10 candidates
+
+    def _get_expected_parent_type(self, work_item_type: str) -> Optional[str]:
+        """Get the expected parent work item type for a given work item type."""
+        parent_type_mapping = {
+            'Test Case': 'User Story',
+            'Task': 'User Story', 
+            'User Story': 'Feature',
+            'Feature': 'Epic',
+            'Bug': 'User Story',
+            'Issue': 'User Story'
+        }
+        return parent_type_mapping.get(work_item_type)
+
+    def _find_parents_by_title_similarity(self, work_item_title: str, parent_type: str, 
+                                        area_path: str = None) -> List[Dict[str, Any]]:
+        """Find potential parents by title similarity using semantic matching."""
+        try:
+            # Get all work items of the parent type
+            parent_work_items = self.get_work_items_by_type(parent_type)
+            
+            candidates = []
+            for parent in parent_work_items:
+                parent_title = parent.get('fields', {}).get('System.Title', '')
+                parent_area_path = parent.get('fields', {}).get('System.AreaPath', '')
+                
+                # Calculate similarity score
+                similarity_score = self._calculate_title_similarity(work_item_title, parent_title)
+                
+                # Area path bonus
+                area_bonus = 0.3 if area_path and parent_area_path and area_path in parent_area_path else 0
+                
+                total_score = similarity_score + area_bonus
+                
+                if total_score > 0.2:  # Minimum threshold
+                    candidates.append({
+                        'work_item': parent,
+                        'confidence_score': total_score,
+                        'match_reason': f'Title similarity: {similarity_score:.2f}, Area path bonus: {area_bonus:.2f}'
+                    })
+            
+            return sorted(candidates, key=lambda x: x['confidence_score'], reverse=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error in title similarity search: {e}")
+            return []
+
+    def _find_parents_by_area_path(self, work_item_area_path: str, parent_type: str) -> List[Dict[str, Any]]:
+        """Find potential parents by area path matching."""
+        try:
+            # Get all work items of the parent type in the same area path
+            parent_work_items = self.get_work_items_by_type(parent_type)
+            
+            candidates = []
+            for parent in parent_work_items:
+                parent_area_path = parent.get('fields', {}).get('System.AreaPath', '')
+                
+                # Check if area paths match or are related
+                if work_item_area_path and parent_area_path:
+                    if work_item_area_path == parent_area_path:
+                        score = 0.8  # Exact match
+                    elif work_item_area_path in parent_area_path:
+                        score = 0.6  # Work item is in a sub-area of parent
+                    elif parent_area_path in work_item_area_path:
+                        score = 0.4  # Parent is in a sub-area of work item
+                    else:
+                        # Check for common parent area
+                        common_parent = self._find_common_parent_area(work_item_area_path, parent_area_path)
+                        score = 0.3 if common_parent else 0.0
+                    
+                    if score > 0:
+                        candidates.append({
+                            'work_item': parent,
+                            'confidence_score': score,
+                            'match_reason': f'Area path match: {score:.2f}'
+                        })
+            
+            return sorted(candidates, key=lambda x: x['confidence_score'], reverse=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error in area path search: {e}")
+            return []
+
+    def _find_parents_by_recent_activity(self, parent_type: str, area_path: str = None) -> List[Dict[str, Any]]:
+        """Find potential parents by recent activity and state."""
+        try:
+            # Get recent work items of the parent type
+            parent_work_items = self.get_work_items_by_type(parent_type)
+            
+            candidates = []
+            for parent in parent_work_items:
+                parent_state = parent.get('fields', {}).get('System.State', '')
+                parent_area_path = parent.get('fields', {}).get('System.AreaPath', '')
+                parent_priority = parent.get('fields', {}).get('Microsoft.VSTS.Common.Priority', 2)
+                
+                # Score based on state and priority
+                state_score = self._get_state_score(parent_state)
+                priority_score = self._get_priority_score(parent_priority)
+                area_score = 0.2 if area_path and parent_area_path and area_path in parent_area_path else 0
+                
+                total_score = state_score + priority_score + area_score
+                
+                if total_score > 0.3:  # Minimum threshold
+                    candidates.append({
+                        'work_item': parent,
+                        'confidence_score': total_score,
+                        'match_reason': f'Recent activity: State={state_score:.2f}, Priority={priority_score:.2f}, Area={area_score:.2f}'
+                    })
+            
+            return sorted(candidates, key=lambda x: x['confidence_score'], reverse=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error in recent activity search: {e}")
+            return []
+
+    def _calculate_title_similarity(self, title1: str, title2: str) -> float:
+        """Calculate similarity between two titles using simple string matching."""
+        if not title1 or not title2:
+            return 0.0
+        
+        # Convert to lowercase for comparison
+        t1_lower = title1.lower()
+        t2_lower = title2.lower()
+        
+        # Exact match
+        if t1_lower == t2_lower:
+            return 1.0
+        
+        # Check if one title contains the other
+        if t1_lower in t2_lower or t2_lower in t1_lower:
+            return 0.7
+        
+        # Word overlap
+        words1 = set(t1_lower.split())
+        words2 = set(t2_lower.split())
+        
+        if not words1 or not words2:
+            return 0.0
+        
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+        
+        jaccard_similarity = len(intersection) / len(union)
+        
+        return jaccard_similarity
+
+    def _find_common_parent_area(self, area_path1: str, area_path2: str) -> Optional[str]:
+        """Find the common parent area path between two area paths."""
+        if not area_path1 or not area_path2:
+            return None
+        
+        parts1 = area_path1.split('\\')
+        parts2 = area_path2.split('\\')
+        
+        common_parts = []
+        for p1, p2 in zip(parts1, parts2):
+            if p1 == p2:
+                common_parts.append(p1)
+            else:
+                break
+        
+        return '\\'.join(common_parts) if common_parts else None
+
+    def _get_state_score(self, state: str) -> float:
+        """Get score based on work item state (active states get higher scores)."""
+        state_scores = {
+            'New': 0.8,
+            'Active': 0.9,
+            'In Progress': 0.8,
+            'Ready': 0.7,
+            'Resolved': 0.3,
+            'Closed': 0.1,
+            'Removed': 0.0
+        }
+        return state_scores.get(state, 0.5)
+
+    def _get_priority_score(self, priority: int) -> float:
+        """Get score based on priority (higher priority gets higher score)."""
+        if priority == 1:
+            return 0.8  # High priority
+        elif priority == 2:
+            return 0.6  # Medium priority
+        elif priority == 3:
+            return 0.4  # Low priority
+        else:
+            return 0.5  # Default
+
+    def _deduplicate_and_rank_parents(self, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Remove duplicate parents and rank by confidence score."""
+        seen_ids = set()
+        unique_candidates = []
+        
+        for candidate in candidates:
+            work_item_id = candidate['work_item']['id']
+            if work_item_id not in seen_ids:
+                seen_ids.add(work_item_id)
+                unique_candidates.append(candidate)
+        
+        return sorted(unique_candidates, key=lambda x: x['confidence_score'], reverse=True)
+
+    def link_orphaned_work_item_to_parent(self, orphaned_work_item_id: int, parent_work_item_id: int) -> bool:
+        """
+        Link an orphaned work item to its parent using the Azure DevOps API.
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        try:
+            # Create the parent-child relationship
+            success = self.create_work_item_relation(
+                source_id=orphaned_work_item_id,
+                target_id=parent_work_item_id,
+                relation_type='System.LinkTypes.Hierarchy-Reverse'
+            )
+            
+            if success:
+                self.logger.info(f"Successfully linked orphaned work item {orphaned_work_item_id} to parent {parent_work_item_id}")
+            else:
+                self.logger.error(f"Failed to link orphaned work item {orphaned_work_item_id} to parent {parent_work_item_id}")
+            
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"Error linking orphaned work item {orphaned_work_item_id} to parent {parent_work_item_id}: {e}")
+            return False
+
+    def find_original_parent_from_history(self, work_item_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Find the original or last parent from work item revision history.
+        This is more reliable than similarity-based guessing for orphaned work items.
+        
+        Returns the parent work item details or None if no parent found in history.
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        try:
+            # Get work item revisions to see history
+            revisions = self.get_work_item_revisions(work_item_id)
+            
+            # Look through revisions in reverse order (newest first)
+            for revision in reversed(revisions):
+                # Check if this revision had parent relations
+                relations = revision.get('relations', [])
+                
+                for relation in relations:
+                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Reverse':
+                        # Extract parent ID from the URL
+                        parent_url = relation.get('url', '')
+                        if parent_url:
+                            try:
+                                parent_id = int(parent_url.split('/')[-1])
+                                # Verify the parent still exists
+                                parent_work_item = self.get_work_item(parent_id)
+                                if parent_work_item:
+                                    self.logger.info(f"Found original parent {parent_id} for work item {work_item_id} from revision history")
+                                    return parent_work_item
+                            except (ValueError, IndexError) as e:
+                                self.logger.warning(f"Failed to extract parent ID from URL {parent_url}: {e}")
+                                continue
+            
+            self.logger.info(f"No parent found in revision history for work item {work_item_id}")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error finding original parent from history for work item {work_item_id}: {e}")
+            return None
+
+    def find_last_parent_from_history(self, work_item_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Find the most recent parent from work item revision history.
+        Useful when the original parent was removed but there was a more recent parent.
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        try:
+            # Get work item revisions
+            revisions = self.get_work_item_revisions(work_item_id)
+            
+            last_parent_id = None
+            last_parent_revision_date = None
+            
+            # Look through all revisions to find the most recent parent
+            for revision in revisions:
+                relations = revision.get('relations', [])
+                
+                for relation in relations:
+                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Reverse':
+                        parent_url = relation.get('url', '')
+                        if parent_url:
+                            try:
+                                parent_id = int(parent_url.split('/')[-1])
+                                revision_date = revision.get('revisedDate')
+                                
+                                # Track the most recent parent
+                                if not last_parent_revision_date or revision_date > last_parent_revision_date:
+                                    last_parent_id = parent_id
+                                    last_parent_revision_date = revision_date
+                                    
+                            except (ValueError, IndexError) as e:
+                                continue
+            
+            # Return the most recent parent if found
+            if last_parent_id:
+                try:
+                    parent_work_item = self.get_work_item(last_parent_id)
+                    if parent_work_item:
+                        self.logger.info(f"Found last parent {last_parent_id} for work item {work_item_id} from revision history")
+                        return parent_work_item
+                except Exception as e:
+                    self.logger.warning(f"Last parent {last_parent_id} no longer exists: {e}")
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error finding last parent from history for work item {work_item_id}: {e}")
+            return None
+
+    def restore_parent_from_history(self, work_item_id: int, prefer_original: bool = True) -> bool:
+        """
+        Restore the parent relationship for an orphaned work item from its history.
+        
+        Args:
+            work_item_id: The orphaned work item ID
+            prefer_original: If True, prefer the original parent; if False, prefer the most recent parent
+        
+        Returns:
+            True if parent was restored, False otherwise
+        """
+        if not self.enabled:
+            raise ValueError("Azure DevOps integration not configured")
+        
+        try:
+            # Try to find parent from history
+            if prefer_original:
+                parent = self.find_original_parent_from_history(work_item_id)
+                if not parent:
+                    parent = self.find_last_parent_from_history(work_item_id)
+            else:
+                parent = self.find_last_parent_from_history(work_item_id)
+                if not parent:
+                    parent = self.find_original_parent_from_history(work_item_id)
+            
+            if parent:
+                # Restore the parent relationship
+                success = self.link_orphaned_work_item_to_parent(work_item_id, parent['id'])
+                if success:
+                    self.logger.info(f"Successfully restored parent {parent['id']} for work item {work_item_id}")
+                return success
+            else:
+                self.logger.warning(f"No parent found in history for work item {work_item_id}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error restoring parent from history for work item {work_item_id}: {e}")
+            return False
