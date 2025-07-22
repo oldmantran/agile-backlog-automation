@@ -6,19 +6,12 @@
         "run",
         "-i",
         "--rm",
-        "-p",
-        "8787:8080",
-        "-v",
-        "${MCP_STORAGE_PATH:-X:/Programs/agile-backlog-automation}:/app/data",
         "--env-file",
         ".env",
         "-e",
         "GITHUB_TOOLSETS=repos,issues,pull_requests",
         "ghcr.io/github/github-mcp-server"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
-      }
+      ]
     }
   }
 }
