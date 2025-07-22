@@ -9,9 +9,12 @@
         "--env-file",
         ".env",
         "-e",
-        "GITHUB_TOOLSETS=repos,issues",
+        "GITHUB_TOOLSETS=repos,issues,pull_requests,code,actions,projects",
         "ghcr.io/github/github-mcp-server"
       ]
+    },
+    "context_file_reader": {
+      "command": "context_file_reader"
     }
   }
 }
