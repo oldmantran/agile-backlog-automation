@@ -1,8 +1,0 @@
-{
-  "total": 1881,
-  "successful_deletions": 1880,
-  "failed_deletions": 1,
-  "errors": [
-    "Failed to delete test case 6543"
-  ]
-}

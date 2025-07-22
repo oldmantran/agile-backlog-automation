@@ -57,17 +57,18 @@ class BulkTestCaseDeleterBacklogProject:
     
     def query_test_cases_via_wiql(self) -> List[int]:
         """
-        Query test cases using WIQL from Backlog Automation project.
+        Query test cases using WIQL from DataVis area path within Backlog Automation project.
         
         Returns:
             List of test case IDs
         """
-        print("🔍 Querying test cases via WIQL from Backlog Automation project...")
+        print("🔍 Querying test cases via WIQL from DataVis area path within Backlog Automation project...")
         
-        # Build WIQL query - search for all test cases in Backlog Automation project
+        # Build WIQL query - search for test cases in DataVis area path within Backlog Automation project
         query_parts = [
             "SELECT [System.Id] FROM WorkItems",
-            "WHERE [System.WorkItemType] = 'Test Case'"
+            "WHERE [System.WorkItemType] = 'Test Case'",
+            "AND [System.AreaPath] UNDER 'Backlog Automation\\DataVis'"
         ]
         
         wiql_query = " ".join(query_parts)
@@ -140,7 +141,7 @@ class BulkTestCaseDeleterBacklogProject:
     
     def bulk_delete_test_cases(self, test_case_ids: List[int]) -> Dict[str, Any]:
         """
-        Perform bulk deletion of test cases from Grit project.
+        Perform bulk deletion of test cases from DataVis area path within Backlog Automation project.
         
         Args:
             test_case_ids: List of test case IDs to delete
@@ -148,7 +149,7 @@ class BulkTestCaseDeleterBacklogProject:
         Returns:
             Dictionary with deletion statistics
         """
-        print(f"🚀 Starting bulk deletion of {len(test_case_ids)} test cases from Grit project...")
+        print(f"🚀 Starting bulk deletion of {len(test_case_ids)} test cases from DataVis area path within Backlog Automation project...")
         print("=" * 80)
         
         stats = {
@@ -192,8 +193,8 @@ class BulkTestCaseDeleterBacklogProject:
         return stats
 
 def main():
-    """Main function to run the bulk test case deletion from Backlog Automation project."""
-    print("🗑️ Bulk Test Case Deletion Script (Backlog Automation Project)")
+    """Main function to run the bulk test case deletion from DataVis area path within Backlog Automation project."""
+    print("🗑️ Bulk Test Case Deletion Script (DataVis Area Path - Backlog Automation Project)")
     print("=" * 70)
     
     try:
@@ -203,20 +204,15 @@ def main():
         # Initialize deleter
         deleter = BulkTestCaseDeleterBacklogProject(organization_url)
         
-        # Query test cases from Backlog Automation project
+        # Query test cases from DataVis area path within Backlog Automation project
         test_case_ids = deleter.query_test_cases_via_wiql()
         
         if not test_case_ids:
             print("✅ No test cases found to delete")
             return
         
-        # Filter out test cases with IDs less than 4859
-        min_id = 4859
-        original_count = len(test_case_ids)
-        test_case_ids = [id for id in test_case_ids if id >= min_id]
-        
-        print(f"🔍 Filtered out {original_count - len(test_case_ids)} test cases with ID < {min_id}")
-        print(f"📋 Remaining test cases to delete: {len(test_case_ids)}")
+        # All test cases in DataVis area path will be deleted
+        print(f"📋 All test cases in DataVis area path will be deleted: {len(test_case_ids)}")
         
         # Show the top 5 work item IDs that would be deleted
         if test_case_ids:
@@ -228,14 +224,10 @@ def main():
                 print(f"  ... and {len(test_case_ids) - 5} more test cases")
             print("=" * 50)
         
-        if not test_case_ids:
-            print("✅ No test cases found to delete after filtering")
-            return
-        
         # Confirm deletion
-        print(f"\n⚠️ WARNING: About to delete {len(test_case_ids)} test cases from Backlog Automation project!")
+        print(f"\n⚠️ WARNING: About to delete {len(test_case_ids)} test cases from DataVis area path within Backlog Automation project!")
         print("This action cannot be undone.")
-        print("Note: Test cases will be deleted from the Backlog Automation project.")
+        print("Note: Test cases will be deleted from the DataVis area path.")
         
         confirm = input("\nDo you want to proceed? (yes/no): ").lower().strip()
         if confirm not in ['yes', 'y']:
@@ -247,7 +239,7 @@ def main():
         
         # Save results
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        results_file = f"bulk_deletion_backlog_project_results_{timestamp}.json"
+        results_file = f"datavis_test_case_deletion_results_{timestamp}.json"
         
         with open(results_file, 'w') as f:
             json.dump(stats, f, indent=2)
@@ -255,7 +247,7 @@ def main():
         print(f"\n📄 Results saved to: {results_file}")
         
         if stats['successful_deletions'] == stats['total']:
-            print("🎉 All test cases deleted successfully from Backlog Automation project!")
+            print("🎉 All test cases deleted successfully from DataVis area path!")
         else:
             print(f"⚠️ {stats['failed_deletions']} test cases failed to delete")
         
