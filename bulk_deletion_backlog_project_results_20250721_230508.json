@@ -1,0 +1,23 @@
+{
+  "total": 16,
+  "successful_deletions": 0,
+  "failed_deletions": 16,
+  "errors": [
+    "Failed to delete test case 2383",
+    "Failed to delete test case 2556",
+    "Failed to delete test case 2557",
+    "Failed to delete test case 2558",
+    "Failed to delete test case 2878",
+    "Failed to delete test case 2880",
+    "Failed to delete test case 2881",
+    "Failed to delete test case 2882",
+    "Failed to delete test case 2886",
+    "Failed to delete test case 2887",
+    "Failed to delete test case 2888",
+    "Failed to delete test case 2889",
+    "Failed to delete test case 2890",
+    "Failed to delete test case 3524",
+    "Failed to delete test case 3525",
+    "Failed to delete test case 3526"
+  ]
+}

@@ -1,0 +1,73 @@
+trigger: none
+
+stages:
+- stage: Cleanup
+  jobs:
+  - job: DeleteTestCases
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    - task: PowerShell@2
+      displayName: 'Query Test Cases via WIQL'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $pat = "$(System.AccessToken)"
+          $org = "https://dev.azure.com/c4workx"
+          $project = "Backlog Automation"
+          $query = @"
+          {
+            "query": "SELECT [System.Id] FROM WorkItems WHERE [System.WorkItemType] = 'Test Case' AND [System.AreaPath] UNDER 'Backlog Automation\\Grit'"
+          }
+          "@
+
+          $headers = @{ Authorization = "Bearer $pat"; "Content-Type" = "application/json" }
+          $result = Invoke-RestMethod -Uri "$org/$project/_apis/wit/wiql?api-version=7.0" -Method Post -Body $query -Headers $headers
+          $ids = $result.workItems | ForEach-Object { $_.id }
+          Write-Host "Found $($ids.Count) test cases to delete"
+          Set-Content -Path "$(Build.ArtifactStagingDirectory)/testcase_ids.json" -Value ($ids -join ",")
+
+    - task: PowerShell@2
+      displayName: 'Unlink and Delete Test Cases'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $ids = Get-Content "$(Build.ArtifactStagingDirectory)/testcase_ids.json" -split ","
+          $pat = "$(System.AccessToken)"
+          $org = "https://dev.azure.com/c4workx"
+          $project = "Backlog Automation"
+          $headers = @{ Authorization = "Bearer $pat"; "Content-Type" = "application/json-patch+json" }
+
+          Write-Host "Starting deletion of $($ids.Count) test cases..."
+
+          foreach ($id in $ids) {
+            Write-Host "Processing test case $id..."
+            
+            try {
+              # Optional: remove suite/plan relations
+              $relUri = "$org/$project/_apis/wit/workitems/$id`?api-version=7.0"
+              $workItem = Invoke-RestMethod -Uri $relUri -Method Get -Headers $headers
+              $relations = $workItem.relations
+              $patchOps = @()
+              
+              for ($i = 0; $i -lt $relations.Count; $i++) {
+                $patchOps += @{ op = 'remove'; path = "/relations/$i" }
+              }
+
+              if ($patchOps.Count -gt 0) {
+                Write-Host "  Removing $($patchOps.Count) relations..."
+                Invoke-RestMethod -Uri $relUri -Method Patch -Headers $headers -Body ($patchOps | ConvertTo-Json -Depth 5)
+              }
+
+              # Delete work item
+              Write-Host "  Deleting work item..."
+              Invoke-RestMethod -Uri "$org/$project/_apis/wit/workitems/$id`?api-version=7.0" -Method Delete -Headers $headers
+              Write-Host "  ✅ Successfully deleted test case $id"
+              
+            } catch {
+              Write-Host "  ❌ Error processing test case $id`: $_"
+            }
+          }
+
+          Write-Host "Bulk deletion completed!" 

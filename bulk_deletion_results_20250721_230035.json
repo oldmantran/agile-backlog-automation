@@ -1,0 +1,28 @@
+{
+  "total": 19,
+  "successful_deletions": 0,
+  "failed_deletions": 19,
+  "successful_unlinks": 19,
+  "failed_unlinks": 0,
+  "errors": [
+    "Failed to delete work item 1698",
+    "Failed to delete work item 1699",
+    "Failed to delete work item 2382",
+    "Failed to delete work item 2383",
+    "Failed to delete work item 2556",
+    "Failed to delete work item 2557",
+    "Failed to delete work item 2558",
+    "Failed to delete work item 2878",
+    "Failed to delete work item 2880",
+    "Failed to delete work item 2881",
+    "Failed to delete work item 2882",
+    "Failed to delete work item 2886",
+    "Failed to delete work item 2887",
+    "Failed to delete work item 2888",
+    "Failed to delete work item 2889",
+    "Failed to delete work item 2890",
+    "Failed to delete work item 3524",
+    "Failed to delete work item 3525",
+    "Failed to delete work item 3526"
+  ]
+}

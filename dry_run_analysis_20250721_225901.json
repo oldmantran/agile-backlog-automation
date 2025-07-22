@@ -1,0 +1,103 @@
+{
+  "total_count": 19,
+  "by_state": {
+    "Closed": 19
+  },
+  "by_area_path": {
+    "Grit": 19
+  },
+  "by_created_date": {
+    "2025-07-03": 2,
+    "2025-07-07": 2,
+    "2025-07-08": 3,
+    "2025-07-10": 9,
+    "2025-07-14": 3
+  },
+  "by_priority": {
+    "2": 19
+  },
+  "with_relations": 0,
+  "without_relations": 19,
+  "sample_items": [
+    {
+      "id": 1698,
+      "title": "Implement hover and display tooltip",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-03T09:08:12.627Z",
+      "relations_count": 0
+    },
+    {
+      "id": 1699,
+      "title": "Implement hover and display tooltip",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-03T09:08:23.19Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2382,
+      "title": "Grit app regression - Dashboard",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-07T10:33:00.797Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2383,
+      "title": "Grit app regression - Dashboard",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-07T11:25:55.993Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2556,
+      "title": "Grit app regression - Map",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-08T06:13:19.937Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2557,
+      "title": "Grit app regression - Planning",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-08T06:15:17.24Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2558,
+      "title": "Grit app regression - All Plans",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-08T06:16:14.797Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2878,
+      "title": "Create Dashboard Alert when status changes to \"DELAYED\"",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-10T08:45:40.893Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2880,
+      "title": "Draft Plan Cancellation",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-10T12:15:56.97Z",
+      "relations_count": 0
+    },
+    {
+      "id": 2881,
+      "title": "Active Plan Cancellation",
+      "state": "Closed",
+      "area_path": "Grit",
+      "created_date": "2025-07-10T12:29:18.677Z",
+      "relations_count": 0
+    }
+  ]
+}
