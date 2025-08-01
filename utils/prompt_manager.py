@@ -148,7 +148,12 @@ class PromptTemplateManager:
             'integrations': 'standard integrations',
             'test_environment': 'standard test environment',
             'quality_standards': 'industry standards',
-            'security_requirements': 'standard security'
+            'security_requirements': 'standard security',
+            'epic_title': 'Epic Title',
+            'epic_description': 'Epic description and objectives',
+            'feature_title': 'Feature Title',
+            'feature_description': 'Feature description and requirements',
+            'user_stories_text': 'User stories for this feature'
         }
         return fallbacks.get(variable, f'[MISSING: {variable}]')
     

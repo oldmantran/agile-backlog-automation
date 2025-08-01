@@ -8,6 +8,9 @@ echo Agile Backlog Automation - Quick Start
 echo ========================================
 echo.
 
+REM Change to the project root directory
+cd /d "%~dp0.."
+
 REM Check if Python is available
 python --version >nul 2>&1
 if errorlevel 1 (

@@ -4,7 +4,11 @@
     "allow": [
       "Bash(mv:*)",
       "Bash(rm:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(find:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)"
     ],
     "deny": []
   }
