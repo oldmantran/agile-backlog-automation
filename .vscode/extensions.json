@@ -1,5 +1,11 @@
 {
     "recommendations": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "ms-vsts.team",
+        "redhat.vscode-yaml",
         "ms-vscode.azurecli"
     ]
 }
