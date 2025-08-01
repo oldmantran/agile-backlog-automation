@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-08-01T15:09:47.594973",
+  "tests": {
+    "database": {
+      "status": "PASSED",
+      "result": true
+    },
+    "configuration": {
+      "status": "PASSED",
+      "result": true
+    },
+    "agents": {
+      "status": "PASSED",
+      "result": true
+    },
+    "api_server": {
+      "status": "PASSED",
+      "result": true
+    },
+    "integration": {
+      "status": "PASSED",
+      "result": true
+    }
+  },
+  "summary": {
+    "total_tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "success_rate": "100.0%",
+    "overall_status": "HEALTHY"
+  }
+}

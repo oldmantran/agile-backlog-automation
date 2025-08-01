@@ -3,7 +3,8 @@
   "permissions": {
     "allow": [
       "Bash(mv:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }

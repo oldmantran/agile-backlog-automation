@@ -22,28 +22,30 @@ class Database:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 
-                # Create jobs table
+                # Create jobs table with proper constraints
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS jobs (
                         id TEXT PRIMARY KEY,
                         project_id TEXT NOT NULL,
-                        status TEXT NOT NULL,
-                        progress INTEGER DEFAULT 0,
+                        status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'completed', 'failed', 'cancelled')),
+                        progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
                         current_agent TEXT,
                         current_action TEXT,
                         start_time TIMESTAMP,
                         end_time TIMESTAMP,
                         error TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        result_data TEXT,  -- JSON storage for job results
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
                 
-                # Create user settings table
+                # Create user settings table with proper constraints
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS user_settings (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id TEXT NOT NULL,
-                        setting_type TEXT NOT NULL,
+                        setting_type TEXT NOT NULL CHECK (setting_type IN ('work_item_limits', 'visual_settings', 'llm_config', 'preferences')),
                         setting_key TEXT NOT NULL,
                         setting_value TEXT NOT NULL,
                         scope TEXT NOT NULL CHECK (scope IN ('session', 'user_default', 'global_default')),
@@ -54,7 +56,7 @@ class Database:
                     )
                 ''')
                 
-                # Create LLM configuration table
+                # Create LLM configuration table with proper constraints
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS llm_configurations (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,9 +64,9 @@ class Database:
                         name TEXT NOT NULL,
                         provider TEXT NOT NULL CHECK (provider IN ('openai', 'grok', 'ollama')),
                         model TEXT,
-                        api_key TEXT,
+                        api_key TEXT,  -- TODO: Encrypt in production
                         base_url TEXT,
-                        preset TEXT,
+                        preset TEXT CHECK (preset IN ('fast', 'balanced', 'high_quality', 'code_focused') OR preset IS NULL),
                         is_default BOOLEAN DEFAULT FALSE,
                         is_active BOOLEAN DEFAULT FALSE,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -73,16 +75,45 @@ class Database:
                     )
                 ''')
                 
-                # Create index for faster lookups
+                # Create indexes for faster lookups
                 cursor.execute('''
                     CREATE INDEX IF NOT EXISTS idx_user_settings_lookup 
                     ON user_settings(user_id, setting_type, scope)
                 ''')
                 
-                # Add is_user_default column if it doesn't exist (migration)
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_jobs_status 
+                    ON jobs(status, created_at)
+                ''')
+                
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_jobs_project 
+                    ON jobs(project_id, created_at)
+                ''')
+                
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_llm_configs_user 
+                    ON llm_configurations(user_id, is_active)
+                ''')
+                
+                # Add missing columns if they don't exist (migrations)
                 try:
                     cursor.execute('ALTER TABLE user_settings ADD COLUMN is_user_default BOOLEAN DEFAULT FALSE')
                     logger.info("Added is_user_default column to user_settings table")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
+                
+                try:
+                    cursor.execute('ALTER TABLE jobs ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+                    logger.info("Added updated_at column to jobs table")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
+                
+                try:
+                    cursor.execute('ALTER TABLE jobs ADD COLUMN result_data TEXT')
+                    logger.info("Added result_data column to jobs table")
                 except sqlite3.OperationalError:
                     # Column already exists
                     pass
@@ -93,6 +124,107 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to initialize database: {e}")
             raise
+    
+    def validate_database_integrity(self) -> Dict[str, Any]:
+        """Validate database integrity and return health report."""
+        report = {
+            "status": "healthy",
+            "issues": [],
+            "tables": {},
+            "indexes": {},
+            "constraints": {}
+        }
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Check table existence
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = [row[0] for row in cursor.fetchall()]
+                expected_tables = ['jobs', 'user_settings', 'llm_configurations']
+                
+                for table in expected_tables:
+                    if table in tables:
+                        report["tables"][table] = "exists"
+                        
+                        # Check table structure
+                        cursor.execute(f"PRAGMA table_info({table})")
+                        columns = cursor.fetchall()
+                        report["tables"][f"{table}_columns"] = len(columns)
+                    else:
+                        report["tables"][table] = "missing"
+                        report["issues"].append(f"Missing table: {table}")
+                        report["status"] = "unhealthy"
+                
+                # Check indexes
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='index'")
+                indexes = [row[0] for row in cursor.fetchall()]
+                expected_indexes = [
+                    'idx_user_settings_lookup', 
+                    'idx_jobs_status', 
+                    'idx_jobs_project', 
+                    'idx_llm_configs_user'
+                ]
+                
+                for index in expected_indexes:
+                    if index in indexes:
+                        report["indexes"][index] = "exists"
+                    else:
+                        report["indexes"][index] = "missing"
+                        report["issues"].append(f"Missing index: {index}")
+                
+                # Check for orphaned records (example - would need foreign keys)
+                cursor.execute("SELECT COUNT(*) FROM jobs WHERE status NOT IN ('queued', 'running', 'completed', 'failed', 'cancelled')")
+                invalid_status_count = cursor.fetchone()[0]
+                if invalid_status_count > 0:
+                    report["issues"].append(f"Found {invalid_status_count} jobs with invalid status")
+                    report["status"] = "unhealthy"
+                
+        except Exception as e:
+            report["status"] = "error"
+            report["issues"].append(f"Database validation failed: {str(e)}")
+        
+        return report
+    
+    def repair_database(self) -> bool:
+        """Attempt to repair common database issues."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Fix invalid job statuses
+                cursor.execute("""
+                    UPDATE jobs 
+                    SET status = 'failed' 
+                    WHERE status NOT IN ('queued', 'running', 'completed', 'failed', 'cancelled')
+                """)
+                
+                # Fix invalid progress values
+                cursor.execute("""
+                    UPDATE jobs 
+                    SET progress = CASE 
+                        WHEN progress < 0 THEN 0
+                        WHEN progress > 100 THEN 100
+                        ELSE progress
+                    END 
+                    WHERE progress < 0 OR progress > 100
+                """)
+                
+                # Add missing updated_at timestamps
+                cursor.execute("""
+                    UPDATE jobs 
+                    SET updated_at = CURRENT_TIMESTAMP 
+                    WHERE updated_at IS NULL
+                """)
+                
+                conn.commit()
+                logger.info("Database repair completed successfully")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Database repair failed: {e}")
+            return False
     
     def save_job(self, job_id: str, project_id: str, status: str = "queued", progress: int = 0):
         """Save or update a job."""

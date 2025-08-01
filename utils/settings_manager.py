@@ -31,6 +31,16 @@ class SettingsManager:
     def __init__(self, config_settings: Dict[str, Any]):
         self.config_settings = config_settings
         self.logger = logging.getLogger(self.__class__.__name__)
+        
+        # Validate config_settings structure
+        if not isinstance(config_settings, dict):
+            raise ValueError("config_settings must be a dictionary")
+        
+        # Log configuration precedence rules
+        self.logger.info("Settings precedence: session > user_default > global_default > config_fallback")
+        
+        # Validate critical configuration exists
+        self._validate_config_completeness()
     
     def get_work_item_limits(self, user_id: str, session_id: str = None) -> WorkItemLimits:
         """
@@ -317,4 +327,75 @@ class SettingsManager:
         Returns:
             List of setting changes
         """
-        return db.get_setting_history(user_id, setting_type) 
+        return db.get_setting_history(user_id, setting_type)
+    
+    def _validate_config_completeness(self) -> None:
+        """Validate that critical configuration sections exist."""
+        required_sections = ['work_item_limits', 'agents', 'workflow']
+        missing_sections = []
+        
+        for section in required_sections:
+            if section not in self.config_settings:
+                missing_sections.append(section)
+        
+        if missing_sections:
+            error_msg = f"Missing critical configuration sections: {missing_sections}"
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # Validate work_item_limits structure
+        wil_config = self.config_settings.get('work_item_limits', {})
+        if not isinstance(wil_config, dict):
+            raise ValueError("work_item_limits must be a dictionary")
+        
+        # Validate agents configuration
+        agents_config = self.config_settings.get('agents', {})
+        if not isinstance(agents_config, dict):
+            raise ValueError("agents configuration must be a dictionary")
+        
+        # Validate workflow configuration
+        workflow_config = self.config_settings.get('workflow', {})
+        if not isinstance(workflow_config, dict):
+            raise ValueError("workflow configuration must be a dictionary")
+        
+        sequence = workflow_config.get('sequence', [])
+        if not isinstance(sequence, list) or len(sequence) == 0:
+            raise ValueError("workflow.sequence must be a non-empty list")
+        
+        self.logger.info("Configuration validation passed")
+    
+    def validate_environment_variables(self) -> Dict[str, Any]:
+        """Validate required environment variables are present."""
+        import os
+        
+        validation_report = {
+            "status": "healthy",
+            "missing_vars": [],
+            "warnings": []
+        }
+        
+        # Critical environment variables
+        critical_vars = [
+            "AZURE_DEVOPS_PAT",
+            "AZURE_DEVOPS_ORG", 
+            "AZURE_DEVOPS_PROJECT"
+        ]
+        
+        # Optional but recommended
+        recommended_vars = [
+            "LLM_PROVIDER",
+            "OLLAMA_MODEL",
+            "OPENAI_API_KEY",
+            "USER_ID"
+        ]
+        
+        for var in critical_vars:
+            if not os.getenv(var):
+                validation_report["missing_vars"].append(var)
+                validation_report["status"] = "unhealthy"
+        
+        for var in recommended_vars:
+            if not os.getenv(var):
+                validation_report["warnings"].append(f"Recommended variable {var} not set")
+        
+        return validation_report 

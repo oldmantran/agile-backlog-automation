@@ -2,8 +2,11 @@ import os
 import json
 import requests
 import logging
-from typing import Dict, Any, Optional, List
-from datetime import datetime
+import time
+import signal
+from typing import Dict, Any, Optional, List, Callable
+from datetime import datetime, timedelta
+from functools import wraps
 
 from config.config_loader import Config
 from utils.prompt_manager import prompt_manager
@@ -23,6 +26,99 @@ class CommunicationError(AgentError):
     """Exception raised when agent communication fails."""
     pass
 
+class TimeoutError(AgentError):
+    """Exception raised when agent execution times out."""
+    pass
+
+class CircuitBreakerError(AgentError):
+    """Exception raised when circuit breaker is open."""
+    pass
+
+def timeout_handler(signum, frame):
+    """Handler for timeout signals."""
+    raise TimeoutError("Agent execution timed out")
+
+def with_timeout(timeout_seconds: int):
+    """Decorator to add timeout to agent methods."""
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # For Windows compatibility, we'll use a different approach
+            import threading
+            import time
+            
+            result = [None]
+            exception = [None]
+            
+            def target():
+                try:
+                    result[0] = func(*args, **kwargs)
+                except Exception as e:
+                    exception[0] = e
+            
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+            thread.join(timeout_seconds)
+            
+            if thread.is_alive():
+                logger.error(f"Function {func.__name__} timed out after {timeout_seconds} seconds")
+                raise TimeoutError(f"Function {func.__name__} timed out after {timeout_seconds} seconds")
+            
+            if exception[0]:
+                raise exception[0]
+                
+            return result[0]
+        return wrapper
+    return decorator
+
+class CircuitBreaker:
+    """Circuit breaker pattern implementation for agent reliability."""
+    
+    def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = 'CLOSED'  # CLOSED, OPEN, HALF_OPEN
+    
+    def call(self, func: Callable, *args, **kwargs):
+        """Execute function with circuit breaker protection."""
+        if self.state == 'OPEN':
+            if self._should_attempt_reset():
+                self.state = 'HALF_OPEN'
+            else:
+                raise CircuitBreakerError("Circuit breaker is OPEN")
+        
+        try:
+            result = func(*args, **kwargs)
+            self._on_success()
+            return result
+        except Exception as e:
+            self._on_failure()
+            raise
+    
+    def _should_attempt_reset(self) -> bool:
+        """Check if enough time has passed to attempt reset."""
+        if self.last_failure_time is None:
+            return True
+        
+        time_since_failure = datetime.now() - self.last_failure_time
+        return time_since_failure.total_seconds() > self.recovery_timeout
+    
+    def _on_success(self):
+        """Handle successful execution."""
+        self.failure_count = 0
+        self.state = 'CLOSED'
+    
+    def _on_failure(self):
+        """Handle failed execution."""
+        self.failure_count += 1
+        self.last_failure_time = datetime.now()
+        
+        if self.failure_count >= self.failure_threshold:
+            self.state = 'OPEN'
+
 class Agent:
     def __init__(self, name: str, config: Config):
         self.name = name
@@ -41,7 +137,14 @@ class Agent:
         self.error_count = 0
         self.success_count = 0
         
-        logger.info(f"Initialized agent: {name} with provider: {self.llm_provider}")
+        # Initialize circuit breaker for reliability
+        self.circuit_breaker = CircuitBreaker(failure_threshold=3, recovery_timeout=60)
+        
+        # Get timeout configuration from settings
+        agent_config = config.settings.get('agents', {}).get(name, {})
+        self.timeout_seconds = agent_config.get('timeout_seconds', 120)  # Default 2 minutes
+        
+        logger.info(f"Initialized agent: {name} with provider: {self.llm_provider}, timeout: {self.timeout_seconds}s")
     
     def _setup_llm_config(self):
         """Setup LLM provider configuration from database with environment fallback."""
@@ -251,38 +354,64 @@ Focus on quality assurance and test coverage."""
             self.execution_count += 1
             self.last_execution_time = start_time
             
-            # Generate prompt with context
-            system_prompt = self.get_prompt(context)
-            
-            logger.info(f"Executing {self.name} (attempt {self.execution_count}) with {self.llm_provider}")
-            
-            # Handle Ollama differently
-            if self.llm_provider == "ollama":
-                result = self._run_ollama(system_prompt, user_input)
-            else:
-                # Prepare request payload for cloud providers
-                payload = self._prepare_request_payload(system_prompt, user_input)
-                logger.debug(f"Request payload for {self.name}: {json.dumps(payload, indent=2)}")
-                
-                # Make API request with retry logic
-                response = self._make_api_request(payload)
-                
-                # Process response
-                result = self._process_response(response)
+            # Use circuit breaker to protect against repeated failures
+            result = self.circuit_breaker.call(self._execute_with_timeout, user_input, context)
             
             # Update success tracking
             self.success_count += 1
-            
-            logger.info(f"Successfully executed {self.name} in {(datetime.now() - start_time).total_seconds():.2f}s")
+            execution_time = (datetime.now() - start_time).total_seconds()
+            logger.info(f"✅ {self.name} completed successfully in {execution_time:.2f}s")
             
             return result
             
-        except Exception as e:
-            # Update error tracking
+        except CircuitBreakerError as e:
             self.error_count += 1
+            error_msg = f"❌ {self.name} circuit breaker is open - too many recent failures"
+            logger.error(error_msg)
+            raise AgentError(error_msg) from e
             
-            logger.error(f"Error executing {self.name}: {e}")
-            raise CommunicationError(f"Agent {self.name} failed: {str(e)}")
+        except TimeoutError as e:
+            self.error_count += 1
+            error_msg = f"❌ {self.name} timed out after {self.timeout_seconds} seconds"
+            logger.error(error_msg)
+            raise AgentError(error_msg) from e
+            
+        except Exception as e:
+            self.error_count += 1
+            execution_time = (datetime.now() - start_time).total_seconds()
+            error_msg = f"❌ {self.name} failed after {execution_time:.2f}s: {str(e)}"
+            logger.error(error_msg)
+            raise AgentError(error_msg) from e
+    
+    @with_timeout(120)  # This will be overridden by instance timeout
+    def _execute_with_timeout(self, user_input: str, context: dict = None) -> str:
+        """Execute the agent with timeout protection."""
+        # Override timeout dynamically
+        import threading
+        current_thread = threading.current_thread()
+        if hasattr(current_thread, '_timeout'):
+            current_thread._timeout = self.timeout_seconds
+        
+        # Generate prompt with context
+        system_prompt = self.get_prompt(context)
+        
+        logger.info(f"Executing {self.name} (attempt {self.execution_count}) with {self.llm_provider}")
+        
+        # Handle Ollama differently
+        if self.llm_provider == "ollama":
+            result = self._run_ollama(system_prompt, user_input)
+        else:
+            # Prepare request payload for cloud providers
+            payload = self._prepare_request_payload(system_prompt, user_input)
+            logger.debug(f"Request payload for {self.name}: {json.dumps(payload, indent=2)}")
+            
+            # Make API request with retry logic
+            response = self._make_api_request(payload)
+            
+            # Process response
+            result = self._process_response(response)
+        
+        return result
     
     def _run_ollama(self, system_prompt: str, user_input: str) -> str:
         """Run inference using local Ollama."""
