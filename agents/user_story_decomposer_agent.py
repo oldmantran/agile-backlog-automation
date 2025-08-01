@@ -1,9 +1,11 @@
 import json
 import re
 import threading
+from typing import Optional
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
+from utils.json_extractor import JSONExtractor
 
 class TimeoutError(Exception):
     """Custom timeout exception."""
@@ -57,18 +59,22 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         if self.model and ("70b" in self.model.lower()):
             # 70B model needs longer timeout
-            models_to_try = [(self.model, 120)]
+            models_to_try = [(self.model, 180)]
+        elif self.model and ("32b" in self.model.lower()):
+            # 32B model needs reasonable timeout for quality
+            models_to_try = [(self.model, 90)]
         elif self.model and ("34b" in self.model.lower()):
-            # 34B model with standard timeout
-            models_to_try = [(self.model, 60)]
+            # 34B model needs more time - increased from 60 to 120 seconds
+            models_to_try = [(self.model, 120)]
         else:
             # 8B or other models with standard timeout
             models_to_try = [(self.model, 60)]
         
         # Try each model until one succeeds
+        response = None
         for model_name, timeout in models_to_try:
             try:
-                print(f"🔄 Trying {model_name} for user stories with {timeout}s timeout...")
+                print(f"Trying {model_name} for user stories with {timeout}s timeout...")
                 
                 # Temporarily switch to this model
                 original_model = self.model
@@ -83,54 +89,104 @@ Edge Cases: {feature.get('edge_cases', [])}
                         print(f"⚠️ Failed to switch to {model_name}: {e}")
                         continue
                 
+                # Use lower temperature for better instruction following
+                original_temperature = getattr(self, 'temperature', 0.7)
+                self.temperature = 0.3  # Lower temperature for more structured output
+                
+                # Try normal prompt first
                 response = self._run_with_timeout(user_input, prompt_context, timeout=timeout, template_name="user_story_decomposer")
+                
+                # If response doesn't look like JSON, try strict prompt
+                if response and not (response.strip().startswith('[') or response.strip().startswith('{')):
+                    print("Response not JSON format, trying strict prompt...")
+                    strict_context = {
+                        'feature_title': feature.get('title', 'Unknown Feature'),
+                        'feature_description': feature.get('description', 'No description')
+                    }
+                    response = self._run_with_timeout(user_input, strict_context, timeout=timeout, template_name="user_story_decomposer_strict")
+                
+                # If we still have empty response, try direct call without timeout
+                if not response or len(response.strip()) == 0:
+                    print("Empty response from timeout method, trying direct call...")
+                    try:
+                        if template_name:
+                            response = self.run_with_template(user_input, prompt_context, "user_story_decomposer")
+                        else:
+                            response = self.run(user_input, prompt_context)
+                        print(f"Direct call successful, response length: {len(response) if response else 0}")
+                    except Exception as e:
+                        print(f"Direct call also failed: {e}")
+                        response = ""
+                
+                # Restore original temperature
+                self.temperature = original_temperature
                 
                 # Restore original model
                 self.model = original_model
                 
-                print(f"✅ Successfully generated user stories using {model_name}")
+                print(f"SUCCESS: Generated user stories using {model_name}")
                 break
                 
             except TimeoutError:
-                print(f"⏱️ {model_name} timed out after {timeout}s, trying next model...")
+                print(f"TIMEOUT {model_name} timed out after {timeout}s, trying next model...")
                 # Restore original model before continuing
                 self.model = original_model
                 continue
             except Exception as e:
-                print(f"❌ {model_name} failed: {e}, trying next model...")
+                print(f"ERROR {model_name} failed: {e}, trying next model...")
                 # Restore original model before continuing
                 self.model = original_model
                 continue
         else:
             # All models failed
-            print("❌ All models failed for user story generation")
+            print("ERROR: All models failed for user story generation")
             return []
 
+        # Safety check for None response (timeout case)
+        if response is None:
+            print("WARNING: Response is None, falling back to text extraction")
+            return self._extract_user_stories_from_text("", feature, max_user_stories)
+
         try:
-            # Extract JSON with improved parsing
-            cleaned_response = self._extract_json_from_response(response)
-            print(f"🔍 [UserStoryDecomposerAgent] Raw response: {response[:200]}...")
-            print(f"🔍 [UserStoryDecomposerAgent] Cleaned response: {cleaned_response[:200]}...")
+            # Debug: Show response info
+            print(f"[UserStoryDecomposerAgent] Response type: {type(response)}")
+            print(f"[UserStoryDecomposerAgent] Response length: {len(response) if response else 0}")
+            if response:
+                print(f"[UserStoryDecomposerAgent] Raw response (first 500 chars): {response[:500]}")
+                print(f"[UserStoryDecomposerAgent] Raw response (last 200 chars): {response[-200:]}")
+            else:
+                print("[UserStoryDecomposerAgent] Response is empty or None!")
+            
+            # Extract JSON with robust parsing
+            cleaned_response = JSONExtractor.extract_json_from_response(response)
+            print(f"[UserStoryDecomposerAgent] Cleaned response: {cleaned_response[:200] if cleaned_response else 'None'}")
             
             # Safety check for empty or invalid JSON
             if not cleaned_response or cleaned_response.strip() == "[]":
-                print("⚠️ Empty or invalid JSON response")
-                return self._extract_user_stories_from_text(response, feature, max_user_stories)
+                print("WARNING: Empty or invalid JSON response, trying manual extraction")
+                # Try one more manual extraction approach
+                manual_json = self._manual_json_extraction(response)
+                if manual_json:
+                    cleaned_response = manual_json
+                    print(f"Manual extraction successful: {cleaned_response[:100]}...")
+                else:
+                    print("WARNING: Manual extraction failed, attempting text extraction")
+                    return self._extract_user_stories_from_text(response, feature, max_user_stories)
             
             try:
                 user_stories = json.loads(cleaned_response)
             except (json.JSONDecodeError, TypeError):
-                print("⚠️ Failed to parse JSON response")
+                print("WARNING: Failed to parse JSON response")
                 return self._extract_user_stories_from_text(response, feature, max_user_stories)
             
             # Safety check for None or empty user_stories
             if not user_stories:
-                print("⚠️ Empty or None user_stories after JSON parsing")
+                print("WARNING: Empty or None user_stories after JSON parsing")
                 return self._extract_user_stories_from_text(response, feature, max_user_stories)
             
             # Additional safety check - ensure user_stories is not None
             if user_stories is None:
-                print("⚠️ user_stories is None after JSON parsing")
+                print("WARNING: user_stories is None after JSON parsing")
                 return self._extract_user_stories_from_text(response, feature, max_user_stories)
             
             # Handle different response formats
@@ -139,7 +195,7 @@ Edge Cases: {feature.get('edge_cases', [])}
                 first_item = user_stories[0]
                 if first_item is not None and isinstance(first_item, dict) and 'user_stories' in first_item:
                     # This is actually a list of features, extract the user stories
-                    print("🔄 Response contains features, extracting user stories...")
+                    print("Response contains features, extracting user stories...")
                     extracted_stories = []
                     for feature_item in user_stories:
                         stories = feature_item.get('user_stories', [])
@@ -161,7 +217,7 @@ Edge Cases: {feature.get('edge_cases', [])}
             elif isinstance(user_stories, dict) and 'user_stories' in user_stories:
                 return self._validate_and_enhance_user_stories(user_stories['user_stories'], max_user_stories)
             else:
-                print("⚠️ LLM response was not in expected format. Attempting to extract user stories from response...")
+                print("WARNING: LLM response was not in expected format. Attempting to extract user stories from response...")
                 # Try to extract any user story-like content from the response
                 return self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
                 
@@ -171,7 +227,7 @@ Edge Cases: {feature.get('edge_cases', [])}
 
     def _extract_user_stories_from_any_format(self, response_data: any, feature: dict = None, max_user_stories: int = None) -> list[dict]:
         """Extract user stories from any response format the LLM provides."""
-        print("🔍 [UserStoryDecomposerAgent] Extracting user stories from unexpected format...")
+        print("[UserStoryDecomposerAgent] Extracting user stories from unexpected format...")
         
         extracted_stories = []
         
@@ -204,10 +260,10 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         if not extracted_stories:
             # No fallback - return empty list instead of creating generic work items
-            print("🔍 [UserStoryDecomposerAgent] No user stories extracted, returning empty list")
+            print("[UserStoryDecomposerAgent] No user stories extracted, returning empty list")
             return []
         
-        print(f"🔍 [UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from format")
+        print(f"[UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from format")
         return self._validate_and_enhance_user_stories(extracted_stories, max_user_stories)
 
     def _convert_to_user_story_format(self, item: any) -> dict:
@@ -227,7 +283,7 @@ Edge Cases: {feature.get('edge_cases', [])}
 
     def _extract_user_stories_from_text(self, response_text: str, feature: dict, max_user_stories: int = None) -> list[dict]:
         """Extract user stories from raw text when JSON parsing fails."""
-        print("🔍 [UserStoryDecomposerAgent] Extracting user stories from raw text...")
+        print("[UserStoryDecomposerAgent] Extracting user stories from raw text...")
         
         extracted_stories = []
         
@@ -269,10 +325,10 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # If still no stories found, return empty list instead of creating generic work items
         if not extracted_stories:
-            print("🔍 [UserStoryDecomposerAgent] No user stories found in text, returning empty list")
+            print("[UserStoryDecomposerAgent] No user stories found in text, returning empty list")
             return []
         
-        print(f"🔍 [UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from text")
+        print(f"[UserStoryDecomposerAgent] Extracted {len(extracted_stories)} user stories from text")
         return self._validate_and_enhance_user_stories(extracted_stories, max_user_stories)
 
     def _validate_and_enhance_user_stories(self, user_stories: list, max_user_stories: int = None) -> list:
@@ -305,7 +361,7 @@ Edge Cases: {feature.get('edge_cases', [])}
         if not title_valid:
             # Only show critical title issues
             if not title or len(title.strip()) < 5:
-                print(f"⚠️ Critical story title issue: {', '.join(title_issues)}")
+                print(f"WARNING: Critical story title issue: {', '.join(title_issues)}")
             if not title:
                 enhanced_story['title'] = f"User Story: {story.get('description', 'Undefined')[:50]}..."
         
@@ -315,7 +371,7 @@ Edge Cases: {feature.get('edge_cases', [])}
         if not desc_valid:
             # Only show critical description issues
             if not description or len(description.strip()) < 20:
-                print(f"⚠️ Critical story description issue: {', '.join(desc_issues)}")
+                print(f"WARNING: Critical story description issue: {', '.join(desc_issues)}")
             # Try to fix the description
             if 'As a' not in description and 'As an' not in description:
                 user_type = story.get('user_type', 'user')
@@ -332,7 +388,7 @@ Edge Cases: {feature.get('edge_cases', [])}
         if not criteria_valid or criteria_issues:
             # Only show critical criteria issues
             if len(criteria) < 2:
-                print(f"📋 Critical acceptance criteria issue: {', '.join(criteria_issues)}")
+                print(f"WARNING: Critical acceptance criteria issue: {', '.join(criteria_issues)}")
             enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
                 criteria, 
                 {'title': enhanced_story['title'], 'description': enhanced_story['description']}
@@ -612,11 +668,14 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         def target():
             try:
+                print(f"Starting LLM call with template: {template_name}")
                 if template_name:
                     result[0] = self.run_with_template(user_input, context, template_name)
                 else:
                     result[0] = self.run(user_input, context)
+                print(f"LLM call completed, response length: {len(result[0]) if result[0] else 0}")
             except Exception as e:
+                print(f"LLM call failed with exception: {e}")
                 exception[0] = e
         
         thread = threading.Thread(target=target)
@@ -625,10 +684,97 @@ Edge Cases: {feature.get('edge_cases', [])}
         thread.join(timeout)
         
         if thread.is_alive():
-            print(f"⚠️ User story generation timed out after {timeout} seconds")
-            return None
+            print(f"WARNING: User story generation timed out after {timeout} seconds")
+            # Return empty response instead of None to prevent NoneType errors
+            return ""
         
         if exception[0]:
             raise exception[0]
         
-        return result[0]
+        # Ensure we never return None - return empty string if result is None
+        return result[0] if result[0] is not None else ""
+    
+    def _manual_json_extraction(self, response: str) -> Optional[str]:
+        """Manual JSON extraction as final fallback for CodeLlama responses."""
+        if not response:
+            return None
+            
+        try:
+            # Strategy 1: Look for JSON after explanatory text
+            # CodeLlama often explains then provides JSON
+            lines = response.split('\n')
+            json_start = -1
+            json_end = -1
+            
+            for i, line in enumerate(lines):
+                if line.strip().startswith('[') and '{' in line:
+                    json_start = i
+                    break
+                elif line.strip().startswith('{') and '"title"' in line:
+                    json_start = i
+                    break
+            
+            if json_start >= 0:
+                # Find the end of JSON
+                bracket_count = 0
+                json_lines = []
+                for i in range(json_start, len(lines)):
+                    line = lines[i]
+                    json_lines.append(line)
+                    
+                    # Count brackets to find end
+                    for char in line:
+                        if char == '[' or char == '{':
+                            bracket_count += 1
+                        elif char == ']' or char == '}':
+                            bracket_count -= 1
+                    
+                    if bracket_count == 0 and (']' in line or '}' in line):
+                        json_end = i
+                        break
+                
+                if json_end >= 0:
+                    json_text = '\n'.join(json_lines)
+                    
+                    # Clean up the JSON
+                    json_text = json_text.strip()
+                    
+                    # If it's a single object, wrap in array
+                    if json_text.startswith('{') and json_text.endswith('}'):
+                        json_text = f'[{json_text}]'
+                    
+                    # Try to parse it
+                    try:
+                        json.loads(json_text)
+                        return json_text
+                    except:
+                        pass
+            
+            # Strategy 2: Extract any JSON-like content using regex
+            import re
+            
+            # Look for array patterns
+            array_match = re.search(r'\[[\s\S]*?\]', response)
+            if array_match:
+                potential_json = array_match.group(0)
+                try:
+                    json.loads(potential_json)
+                    return potential_json
+                except:
+                    pass
+            
+            # Strategy 3: Look for object patterns and wrap in array
+            object_matches = re.findall(r'\{[^{}]*"title"[^{}]*:[^{}]*\}', response, re.DOTALL)
+            if object_matches:
+                json_text = '[' + ','.join(object_matches) + ']'
+                try:
+                    json.loads(json_text)
+                    return json_text
+                except:
+                    pass
+            
+            return None
+            
+        except Exception as e:
+            print(f"❌ Manual JSON extraction error: {e}")
+            return None
