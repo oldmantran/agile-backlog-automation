@@ -20,6 +20,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test Azure DevOps connection: `python tools/test_ado_connection.py`
 - Test complete workflow: `python tools/test_complete_workflow.py`
 
+### Development Scripts
+- Start application: `tools/start_application.bat` (Windows) or `tools/quick_start.bat`
+- Kill development processes: `tools/kill_dev_processes.bat` (Windows)
+- Debug QA agents: `python tools/debug_qa_lead_agent.py`
+- Scan test artifacts: `python tools/scan_remaining_test_artifacts.py`
+
 ## Architecture Overview
 
 This is a multi-agent AI system that transforms product visions into structured Azure DevOps backlogs.
