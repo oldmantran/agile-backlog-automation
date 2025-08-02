@@ -131,11 +131,11 @@ work_item_limits:
   enabled: true
   
   # Maximum number of work items per job (null for unlimited)
-  max_epics: 2
-  max_features_per_epic: 3
-  max_user_stories_per_feature: 5
-  max_tasks_per_user_story: 5
-  max_test_cases_per_user_story: 5
+  max_epics: 1
+  max_features_per_epic: 1
+  max_user_stories_per_feature: 1
+  max_tasks_per_user_story: 1
+  max_test_cases_per_user_story: 3
   
   # Preset configurations for quick setup
   presets:

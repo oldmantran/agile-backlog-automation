@@ -138,7 +138,7 @@ CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code bloc
                 if hasattr(self, 'ollama_provider') and self.llm_provider == "ollama":
                     try:
                         from utils.ollama_client import create_ollama_provider
-                        self.ollama_provider = create_ollama_provider(preset='balanced')
+                        self.ollama_provider = create_ollama_provider(preset='fast')
                     except Exception as e:
                         print(f"⚠️ Failed to switch to {model_name}: {e}")
                         continue

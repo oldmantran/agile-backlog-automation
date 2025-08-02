@@ -2669,3 +2669,29 @@ Vision State...
 2025-08-01 23:08:41 - supervisor - INFO - Executing stage: qa_lead_agent
 2025-08-01 23:08:41 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: False)
 2025-08-01 23:08:41 - supervisor - INFO - Processing QA for feature: Real-Time Data Analytics Engine
+2025-08-02 08:17:39 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250802_081739_proj_20250802_081739
+2025-08-02 08:17:39 - supervisor - INFO - Azure DevOps config for job_id=job_20250802_081739_proj_20250802_081739: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-02 08:17:57 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-02 08:17:57 - supervisor - INFO - Starting workflow execution at 2025-08-02 08:17:57.878610
+2025-08-02 08:17:57 - supervisor - INFO - Refreshing agent configurations...
+2025-08-02 08:17:59 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-02 08:18:01 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-02 08:18:04 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-02 08:18:06 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-02 08:18:08 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-02 08:18:08 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-02 08:18:08 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-02 08:18:08 - supervisor - INFO - Generating epics from product vision
+2025-08-02 08:18:08 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-02 08:18:08 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
