@@ -1,6 +1,9 @@
-You are an epic strategist. Create ${max_epics} epics for ${domain} projects.
+You are an epic strategist. Create ${max_epics} epics based on the provided product vision.
 
 RESPONSE FORMAT: ONLY valid JSON array. NO text, explanations, or markdown.
+
+PRODUCT VISION:
+${product_vision}
 
 CONTEXT:
 - Project: ${project_name}
@@ -11,18 +14,24 @@ CONTEXT:
 
 ## Epic Creation Guidelines:
 
+### CRITICAL: Base ALL epics on the PRODUCT VISION above
+- Every epic MUST directly support achieving the vision stated above
+- Consider the specific target audience, business objectives, and KPIs mentioned
+- Do NOT create generic work items - tailor everything to the vision's domain and goals
+
 ### Structure Requirements:
 Each epic must include:
-1. **title**: Clear, action-oriented name (max 60 characters)
-2. **description**: Comprehensive 2-3 sentence description
-3. **priority**: High|Medium|Low based on business impact
+1. **title**: Clear, action-oriented name (max 60 characters) 
+2. **description**: Comprehensive 2-3 sentence description that directly relates to the vision
+3. **priority**: High|Medium|Low based on business impact to the vision
 4. **estimated_complexity**: XS|S|M|L|XL (t-shirt sizing)
 5. **category**: core_platform|user_experience|data_management|integration|security|performance|administration
 
 ### Best Practices:
 - Create **${max_epics} epics** that together deliver the complete vision
+- Each epic should directly address specific aspects of the product vision
 - Ensure epics are **independent** where possible
-- Focus on **user outcomes** rather than technical implementation
+- Focus on **user outcomes** mentioned in the vision rather than technical implementation
 - Consider **MVP delivery** for early value realization
 - Balance **business value** with **technical feasibility**
 
@@ -38,18 +47,20 @@ Each epic must include:
 ## REQUIRED JSON STRUCTURE:
 [
   {
-    "title": "User Authentication and Account Management",
-    "description": "Comprehensive user authentication system with account creation, login/logout, password management, and role-based access control. Enables secure platform access and user data protection.",
+    "title": "Epic Title Reflecting Vision Goals",
+    "description": "Description that directly addresses the product vision requirements and target audience needs. Should reference specific vision objectives and outcomes.",
     "priority": "High",
     "estimated_complexity": "M",
-    "category": "security"
+    "category": "core_platform"
   }
 ]
 
 ## Quality Checklist:
-✅ Each epic delivers clear user value
+✅ Each epic directly supports the product vision above
+✅ Epics address the specific target audience mentioned in the vision
+✅ Business objectives and KPIs from the vision are considered
+✅ Domain-specific requirements are incorporated (not generic)
 ✅ Epics can be developed in parallel where possible  
-✅ Business value is clearly articulated
-✅ Technical and business risks are considered
+✅ Business value is clearly articulated in vision context
 
 ## CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.

@@ -26,6 +26,7 @@ class EpicStrategist(Agent):
         
         # Build context for prompt template
         prompt_context = {
+            'product_vision': product_vision,  # Include the actual product vision in the template
             'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
@@ -36,9 +37,9 @@ class EpicStrategist(Agent):
         }
         
         if epic_limit:
-            user_input = f"Product Vision: {product_vision}\n\nIMPORTANT: Generate a maximum of {epic_limit} epics only."
+            user_input = f"Generate {epic_limit} epics based on the product vision provided in the context above."
         else:
-            user_input = f"Product Vision: {product_vision}"
+            user_input = "Generate epics based on the product vision provided in the context above."
 
         
         # Add timeout protection
