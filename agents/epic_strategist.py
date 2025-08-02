@@ -36,11 +36,28 @@ class EpicStrategist(Agent):
             'max_epics': epic_limit if epic_limit else "unlimited"
         }
         
+        print(f"DEBUG: Epic strategist product_vision: {product_vision[:200]}...")
+        print(f"DEBUG: Epic strategist prompt_context: {prompt_context}")
+        print(f"DEBUG: Epic strategist context from supervisor: {context}")
+        print(f"DEBUG: Epic strategist max_epics: {epic_limit}")
+        
         if epic_limit:
             user_input = f"Generate {epic_limit} epics based on the product vision provided in the context above."
         else:
             user_input = "Generate epics based on the product vision provided in the context above."
 
+        
+        # Debug: Check what the actual prompt looks like after template substitution
+        try:
+            actual_prompt = self.get_prompt(prompt_context)
+            print(f"DEBUG: Actual system prompt after template substitution:")
+            print(f"=====================================")
+            print(actual_prompt)
+            print(f"=====================================")
+            print(f"DEBUG: User input: {user_input}")
+            print(f"=====================================")
+        except Exception as e:
+            print(f"DEBUG: Error getting prompt: {e}")
         
         # Add timeout protection
         try:
