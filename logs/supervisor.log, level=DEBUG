@@ -2695,3 +2695,74 @@ Vision State...
 2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
 2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
 2025-08-02 08:18:08 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-02 08:29:58 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250802_082958_proj_20250802_082958
+2025-08-02 08:29:58 - supervisor - INFO - Azure DevOps config for job_id=job_20250802_082958_proj_20250802_082958: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-02 08:30:16 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-02 08:30:16 - supervisor - INFO - Starting workflow execution at 2025-08-02 08:30:16.724343
+2025-08-02 08:30:16 - supervisor - INFO - Refreshing agent configurations...
+2025-08-02 08:30:18 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-02 08:30:20 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-02 08:30:22 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-02 08:30:24 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-02 08:30:26 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-02 08:30:26 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-02 08:30:26 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-02 08:30:26 - supervisor - INFO - Generating epics from product vision
+2025-08-02 08:30:26 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=1
+2025-08-02 08:30:26 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-02 08:30:26 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-02 08:30:26 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-02 08:30:26 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-02 08:30:26 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-02 08:30:26 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-02 08:30:26 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-02 08:30:34 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-02 08:30:34 - supervisor - INFO - Generated 1 epics (limited to 1)
+2025-08-02 08:30:34 - supervisor - INFO - Validation completed: 1 epics checked, 0 errors.
+2025-08-02 08:30:34 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-02 08:30:34 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-02 08:30:34 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=1
+2025-08-02 08:30:34 - supervisor - INFO - Decomposing epic: Backlog Automation System
+2025-08-02 08:30:40 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-02 08:30:40 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-02 08:30:40 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-02 08:30:40 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=1
+2025-08-02 08:30:40 - supervisor - INFO - Decomposing feature to user stories: Backlog Automation Engine
+2025-08-02 08:30:51 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-02 08:30:51 - supervisor - INFO - [DEBUG] Retrying incomplete item Backlog Automation Engine for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-02 08:30:51 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-02 08:30:51 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-02 08:30:51 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=1
+2025-08-02 08:30:51 - supervisor - INFO - Decomposing feature to user stories: Backlog Automation Engine
+2025-08-02 08:31:17 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-02 08:31:17 - supervisor - INFO - [DEBUG] Retrying incomplete item Backlog Automation Engine for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-02 08:31:17 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-02 08:31:17 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-02 08:31:17 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=1
+2025-08-02 08:31:17 - supervisor - INFO - Decomposing feature to user stories: Backlog Automation Engine
+2025-08-02 08:31:43 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-02 08:31:43 - supervisor - INFO - [DEBUG] Retrying incomplete item Backlog Automation Engine for stage user_story_decomposer_agent (attempt 3/5)
+2025-08-02 08:31:43 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-02 08:31:43 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-02 08:31:43 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=1
+2025-08-02 08:31:43 - supervisor - INFO - Decomposing feature to user stories: Backlog Automation Engine
+2025-08-02 08:32:08 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-02 08:32:08 - supervisor - INFO - [DEBUG] Retrying incomplete item Backlog Automation Engine for stage user_story_decomposer_agent (attempt 4/5)
+2025-08-02 08:32:08 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-02 08:32:08 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-02 08:32:08 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=1
+2025-08-02 08:32:08 - supervisor - INFO - Decomposing feature to user stories: Backlog Automation Engine
+2025-08-02 08:32:34 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-02 08:32:34 - supervisor - INFO - [DEBUG] Retrying incomplete item Backlog Automation Engine for stage user_story_decomposer_agent (attempt 5/5)
+2025-08-02 08:32:34 - supervisor - INFO - Executing stage: developer_agent
+2025-08-02 08:32:34 - supervisor - INFO - Generating developer tasks (parallel mode: False)
+2025-08-02 08:32:34 - supervisor - INFO - Generating tasks for user story: Backlog Automation Engine
+2025-08-02 08:32:44 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-08-02 08:32:44 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-08-02 08:32:44 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: False)
+2025-08-02 08:32:44 - supervisor - INFO - Processing QA for feature: Backlog Automation Engine

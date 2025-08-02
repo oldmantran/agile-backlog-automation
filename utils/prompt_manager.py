@@ -109,10 +109,8 @@ class PromptTemplateManager:
         missing_vars = [var for var in required_vars if var not in merged_context]
         
         if missing_vars:
-            logger.warning(f"Missing required variables for {agent_name}: {missing_vars}")
-            # Provide fallback values for missing variables
-            for var in missing_vars:
-                merged_context[var] = self._get_fallback_value(var)
+            logger.error(f"Missing required template variables for {agent_name}: {missing_vars}")
+            raise ValueError(f"Cannot generate prompt for {agent_name} - missing required variables: {missing_vars}")
         
         try:
             result = template.safe_substitute(**merged_context)

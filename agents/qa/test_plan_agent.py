@@ -22,6 +22,13 @@ class TestPlanAgent(Agent):
         super().__init__("test_plan_agent", config)
         self.logger = logging.getLogger(self.__class__.__name__)
         
+        # Get timeout from QA lead agent sub-agents config
+        qa_config = config.get_setting('agents', 'qa_lead_agent') or {}
+        sub_agents_config = qa_config.get('sub_agents', {})
+        test_plan_config = sub_agents_config.get('test_plan_agent', {})
+        self.timeout_seconds = test_plan_config.get('timeout_seconds', 120)
+        self.logger.info(f"TestPlanAgent initialized with timeout: {self.timeout_seconds}s")
+        
         # Test plan specific settings
         self.default_test_approach = "Risk-based testing with automated and manual coverage"
         self.test_types = [
@@ -106,14 +113,23 @@ class TestPlanAgent(Agent):
                                    context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Generate test plan content using LLM."""
         try:
+            # Validate required data exists
+            if not epic.get('title') or not epic.get('description'):
+                self.logger.error(f"Epic missing required fields: title={epic.get('title')}, description={epic.get('description')}")
+                return None
+                
+            if not feature.get('title') or not feature.get('description'):
+                self.logger.error(f"Feature missing required fields: title={feature.get('title')}, description={feature.get('description')}")
+                return None
+            
             # Prepare context for LLM using the proper template system
             template_context = {
                 'project_name': context.get('project_name', 'Unknown Project'),
                 'domain': context.get('domain', 'dynamic'),
-                'epic_title': epic.get('title', ''),
-                'epic_description': epic.get('description', ''),
-                'feature_title': feature.get('title', ''),
-                'feature_description': feature.get('description', ''),
+                'epic_title': epic['title'],
+                'epic_description': epic['description'],
+                'feature_title': feature['title'],
+                'feature_description': feature['description'],
                 'user_stories': feature.get('user_stories', []),
                 'project_context': context.get('project_context', {}),
                 'project_type': context.get('project_context', {}).get('project_type', '')
@@ -141,16 +157,8 @@ class TestPlanAgent(Agent):
                 prompt = self.get_prompt(template_context)
                 self.logger.info(f"Generated prompt using template system for feature: {feature.get('title', 'Unknown')}")
             except Exception as e:
-                self.logger.warning(f"Template system failed, using fallback prompt: {e}")
-                prompt = self._build_test_plan_prompt({
-                    'epic_title': epic.get('title', ''),
-                    'epic_description': epic.get('description', ''),
-                    'feature_title': feature.get('title', ''),
-                    'feature_description': feature.get('description', ''),
-                    'user_stories': feature.get('user_stories', []),
-                    'domain': context.get('domain', ''),
-                    'project_type': context.get('project_context', {}).get('project_type', '')
-                })
+                self.logger.error(f"Failed to generate prompt for test plan: {e}")
+                return None
             
             # Call LLM to generate test plan with timeout handling
             try:
