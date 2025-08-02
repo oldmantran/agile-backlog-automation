@@ -98,11 +98,11 @@ const SimpleProjectWizard: React.FC = () => {
   const handleBackToHome = () => {
     console.log('Navigating back to dashboard...');
     try {
-      navigate('/my-projects');
+      navigate('/');
     } catch (error) {
       console.error('React Router navigation failed:', error);
       // Fallback to direct navigation
-      window.location.href = '/my-projects';
+      window.location.href = '/';
     }
   };
 
@@ -188,7 +188,7 @@ const SimpleProjectWizard: React.FC = () => {
                     onClick={handleBackToHome}
                     variant="outline"
                   >
-                    Back to Dashboard
+                    Return to Dashboard
                   </Button>
                 </div>
               </div>
@@ -223,7 +223,7 @@ const SimpleProjectWizard: React.FC = () => {
                     onClick={handleBackToHome}
                     variant="outline"
                   >
-                    Back to Dashboard
+                    Return to Dashboard
                   </Button>
                 </div>
               </div>

@@ -159,7 +159,20 @@ Edge Cases: {feature.get('edge_cases', [])}
             
             # Extract JSON with robust parsing
             cleaned_response = JSONExtractor.extract_json_from_response(response)
-            print(f"[UserStoryDecomposerAgent] Cleaned response: {cleaned_response[:200] if cleaned_response else 'None'}")
+            if cleaned_response:
+                try:
+                    parsed_preview = json.loads(cleaned_response)
+                    if isinstance(parsed_preview, list):
+                        print(f"[UserStoryDecomposerAgent] Extracted {len(parsed_preview)} user stories")
+                        if parsed_preview:
+                            criteria_count = len(parsed_preview[0].get('acceptance_criteria', []))
+                            print(f"[UserStoryDecomposerAgent] First story has {criteria_count} acceptance criteria")
+                    else:
+                        print(f"[UserStoryDecomposerAgent] Cleaned response is not a list: {type(parsed_preview)}")
+                except:
+                    print(f"[UserStoryDecomposerAgent] Cleaned response (first 200): {cleaned_response[:200]}")
+            else:
+                print("[UserStoryDecomposerAgent] Cleaned response: None")
             
             # Safety check for empty or invalid JSON
             if not cleaned_response or cleaned_response.strip() == "[]":

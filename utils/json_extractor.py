@@ -105,11 +105,14 @@ class JSONExtractor:
             except:
                 pass
         
-        # Find JSON objects
+        # Find JSON objects and wrap in array if needed
         object_match = JSONExtractor._find_balanced_brackets(response, '{', '}')
         if object_match:
             try:
-                json.loads(object_match)
+                parsed = json.loads(object_match)
+                # If it's a single object with user story fields, wrap in array
+                if isinstance(parsed, dict) and any(key in parsed for key in ['title', 'user_story', 'description']):
+                    return f"[{object_match}]"
                 return object_match
             except:
                 pass
@@ -159,26 +162,28 @@ class JSONExtractor:
                     except:
                         continue
         
-        # Strategy 2: Look for object patterns
-        object_patterns = [
-            r'\{[^{}]*"title"[^{}]*:[^{}]*"user_story"[^{}]*:[^{}]*\}',  # User story specific
-            r'\{[^{}]*"[^"]*"[^{}]*:[^{}]*\}',                         # Generic object
-        ]
-        
-        for pattern in object_patterns:
-            matches = re.findall(pattern, response, re.DOTALL)
-            for match in matches:
-                try:
-                    json.loads(match)
-                    return f"[{match}]"  # Wrap single object in array
-                except:
-                    # Try cleaning the match
-                    cleaned = JSONExtractor.clean_json_string(match)
-                    try:
-                        json.loads(cleaned)
-                        return f"[{cleaned}]"  # Wrap single object in array
-                    except:
-                        continue
+        # Strategy 2: Look for object patterns using balanced bracket matching
+        # Find objects that contain "title" and "user_story" fields
+        title_start = response.find('"title"')
+        if title_start != -1:
+            # Find the opening brace before "title"
+            for i in range(title_start, -1, -1):
+                if response[i] == '{':
+                    # Extract balanced object starting from this brace
+                    obj_match = JSONExtractor._find_balanced_brackets(response[i:], '{', '}')
+                    if obj_match and '"title"' in obj_match and '"user_story"' in obj_match:
+                        try:
+                            json.loads(obj_match)
+                            return f"[{obj_match}]"  # Wrap single object in array
+                        except:
+                            # Try cleaning the match
+                            cleaned = JSONExtractor.clean_json_string(obj_match)
+                            try:
+                                json.loads(cleaned)
+                                return f"[{cleaned}]"  # Wrap single object in array
+                            except:
+                                continue
+                    break
                     
         return None
     
