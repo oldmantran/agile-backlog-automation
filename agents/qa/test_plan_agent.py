@@ -148,22 +148,15 @@ class TestPlanAgent(Agent):
             # Add user stories to context
             template_context['user_stories_text'] = user_stories_text
             
-            # Debug: Log the template context
-            self.logger.info(f"Template context keys: {list(template_context.keys())}")
-            self.logger.info(f"Template context values: epic_title='{template_context.get('epic_title')}', feature_title='{template_context.get('feature_title')}', user_stories_text length={len(template_context.get('user_stories_text', ''))}")
-            
-            # Get the prompt using the template system
-            try:
-                prompt = self.get_prompt(template_context)
-                self.logger.info(f"Generated prompt using template system for feature: {feature.get('title', 'Unknown')}")
-            except Exception as e:
-                self.logger.error(f"Failed to generate prompt for test plan: {e}")
-                return None
+            # Debug: Log key template variables
+            self.logger.debug(f"Template context for {feature.get('title', 'Unknown')}: epic_title='{template_context.get('epic_title')}', feature_title='{template_context.get('feature_title')}'")
             
             # Call LLM to generate test plan with timeout handling
+            # The run() method will internally call get_prompt(template_context)
             try:
                 self.logger.info(f"Calling LLM for test plan generation for feature: {feature.get('title', 'Unknown')}")
-                response = self.run(prompt)
+                user_input = f"Create a comprehensive test plan for the feature: {feature.get('title', 'Unknown Feature')}"
+                response = self.run(user_input, template_context)
                 self.logger.info(f"LLM response received, length: {len(response) if response else 0}")
             except Exception as e:
                 self.logger.warning(f"LLM call failed for test plan generation: {e}")

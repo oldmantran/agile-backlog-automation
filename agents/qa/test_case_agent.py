@@ -100,25 +100,29 @@ class TestCaseAgent(Agent):
                                    context: Dict[str, Any]) -> Optional[List[Dict[str, Any]]]:
         """Generate test cases content using LLM."""
         try:
-            # Prepare context for LLM
-            test_context = {
+            # Build acceptance criteria text for template
+            acceptance_criteria_text = ""
+            for i, criteria in enumerate(user_story.get('acceptance_criteria', []), 1):
+                acceptance_criteria_text += f"{i}. {criteria}\n"
+            
+            # Prepare template context for LLM using the template system
+            template_context = {
+                'project_name': context.get('project_name', 'Unknown Project'),
+                'domain': context.get('domain', 'dynamic'),
                 'feature_title': feature.get('title', ''),
                 'feature_description': feature.get('description', ''),
                 'user_story_title': user_story.get('title', ''),
                 'user_story_description': user_story.get('description', ''),
-                'acceptance_criteria': user_story.get('acceptance_criteria', []),
+                'acceptance_criteria_text': acceptance_criteria_text,
                 'priority': user_story.get('priority', 'Medium'),
-                'project_context': context.get('project_context', {}),
-                'domain': context.get('project_context', {}).get('domain', ''),
                 'project_type': context.get('project_context', {}).get('project_type', ''),
                 'test_case_format': self.test_case_format
             }
             
-            # Create test case generation prompt
-            prompt = self._build_test_cases_prompt(test_context)
-            
-            # Call LLM to generate test cases
-            response = self.run(prompt)
+            # Call LLM to generate test cases using template system
+            # The run() method will internally call get_prompt(template_context)
+            user_input = f"Create comprehensive test cases for the user story: {user_story.get('title', 'Unknown Story')}"
+            response = self.run(user_input, template_context)
             
             if not response:
                 self.logger.error("LLM returned empty response for test cases generation")

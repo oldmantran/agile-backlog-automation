@@ -30,6 +30,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a multi-agent AI system that transforms product visions into structured Azure DevOps backlogs.
 
+**Current Status**: Beta/Development Ready - Core functionality working, but requires additional testing and hardening before production deployment.
+
 ### Core Components
 
 **Frontend**: React TypeScript application with Tailwind CSS and shadcn/ui components. Uses React Query for API state management and provides real-time progress updates via Server-Sent Events.
@@ -44,10 +46,10 @@ This is a multi-agent AI system that transforms product visions into structured 
 5. `qa_lead_agent.py` - Orchestrates QA sub-agents for test generation
 
 **LLM Provider Support**: 
-- Local LLM via Ollama (recommended for cost savings)
+- Local LLM via Ollama (recommended for cost savings, Qwen2.5:32B recommended)
 - Cloud providers: OpenAI, Grok (xAI)
 - Configuration managed through `utils/settings_manager.py`
-- **Qwen2.5:32B Optimization**: Prompts optimized for improved JSON compliance and reduced fallback usage
+- **Template System**: Comprehensive prompt template system with variable validation and proper context injection
 
 ### Key Directories
 
@@ -82,10 +84,33 @@ Full integration with Azure DevOps Test Management API:
 
 ### Development Patterns
 
-**Error Handling**: Comprehensive error handling with fallback mechanisms, especially in QA agents to prevent retry loops.
+**Error Handling**: Robust error handling with fail-fast approach. Fallback mechanisms removed in favor of proper error reporting to prevent creation of generic work items.
 
 **Parallel Processing**: Configurable parallel execution for agent stages with rate limiting and worker pool management.
 
 **Real-time Updates**: Server-Sent Events (SSE) for live progress updates during backlog generation.
 
 **Testing**: Extensive test suite in `tools/` directory for individual components, integration testing, and Azure DevOps connectivity validation.
+
+## Recent Fixes and Current Status
+
+### Critical Issues Resolved
+- **Epic Generation**: Fixed template system to generate vision-specific epics instead of generic "Backlog Automation" items
+- **QA Agent Template Issues**: Resolved missing template variables causing QA test plan, suite, and case generation failures
+- **Execution Time Display**: Fixed timing calculation and notification system to show accurate job duration
+- **Agent Calling Patterns**: Corrected base agent `run()` method usage across all QA agents
+- **Fallback Removal**: Eliminated generic fallback mechanisms that masked real failures
+
+### Current Limitations
+- **Performance**: Individual LLM calls take 30+ seconds, full workflow can take 4+ minutes
+- **Error Recovery**: Limited retry mechanisms for transient failures
+- **Test Coverage**: Core workflow verified but needs comprehensive automated testing
+- **Load Testing**: Not tested with large projects (100+ work items)
+- **User Experience**: Limited progress feedback during long-running operations
+
+### Production Readiness Roadmap
+1. **Performance Optimization**: Implement caching, parallel processing improvements
+2. **Comprehensive Testing**: End-to-end automated test suite
+3. **Error Handling**: Enhanced retry logic and graceful degradation
+4. **Monitoring**: Add application performance monitoring and alerting
+5. **User Testing**: Validate with real business scenarios and user feedback
