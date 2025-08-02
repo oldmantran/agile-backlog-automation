@@ -132,6 +132,10 @@ class TestPlanAgent(Agent):
             # Add user stories to context
             template_context['user_stories_text'] = user_stories_text
             
+            # Debug: Log the template context
+            self.logger.info(f"Template context keys: {list(template_context.keys())}")
+            self.logger.info(f"Template context values: epic_title='{template_context.get('epic_title')}', feature_title='{template_context.get('feature_title')}', user_stories_text length={len(template_context.get('user_stories_text', ''))}")
+            
             # Get the prompt using the template system
             try:
                 prompt = self.get_prompt(template_context)

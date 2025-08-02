@@ -2581,3 +2581,91 @@ Vision State...
 2025-08-01 22:32:26 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics Engine
 2025-08-01 22:32:37 - supervisor - INFO - Decomposing feature to user stories: Visualization Dashboard
 2025-08-01 22:33:15 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Insights and Recommendations
+2025-08-01 22:49:41 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_224941_proj_20250801_224941
+2025-08-01 22:49:41 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_224941_proj_20250801_224941: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 22:49:58 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 22:49:58 - supervisor - INFO - Starting workflow execution at 2025-08-01 22:49:58.945793
+2025-08-01 22:49:58 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 22:50:01 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 22:50:03 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:50:05 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:50:07 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:50:09 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 22:50:09 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 22:50:09 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 22:50:09 - supervisor - INFO - Generating epics from product vision
+2025-08-01 22:50:09 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 22:50:09 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 22:50:09 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 22:50:09 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 22:50:09 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 22:50:09 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 22:50:09 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 22:50:09 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 22:50:18 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 22:50:18 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 22:50:18 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 22:50:18 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 22:50:18 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 22:50:18 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 22:50:18 - supervisor - INFO - Decomposing epic: Real-Time Data Analytics and Visualization
+2025-08-01 22:50:30 - supervisor - INFO - Decomposing epic: Integration with Existing Systems
+2025-08-01 22:50:40 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 22:50:40 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 22:50:40 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:50:40 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:50:40 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics Engine
+2025-08-01 22:50:51 - supervisor - INFO - Decomposing feature to user stories: Visualization Dashboard
+2025-08-01 22:51:28 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Insights and Recommendations
+2025-08-01 22:51:56 - supervisor - INFO - Decomposing feature to user stories: Integration with Existing Oil and Gas Systems
+2025-08-01 22:52:48 - supervisor - INFO - Decomposing feature to user stories: Data Transfer and Synchronization
+2025-08-01 22:53:42 - supervisor - INFO - Decomposing feature to user stories: Integration Testing
+2025-08-01 22:54:10 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-01 22:54:10 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Data Analytics Engine for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 22:54:10 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-01 22:54:10 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:54:10 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:54:10 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics Engine
+2025-08-01 22:54:56 - supervisor - INFO - Decomposing feature to user stories: Visualization Dashboard
+2025-08-01 22:55:35 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Insights and Recommendations
+2025-08-01 22:56:03 - supervisor - INFO - Decomposing feature to user stories: Integration with Existing Oil and Gas Systems
+2025-08-01 22:56:56 - supervisor - INFO - Decomposing feature to user stories: Data Transfer and Synchronization
+2025-08-01 22:57:50 - supervisor - INFO - Decomposing feature to user stories: Integration Testing
+2025-08-01 22:58:18 - supervisor - INFO - Validation completed: All features checked for user stories, 0 errors.
+2025-08-01 22:58:18 - supervisor - INFO - Executing stage: developer_agent
+2025-08-01 22:58:18 - supervisor - INFO - Generating developer tasks (parallel mode: False)
+2025-08-01 22:58:18 - supervisor - INFO - Generating tasks for user story: Real-Time Data Analytics Engine
+2025-08-01 22:58:46 - supervisor - INFO - Generating tasks for user story: Scalable Data Analytics Engine
+2025-08-01 22:59:17 - supervisor - INFO - Generating tasks for user story: Flexible Data Analytics Engine
+2025-08-01 22:59:40 - supervisor - INFO - Generating tasks for user story: Real-Time Data Analytics Engine UI/UX
+2025-08-01 23:00:10 - supervisor - INFO - Generating tasks for user story: Real-Time Data Analytics Engine Error Handling
+2025-08-01 23:00:33 - supervisor - INFO - Generating tasks for user story: Visualization Dashboard - Filtering
+2025-08-01 23:00:59 - supervisor - INFO - Generating tasks for user story: Visualization Dashboard - Sorting
+2025-08-01 23:01:24 - supervisor - INFO - Generating tasks for user story: Visualization Dashboard - Analytics
+2025-08-01 23:01:49 - supervisor - INFO - Generating tasks for user story: Visualization Dashboard - Responsive Design
+2025-08-01 23:02:20 - supervisor - INFO - Generating tasks for user story: Visualization Dashboard - Accessibility Compliance
+2025-08-01 23:02:54 - supervisor - INFO - Generating tasks for user story: Generate AI-Powered Insights and Recommendations
+2025-08-01 23:03:25 - supervisor - INFO - Generating tasks for user story: Implement Machine Learning Algorithms for Insights and Recommendations
+2025-08-01 23:03:47 - supervisor - INFO - Generating tasks for user story: Implement Personalized Search Results and Recommendations
+2025-08-01 23:04:13 - supervisor - INFO - Generating tasks for user story: Integrate with legacy oil and gas systems
+2025-08-01 23:04:30 - supervisor - INFO - Generating tasks for user story: Ensure data transfer between systems is secure
+2025-08-01 23:04:50 - supervisor - INFO - Generating tasks for user story: Provide a user-friendly interface for integration
+2025-08-01 23:05:13 - supervisor - INFO - Generating tasks for user story: Ensure compatibility with various oil and gas systems
+2025-08-01 23:05:37 - supervisor - INFO - Generating tasks for user story: Ensure scalability and reliability of the integration
+2025-08-01 23:06:01 - supervisor - INFO - Generating tasks for user story: Data Transfer Mechanisms
+2025-08-01 23:06:25 - supervisor - INFO - Generating tasks for user story: Synchronization Mechanisms
+2025-08-01 23:06:42 - supervisor - INFO - Generating tasks for user story: Error Handling
+2025-08-01 23:07:00 - supervisor - INFO - Generating tasks for user story: Data Security
+2025-08-01 23:07:21 - supervisor - INFO - Generating tasks for user story: Data Validation
+2025-08-01 23:07:41 - supervisor - INFO - Generating tasks for user story: Integration Testing for Oil and Gas Systems
+2025-08-01 23:07:51 - supervisor - INFO - Generating tasks for user story: Responsive Design for Oil and Gas Systems
+2025-08-01 23:08:19 - supervisor - INFO - Generating tasks for user story: Accessibility Compliance for Oil and Gas Systems
+2025-08-01 23:08:41 - supervisor - INFO - Validation passed: All user stories have tasks and estimates.
+2025-08-01 23:08:41 - supervisor - INFO - Executing stage: qa_lead_agent
+2025-08-01 23:08:41 - supervisor - INFO - Generating QA artifacts using QA Lead Agent (parallel mode: False)
+2025-08-01 23:08:41 - supervisor - INFO - Processing QA for feature: Real-Time Data Analytics Engine
