@@ -64,17 +64,17 @@ class EpicStrategist(Agent):
             # Set a longer timeout for larger models (70B needs more time)
             timeout = 180 if self.model and "70b" in self.model.lower() else 60
             response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
-        except TimeoutError:
-            print("⚠️ Epic generation timed out, returning empty list")
-            return []
+        except TimeoutError as e:
+            print("⚠️ Epic generation timed out")
+            raise TimeoutError("Epic generation timed out") from e
         except Exception as e:
             print(f"❌ Epic generation failed: {e}")
-            return []
+            raise
 
         try:
             if not response:
                 print("⚠️ Empty response from LLM")
-                return []
+                raise ValueError("Empty response from LLM")
             
             # Check for markdown code blocks
             # Extract JSON with improved parsing
@@ -83,13 +83,14 @@ class EpicStrategist(Agent):
             # Safety check for empty or invalid JSON
             if not cleaned_response or cleaned_response.strip() == "[]":
                 print("⚠️ Empty or invalid JSON response")
-                return []
+                raise ValueError("Empty or invalid JSON response")
             
             try:
                 epics = json.loads(cleaned_response)
-            except (json.JSONDecodeError, TypeError):
+            except (json.JSONDecodeError, TypeError) as e:
                 print("⚠️ Failed to parse JSON response")
-                return []
+                raise ValueError(f"Failed to parse JSON response: {e}")
+                
             if isinstance(epics, list):
                 # Apply the epic limit constraint if specified
                 if epic_limit:
@@ -101,9 +102,9 @@ class EpicStrategist(Agent):
                     return epics
             else:
                 print("⚠️ LLM response was not a list.")
-                return []
+                raise ValueError("LLM response was not a list")
         except json.JSONDecodeError as e:
-            return []
+            raise ValueError(f"JSON decode error: {e}")
 
     def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
         """Run the agent with a timeout to prevent hanging."""

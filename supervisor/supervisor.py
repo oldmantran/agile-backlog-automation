@@ -904,38 +904,16 @@ class WorkflowSupervisor:
             
             if thread.is_alive():
                 self.logger.error(f"Epic generation timed out after {timeout} seconds")
-                # Create a fallback epic to prevent workflow failure
-                fallback_epic = {
-                    "title": "Core System Implementation",
-                    "description": "Implement the core system functionality based on the product vision",
-                    "priority": "High",
-                    "business_value": "Critical for system operation"
-                }
-                epics[0] = [fallback_epic]
-                self.logger.warning("Using fallback epic due to timeout")
+                raise TimeoutError(f"Epic generation timed out after {timeout} seconds")
             
             elif exception[0]:
                 self.logger.error(f"Epic generation failed: {exception[0]}")
-                # Create a fallback epic to prevent workflow failure
-                fallback_epic = {
-                    "title": "Core System Implementation",
-                    "description": "Implement the core system functionality based on the product vision",
-                    "priority": "High",
-                    "business_value": "Critical for system operation"
-                }
-                epics[0] = [fallback_epic]
-                self.logger.warning("Using fallback epic due to generation failure")
+                raise exception[0]
             
             # Ensure we have valid epics
             if not epics[0] or not isinstance(epics[0], list):
-                self.logger.warning("No valid epics generated, using fallback")
-                fallback_epic = {
-                    "title": "Core System Implementation",
-                    "description": "Implement the core system functionality based on the product vision",
-                    "priority": "High",
-                    "business_value": "Critical for system operation"
-                }
-                epics[0] = [fallback_epic]
+                self.logger.error("No valid epics generated")
+                raise ValueError("Epic generation failed - no valid epics produced")
             
             self.workflow_data['epics'] = epics[0]
             

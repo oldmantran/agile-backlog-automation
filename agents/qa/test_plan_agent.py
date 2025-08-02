@@ -270,59 +270,14 @@ Ensure the test plan is thorough, realistic, and aligned with industry best prac
                 else:
                     self.logger.warning("Parsed JSON missing required fields, using fallback")
             
-            # If JSON extraction fails or is invalid, create a basic structure
-            self.logger.warning("Could not parse valid JSON from test plan response, creating basic structure")
-            
-            # Extract any useful information from the response
-            description = "Test plan for feature"
-            if response and len(response) > 50:
-                # Try to extract a meaningful description from the response
-                lines = response.split('\n')
-                for line in lines:
-                    if 'test' in line.lower() and len(line) > 20:
-                        description = line.strip()
-                        break
-            
-            return {
-                'description': f"{description}: {response[:200]}..." if len(response) > 200 else description,
-                'test_approach': self.default_test_approach,
-                'test_types': self.test_types,
-                'entry_criteria': [
-                    "Feature development completed",
-                    "Test environment prepared",
-                    "Test data available"
-                ],
-                'exit_criteria': [
-                    "All test cases executed",
-                    "Critical defects resolved",
-                    "Acceptance criteria verified"
-                ],
-                'test_environment': {
-                    'description': 'Standard test environment with appropriate test data',
-                    'data_requirements': 'Representative test data covering normal and edge cases',
-                    'tools_required': ['Test management tool', 'Automation framework']
-                },
-                'risks_and_mitigations': [
-                    {
-                        'risk': 'Test environment unavailability',
-                        'impact': 'Medium',
-                        'mitigation': 'Prepare backup environment and early validation'
-                    }
-                ]
-            }
+            # If JSON extraction fails or is invalid, return None to skip
+            self.logger.error("Could not parse valid JSON from test plan response, skipping test plan creation")
+            return None
             
         except Exception as e:
             self.logger.error(f"Error parsing test plan response: {e}")
-            # Return a minimal valid structure instead of empty dict
-            return {
-                'description': 'Test plan for feature (fallback due to parsing error)',
-                'test_approach': self.default_test_approach,
-                'test_types': self.test_types,
-                'entry_criteria': ["Feature development completed"],
-                'exit_criteria': ["All test cases executed"],
-                'test_environment': {'description': 'Standard test environment'},
-                'risks_and_mitigations': []
-            }
+            # Skip test plan creation on parsing error
+            return None
     
     def _extract_json_from_response(self, response: str) -> Optional[Dict[str, Any]]:
         """Extract JSON content from LLM response with improved parsing."""
