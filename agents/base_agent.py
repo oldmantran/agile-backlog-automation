@@ -222,6 +222,7 @@ class Agent:
         """Validate that the prompt template exists and is properly formatted."""
         try:
             validation = prompt_manager.validate_template(self.name)
+            logger.info(f"DEBUG: Template validation for {self.name}: {validation}")
             if not validation["valid"]:
                 logger.warning(f"Template validation failed for {self.name}: {validation.get('error', 'Unknown error')}")
                 # Don't raise error, use fallback prompt instead

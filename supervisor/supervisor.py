@@ -271,7 +271,7 @@ class WorkflowSupervisor:
         self.config = Config(config_path) if config_path else Config()
         
         # Setup logging
-        self.logger = setup_logger("supervisor", "logs/supervisor.log, level=DEBUG")
+        self.logger = setup_logger("supervisor", "logs/supervisor.log", "DEBUG")
         self.logger.info(f"Initializing WorkflowSupervisor for job_id={job_id}")
         if organization_url or project or area_path or iteration_path:
             self.logger.info(f"Azure DevOps config for job_id={job_id}: org_url={organization_url}, project={project}, area_path={area_path}, iteration_path={iteration_path}")
@@ -1359,12 +1359,14 @@ class WorkflowSupervisor:
         try:
             # Debug execution metadata timing
             self.logger.info(f"DEBUG: Execution metadata timing - start_time: {self.execution_metadata.get('start_time')}, end_time: {self.execution_metadata.get('end_time')}")
+            print(f"CONSOLE DEBUG: Execution metadata timing - start_time: {self.execution_metadata.get('start_time')}, end_time: {self.execution_metadata.get('end_time')}")
             
             # Calculate summary statistics
             stats = self._calculate_workflow_stats()
             
             # Debug calculated stats
             self.logger.info(f"DEBUG: Calculated execution_time_seconds: {stats.get('execution_time_seconds')}")
+            print(f"CONSOLE DEBUG: Calculated execution_time_seconds: {stats.get('execution_time_seconds')}")
             
             # Add Azure DevOps integration info if available
             azure_integration = self.workflow_data.get('azure_integration', {})
@@ -1424,12 +1426,15 @@ class WorkflowSupervisor:
         end_time = self.execution_metadata.get('end_time')
         
         self.logger.info(f"DEBUG: _calculate_workflow_stats - start_time: {start_time}, end_time: {end_time}")
+        print(f"CONSOLE DEBUG: _calculate_workflow_stats - start_time: {start_time}, end_time: {end_time}")
         
         if start_time and end_time:
             execution_time = (end_time - start_time).total_seconds()
             self.logger.info(f"DEBUG: Calculated execution_time: {execution_time} seconds")
+            print(f"CONSOLE DEBUG: Calculated execution_time: {execution_time} seconds")
         else:
             self.logger.warning(f"DEBUG: Cannot calculate execution time - start_time: {start_time}, end_time: {end_time}")
+            print(f"CONSOLE DEBUG: Cannot calculate execution time - start_time: {start_time}, end_time: {end_time}")
         
         return {
             'epics_generated': epics_count,
