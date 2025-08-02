@@ -1355,8 +1355,14 @@ class WorkflowSupervisor:
     def _send_completion_notifications(self):
         """Send workflow completion notifications."""
         try:
+            # Debug execution metadata timing
+            self.logger.info(f"DEBUG: Execution metadata timing - start_time: {self.execution_metadata.get('start_time')}, end_time: {self.execution_metadata.get('end_time')}")
+            
             # Calculate summary statistics
             stats = self._calculate_workflow_stats()
+            
+            # Debug calculated stats
+            self.logger.info(f"DEBUG: Calculated execution_time_seconds: {stats.get('execution_time_seconds')}")
             
             # Add Azure DevOps integration info if available
             azure_integration = self.workflow_data.get('azure_integration', {})
@@ -1412,8 +1418,16 @@ class WorkflowSupervisor:
         )
         
         execution_time = None
-        if self.execution_metadata['start_time'] and self.execution_metadata['end_time']:
-            execution_time = (self.execution_metadata['end_time'] - self.execution_metadata['start_time']).total_seconds()
+        start_time = self.execution_metadata.get('start_time')
+        end_time = self.execution_metadata.get('end_time')
+        
+        self.logger.info(f"DEBUG: _calculate_workflow_stats - start_time: {start_time}, end_time: {end_time}")
+        
+        if start_time and end_time:
+            execution_time = (end_time - start_time).total_seconds()
+            self.logger.info(f"DEBUG: Calculated execution_time: {execution_time} seconds")
+        else:
+            self.logger.warning(f"DEBUG: Cannot calculate execution time - start_time: {start_time}, end_time: {end_time}")
         
         return {
             'epics_generated': epics_count,
@@ -2248,6 +2262,11 @@ class WorkflowSupervisor:
                 update_progress_callback(stage_index, "Generating final report", 0.75)
             
             final_report = self._generate_final_report()
+            
+            # CRITICAL FIX: Ensure end_time is set before sending notifications
+            if not self.execution_metadata.get('end_time'):
+                self.execution_metadata['end_time'] = datetime.now()
+                self.logger.info(f"Set end_time in final validation: {self.execution_metadata['end_time']}")
             
             # Send completion notifications
             if update_progress_callback:
