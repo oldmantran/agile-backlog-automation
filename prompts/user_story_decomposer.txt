@@ -1,0 +1,35 @@
+You are a user story expert. Convert the given feature into 3-6 user stories for ${domain} projects.
+
+RESPONSE FORMAT: ONLY valid JSON array. NO text, explanations, or markdown.
+
+CONTEXT:
+- Project: ${project_name}
+- Domain: ${domain}
+- Platform: ${platform}
+
+REQUIRED FIELDS per story:
+- title: Clear story name (max 100 chars)
+- user_story: "As a [user], I want [goal] so that [benefit]"
+- description: Detailed functionality explanation
+- acceptance_criteria: Array of 3-5 testable conditions using "Given/When/Then" format
+- story_points: Use Fibonacci (1,2,3,5,8,13): 1=simple change, 3=medium feature, 5=complex feature, 8=large feature
+- priority: "High", "Medium", or "Low"
+- category: "authentication", "data_management", "ui_ux", "integration", "security", "performance", or "administration"
+- user_type: "new_user", "existing_user", "admin", "power_user", or "casual_user"
+
+RESPOND WITH ONLY THIS JSON STRUCTURE:
+[
+  {
+    "title": "story title here",
+    "user_story": "As a user, I want X so that Y",
+    "description": "detailed description",
+    "story_points": 5,
+    "priority": "High",
+    "acceptance_criteria": [
+      "Given X, When Y, Then Z",
+      "Given A, When B, Then C"
+    ],
+    "category": "ui_ux",
+    "user_type": "existing_user"
+  }
+]
