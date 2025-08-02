@@ -2156,3 +2156,428 @@ Vision State...
 2025-08-01 17:09:36 - supervisor - INFO - Decomposing feature to user stories: Real-Time Alerts and Notifications
 2025-08-01 17:09:36 - supervisor - INFO - Decomposing feature to user stories: User Account Creation
 2025-08-01 17:11:08 - supervisor - INFO - Decomposing feature to user stories: Password Management
+2025-08-01 21:03:06 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_210306_proj_20250801_210306
+2025-08-01 21:03:06 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_210306_proj_20250801_210306: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 21:03:23 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 21:03:23 - supervisor - INFO - Starting workflow execution at 2025-08-01 21:03:23.965938
+2025-08-01 21:03:23 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 21:03:26 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 21:03:28 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:03:30 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:03:32 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:03:34 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 21:03:34 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 21:03:34 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 21:03:34 - supervisor - INFO - Generating epics from product vision
+2025-08-01 21:03:34 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 21:03:34 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 21:03:34 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 21:03:34 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 21:03:34 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 21:03:34 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 21:03:34 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 21:03:34 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 21:03:44 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 21:03:44 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 21:03:44 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 21:03:44 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 21:03:44 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-08-01 21:03:44 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 21:03:44 - supervisor - INFO - Decomposing epic: Data Visualization and Insights
+2025-08-01 21:03:44 - supervisor - INFO - Decomposing epic: User Authentication and Access Management
+2025-08-01 21:04:03 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 21:04:03 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 21:04:03 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-08-01 21:04:03 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:04:03 - supervisor - INFO - Decomposing feature to user stories: Data Visualization and Insights Dashboard
+2025-08-01 21:04:03 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Data Analysis and Forecasting
+2025-08-01 21:04:03 - supervisor - INFO - Decomposing feature to user stories: Real-Time Alerts and Notifications
+2025-08-01 21:04:03 - supervisor - INFO - Decomposing feature to user stories: User Account Creation
+2025-08-01 21:22:52 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_212252_proj_20250801_212252
+2025-08-01 21:22:52 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_212252_proj_20250801_212252: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 21:23:10 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 21:23:10 - supervisor - INFO - Starting workflow execution at 2025-08-01 21:23:10.093123
+2025-08-01 21:23:10 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 21:26:21 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_212621_proj_20250801_212621
+2025-08-01 21:26:21 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_212621_proj_20250801_212621: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 21:26:38 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 21:26:38 - supervisor - INFO - Starting workflow execution at 2025-08-01 21:26:38.971061
+2025-08-01 21:26:38 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 21:26:41 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 21:26:43 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:26:45 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:26:47 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:26:49 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 21:26:49 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 21:26:49 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 21:26:49 - supervisor - INFO - Generating epics from product vision
+2025-08-01 21:26:49 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 21:26:49 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 21:26:49 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 21:26:49 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 21:26:49 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 21:26:49 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 21:26:49 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 21:26:49 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 21:27:10 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 21:27:10 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 21:27:10 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 21:27:10 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 21:27:10 - supervisor - INFO - Decomposing epics into features (parallel mode: True)
+2025-08-01 21:27:10 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 21:27:10 - supervisor - INFO - Decomposing epic: Data Visualization and Insights
+2025-08-01 21:27:10 - supervisor - INFO - Decomposing epic: User Authentication and Access Management
+2025-08-01 21:27:29 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 21:27:29 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 21:27:29 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-08-01 21:27:29 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:27:29 - supervisor - INFO - Decomposing feature to user stories: Data Visualization and Insights Dashboard
+2025-08-01 21:27:29 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Data Analysis and Forecasting
+2025-08-01 21:27:29 - supervisor - INFO - Decomposing feature to user stories: Real-Time Alerts and Notifications
+2025-08-01 21:27:29 - supervisor - INFO - Decomposing feature to user stories: User Account Creation
+2025-08-01 21:28:16 - supervisor - INFO - Decomposing feature to user stories: Password Management
+2025-08-01 21:28:41 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control
+2025-08-01 21:30:13 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Data Visualization and Insights Dashboard'. Skipping invalid user stories.
+2025-08-01 21:30:13 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'AI-Powered Data Analysis and Forecasting'. Skipping invalid user stories.
+2025-08-01 21:30:13 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'User Account Creation'. Skipping invalid user stories.
+2025-08-01 21:30:13 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Password Management'. Skipping invalid user stories.
+2025-08-01 21:30:13 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Role-Based Access Control'. Skipping invalid user stories.
+2025-08-01 21:30:13 - supervisor - INFO - Validation completed: All features checked for user stories, 5 errors.
+2025-08-01 21:30:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Data Visualization and Insights Dashboard for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 21:30:13 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Powered Data Analysis and Forecasting for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 21:30:13 - supervisor - INFO - [DEBUG] Retrying incomplete item User Account Creation for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 21:30:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Password Management for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 21:30:13 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 21:30:13 - supervisor - INFO - [DEBUG] 5 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-01 21:30:13 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-08-01 21:30:13 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:30:13 - supervisor - INFO - Decomposing feature to user stories: Data Visualization and Insights Dashboard
+2025-08-01 21:30:13 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Data Analysis and Forecasting
+2025-08-01 21:30:13 - supervisor - INFO - Decomposing feature to user stories: Real-Time Alerts and Notifications
+2025-08-01 21:30:13 - supervisor - INFO - Decomposing feature to user stories: User Account Creation
+2025-08-01 21:31:37 - supervisor - INFO - Decomposing feature to user stories: Password Management
+2025-08-01 21:31:45 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control
+2025-08-01 21:33:17 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Data Visualization and Insights Dashboard'. Skipping invalid user stories.
+2025-08-01 21:33:17 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'AI-Powered Data Analysis and Forecasting'. Skipping invalid user stories.
+2025-08-01 21:33:17 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Real-Time Alerts and Notifications'. Skipping invalid user stories.
+2025-08-01 21:33:17 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'User Account Creation'. Skipping invalid user stories.
+2025-08-01 21:33:17 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Password Management'. Skipping invalid user stories.
+2025-08-01 21:33:17 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Role-Based Access Control'. Skipping invalid user stories.
+2025-08-01 21:33:17 - supervisor - INFO - Validation completed: All features checked for user stories, 6 errors.
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] Retrying incomplete item Data Visualization and Insights Dashboard for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Powered Data Analysis and Forecasting for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Alerts and Notifications for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] Retrying incomplete item User Account Creation for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] Retrying incomplete item Password Management for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-01 21:33:17 - supervisor - INFO - [DEBUG] 6 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-01 21:33:17 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-08-01 21:33:17 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:33:17 - supervisor - INFO - Decomposing feature to user stories: Data Visualization and Insights Dashboard
+2025-08-01 21:33:17 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Data Analysis and Forecasting
+2025-08-01 21:33:17 - supervisor - INFO - Decomposing feature to user stories: Real-Time Alerts and Notifications
+2025-08-01 21:33:17 - supervisor - INFO - Decomposing feature to user stories: User Account Creation
+2025-08-01 21:34:49 - supervisor - INFO - Decomposing feature to user stories: Password Management
+2025-08-01 21:34:49 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control
+2025-08-01 21:36:22 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Data Visualization and Insights Dashboard'. Skipping invalid user stories.
+2025-08-01 21:36:22 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'AI-Powered Data Analysis and Forecasting'. Skipping invalid user stories.
+2025-08-01 21:36:22 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Real-Time Alerts and Notifications'. Skipping invalid user stories.
+2025-08-01 21:36:22 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'User Account Creation'. Skipping invalid user stories.
+2025-08-01 21:36:22 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Password Management'. Skipping invalid user stories.
+2025-08-01 21:36:22 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Role-Based Access Control'. Skipping invalid user stories.
+2025-08-01 21:36:22 - supervisor - INFO - Validation completed: All features checked for user stories, 6 errors.
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] Retrying incomplete item Data Visualization and Insights Dashboard for stage user_story_decomposer_agent (attempt 3/5)
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] Retrying incomplete item AI-Powered Data Analysis and Forecasting for stage user_story_decomposer_agent (attempt 3/5)
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] Retrying incomplete item Real-Time Alerts and Notifications for stage user_story_decomposer_agent (attempt 2/5)
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] Retrying incomplete item User Account Creation for stage user_story_decomposer_agent (attempt 3/5)
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] Retrying incomplete item Password Management for stage user_story_decomposer_agent (attempt 3/5)
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] Retrying incomplete item Role-Based Access Control for stage user_story_decomposer_agent (attempt 3/5)
+2025-08-01 21:36:22 - supervisor - INFO - [DEBUG] 6 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-01 21:36:22 - supervisor - INFO - Decomposing features into user stories (parallel mode: True)
+2025-08-01 21:36:22 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:36:22 - supervisor - INFO - Decomposing feature to user stories: Data Visualization and Insights Dashboard
+2025-08-01 21:36:22 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Data Analysis and Forecasting
+2025-08-01 21:36:22 - supervisor - INFO - Decomposing feature to user stories: Real-Time Alerts and Notifications
+2025-08-01 21:36:22 - supervisor - INFO - Decomposing feature to user stories: User Account Creation
+2025-08-01 21:37:54 - supervisor - INFO - Decomposing feature to user stories: Password Management
+2025-08-01 21:37:54 - supervisor - INFO - Decomposing feature to user stories: Role-Based Access Control
+2025-08-01 21:47:24 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_214724_proj_20250801_214724
+2025-08-01 21:47:24 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_214724_proj_20250801_214724: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 21:47:41 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 21:47:41 - supervisor - INFO - Starting workflow execution at 2025-08-01 21:47:41.424697
+2025-08-01 21:47:41 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 21:47:43 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 21:47:45 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:47:47 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:47:49 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:47:51 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 21:47:51 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 21:47:51 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 21:47:51 - supervisor - INFO - Generating epics from product vision
+2025-08-01 21:47:51 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 21:47:51 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 21:47:51 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 21:47:51 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 21:47:51 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 21:47:51 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 21:47:51 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 21:47:51 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 21:48:00 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 21:48:00 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 21:48:00 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 21:48:00 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 21:48:00 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 21:48:00 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 21:48:00 - supervisor - INFO - Decomposing epic: Data Visualization and Insights
+2025-08-01 21:48:09 - supervisor - INFO - Decomposing epic: User Authentication and Access Management
+2025-08-01 21:48:17 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 21:48:17 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 21:48:17 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 21:48:17 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:48:17 - supervisor - INFO - Decomposing feature to user stories: Data Visualization and Insights Dashboard
+2025-08-01 21:48:59 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Insight Generation
+2025-08-01 21:49:42 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Visualization
+2025-08-01 21:55:52 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_215552_proj_20250801_215552
+2025-08-01 21:55:52 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_215552_proj_20250801_215552: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 21:56:09 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 21:56:09 - supervisor - INFO - Starting workflow execution at 2025-08-01 21:56:09.735535
+2025-08-01 21:56:09 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 21:56:11 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 21:56:13 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:56:15 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:56:17 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 21:56:19 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 21:56:19 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 21:56:19 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 21:56:19 - supervisor - INFO - Generating epics from product vision
+2025-08-01 21:56:19 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 21:56:19 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 21:56:19 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 21:56:19 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 21:56:19 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 21:56:19 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 21:56:19 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 21:56:19 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 21:56:26 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 21:56:26 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 21:56:26 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 21:56:26 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 21:56:26 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 21:56:26 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 21:56:26 - supervisor - INFO - Decomposing epic: Real-time Data Optimization and Visualization Platform
+2025-08-01 21:56:35 - supervisor - INFO - Decomposing epic: Data Management and Analytics Capabilities
+2025-08-01 21:56:44 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 21:56:44 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 21:56:44 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 21:56:44 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 21:56:44 - supervisor - INFO - Decomposing feature to user stories: Real-time Data Visualization and Analytics Platform
+2025-08-01 21:57:14 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Predictive Maintenance
+2025-08-01 21:57:44 - supervisor - INFO - Decomposing feature to user stories: User-Friendly Interface Design
+2025-08-01 21:58:12 - supervisor - INFO - Decomposing feature to user stories: Real-time Data Processing and Visualization
+2025-08-01 22:03:38 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_220338_proj_20250801_220338
+2025-08-01 22:03:38 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_220338_proj_20250801_220338: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 22:03:56 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 22:03:56 - supervisor - INFO - Starting workflow execution at 2025-08-01 22:03:56.957816
+2025-08-01 22:03:56 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 22:03:59 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 22:04:01 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:04:03 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:04:05 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:04:07 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 22:04:07 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 22:04:07 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 22:04:07 - supervisor - INFO - Generating epics from product vision
+2025-08-01 22:04:07 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 22:04:07 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 22:04:07 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 22:04:07 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 22:04:07 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 22:04:07 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 22:04:07 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 22:04:07 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 22:04:14 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 22:04:14 - supervisor - WARNING - No valid epics generated, using fallback
+2025-08-01 22:04:14 - supervisor - INFO - Generated 1 epics (limited to 2)
+2025-08-01 22:04:14 - supervisor - INFO - Validation completed: 1 epics checked, 0 errors.
+2025-08-01 22:04:14 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 22:04:14 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 22:04:14 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 22:04:14 - supervisor - INFO - Decomposing epic: Core System Implementation
+2025-08-01 22:04:24 - supervisor - ERROR - Decomposition Agent did not generate valid features for epic 'Core System Implementation'. Skipping invalid features.
+2025-08-01 22:04:24 - supervisor - INFO - Validation completed: All epics checked for features, 1 errors.
+2025-08-01 22:04:24 - supervisor - INFO - [DEBUG] Retrying incomplete item Core System Implementation for stage feature_decomposer_agent (attempt 1/5)
+2025-08-01 22:04:24 - supervisor - INFO - [DEBUG] 1 items remain incomplete after this retry round in stage feature_decomposer_agent.
+2025-08-01 22:04:24 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 22:04:24 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 22:04:24 - supervisor - INFO - Decomposing epic: Core System Implementation
+2025-08-01 22:04:35 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 22:04:35 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 22:04:35 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:04:35 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:04:35 - supervisor - INFO - Decomposing feature to user stories: User Authentication and Authorization
+2025-08-01 22:12:46 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_221246_proj_20250801_221246
+2025-08-01 22:12:46 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_221246_proj_20250801_221246: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 22:13:04 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 22:13:04 - supervisor - INFO - Starting workflow execution at 2025-08-01 22:13:04.363553
+2025-08-01 22:13:04 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 22:13:06 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 22:13:08 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:13:10 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:13:12 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:13:14 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 22:13:14 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 22:13:14 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 22:13:14 - supervisor - INFO - Generating epics from product vision
+2025-08-01 22:13:14 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 22:13:14 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 22:13:14 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 22:13:14 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 22:13:14 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 22:13:14 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 22:13:14 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 22:13:14 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 22:13:24 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 22:13:24 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 22:13:24 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 22:13:24 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 22:13:24 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 22:13:24 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 22:13:24 - supervisor - INFO - Decomposing epic: Real-Time Data Analytics and Visualization
+2025-08-01 22:13:36 - supervisor - INFO - Decomposing epic: Integration with Existing Systems
+2025-08-01 22:13:46 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 22:13:46 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 22:13:46 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:13:46 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:13:46 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics Engine
+2025-08-01 22:13:56 - supervisor - INFO - Decomposing feature to user stories: Visualization Dashboard
+2025-08-01 22:14:14 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Insights and Recommendations
+2025-08-01 22:14:46 - supervisor - INFO - Decomposing feature to user stories: Integration with Existing Oil and Gas Systems
+2025-08-01 22:15:20 - supervisor - INFO - Decomposing feature to user stories: Data Transfer and Synchronization
+2025-08-01 22:18:46 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_221846_proj_20250801_221846
+2025-08-01 22:18:46 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_221846_proj_20250801_221846: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 22:19:04 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 22:19:04 - supervisor - INFO - Starting workflow execution at 2025-08-01 22:19:04.014856
+2025-08-01 22:19:04 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 22:19:06 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 22:19:08 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:19:10 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:19:12 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:19:14 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 22:19:14 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 22:19:14 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 22:19:14 - supervisor - INFO - Generating epics from product vision
+2025-08-01 22:19:14 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 22:19:14 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 22:19:14 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 22:19:14 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 22:19:14 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 22:19:14 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 22:19:14 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 22:19:14 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 22:19:21 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 22:19:21 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 22:19:21 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 22:19:21 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 22:19:21 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 22:19:21 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 22:19:21 - supervisor - INFO - Decomposing epic: Real-Time Data Analytics and Visualization
+2025-08-01 22:19:32 - supervisor - INFO - Decomposing epic: Integration with Existing Systems
+2025-08-01 22:19:41 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 22:19:41 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 22:19:41 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:19:41 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:19:41 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics and Visualization
+2025-08-01 22:20:09 - supervisor - INFO - Decomposing feature to user stories: Machine Learning-Powered Insights
+2025-08-01 22:20:44 - supervisor - INFO - Decomposing feature to user stories: Data Visualization Dashboards
+2025-08-01 22:21:11 - supervisor - INFO - Decomposing feature to user stories: Drilling System Integration
+2025-08-01 22:21:23 - supervisor - INFO - Decomposing feature to user stories: Flow Control System Integration
+2025-08-01 22:21:33 - supervisor - INFO - Decomposing feature to user stories: Asset Management Software Integration
+2025-08-01 22:22:15 - supervisor - ERROR - Decomposition Agent did not generate valid user stories for feature 'Flow Control System Integration'. Skipping invalid user stories.
+2025-08-01 22:22:15 - supervisor - INFO - Validation completed: All features checked for user stories, 1 errors.
+2025-08-01 22:22:15 - supervisor - INFO - [DEBUG] Retrying incomplete item Drilling System Integration for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 22:22:15 - supervisor - INFO - [DEBUG] Retrying incomplete item Flow Control System Integration for stage user_story_decomposer_agent (attempt 1/5)
+2025-08-01 22:22:15 - supervisor - INFO - [DEBUG] 2 items remain incomplete after this retry round in stage user_story_decomposer_agent.
+2025-08-01 22:22:15 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:22:15 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:22:15 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics and Visualization
+2025-08-01 22:23:17 - supervisor - INFO - Decomposing feature to user stories: Machine Learning-Powered Insights
+2025-08-01 22:23:52 - supervisor - INFO - Decomposing feature to user stories: Data Visualization Dashboards
+2025-08-01 22:24:21 - supervisor - INFO - Decomposing feature to user stories: Drilling System Integration
+2025-08-01 22:24:33 - supervisor - INFO - Decomposing feature to user stories: Flow Control System Integration
+2025-08-01 22:24:43 - supervisor - INFO - Decomposing feature to user stories: Asset Management Software Integration
+2025-08-01 22:31:27 - supervisor - INFO - Initializing WorkflowSupervisor for job_id=job_20250801_223127_proj_20250801_223127
+2025-08-01 22:31:27 - supervisor - INFO - Azure DevOps config for job_id=job_20250801_223127_proj_20250801_223127: org_url=https://dev.azure.com/c4workx, project=Backlog Automation, area_path=DV-qwen2.5-32B, iteration_path=Sprint 2025-08
+2025-08-01 22:31:44 - supervisor - INFO - Initialized 5 agents successfully
+2025-08-01 22:31:44 - supervisor - INFO - Starting workflow execution at 2025-08-01 22:31:44.576171
+2025-08-01 22:31:44 - supervisor - INFO - Refreshing agent configurations...
+2025-08-01 22:31:46 - supervisor - INFO - Refreshed config for epic_strategist: ollama (qwen2.5:32b)
+2025-08-01 22:31:48 - supervisor - INFO - Refreshed config for feature_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:31:50 - supervisor - INFO - Refreshed config for user_story_decomposer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:31:52 - supervisor - INFO - Refreshed config for developer_agent: ollama (qwen2.5:32b)
+2025-08-01 22:31:54 - supervisor - INFO - Refreshed config for qa_lead_agent: ollama (qwen2.5:32b)
+2025-08-01 22:31:54 - supervisor - INFO - Updated project context with extracted domain: oil_gas
+2025-08-01 22:31:54 - supervisor - INFO - Executing stage: epic_strategist
+2025-08-01 22:31:54 - supervisor - INFO - Generating epics from product vision
+2025-08-01 22:31:54 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_epics=2
+2025-08-01 22:31:54 - supervisor - INFO - Generating epics from product vision: Project: Backlog Automation
+Domain: dynamic
+
+Vision Statement:
+Product Vision Statement
+Vision State...
+2025-08-01 22:31:54 - supervisor - INFO - DEBUG: Starting epic generation in thread
+2025-08-01 22:31:54 - supervisor - INFO - DEBUG: Agent type: <class 'agents.epic_strategist.EpicStrategist'>
+2025-08-01 22:31:54 - supervisor - INFO - DEBUG: Agent LLM provider: ollama
+2025-08-01 22:31:54 - supervisor - INFO - DEBUG: Agent model: qwen2.5:32b
+2025-08-01 22:31:54 - supervisor - INFO - DEBUG: Agent ollama_provider exists: True
+2025-08-01 22:31:54 - supervisor - INFO - DEBUG: Agent ollama_provider type: <class 'utils.ollama_client.OllamaProvider'>
+2025-08-01 22:32:04 - supervisor - INFO - DEBUG: Epic generation completed successfully
+2025-08-01 22:32:04 - supervisor - INFO - Generated 2 epics (limited to 2)
+2025-08-01 22:32:04 - supervisor - INFO - Validation completed: 2 epics checked, 0 errors.
+2025-08-01 22:32:04 - supervisor - INFO - Executing stage: feature_decomposer_agent
+2025-08-01 22:32:04 - supervisor - INFO - Decomposing epics into features (parallel mode: False)
+2025-08-01 22:32:04 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_features_per_epic=3
+2025-08-01 22:32:04 - supervisor - INFO - Decomposing epic: Real-Time Data Analytics and Visualization
+2025-08-01 22:32:16 - supervisor - INFO - Decomposing epic: Integration with Existing Systems
+2025-08-01 22:32:26 - supervisor - INFO - Validation completed: All epics checked for features, 0 errors.
+2025-08-01 22:32:26 - supervisor - INFO - Executing stage: user_story_decomposer_agent
+2025-08-01 22:32:26 - supervisor - INFO - Decomposing features into user stories (parallel mode: False)
+2025-08-01 22:32:26 - supervisor - INFO - Using settings manager limits for user user_d918da6e: max_user_stories_per_feature=5
+2025-08-01 22:32:26 - supervisor - INFO - Decomposing feature to user stories: Real-Time Data Analytics Engine
+2025-08-01 22:32:37 - supervisor - INFO - Decomposing feature to user stories: Visualization Dashboard
+2025-08-01 22:33:15 - supervisor - INFO - Decomposing feature to user stories: AI-Powered Insights and Recommendations

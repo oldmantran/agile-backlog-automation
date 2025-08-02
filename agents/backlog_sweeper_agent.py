@@ -149,6 +149,9 @@ class BacklogSweeperAgent:
             }]
         
         # Split criteria into individual items (assuming line breaks or bullet points)
+        # Debug logging
+        print(f"[BacklogSweeper] Raw acceptance criteria for story '{title}': {repr(criteria_text[:200])}")
+        
         criteria_lines = [line.strip() for line in criteria_text.split('\n') if line.strip()]
         criteria_items = []
         
@@ -159,6 +162,8 @@ class BacklogSweeperAgent:
             if cleaned:
                 criteria_items.append(cleaned)
         
+        print(f"[BacklogSweeper] Parsed {len(criteria_items)} criteria items from {len(criteria_lines)} lines")
+        
         # Check quantity (configurable criteria count)
         if len(criteria_items) < self.min_criteria_count:
             discrepancies.append({
@@ -167,7 +172,7 @@ class BacklogSweeperAgent:
                 'work_item_type': 'User Story',
                 'title': title,
                 'description': f'Only {len(criteria_items)} acceptance criteria found. Recommend {self.min_criteria_count}-{self.max_criteria_count} criteria for proper coverage.',
-                'severity': 'medium',
+                'severity': 'high' if len(criteria_items) == 1 else 'medium',
                 'suggested_agent': 'qa_lead_agent'
             })
         elif len(criteria_items) > self.max_criteria_count:
