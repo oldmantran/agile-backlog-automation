@@ -18,7 +18,7 @@ class UserStoryDecomposerAgent(Agent):
     """
     
     def __init__(self, config: Config):
-        super().__init__("user_story_decomposer_agent", config)
+        super().__init__("user_story_decomposer", config)
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
 
