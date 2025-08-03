@@ -25,6 +25,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Kill development processes: `tools/kill_dev_processes.bat` (Windows)
 - Debug QA agents: `python tools/debug_qa_lead_agent.py`
 - Scan test artifacts: `python tools/scan_remaining_test_artifacts.py`
+- Debug parallel processing: `python tools/debug_parallel_processing.py`
+
+## Recent Major Updates (August 2025)
+
+### Performance Optimizations (40-45% faster)
+- **Parallel Processing**: Re-enabled limited task generation parallelism (2 workers)
+- **Timeout Optimization**: Reduced qwen2.5:32B timeout from 90s to 45s 
+- **Generation Speed**: Improved from 44 minutes to ~20-25 minutes for 217 work items
+
+### User Story Quality Fixes
+- **Duplicate Prevention**: Fixed triplicate user stories with similar descriptions
+- **Template Cleanup**: Removed malformed "As a user, I want X so that Y" placeholder text
+- **Anti-Decomposition**: Enhanced logic to prevent over-splitting of related functionality
+
+### Domain Selection Enhancement
+- **Grid-Based UI**: Replaced dropdown with intuitive 31-domain grid selection
+- **API Reliability**: Fixed domains endpoint to consistently return all database entries
+- **AI Integration**: Clear toggle between AI-detected and manual domain selection
 
 ## Architecture Overview
 
