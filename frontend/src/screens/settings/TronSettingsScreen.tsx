@@ -958,7 +958,20 @@ const TronSettingsScreen: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Domain Management Section */}\n            <Card className=\"tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8\">\n              <CardHeader>\n                <div className=\"flex items-center space-x-3\">\n                  <FiGlobe className=\"w-6 h-6 text-primary glow-cyan\" />\n                  <CardTitle className=\"text-foreground glow-cyan\">Domain Management</CardTitle>\n                </div>\n              </CardHeader>\n              <CardContent>\n                <DomainManagement />\n              </CardContent>\n            </Card>\n\n            {/* Display Settings Section */}
+            {/* Domain Management Section */}
+            <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <FiGlobe className="w-6 h-6 text-primary glow-cyan" />
+                  <CardTitle className="text-foreground glow-cyan">Domain Management</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <DomainManagement />
+              </CardContent>
+            </Card>
+
+            {/* Display Settings Section */}
             <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
               <CardHeader>
                 <div className="flex items-center space-x-3">
