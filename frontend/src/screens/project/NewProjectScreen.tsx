@@ -87,7 +87,7 @@ const NewProjectScreen: React.FC = () => {
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center space-x-3 mb-4">
-                <FiRocket className="w-8 h-8 text-primary glow-cyan" />
+                <FiPlay className="w-8 h-8 text-primary glow-cyan" />
                 <h1 className="text-4xl font-bold text-foreground tracking-wider glow-cyan">
                   CREATE NEW PROJECT
                 </h1>
