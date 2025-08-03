@@ -224,13 +224,17 @@ Check the application logs for detailed issue descriptions and remediation steps
         
         payload = { "text": sanitized_message }
         try:
-            response = requests.post(self.teams_webhook, json=payload)
+            # Add timeout to prevent hanging
+            response = requests.post(self.teams_webhook, json=payload, timeout=30)
             if response.status_code in [200, 202]:
                 print("✅ Teams notification sent.")
                 return True
             else:
                 print(f"❌ Teams error: {response.status_code} - {response.text}")
                 return False
+        except requests.exceptions.Timeout:
+            print("❌ Teams notification timed out after 30 seconds")
+            return False
         except Exception as e:
             print(f"❌ Teams exception: {e}")
             return False
@@ -257,7 +261,9 @@ Check the application logs for detailed issue descriptions and remediation steps
 
         try:
             print(f"📧 Attempting to send email via {self.smtp_server}:{self.smtp_port} to {self.email_to}")
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
+                # Set timeout for all SMTP operations
+                server.settimeout(30)
                 if self.use_tls:
                     print("🔒 Starting TLS encryption")
                     server.starttls()
@@ -267,6 +273,15 @@ Check the application logs for detailed issue descriptions and remediation steps
                 server.sendmail(self.email_from, [self.email_to], msg.as_string())
                 print("✅ Email notification sent successfully.")
                 return True
+        except smtplib.SMTPException as e:
+            print(f"❌ SMTP error: {e}")
+            return False
+        except ConnectionError as e:
+            print(f"❌ Email connection error: {e}")
+            return False
+        except TimeoutError as e:
+            print(f"❌ Email timeout error: {e}")
+            return False
         except Exception as e:
             print(f"❌ Email exception: {e}")
             print(f"   SMTP Server: {self.smtp_server}:{self.smtp_port}")

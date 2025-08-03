@@ -5,6 +5,7 @@ Database setup and management for Agile Backlog Automation.
 
 import sqlite3
 import os
+import json
 import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -713,3 +714,294 @@ def add_backlog_job(user_email: str, project_name: str, epics_generated: int = 0
     except Exception as e:
         logger.error(f"Failed to add backlog job: {e}")
         raise
+
+
+# =====================================================
+# DOMAIN MANAGEMENT FUNCTIONS
+# =====================================================
+
+def get_all_domains(include_inactive: bool = False) -> List[Dict[str, Any]]:
+    """Get all available domains with their subdomains."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            where_clause = "" if include_inactive else "WHERE d.is_active = TRUE"
+            
+            cursor.execute(f'''
+                SELECT 
+                    d.id, d.domain_key, d.display_name, d.description, 
+                    d.icon_name, d.color_code, d.is_active, d.sort_order
+                FROM domains d
+                {where_clause}
+                ORDER BY d.sort_order, d.display_name
+            ''')
+            
+            domains = []
+            for row in cursor.fetchall():
+                domain = dict(row)
+                
+                # Get subdomains for this domain
+                cursor.execute('''
+                    SELECT id, subdomain_key, display_name, description, is_active, sort_order
+                    FROM subdomains 
+                    WHERE domain_id = ? AND is_active = TRUE
+                    ORDER BY sort_order, display_name
+                ''', (domain['id'],))
+                
+                domain['subdomains'] = [dict(sub_row) for sub_row in cursor.fetchall()]
+                domains.append(domain)
+            
+            return domains
+            
+    except Exception as e:
+        logger.error(f"Failed to get domains: {e}")
+        return []
+
+def get_domain_patterns(domain_id: int, subdomain_id: int = None) -> List[str]:
+    """Get patterns for domain detection."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.cursor()
+            
+            if subdomain_id:
+                cursor.execute('''
+                    SELECT pattern_value FROM domain_patterns 
+                    WHERE domain_id = ? AND (subdomain_id = ? OR subdomain_id IS NULL) 
+                    AND is_active = TRUE
+                    ORDER BY weight DESC
+                ''', (domain_id, subdomain_id))
+            else:
+                cursor.execute('''
+                    SELECT pattern_value FROM domain_patterns 
+                    WHERE domain_id = ? AND subdomain_id IS NULL 
+                    AND is_active = TRUE
+                    ORDER BY weight DESC
+                ''', (domain_id,))
+            
+            return [row[0] for row in cursor.fetchall()]
+            
+    except Exception as e:
+        logger.error(f"Failed to get domain patterns: {e}")
+        return []
+
+def get_domain_user_types(domain_id: int, subdomain_id: int = None) -> Dict[str, Dict[str, Any]]:
+    """Get user types for a domain."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            if subdomain_id:
+                cursor.execute('''
+                    SELECT user_type_key, display_name, description, user_patterns
+                    FROM domain_user_types 
+                    WHERE domain_id = ? AND (subdomain_id = ? OR subdomain_id IS NULL)
+                    AND is_active = TRUE
+                    ORDER BY sort_order, display_name
+                ''', (domain_id, subdomain_id))
+            else:
+                cursor.execute('''
+                    SELECT user_type_key, display_name, description, user_patterns
+                    FROM domain_user_types 
+                    WHERE domain_id = ? AND subdomain_id IS NULL
+                    AND is_active = TRUE
+                    ORDER BY sort_order, display_name
+                ''', (domain_id,))
+            
+            user_types = {}
+            for row in cursor.fetchall():
+                row_dict = dict(row)
+                patterns = json.loads(row_dict['user_patterns']) if row_dict['user_patterns'] else []
+                user_types[row_dict['user_type_key']] = {
+                    'display_name': row_dict['display_name'],
+                    'description': row_dict['description'],
+                    'patterns': patterns
+                }
+            
+            return user_types
+            
+    except Exception as e:
+        logger.error(f"Failed to get domain user types: {e}")
+        return {}
+
+def get_domain_vocabulary(domain_id: int, subdomain_id: int = None, category: str = None) -> List[str]:
+    """Get vocabulary terms for a domain."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.cursor()
+            
+            where_conditions = ["domain_id = ?", "is_active = TRUE"]
+            params = [domain_id]
+            
+            if subdomain_id:
+                where_conditions.append("(subdomain_id = ? OR subdomain_id IS NULL)")
+                params.append(subdomain_id)
+            else:
+                where_conditions.append("subdomain_id IS NULL")
+            
+            if category:
+                where_conditions.append("category = ?")
+                params.append(category)
+            
+            query = f'''
+                SELECT term FROM domain_vocabulary 
+                WHERE {" AND ".join(where_conditions)}
+                ORDER BY term
+            '''
+            
+            cursor.execute(query, params)
+            return [row[0] for row in cursor.fetchall()]
+            
+    except Exception as e:
+        logger.error(f"Failed to get domain vocabulary: {e}")
+        return []
+
+def save_project_domains(project_id: str, domain_selections: List[Dict[str, Any]], selected_by: str):
+    """Save domain selections for a project."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # Clear existing selections for this project
+            cursor.execute('DELETE FROM project_domains WHERE project_id = ?', (project_id,))
+            
+            # Insert new selections
+            for selection in domain_selections:
+                cursor.execute('''
+                    INSERT INTO project_domains 
+                    (project_id, domain_id, subdomain_id, is_primary, weight, selected_by)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    project_id,
+                    selection['domain_id'],
+                    selection.get('subdomain_id'),
+                    selection.get('is_primary', False),
+                    selection.get('weight', 1.0),
+                    selected_by
+                ))
+            
+            conn.commit()
+            logger.info(f"Saved {len(domain_selections)} domain selections for project {project_id}")
+            
+    except Exception as e:
+        logger.error(f"Failed to save project domains: {e}")
+        raise
+
+def get_project_domains(project_id: str) -> List[Dict[str, Any]]:
+    """Get domain selections for a project."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT 
+                    pd.domain_id, pd.subdomain_id, pd.is_primary, pd.weight,
+                    d.domain_key, d.display_name as domain_name,
+                    s.subdomain_key, s.display_name as subdomain_name
+                FROM project_domains pd
+                JOIN domains d ON pd.domain_id = d.id
+                LEFT JOIN subdomains s ON pd.subdomain_id = s.id
+                WHERE pd.project_id = ?
+                ORDER BY pd.is_primary DESC, pd.weight DESC, d.display_name
+            ''', (project_id,))
+            
+            return [dict(row) for row in cursor.fetchall()]
+            
+    except Exception as e:
+        logger.error(f"Failed to get project domains: {e}")
+        return []
+
+def submit_domain_request(request_data: Dict[str, Any]) -> str:
+    """Submit a new domain request."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO domain_requests 
+                (requested_by, request_type, parent_domain_id, requested_domain_key, 
+                 requested_display_name, justification, proposed_patterns, 
+                 proposed_user_types, proposed_vocabulary, priority)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                request_data['requested_by'],
+                request_data['request_type'],
+                request_data.get('parent_domain_id'),
+                request_data.get('requested_domain_key'),
+                request_data.get('requested_display_name'),
+                request_data['justification'],
+                json.dumps(request_data.get('proposed_patterns', [])),
+                json.dumps(request_data.get('proposed_user_types', [])),
+                json.dumps(request_data.get('proposed_vocabulary', [])),
+                request_data.get('priority', 'medium')
+            ))
+            
+            request_id = cursor.lastrowid
+            conn.commit()
+            
+            logger.info(f"Domain request submitted: {request_id}")
+            return str(request_id)
+            
+    except Exception as e:
+        logger.error(f"Failed to submit domain request: {e}")
+        raise
+
+def get_domain_requests(status: str = None, user_id: str = None) -> List[Dict[str, Any]]:
+    """Get domain requests with optional filtering."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            where_conditions = []
+            params = []
+            
+            if status:
+                where_conditions.append("status = ?")
+                params.append(status)
+            
+            if user_id:
+                where_conditions.append("requested_by = ?")
+                params.append(user_id)
+            
+            where_clause = ""
+            if where_conditions:
+                where_clause = "WHERE " + " AND ".join(where_conditions)
+            
+            cursor.execute(f'''
+                SELECT 
+                    dr.*, 
+                    d.display_name as parent_domain_name
+                FROM domain_requests dr
+                LEFT JOIN domains d ON dr.parent_domain_id = d.id
+                {where_clause}
+                ORDER BY dr.created_at DESC
+            ''', params)
+            
+            requests = []
+            for row in cursor.fetchall():
+                request_dict = dict(row)
+                
+                # Parse JSON fields
+                for json_field in ['proposed_patterns', 'proposed_user_types', 'proposed_vocabulary']:
+                    if request_dict[json_field]:
+                        request_dict[json_field] = json.loads(request_dict[json_field])
+                
+                requests.append(request_dict)
+            
+            return requests
+            
+    except Exception as e:
+        logger.error(f"Failed to get domain requests: {e}")
+        return []

@@ -8,7 +8,7 @@ import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Switch } from '../../components/ui/switch';
 import Header from '../../components/navigation/Header';
-import Sidebar from '../../components/navigation/Sidebar';
+import Sidebar from '../../components/navigation/Sidebar';\nimport DomainManagement from '../../components/domain/DomainManagement';
 import { settingsApi, WorkItemLimitsRequest, VisualSettingsRequest } from '../../services/api/settingsApi';
 import { userApi, CurrentUser } from '../../services/api/userApi';
 import { 
@@ -23,7 +23,7 @@ import {
   FiUser,
   FiDatabase,
   FiCpu,
-  FiServer
+  FiServer,\n  FiGlobe
 } from 'react-icons/fi';
 
 const TronSettingsScreen: React.FC = () => {
@@ -956,7 +956,7 @@ const TronSettingsScreen: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Display Settings Section */}
+            {/* Domain Management Section */}\n            <Card className=\"tron-card bg-card/50 backdrop-blur-sm border border-primary/30 mb-8\">\n              <CardHeader>\n                <div className=\"flex items-center space-x-3\">\n                  <FiGlobe className=\"w-6 h-6 text-primary glow-cyan\" />\n                  <CardTitle className=\"text-foreground glow-cyan\">Domain Management</CardTitle>\n                </div>\n              </CardHeader>\n              <CardContent>\n                <DomainManagement />\n              </CardContent>\n            </Card>\n\n            {/* Display Settings Section */}
             <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
               <CardHeader>
                 <div className="flex items-center space-x-3">
