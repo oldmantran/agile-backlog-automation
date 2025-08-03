@@ -1814,19 +1814,38 @@ async def initialize_default_llm_configurations():
 @app.get("/api/domains")
 async def get_domains():
     """Get all available domains."""
+    logger.info("Domains API endpoint called")
     try:
-        domains = db.get_all_domains()
-        logger.info(f"Retrieved {len(domains)} domains from database")
+        # Direct database query
+        import sqlite3
+        db_path = "backlog_jobs.db"
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, domain_key, display_name, description, is_active
+                FROM domains 
+                WHERE is_active = 1 
+                ORDER BY display_name
+            ''')
+            domains = [dict(row) for row in cursor.fetchall()]
+            
+        logger.info(f"Successfully retrieved {len(domains)} domains from database")
         return domains
     except Exception as e:
         logger.error(f"Failed to get domains: {e}")
-        # Return hardcoded domains as fallback
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Always return some domains to prevent empty dropdown
         fallback_domains = [
             {"id": 1, "domain_key": "technology", "display_name": "Technology", "description": "Software development and technology projects", "is_active": 1},
             {"id": 2, "domain_key": "healthcare", "display_name": "Healthcare", "description": "Healthcare and medical technology", "is_active": 1},
             {"id": 3, "domain_key": "finance", "display_name": "Finance", "description": "Financial services and fintech", "is_active": 1},
             {"id": 4, "domain_key": "retail", "display_name": "Retail", "description": "E-commerce and retail solutions", "is_active": 1},
-            {"id": 5, "domain_key": "education", "display_name": "Education", "description": "Educational technology and learning platforms", "is_active": 1}
+            {"id": 5, "domain_key": "education", "display_name": "Education", "description": "Educational technology and learning platforms", "is_active": 1},
+            {"id": 6, "domain_key": "manufacturing", "display_name": "Manufacturing", "description": "Manufacturing and industrial automation", "is_active": 1},
+            {"id": 7, "domain_key": "government", "display_name": "Government", "description": "Government and public sector solutions", "is_active": 1}
         ]
         logger.info(f"Returning {len(fallback_domains)} fallback domains")
         return fallback_domains

@@ -4,7 +4,6 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription } from '../ui/alert';
 import { useForm, Controller } from 'react-hook-form';
@@ -53,7 +52,6 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   const [availableDomains, setAvailableDomains] = useState<Domain[]>([]);
   const [detectedDomain, setDetectedDomain] = useState<string | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
-  const [domainOverride, setDomainOverride] = useState(false);
   
   // Watch for vision statement changes to trigger AI detection
   const visionStatement = watch('visionStatement');
@@ -70,29 +68,19 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
           const domains = await response.json();
           setAvailableDomains(domains);
         } else {
-          // Fallback domains if API fails
-          const fallbackDomains = [
-            { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
-            { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
-            { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true },
-            { id: 4, domain_key: 'retail', display_name: 'Retail', description: 'E-commerce and retail solutions', is_active: true },
-            { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true },
-            { id: 6, domain_key: 'manufacturing', display_name: 'Manufacturing', description: 'Manufacturing and industrial automation', is_active: true },
-            { id: 7, domain_key: 'government', display_name: 'Government', description: 'Government and public sector solutions', is_active: true }
-          ];
-          setAvailableDomains(fallbackDomains);
+          console.warn('Domains API failed, will show loading state');
+          // Don't set fallback domains immediately, let the loading state persist
+          // The user will need to restart the backend for the full domain list
         }
       } catch (error) {
         console.error('Failed to load domains:', error);
-        // Set fallback domains on error
-        const fallbackDomains = [
+        // Show minimal fallback to prevent completely broken UI
+        const minimalFallback = [
           { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
           { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
-          { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true },
-          { id: 4, domain_key: 'retail', display_name: 'Retail', description: 'E-commerce and retail solutions', is_active: true },
-          { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true }
+          { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true }
         ];
-        setAvailableDomains(fallbackDomains);
+        setAvailableDomains(minimalFallback);
       }
     };
     loadDomains();
@@ -100,7 +88,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
 
   // AI domain detection when vision statement changes
   useEffect(() => {
-    if (visionStatement && visionStatement.length > 50 && useAiDetection && !domainOverride) {
+    if (visionStatement && visionStatement.length > 50 && useAiDetection) {
       const detectDomain = async () => {
         setIsDetecting(true);
         try {
@@ -123,7 +111,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       const timeoutId = setTimeout(detectDomain, 1000); // Debounce
       return () => clearTimeout(timeoutId);
     }
-  }, [visionStatement, useAiDetection, domainOverride]);
+  }, [visionStatement, useAiDetection]);
 
   const handleDomainSelection = (domainKey: string, isPrimary: boolean = false) => {
     const domain = availableDomains.find(d => d.domain_key === domainKey);
@@ -288,8 +276,12 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                       variant={field.value ? "default" : "outline"}
                       size="sm"
                       onClick={() => {
-                        field.onChange(!field.value);
-                        setDomainOverride(false);
+                        const newValue = !field.value;
+                        field.onChange(newValue);
+                        // Clear manual domain selections when enabling AI detection
+                        if (newValue) {
+                          setValue('selectedDomains', []);
+                        }
                       }}
                     >
                       {field.value ? <FiCheck className="w-4 h-4 mr-2" /> : <FiX className="w-4 h-4 mr-2" />}
@@ -300,7 +292,7 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
               </div>
               
               {/* AI Detection Results */}
-              {useAiDetection && !domainOverride && (
+              {useAiDetection && (
                 <div className="space-y-3">
                   {isDetecting && (
                     <Alert>
@@ -327,54 +319,88 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
               )}
               
               {/* Manual Domain Selection */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="font-medium">Manual Domain Selection (Optional)</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDomainOverride(!domainOverride)}
-                  >
-                    {domainOverride ? 'Cancel Override' : 'Override AI Detection'}
-                  </Button>
-                </div>
-                
-                {(domainOverride || !useAiDetection) && (
+              {!useAiDetection && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-medium">Manual Domain Selection</Label>
+                    <div className="text-xs text-muted-foreground">
+                      AI Detection Disabled - Manual Selection Active
+                    </div>
+                  </div>
+                  
                   <div className="space-y-4 p-4 rounded-lg border border-border bg-card">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <FiInfo className="w-4 h-4" />
-                      <span>Select up to 3 domains that best match your project. The first will be primary.</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <FiInfo className="w-4 h-4" />
+                        <span>Select up to 3 domains. Click to add/remove. First selected becomes primary.</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {selectedDomains.length}/3 selected
+                      </div>
                     </div>
                     
-                    <Select
-                      onValueChange={(value) => {
-                        const newSelections = handleDomainSelection(value, selectedDomains.length === 0);
-                        if (newSelections) {
-                          // Update form value through react-hook-form
-                          setValue('selectedDomains', newSelections);
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a domain to add" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {availableDomains
-                          .filter(domain => !selectedDomains.some((s: DomainSelection) => s.domain_key === domain.domain_key))
-                          .map(domain => (
-                            <SelectItem key={domain.domain_key} value={domain.domain_key}>
-                              <div>
-                                <div className="font-medium">{domain.display_name}</div>
-                                <div className="text-xs text-muted-foreground truncate max-w-60">
-                                  {domain.description}
-                                </div>
+                    {/* Domain Grid Selection */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+                      {availableDomains.map(domain => {
+                        const isSelected = selectedDomains.some((s: DomainSelection) => s.domain_key === domain.domain_key);
+                        const selectedDomain = selectedDomains.find((s: DomainSelection) => s.domain_key === domain.domain_key);
+                        const isPrimary = selectedDomain?.is_primary || false;
+                        
+                        return (
+                          <div
+                            key={domain.domain_key}
+                            onClick={() => {
+                              if (isSelected) {
+                                // Remove domain
+                                const newSelections = removeDomainSelection(domain.domain_key);
+                                setValue('selectedDomains', newSelections);
+                              } else if (selectedDomains.length < 3) {
+                                // Add domain
+                                const newSelections = handleDomainSelection(domain.domain_key, selectedDomains.length === 0);
+                                if (newSelections) {
+                                  setValue('selectedDomains', newSelections);
+                                }
+                              }
+                            }}
+                            className={`
+                              relative p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:scale-105
+                              ${isSelected 
+                                ? isPrimary 
+                                  ? 'border-primary bg-primary/20 shadow-lg' 
+                                  : 'border-secondary bg-secondary/20 shadow-md'
+                                : 'border-border bg-background hover:border-muted-foreground'
+                              }
+                              ${selectedDomains.length >= 3 && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
+                            `}
+                          >
+                            <div className="text-sm font-medium text-foreground truncate">
+                              {domain.display_name}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {domain.description}
+                            </div>
+                            
+                            {/* Selection indicator */}
+                            {isSelected && (
+                              <div className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold
+                                ${isPrimary ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}
+                              `}>
+                                {isPrimary ? '1' : '2'}
                               </div>
-                            </SelectItem>
-                          ))
-                        }
-                      </SelectContent>
-                    </Select>
+                            )}
+                            
+                            {/* Add/Remove icon */}
+                            <div className="absolute bottom-1 right-1">
+                              {isSelected ? (
+                                <FiX className="w-3 h-3 text-destructive" />
+                              ) : (
+                                selectedDomains.length < 3 && <FiPlus className="w-3 h-3 text-muted-foreground" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                     
                     {/* Selected Domains Display */}
                     {selectedDomains && selectedDomains.length > 0 && (
@@ -416,8 +442,8 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                       </div>
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             
             <Separator />
