@@ -783,9 +783,8 @@ class AzureDevOpsIntegrator:
         """Format user story description without acceptance criteria (they go in dedicated field) using proper HTML formatting."""
         description = story_data.get('description', '')
         
-        # Add user story format if available
-        if story_data.get('user_story'):
-            description = f"<p><strong>User Story:</strong><br>{story_data['user_story']}</p>{description}"
+        # Don't duplicate user story in description - it's already in the title
+        # The user_story field is used for the title, description should contain implementation details
         
         # Add definition of ready if available
         if story_data.get('definition_of_ready'):

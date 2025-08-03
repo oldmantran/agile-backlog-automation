@@ -8,9 +8,9 @@ Description: ${feature_description}
 RETURN ONLY THIS JSON FORMAT:
 [
   {
-    "title": "story title",
-    "user_story": "As a user, I want X so that Y",
-    "description": "detailed description",
+    "title": "As a [user role], I want [goal] so that [benefit]",
+    "user_story": "As a [user role], I want [goal] so that [benefit]",
+    "description": "detailed functionality and implementation description",
     "story_points": 5,
     "priority": "High",
     "acceptance_criteria": [

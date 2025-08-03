@@ -61,8 +61,8 @@ Edge Cases: {feature.get('edge_cases', [])}
             # 70B model needs longer timeout
             models_to_try = [(self.model, 180)]
         elif self.model and ("32b" in self.model.lower()):
-            # 32B model needs reasonable timeout for quality
-            models_to_try = [(self.model, 90)]
+            # 32B model is actually quite fast - reduced timeout
+            models_to_try = [(self.model, 45)]
         elif self.model and ("34b" in self.model.lower()):
             # 34B model needs more time - increased from 60 to 120 seconds
             models_to_try = [(self.model, 120)]
