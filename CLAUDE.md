@@ -43,7 +43,7 @@ This is a multi-agent AI system that transforms product visions into structured 
 2. `feature_decomposer_agent.py` - Breaks epics into features
 3. `user_story_decomposer_agent.py` - Creates user stories with acceptance criteria
 4. `developer_agent.py` - Generates technical tasks with time estimates
-5. `qa_lead_agent.py` - Orchestrates QA sub-agents for test generation
+5. `qa_lead_agent.py` - Orchestrates QA sub-agents for test generation (optional)
 
 **LLM Provider Support**: 
 - Local LLM via Ollama (recommended for cost savings, Qwen2.5:32B recommended)
@@ -90,6 +90,8 @@ Full integration with Azure DevOps Test Management API:
 
 **Real-time Updates**: Server-Sent Events (SSE) for live progress updates during backlog generation.
 
+**Flexible Testing Generation**: Users can choose to generate work items only (~15-30 minutes) or include full testing artifacts (~45-90 minutes) based on project needs.
+
 **Testing**: Extensive test suite in `tools/` directory for individual components, integration testing, and Azure DevOps connectivity validation.
 
 ## Recent Fixes and Current Status
@@ -130,12 +132,19 @@ Full integration with Azure DevOps Test Management API:
 - **JSON Parsing Resilience**: Improved parsing to handle various response formats from different LLM models
 - **Acceptance Criteria Validation**: Enhanced generation and formatting of user story acceptance criteria
 
+#### **Work Items vs Testing Toggle Feature (August 3, 2025)**
+- **Frontend Enhancement**: Added `includeTestArtifacts` toggle in project creation form with visual processing time feedback
+- **Backend Implementation**: Conditional QA stage execution based on user preference in `supervisor/supervisor.py`
+- **Performance Optimization**: Users can choose work items only (~15-30 minutes) vs full testing (~45-90 minutes)
+- **Workflow Flexibility**: Allows users to generate basic backlog first, then add testing artifacts later if needed
+- **API Integration**: `CreateProjectRequest` model updated to support testing preference throughout the pipeline
+
 ### Current Limitations
-- **Performance**: Individual LLM calls take 30+ seconds, full workflow can take 4+ minutes
+- **Performance**: Individual LLM calls take 30+ seconds, full workflow can take 15-90 minutes depending on options
 - **Error Recovery**: Limited retry mechanisms for transient failures
 - **Test Coverage**: Core workflow verified but needs comprehensive automated testing
 - **Load Testing**: Not tested with large projects (100+ work items)
-- **User Experience**: Limited progress feedback during long-running operations
+- **User Experience**: Progress feedback improved with testing toggle option
 
 ### Production Readiness Roadmap
 1. **Performance Optimization**: Implement caching, parallel processing improvements
