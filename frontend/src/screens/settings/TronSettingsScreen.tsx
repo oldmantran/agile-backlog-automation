@@ -24,7 +24,8 @@ import {
   FiUser,
   FiDatabase,
   FiCpu,
-  FiServer,\n  FiGlobe
+  FiServer,
+  FiGlobe
 } from 'react-icons/fi';
 
 const TronSettingsScreen: React.FC = () => {
