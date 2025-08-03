@@ -130,12 +130,14 @@ const NewProjectScreen: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
       />
       
       <div className="flex">
-        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+        <Sidebar 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
+        />
         <main className="flex-1 transition-all duration-300">
           <ProjectCreationContent />
         </main>
