@@ -1005,3 +1005,33 @@ def get_domain_requests(status: str = None, user_id: str = None) -> List[Dict[st
     except Exception as e:
         logger.error(f"Failed to get domain requests: {e}")
         return []
+
+def get_all_domains() -> List[Dict[str, Any]]:
+    """Get all domains from the database."""
+    try:
+        db = Database()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT 
+                    id,
+                    domain_key,
+                    display_name,
+                    description,
+                    is_active
+                FROM domains
+                WHERE is_active = 1
+                ORDER BY display_name
+            ''')
+            
+            domains = []
+            for row in cursor.fetchall():
+                domains.append(dict(row))
+            
+            return domains
+            
+    except Exception as e:
+        logger.error(f"Failed to get all domains: {e}")
+        return []

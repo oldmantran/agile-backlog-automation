@@ -1810,6 +1810,36 @@ async def initialize_default_llm_configurations():
         logger.error(f"Failed to initialize LLM configurations: {e}")
         raise HTTPException(status_code=500, detail="Failed to initialize LLM configurations")
 
+# Domain Management Endpoints
+@app.get("/api/domains")
+async def get_domains():
+    """Get all available domains."""
+    try:
+        domains = db.get_all_domains()
+        return domains
+    except Exception as e:
+        logger.error(f"Failed to get domains: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get domains")
+
+@app.post("/api/domains/detect")
+async def detect_domain(request: dict):
+    """Detect domain from text using AI."""
+    try:
+        text = request.get("text", "")
+        if not text:
+            raise HTTPException(status_code=400, detail="Text is required")
+        
+        # Import domain detection utility
+        from utils.domain_detector import DomainDetector
+        detector = DomainDetector()
+        detected_domain = detector.detect_domain(text)
+        
+        return {"domain": detected_domain}
+    except Exception as e:
+        logger.error(f"Failed to detect domain: {e}")
+        # Return a fallback domain instead of failing
+        return {"domain": "technology"}
+
 if __name__ == "__main__":
     uvicorn.run(
         "unified_api_server:app",
