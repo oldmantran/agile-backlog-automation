@@ -45,6 +45,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       iterationPath: initialData.iterationPath || '',
       selectedDomains: initialData.selectedDomains || [],
       useAiDetection: initialData.useAiDetection !== false, // Default to true
+      includeTestArtifacts: initialData.includeTestArtifacts !== false, // Default to true
     }
   });
 
@@ -58,6 +59,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   const visionStatement = watch('visionStatement');
   const useAiDetection = watch('useAiDetection');
   const selectedDomains = watch('selectedDomains');
+  const includeTestArtifacts = watch('includeTestArtifacts');
 
   // Load available domains on component mount
   useEffect(() => {
@@ -189,7 +191,8 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
         areaPath: data.areaPath,
         iterationPath: data.iterationPath
       },
-      domainStrategy: finalDomainStrategy // New domain configuration
+      domainStrategy: finalDomainStrategy, // New domain configuration
+      includeTestArtifacts: data.includeTestArtifacts // QA testing option
     };
     
     console.log('🔍 Calling onSubmit with enhanced projectData:', projectData);
@@ -393,6 +396,70 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Testing & QA Options */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <FiInfo className="w-6 h-6 text-primary" />
+                <h3 className="text-lg font-semibold">Backlog Generation Options</h3>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/50">
+                <div className="space-y-1">
+                  <p className="font-medium">Include Test Artifacts</p>
+                  <p className="text-sm text-muted-foreground">
+                    Generate test plans, test suites, and test cases along with work items. 
+                    Disable to generate work items only and add testing later.
+                  </p>
+                </div>
+                <Controller
+                  name="includeTestArtifacts"
+                  control={control}
+                  render={({ field }) => (
+                    <Button
+                      type="button"
+                      variant={field.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => field.onChange(!field.value)}
+                      className="min-w-24"
+                    >
+                      {field.value ? (
+                        <>
+                          <FiCheck className="w-4 h-4 mr-2" />
+                          Enabled
+                        </>
+                      ) : (
+                        <>
+                          <FiX className="w-4 h-4 mr-2" />
+                          Disabled
+                        </>
+                      )}
+                    </Button>
+                  )}
+                />
+              </div>
+              
+              {/* Processing Time Info */}
+              <div className={`p-3 rounded-lg border ${
+                includeTestArtifacts 
+                  ? 'border-yellow-500/30 bg-yellow-500/10' 
+                  : 'border-green-500/30 bg-green-500/10'
+              }`}>
+                <div className={`flex items-center space-x-2 text-sm ${
+                  includeTestArtifacts ? 'text-yellow-700 dark:text-yellow-300' : 'text-green-700 dark:text-green-300'
+                }`}>
+                  <FiInfo className="w-4 h-4" />
+                  <span>
+                    <strong>Processing Time:</strong> {includeTestArtifacts 
+                      ? 'Full generation with testing (~45-90 minutes for comprehensive backlogs)'
+                      : 'Work items only (~15-30 minutes, add testing later as needed)'
+                    }
+                  </span>
+                </div>
               </div>
             </div>
             

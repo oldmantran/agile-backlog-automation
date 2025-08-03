@@ -265,7 +265,7 @@ class WorkflowSupervisor:
     - Provide human-in-the-loop capabilities
     """
     
-    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None, job_id: str = None, settings_manager: Any = None, user_id: str = None):
+    def __init__(self, config_path: str = None, organization_url: str = None, project: str = None, personal_access_token: str = None, area_path: str = None, iteration_path: str = None, job_id: str = None, settings_manager: Any = None, user_id: str = None, include_test_artifacts: bool = True):
         """Initialize the supervisor with configuration and agents."""
         # Load configuration
         self.config = Config(config_path) if config_path else Config()
@@ -279,6 +279,10 @@ class WorkflowSupervisor:
         # Store settings manager and user ID for work item limits
         self.settings_manager = settings_manager
         self.user_id = user_id
+        
+        # Store testing configuration
+        self.include_test_artifacts = include_test_artifacts
+        self.logger.info(f"Testing artifacts {'enabled' if include_test_artifacts else 'disabled'} for workflow")
         
         # Initialize project context
         self.project_context = ProjectContext(self.config)
@@ -1486,13 +1490,20 @@ class WorkflowSupervisor:
     
     def _get_default_stages(self) -> List[str]:
         """Get default workflow stages from configuration."""
-        return self.config.settings.get('workflow', {}).get('sequence', [
+        default_stages = self.config.settings.get('workflow', {}).get('sequence', [
             'epic_strategist',
             'feature_decomposer_agent',
             'user_story_decomposer_agent',
             'developer_agent',
             'qa_lead_agent'
         ])
+        
+        # Remove QA stage if testing artifacts are disabled
+        if not self.include_test_artifacts:
+            self.logger.info("Excluding QA stages due to include_test_artifacts=False")
+            default_stages = [stage for stage in default_stages if stage != 'qa_lead_agent']
+        
+        return default_stages
     
     def get_execution_status(self) -> Dict[str, Any]:
         """Get current execution status and metadata."""
@@ -2358,7 +2369,7 @@ class WorkflowSupervisor:
     
     def _get_default_stages(self) -> List[str]:
         """Get the default workflow stages including Azure integration."""
-        return [
+        default_stages = [
             'epic_strategist',
             'feature_decomposer_agent',
             'user_story_decomposer_agent',
@@ -2367,3 +2378,10 @@ class WorkflowSupervisor:
             'azure_integration',
             'final_validation'
         ]
+        
+        # Remove QA stage if testing artifacts are disabled
+        if not self.include_test_artifacts:
+            self.logger.info("Excluding QA stages due to include_test_artifacts=False")
+            default_stages = [stage for stage in default_stages if stage != 'qa_lead_agent']
+        
+        return default_stages

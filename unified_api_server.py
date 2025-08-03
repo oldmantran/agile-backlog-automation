@@ -261,6 +261,8 @@ class CreateProjectRequest(BaseModel):
     basics: ProjectBasics
     vision: ProductVision
     azureConfig: AzureConfig = Field(default_factory=AzureConfig, description="Azure DevOps configuration (optional for content-only mode)")
+    domainStrategy: Optional[Dict[str, Any]] = Field(None, description="Domain selection strategy for enhanced context")
+    includeTestArtifacts: bool = Field(True, description="Whether to generate test plans, test suites, and test cases")
 
 class GenerationStatus(BaseModel):
     jobId: str
@@ -461,6 +463,75 @@ async def create_project(project_data: CreateProjectRequest, background_tasks: B
     except Exception as e:
         logger.error(f"Error creating project: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to create project: {str(e)}")
+
+@app.post("/api/generate-backlog")
+async def generate_backlog_direct(project_data: CreateProjectRequest, background_tasks: BackgroundTasks):
+    """Generate a backlog directly from project data (single-step API)."""
+    logger.info("🚀 Direct backlog generation requested")
+    logger.info(f"🔍 Request received at: {datetime.now().isoformat()}")
+    logger.info(f"🔍 Include test artifacts: {project_data.includeTestArtifacts}")
+    
+    try:
+        # Generate unique IDs
+        project_id = f"proj_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{project_id}"
+        logger.info(f"🆔 Generated project ID: {project_id}, job ID: {job_id}")
+        
+        # Store project info
+        project_info = {
+            "id": project_id,
+            "data": project_data.dict(),
+            "status": "created",
+            "createdAt": datetime.now().isoformat(),
+            "updatedAt": datetime.now().isoformat()
+        }
+        
+        # Save project to file for persistence
+        output_dir = Path("output")
+        output_dir.mkdir(exist_ok=True)
+        
+        project_file = output_dir / f"project_{project_id}.json"
+        with open(project_file, 'w') as f:
+            json.dump(project_info, f, indent=2)
+        
+        # Initialize job status immediately
+        set_active_job(job_id, {
+            "jobId": job_id,
+            "projectId": project_id,
+            "status": "queued",
+            "progress": 0,
+            "currentAgent": "Supervisor",
+            "currentAction": "Initializing...",
+            "startTime": datetime.now(),
+            "error": None,
+            "endTime": None,
+            "includeTestArtifacts": project_data.includeTestArtifacts
+        })
+        logger.info(f"🚀 Job {job_id} initialized and queued")
+        
+        # Add to background tasks using thread pool (non-blocking)
+        background_tasks.add_task(run_backlog_generation_threaded, job_id, project_info)
+        logger.info(f"✅ Background task added for job: {job_id}")
+        
+        # Return response immediately with both job_id and project_id for compatibility
+        response_data = {
+            "project_id": project_id,
+            "job_id": job_id,
+            "jobId": job_id,  # For backward compatibility
+            "projectId": project_id,  # For backward compatibility
+            "status": "queued",
+            "includeTestArtifacts": project_data.includeTestArtifacts
+        }
+        logger.info(f"📤 Returning response: {response_data}")
+        
+        return {
+            "success": True,
+            "data": response_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Error starting backlog generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start backlog generation: {str(e)}")
 
 @app.get("/api/projects")
 async def list_projects(page: int = 1, limit: int = 10):
@@ -969,6 +1040,10 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
         # Use Azure DevOps project name as the project name, fallback to basics.name if not available
         project_name = azure_project or project_data.get("basics", {}).get("name", "Unknown Project")
         
+        # Extract test artifacts configuration
+        include_test_artifacts = project_data.get("includeTestArtifacts", True)
+        logger.info(f"🧪 Include test artifacts: {include_test_artifacts}")
+        
         # Extract domain from vision statement using VisionContextExtractor
         from utils.vision_context_extractor import VisionContextExtractor
         vision_extractor = VisionContextExtractor()
@@ -1058,7 +1133,8 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                     iteration_path=iteration_path,
                     job_id=job_id,
                     settings_manager=settings_manager,
-                    user_id=current_user_id
+                    user_id=current_user_id,
+                    include_test_artifacts=include_test_artifacts
                 )
             else:
                 # Initialize without Azure DevOps integration
@@ -1071,7 +1147,8 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                     iteration_path="",
                     job_id=job_id,
                     settings_manager=settings_manager,
-                    user_id=current_user_id
+                    user_id=current_user_id,
+                    include_test_artifacts=include_test_artifacts
                 )
             
             # IMPORTANT: Set the project name in the supervisor's project context
@@ -1103,7 +1180,8 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
                         iteration_path="",
                         job_id=job_id,
                         settings_manager=settings_manager,
-                        user_id=current_user_id
+                        user_id=current_user_id,
+                        include_test_artifacts=include_test_artifacts
                     )
                     supervisor.project = project_name
                     supervisor.project_context.update_context({
