@@ -262,8 +262,6 @@ Check the application logs for detailed issue descriptions and remediation steps
         try:
             print(f"📧 Attempting to send email via {self.smtp_server}:{self.smtp_port} to {self.email_to}")
             with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
-                # Set timeout for all SMTP operations
-                server.settimeout(30)
                 if self.use_tls:
                     print("🔒 Starting TLS encryption")
                     server.starttls()

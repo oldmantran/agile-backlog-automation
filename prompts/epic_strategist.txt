@@ -63,4 +63,12 @@ Each epic must include:
 ✅ Epics can be developed in parallel where possible  
 ✅ Business value is clearly articulated in vision context
 
+### Domain-Specific Validation:
+For domain "${domain}":
+- Epic titles and descriptions MUST use industry-specific terminology
+- Address actual business processes and workflows from the domain
+- Reference real stakeholders and user roles from the industry
+- Avoid generic terms like "system", "platform", "application" unless domain-specific
+- Focus on domain outcomes, not software features
+
 ## CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.

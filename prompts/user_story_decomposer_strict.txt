@@ -1,0 +1,25 @@
+RESPOND ONLY WITH JSON. NO TEXT. NO EXPLANATIONS. JSON ONLY.
+
+You are a user story expert. Convert this feature into user stories.
+
+Feature: ${feature_title}
+Description: ${feature_description}
+
+RETURN ONLY THIS JSON FORMAT:
+[
+  {
+    "title": "story title",
+    "user_story": "As a user, I want X so that Y",
+    "description": "detailed description",
+    "story_points": 5,
+    "priority": "High",
+    "acceptance_criteria": [
+      "Given X, When Y, Then Z",
+      "Given A, When B, Then C"
+    ],
+    "category": "authentication",
+    "user_type": "new_user"
+  }
+]
+
+JSON ONLY. NO MARKDOWN. NO EXPLANATIONS. START WITH [ AND END WITH ].

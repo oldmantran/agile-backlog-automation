@@ -43,4 +43,11 @@ RESPOND WITH ONLY THIS JSON STRUCTURE:
   }
 ]
 
+### Domain-Specific User Story Guidelines for "${domain}":
+- User stories MUST reflect actual roles and personas from the domain
+- Acceptance criteria should test real business scenarios, not generic system behavior
+- Use industry-specific terminology in stories and criteria
+- Reference actual workflows, processes, and outcomes from the domain
+- Consider domain-specific regulations, standards, and best practices
+
 Note: The acceptance_criteria array MUST contain 3-5 items. No more, no less.

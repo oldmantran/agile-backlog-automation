@@ -183,6 +183,20 @@ cython_debug/
 # Ignore all files in the output directory to prevent secrets from being committed
 output/
 
+# Database files - project-specific
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files - all variations
+logs/
+*.log
+logs/*.txt
+logs/*.log
+
+# Local Claude settings
+.claude/settings.local.json
+
 # Temporary development files
 *_SUMMARY.md
 *_PLAN.md
@@ -196,8 +210,9 @@ find_*.py
 test_*.py
 SIMPLIFIED_*.md
 TEMP_*.md
+frontend_domain_selector.tsx
 
-# Temporary prompts and tools
-prompts/*.txt
+# Temporary prompts and tools (keep this commented out since we want to commit prompt improvements)
+# prompts/*.txt
 tools/test_*.py
 tools/quick_*.py

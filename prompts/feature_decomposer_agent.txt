@@ -59,4 +59,11 @@ Each feature must include:
 ✅ Story points reflect realistic complexity estimates for entire feature
 ✅ Feature scope is appropriate for decomposition into 3-6 user stories
 
+### Domain-Specific Feature Guidelines for "${domain}":
+- Feature titles MUST reflect actual business capabilities in the domain
+- Descriptions should reference real workflows and processes from the industry
+- Use domain-specific terminology and avoid generic software terms
+- Features should address actual pain points and opportunities in the domain
+- Consider industry standards, regulations, and best practices
+
 ## CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.
