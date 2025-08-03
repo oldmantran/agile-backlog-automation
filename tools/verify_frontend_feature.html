@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Feature Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+        }
+        .success { background: #28a745; }
+        .error { background: #dc3545; }
+        .info { background: #17a2b8; }
+        code {
+            background: #333;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Include Test Artifacts Feature Verification</h1>
+    
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        async function verifyFeature() {
+            try {
+                // Check if frontend is running
+                addResult('Checking frontend at http://localhost:3000...');
+                const response = await fetch('http://localhost:3000');
+                
+                if (!response.ok) {
+                    addResult('Frontend is not accessible!', 'error');
+                    return;
+                }
+                
+                addResult('Frontend is running!', 'success');
+                
+                // Check if API is accessible
+                addResult('Checking API health...');
+                const apiResponse = await fetch('http://localhost:3000/api/health');
+                const apiData = await apiResponse.json();
+                
+                if (apiData.status === 'healthy') {
+                    addResult('API is healthy!', 'success');
+                } else {
+                    addResult('API health check failed!', 'error');
+                }
+                
+                // Test the new endpoint
+                addResult('Testing includeTestArtifacts parameter...');
+                const testData = {
+                    basics: {
+                        name: "UI Test Project",
+                        description: "Testing from UI",
+                        domain: "software"
+                    },
+                    vision: {
+                        visionStatement: "A test project to verify the UI feature",
+                        businessObjectives: ["Test"],
+                        successMetrics: ["Working"],
+                        targetAudience: "Developers"
+                    },
+                    azureConfig: {
+                        organizationUrl: "",
+                        personalAccessToken: "",
+                        project: "UITest",
+                        areaPath: "Test",
+                        iterationPath: "Sprint1"
+                    },
+                    includeTestArtifacts: false
+                };
+                
+                const testResponse = await fetch('http://localhost:8000/api/generate-backlog', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const testResult = await testResponse.json();
+                
+                if (testResult.success && testResult.data.includeTestArtifacts === false) {
+                    addResult('✅ API correctly processed includeTestArtifacts=false!', 'success');
+                    addResult(`Job ID: <code>${testResult.data.jobId}</code>`, 'info');
+                } else {
+                    addResult('API did not process the parameter correctly!', 'error');
+                }
+                
+                // Instructions for manual verification
+                addResult('<br><strong>Manual Verification Steps:</strong>', 'info');
+                addResult('1. Open <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> in your browser', 'info');
+                addResult('2. Click on "Create New Project"', 'info');
+                addResult('3. Look for the "Include Test Artifacts" toggle in the form', 'info');
+                addResult('4. The toggle should show "Enabled" by default with a checkmark', 'info');
+                addResult('5. Click it to see it change to "Disabled" with an X', 'info');
+                addResult('6. Notice the processing time estimate changes', 'info');
+                
+            } catch (error) {
+                addResult(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Run verification
+        verifyFeature();
+    </script>
+</body>
+</html>
