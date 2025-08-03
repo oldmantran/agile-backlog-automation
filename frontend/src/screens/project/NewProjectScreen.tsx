@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
-import { FiRocket, FiInfo, FiArrowRight, FiGlobe } from 'react-icons/fi';
+import { FiPlay, FiInfo, FiArrowRight, FiGlobe } from 'react-icons/fi';
 
 const NewProjectScreen: React.FC = () => {
   const navigate = useNavigate();

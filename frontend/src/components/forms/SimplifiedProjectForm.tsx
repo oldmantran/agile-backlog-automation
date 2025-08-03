@@ -7,7 +7,7 @@ import { Separator } from '../ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription } from '../ui/alert';
-import { useForm, Controller, setValue as setFormValue } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { FiGlobe, FiInfo, FiCheck, FiX, FiPlus } from 'react-icons/fi';
 
 interface Domain {

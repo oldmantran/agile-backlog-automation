@@ -8,7 +8,8 @@ import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Switch } from '../../components/ui/switch';
 import Header from '../../components/navigation/Header';
-import Sidebar from '../../components/navigation/Sidebar';\nimport DomainManagement from '../../components/domain/DomainManagement';
+import Sidebar from '../../components/navigation/Sidebar';
+import DomainManagement from '../../components/domain/DomainManagement';
 import { settingsApi, WorkItemLimitsRequest, VisualSettingsRequest } from '../../services/api/settingsApi';
 import { userApi, CurrentUser } from '../../services/api/userApi';
 import { 
