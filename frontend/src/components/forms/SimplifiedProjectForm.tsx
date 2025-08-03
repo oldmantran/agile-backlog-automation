@@ -45,7 +45,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       iterationPath: initialData.iterationPath || '',
       selectedDomains: initialData.selectedDomains || [],
       useAiDetection: initialData.useAiDetection !== false, // Default to true
-      includeTestArtifacts: initialData.includeTestArtifacts !== false, // Default to true
+      includeTestArtifacts: initialData.includeTestArtifacts === true, // Default to false
     }
   });
 
@@ -69,9 +69,30 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
         if (response.ok) {
           const domains = await response.json();
           setAvailableDomains(domains);
+        } else {
+          // Fallback domains if API fails
+          const fallbackDomains = [
+            { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
+            { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
+            { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true },
+            { id: 4, domain_key: 'retail', display_name: 'Retail', description: 'E-commerce and retail solutions', is_active: true },
+            { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true },
+            { id: 6, domain_key: 'manufacturing', display_name: 'Manufacturing', description: 'Manufacturing and industrial automation', is_active: true },
+            { id: 7, domain_key: 'government', display_name: 'Government', description: 'Government and public sector solutions', is_active: true }
+          ];
+          setAvailableDomains(fallbackDomains);
         }
       } catch (error) {
         console.error('Failed to load domains:', error);
+        // Set fallback domains on error
+        const fallbackDomains = [
+          { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
+          { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
+          { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true },
+          { id: 4, domain_key: 'retail', display_name: 'Retail', description: 'E-commerce and retail solutions', is_active: true },
+          { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true }
+        ];
+        setAvailableDomains(fallbackDomains);
       }
     };
     loadDomains();

@@ -382,7 +382,7 @@ async def test_endpoint():
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "2.1.0"}
 
 @app.get("/api/config")
 async def get_config():
@@ -1816,10 +1816,20 @@ async def get_domains():
     """Get all available domains."""
     try:
         domains = db.get_all_domains()
+        logger.info(f"Retrieved {len(domains)} domains from database")
         return domains
     except Exception as e:
         logger.error(f"Failed to get domains: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get domains")
+        # Return hardcoded domains as fallback
+        fallback_domains = [
+            {"id": 1, "domain_key": "technology", "display_name": "Technology", "description": "Software development and technology projects", "is_active": 1},
+            {"id": 2, "domain_key": "healthcare", "display_name": "Healthcare", "description": "Healthcare and medical technology", "is_active": 1},
+            {"id": 3, "domain_key": "finance", "display_name": "Finance", "description": "Financial services and fintech", "is_active": 1},
+            {"id": 4, "domain_key": "retail", "display_name": "Retail", "description": "E-commerce and retail solutions", "is_active": 1},
+            {"id": 5, "domain_key": "education", "display_name": "Education", "description": "Educational technology and learning platforms", "is_active": 1}
+        ]
+        logger.info(f"Returning {len(fallback_domains)} fallback domains")
+        return fallback_domains
 
 @app.post("/api/domains/detect")
 async def detect_domain(request: dict):
