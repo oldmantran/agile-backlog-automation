@@ -369,13 +369,13 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                     <div className="relative" style={{ maxHeight: '320px' }}>
                       <div className="overflow-y-auto overflow-x-hidden pr-2" style={{ maxHeight: '320px', scrollbarWidth: 'thin' }}>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {availableDomains.map(domain => {
-                        const isSelected = selectedDomains.some((s: DomainSelection) => s.domain_key === domain.domain_key);
-                        const selectedDomain = selectedDomains.find((s: DomainSelection) => s.domain_key === domain.domain_key);
-                        const isPrimary = selectedDomain?.is_primary || false;
-                        
-                        return (
-                          <div
+                          {availableDomains.map(domain => {
+                            const isSelected = selectedDomains.some((s: DomainSelection) => s.domain_key === domain.domain_key);
+                            const selectedDomain = selectedDomains.find((s: DomainSelection) => s.domain_key === domain.domain_key);
+                            const isPrimary = selectedDomain?.is_primary || false;
+                            
+                            return (
+                              <div
                             key={domain.domain_key}
                             onClick={() => {
                               if (isSelected) {
@@ -426,8 +426,8 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                               )}
                             </div>
                           </div>
-                        );
-                      })}
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
