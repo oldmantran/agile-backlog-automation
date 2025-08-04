@@ -1813,6 +1813,42 @@ async def initialize_default_llm_configurations():
         logger.error(f"Failed to initialize LLM configurations: {e}")
         raise HTTPException(status_code=500, detail="Failed to initialize LLM configurations")
 
+# Backlog Jobs Management Endpoints
+@app.get("/api/backlog/jobs")
+async def get_backlog_jobs(
+    user_email: str,
+    exclude_test_generated: bool = True,
+    exclude_failed: bool = True,
+    exclude_deleted: bool = True
+):
+    """Get backlog jobs for a user."""
+    try:
+        # Call the database method with limit of 6 for recent projects
+        jobs = db.get_backlog_jobs(
+            user_email=user_email, 
+            exclude_test_generated=exclude_test_generated, 
+            exclude_failed=exclude_failed, 
+            exclude_deleted=exclude_deleted,
+            limit=6
+        )
+        return jobs
+    except Exception as e:
+        logger.error(f"Failed to get backlog jobs: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get backlog jobs: {str(e)}")
+
+@app.delete("/api/backlog/jobs/{job_id}")
+async def delete_backlog_job(job_id: int):
+    """Delete a backlog job."""
+    try:
+        success = db.delete_backlog_job(job_id)
+        if success:
+            return {"status": "success", "message": f"Job {job_id} deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Job not found")
+    except Exception as e:
+        logger.error(f"Failed to delete backlog job {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete job: {str(e)}")
+
 # Domain Management Endpoints
 @app.get("/api/domains")
 async def get_domains():
@@ -1887,6 +1923,20 @@ async def detect_domain(request: dict):
         logger.error(f"Failed to detect domain: {e}")
         # Return a fallback domain instead of failing
         return {"domain": "technology"}
+
+# Build Version Endpoint
+@app.get("/api/build-version")
+async def get_build_version():
+    """Get current build version."""
+    try:
+        build_version = db.get_build_version()
+        return {
+            "build_version": build_version,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get build version: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get build version: {str(e)}")
 
 # Retry Failed Uploads Endpoint
 class RetryFailedUploadsRequest(BaseModel):

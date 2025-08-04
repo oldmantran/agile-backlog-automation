@@ -52,6 +52,25 @@ class Database:
                     )
                 ''')
                 
+                # Create backlog jobs table for job completion statistics
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS backlog_jobs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_email TEXT NOT NULL,
+                        project_name TEXT NOT NULL,
+                        epics_generated INTEGER DEFAULT 0,
+                        features_generated INTEGER DEFAULT 0,
+                        user_stories_generated INTEGER DEFAULT 0,
+                        tasks_generated INTEGER DEFAULT 0,
+                        test_cases_generated INTEGER DEFAULT 0,
+                        execution_time_seconds REAL,
+                        status TEXT DEFAULT 'completed',
+                        raw_summary TEXT,
+                        is_deleted INTEGER DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
                 # Create user settings table with proper constraints
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS user_settings (
@@ -154,7 +173,7 @@ class Database:
                 # Check table existence
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 tables = [row[0] for row in cursor.fetchall()]
-                expected_tables = ['jobs', 'user_settings', 'llm_configurations', 'system_info']
+                expected_tables = ['jobs', 'user_settings', 'llm_configurations', 'system_info', 'backlog_jobs']
                 
                 for table in expected_tables:
                     if table in tables:
@@ -740,6 +759,104 @@ class Database:
             fallback_version = f"{current_date}.001"
             self.set_system_info('build_version', fallback_version)
             return fallback_version
+    
+    def add_backlog_job(self, user_email: str, project_name: str, epics_generated: int = 0,
+                       features_generated: int = 0, user_stories_generated: int = 0,
+                       tasks_generated: int = 0, test_cases_generated: int = 0,
+                       execution_time_seconds: float = None, raw_summary: dict = None) -> int:
+        """Add a backlog job to the database and return the job ID."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO backlog_jobs (
+                        user_email, project_name, epics_generated, features_generated,
+                        user_stories_generated, tasks_generated, test_cases_generated,
+                        execution_time_seconds, raw_summary
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    user_email, project_name, epics_generated, features_generated,
+                    user_stories_generated, tasks_generated, test_cases_generated,
+                    execution_time_seconds, json.dumps(raw_summary) if raw_summary else None
+                ))
+                job_id = cursor.lastrowid
+                conn.commit()
+                logger.info(f"Backlog job added successfully with ID: {job_id}")
+                return job_id
+        except Exception as e:
+            logger.error(f"Failed to add backlog job: {e}")
+            raise
+    
+    def get_backlog_jobs(self, user_email: str = None, exclude_test_generated: bool = False,
+                        exclude_failed: bool = False, exclude_deleted: bool = True,
+                        limit: int = None) -> List[Dict[str, Any]]:
+        """Get backlog jobs with optional filtering."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                where_conditions = []
+                params = []
+                
+                if user_email:
+                    where_conditions.append("user_email = ?")
+                    params.append(user_email)
+                
+                if exclude_deleted:
+                    where_conditions.append("is_deleted = 0")
+                
+                if exclude_failed:
+                    where_conditions.append("status != 'failed'")
+                
+                where_clause = ""
+                if where_conditions:
+                    where_clause = "WHERE " + " AND ".join(where_conditions)
+                
+                limit_clause = f"LIMIT {limit}" if limit else ""
+                
+                query = f'''
+                    SELECT * FROM backlog_jobs 
+                    {where_clause}
+                    ORDER BY created_at DESC
+                    {limit_clause}
+                '''
+                
+                cursor.execute(query, params)
+                jobs = []
+                for row in cursor.fetchall():
+                    job = dict(row) 
+                    # Parse raw_summary JSON if it exists
+                    if job['raw_summary']:
+                        try:
+                            job['raw_summary'] = json.loads(job['raw_summary'])
+                        except json.JSONDecodeError:
+                            job['raw_summary'] = None
+                    jobs.append(job)
+                
+                return jobs
+        except Exception as e:
+            logger.error(f"Failed to get backlog jobs: {e}")
+            return []
+    
+    def delete_backlog_job(self, job_id: int) -> bool:
+        """Soft delete a backlog job."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'UPDATE backlog_jobs SET is_deleted = 1 WHERE id = ?',
+                    (job_id,)
+                )
+                success = cursor.rowcount > 0
+                conn.commit()
+                if success:
+                    logger.info(f"Backlog job {job_id} marked as deleted")
+                return success
+        except Exception as e:
+            logger.error(f"Failed to delete backlog job {job_id}: {e}")
+            return False
 
 # Global database instance
 db = Database()
@@ -763,27 +880,20 @@ def add_backlog_job(user_email: str, project_name: str, epics_generated: int = 0
         raw_summary: Raw summary data as dictionary
     """
     try:
-        # Create a unique job ID
-        job_id = f"backlog_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_email.replace('@', '_').replace('.', '_')}"
-        
-        # Save the job using the existing save_job method
-        db.save_job(
-            job_id=job_id,
-            project_id=project_name,
-            status="completed",
-            progress=100
+        # Use the Database class method
+        job_id = db.add_backlog_job(
+            user_email=user_email,
+            project_name=project_name,
+            epics_generated=epics_generated,
+            features_generated=features_generated,
+            user_stories_generated=user_stories_generated,
+            tasks_generated=tasks_generated,
+            test_cases_generated=test_cases_generated,
+            execution_time_seconds=execution_time_seconds,
+            raw_summary=raw_summary
         )
         
-        # Update with additional details
-        db.update_job(
-            job_id=job_id,
-            current_agent="completed",
-            current_action="backlog_generation_complete",
-            end_time=datetime.now(),
-            error=None
-        )
-        
-        logger.info(f"Backlog job logged successfully: {job_id}")
+        logger.info(f"Backlog job logged successfully with ID: {job_id}")
         return job_id
         
     except Exception as e:
