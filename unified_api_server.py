@@ -382,7 +382,18 @@ async def test_endpoint():
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "2.1.0"}
+    build_version = db.get_build_version()
+    return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "2.1.0", "build": build_version}
+
+@app.get("/api/build-version")
+async def get_build_version():
+    """Get current build version from database."""
+    try:
+        build_version = db.get_build_version()
+        return {"build_version": build_version, "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Failed to get build version: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve build version")
 
 @app.get("/api/config")
 async def get_config():
@@ -1876,6 +1887,66 @@ async def detect_domain(request: dict):
         logger.error(f"Failed to detect domain: {e}")
         # Return a fallback domain instead of failing
         return {"domain": "technology"}
+
+# Retry Failed Uploads Endpoint
+class RetryFailedUploadsRequest(BaseModel):
+    job_id: str
+    action: str = "retry"  # retry, summary, details, cleanup
+
+@app.post("/api/retry-failed-uploads")
+async def retry_failed_uploads(request: RetryFailedUploadsRequest):
+    """Retry failed uploads for a staging job."""
+    try:
+        job_id = request.job_id
+        action = request.action
+        
+        logger.info(f"Retry failed uploads requested for job {job_id}, action: {action}")
+        
+        # Import the retry tool module
+        import subprocess
+        import tempfile
+        import os
+        
+        # Execute the retry tool
+        retry_script = "tools/retry_failed_uploads.py"
+        if not os.path.exists(retry_script):
+            raise HTTPException(status_code=404, detail="Retry tool not found")
+        
+        # Execute the command
+        cmd = [sys.executable, retry_script, job_id, action]
+        logger.info(f"Executing: {' '.join(cmd)}")
+        
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+        
+        if result.returncode == 0:
+            return {
+                "success": True,
+                "message": f"Retry operation completed successfully",
+                "output": result.stdout,
+                "job_id": job_id,
+                "action": action
+            }
+        else:
+            logger.error(f"Retry failed with return code {result.returncode}: {result.stderr}")
+            return {
+                "success": False,
+                "message": f"Retry operation failed",
+                "error": result.stderr,
+                "job_id": job_id,
+                "action": action
+            }
+            
+    except subprocess.TimeoutExpired:
+        logger.error(f"Retry operation timed out for job {job_id}")
+        raise HTTPException(status_code=408, detail="Retry operation timed out")
+    except Exception as e:
+        logger.error(f"Failed to retry uploads for job {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to retry uploads: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(

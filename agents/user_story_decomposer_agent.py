@@ -529,7 +529,7 @@ Edge Cases: {feature.get('edge_cases', [])}
                     system_prompt=prompt,
                     user_input=user_input,
                     temperature=0.7,
-                    max_tokens=4000
+                    max_tokens=8000
                 )
             else:
                 # Use direct API call for cloud providers

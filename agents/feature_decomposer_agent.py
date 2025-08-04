@@ -125,8 +125,11 @@ Dependencies: {epic.get('dependencies', [])}
                 features = json.loads(cleaned_response)
             except (json.JSONDecodeError, TypeError) as e:
                 print(f"⚠️ Failed to parse JSON response: {e}")
+                print(f"📄 Raw response length: {len(response)} chars")
+                print(f"🧹 Cleaned response length: {len(cleaned_response)} chars")
                 print(f"📄 Raw response preview (first 500 chars): {response[:500]}")
                 print(f"🧹 Cleaned response preview (first 500 chars): {cleaned_response[:500]}")
+                print(f"🧹 Cleaned response ending (last 100 chars): ...{cleaned_response[-100:]}")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
             if isinstance(features, list) and len(features) > 0:
                 # Apply the feature limit constraint if specified
@@ -330,7 +333,7 @@ Dependencies: {epic.get('dependencies', [])}
                     system_prompt=prompt,
                     user_input=user_input,
                     temperature=0.7,
-                    max_tokens=4000
+                    max_tokens=8000
                 )
             else:
                 # Use direct API call for cloud providers
@@ -384,7 +387,14 @@ Dependencies: {epic.get('dependencies', [])}
             json.loads(response.strip())
             return response.strip()
         except (json.JSONDecodeError, TypeError):
-            pass
+            # Try cleaning common JSON issues and parsing again
+            cleaned = self._clean_json_syntax(response.strip())
+            try:
+                json.loads(cleaned)
+                print(f"🧹 Fixed JSON syntax issues, returning cleaned version")
+                return cleaned
+            except (json.JSONDecodeError, TypeError):
+                pass
         
         # Method 2: Look for JSON inside ```json blocks
         json_pattern = r'```json\s*([\s\S]*?)\s*```'
@@ -419,13 +429,24 @@ Dependencies: {epic.get('dependencies', [])}
         
         for pattern in array_patterns:
             matches = re.findall(pattern, response, re.DOTALL)
-            for match in matches:
+            print(f"🔍 Regex found {len(matches)} potential JSON arrays")
+            for i, match in enumerate(matches):
+                print(f"🔍 Array {i+1}: {len(match)} chars, starts with: {match[:100]}...")
                 try:
                     json.loads(match)
                     print(f"🎯 Found valid JSON array: {len(match)} characters")
                     return match
-                except (json.JSONDecodeError, TypeError):
-                    continue
+                except (json.JSONDecodeError, TypeError) as e:
+                    print(f"❌ Array {i+1} failed JSON validation: {e}")
+                    # Try cleaning the JSON and parsing again
+                    cleaned_match = self._clean_json_syntax(match)
+                    try:
+                        json.loads(cleaned_match)
+                        print(f"🧹 Fixed JSON syntax in array {i+1}, returning cleaned version")
+                        return cleaned_match
+                    except (json.JSONDecodeError, TypeError):
+                        print(f"❌ Array {i+1} still invalid after cleaning")
+                        continue
         
         # Method 5: Try to find object patterns
         object_patterns = [
@@ -445,6 +466,31 @@ Dependencies: {epic.get('dependencies', [])}
         # Method 6: Last resort - try to extract JSON by finding balanced brackets
         print("🔍 Using fallback bracket matching...")
         return self._extract_json_with_balanced_brackets(response)
+
+    def _clean_json_syntax(self, json_str: str) -> str:
+        """Clean common JSON syntax issues that LLMs often produce."""
+        if not json_str:
+            return json_str
+        
+        import re
+        
+        # Fix trailing commas before closing brackets/braces
+        json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+        
+        # Fix missing commas between objects in arrays (less common but possible)
+        json_str = re.sub(r'}(\s*){', r'},\1{', json_str)
+        
+        # Fix missing quotes around property names (though templates should prevent this)
+        json_str = re.sub(r'([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:', r'\1"\2":', json_str)
+        
+        # Fix single quotes to double quotes
+        json_str = json_str.replace("'", '"')
+        
+        # Remove comments (JSON doesn't support comments but LLMs sometimes add them)
+        json_str = re.sub(r'//.*$', '', json_str, flags=re.MULTILINE)
+        json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)
+        
+        return json_str
 
     def _extract_json_with_balanced_brackets(self, response: str) -> str:
         """Extract JSON using balanced bracket counting as last resort."""

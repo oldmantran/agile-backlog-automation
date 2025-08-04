@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import Header from '../components/navigation/Header';
 import Sidebar from '../components/navigation/Sidebar';
+import { useBuildVersion } from '../hooks/useBuildVersion';
 import { 
   Settings, 
   Plus, 
@@ -32,6 +33,7 @@ const TronWelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { buildVersion } = useBuildVersion();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -242,7 +244,7 @@ const TronWelcomeScreen: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-xs font-mono text-muted-foreground">
-                  BUILD: <span className="text-primary">2025.07.14</span>
+                  BUILD: <span className="text-primary">{buildVersion}</span>
                 </div>
               </div>
             </div>

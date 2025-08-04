@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus, FiRotateCcw, FiCalendar, FiBarChart3 } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
@@ -32,6 +32,182 @@ interface ComponentError {
 }
 
 const USER_EMAIL = 'kevin.tran@c4workx.com'; // TODO: Replace with dynamic user email if available
+
+// Project History Card Component
+interface ProjectHistoryCardProps {
+  job: BacklogJob;
+  onDelete: () => void;
+  onRetry: () => void;
+  isRetrying?: boolean;
+}
+
+const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, onRetry, isRetrying = false }) => {
+  // Parse staging summary from raw_summary
+  const getStagingSummary = () => {
+    try {
+      const rawSummary = job.raw_summary as any;
+      return rawSummary?.staging_summary || {};
+    } catch {
+      return {};
+    }
+  };
+
+  const getUploadMetrics = () => {
+    const stagingSummary = getStagingSummary();
+    const byStatus = stagingSummary.by_status || {};
+    const totalGenerated = job.epics_generated + job.features_generated + job.user_stories_generated + 
+                          job.tasks_generated + job.test_cases_generated;
+    const totalUploaded = byStatus.success || 0;
+    const totalFailed = byStatus.failed || 0;
+    const failureRate = totalGenerated > 0 ? ((totalFailed + byStatus.skipped || 0) / totalGenerated) * 100 : 0;
+    
+    return {
+      totalGenerated,
+      totalUploaded,
+      totalFailed,
+      failureRate: Math.round(failureRate * 10) / 10,
+      hasFailures: totalFailed > 0
+    };
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+  };
+
+  const metrics = getUploadMetrics();
+  const { date, time } = formatDate(job.created_at);
+  const stagingSummary = getStagingSummary();
+  const jobId = (job.raw_summary as any)?.job_id || 'N/A';
+
+  return (
+    <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:shadow-lg transition-all">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-foreground glow-cyan text-lg">
+              {job.project_name}
+            </CardTitle>
+            <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground font-mono">
+              <FiCalendar className="w-3 h-3" />
+              <span>{date} at {time}</span>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mt-1">
+              Job ID: {jobId.length > 20 ? `${jobId.substring(0, 20)}...` : jobId}
+            </p>
+          </div>
+          <Badge 
+            variant={job.status === 'completed' ? 'default' : job.status === 'failed' ? 'destructive' : 'secondary'}
+            className="font-mono text-xs"
+          >
+            {job.status.toUpperCase()}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Generation Summary */}
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2 text-sm font-medium">
+            <FiBarChart3 className="w-4 h-4 text-primary" />
+            <span>Generation Summary</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Items:</span>
+              <span className="font-mono">{metrics.totalGenerated}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Duration:</span>
+              <span className="font-mono">{formatDuration(job.execution_time_seconds || 0)}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="text-center">
+              <div className="text-muted-foreground">Epics</div>
+              <div className="font-mono font-semibold">{job.epics_generated}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground">Features</div>
+              <div className="font-mono font-semibold">{job.features_generated}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground">Stories</div>
+              <div className="font-mono font-semibold">{job.user_stories_generated}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Upload Results */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">Upload Results</span>
+            {metrics.hasFailures && (
+              <Badge variant="destructive" className="text-xs">
+                {metrics.failureRate}% Failed
+              </Badge>
+            )}
+          </div>
+          
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Uploaded:</span>
+              <span className="font-mono">{metrics.totalUploaded}/{metrics.totalGenerated}</span>
+            </div>
+            <Progress 
+              value={metrics.totalGenerated > 0 ? (metrics.totalUploaded / metrics.totalGenerated) * 100 : 0} 
+              className="h-2"
+            />
+            {metrics.totalFailed > 0 && (
+              <div className="text-xs text-red-500">
+                {metrics.totalFailed} items failed to upload
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-between items-center pt-2 border-t border-border">
+          <div className="flex space-x-2">
+            {metrics.hasFailures && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRetry}
+                disabled={isRetrying}
+                className="text-xs"
+              >
+                {isRetrying ? (
+                  <FiActivity className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <FiRotateCcw className="w-3 h-3 mr-1" />
+                )}
+                {isRetrying ? 'Retrying...' : 'Retry Upload'}
+              </Button>
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onDelete}
+            className="text-red-400 hover:text-red-300 text-xs"
+          >
+            <FiTrash2 className="w-3 h-3" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 // Error Boundary Component for Progress Bar
 class ProgressBarErrorBoundary extends React.Component<
@@ -87,6 +263,7 @@ const MyProjectsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<ComponentError[]>([]);
   const [debugMode, setDebugMode] = useState(false);
+  const [retryingJobs, setRetryingJobs] = useState<Set<number>>(new Set());
   const hasMounted = useRef(false);
   
   // SSE progress hook for real-time updates
@@ -217,6 +394,50 @@ const MyProjectsScreen: React.FC = () => {
       logError('handleDeleteBacklogJob', error, { jobId });
     }
   }, []);
+
+  const handleRetryFailedUploads = useCallback(async (job: BacklogJob) => {
+    try {
+      const jobId = job.id;
+      setRetryingJobs(prev => new Set([...prev, jobId]));
+      
+      console.log(`Retrying failed uploads for job ${jobId}...`);
+      
+      // Get job ID from raw_summary to call retry API
+      const rawSummary = job.raw_summary as any;
+      const stagingJobId = rawSummary?.job_id || `job_${job.created_at.replace(/[^0-9]/g, '')}`;
+      
+      // Call the retry API
+      const response = await fetch('/api/retry-failed-uploads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          job_id: stagingJobId,
+          action: 'retry'
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log(`Retry result for job ${jobId}:`, result);
+      
+      // Refresh the backlog jobs to get updated status
+      await loadBacklogJobs();
+      
+    } catch (error) {
+      logError('handleRetryFailedUploads', error, { jobId: job.id });
+    } finally {
+      setRetryingJobs(prev => {
+        const updated = new Set(prev);
+        updated.delete(job.id);
+        return updated;
+      });
+    }
+  }, [loadBacklogJobs]);
 
   // SSE-based job updates
   const updateJobsFromSSE = useCallback(() => {
@@ -626,67 +847,23 @@ const MyProjectsScreen: React.FC = () => {
               </div>
             )}
 
-            {/* Backlog Jobs Section */}
+            {/* Project History Section */}
             {backlogJobs.length > 0 && (
               <div>
                 <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                  RECENT BACKLOG JOBS
+                  PROJECT HISTORY
                 </h2>
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Project
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Created
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {backlogJobs.map((job) => (
-                          <tr key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                              {job.project_name || 'Unknown Project'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <Badge
-                                variant={
-                                  job.status === 'completed' ? 'default' :
-                                  job.status === 'failed' ? 'destructive' :
-                                  job.status === 'running' ? 'secondary' : 'outline'
-                                }
-                              >
-                                {job.status}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                              {new Date(job.created_at).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteBacklogJob(job.id)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                <FiTrash2 className="w-4 h-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {backlogJobs.map((job) => (
+                    <ProjectHistoryCard 
+                      key={job.id} 
+                      job={job} 
+                      onDelete={() => handleDeleteBacklogJob(job.id)}
+                      onRetry={() => handleRetryFailedUploads(job)}
+                      isRetrying={retryingJobs.has(job.id)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 

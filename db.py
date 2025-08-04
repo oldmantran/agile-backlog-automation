@@ -41,6 +41,17 @@ class Database:
                     )
                 ''')
                 
+                # Create system info table for build version tracking
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS system_info (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        info_key TEXT NOT NULL UNIQUE,
+                        info_value TEXT NOT NULL,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
                 # Create user settings table with proper constraints
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS user_settings (
@@ -143,7 +154,7 @@ class Database:
                 # Check table existence
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 tables = [row[0] for row in cursor.fetchall()]
-                expected_tables = ['jobs', 'user_settings', 'llm_configurations']
+                expected_tables = ['jobs', 'user_settings', 'llm_configurations', 'system_info']
                 
                 for table in expected_tables:
                     if table in tables:
@@ -665,6 +676,70 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to create default LLM configurations: {e}")
             return False
+    
+    def get_system_info(self, info_key: str) -> Optional[str]:
+        """Get system information value by key."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT info_value FROM system_info WHERE info_key = ?', (info_key,))
+                row = cursor.fetchone()
+                return row[0] if row else None
+        except Exception as e:
+            logger.error(f"Failed to get system info {info_key}: {e}")
+            return None
+    
+    def set_system_info(self, info_key: str, info_value: str) -> bool:
+        """Set system information value, updating timestamp."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT OR REPLACE INTO system_info (info_key, info_value, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                ''', (info_key, info_value))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Failed to set system info {info_key}: {e}")
+            return False
+    
+    def get_build_version(self) -> str:
+        """Get current build version from database."""
+        version = self.get_system_info('build_version')
+        return version if version else "2025.08.04.001"  # Default fallback
+    
+    def increment_build_version(self) -> str:
+        """Increment build version for current date."""
+        from datetime import datetime
+        
+        current_date = datetime.now().strftime("%Y.%m.%d")
+        current_version = self.get_build_version()
+        
+        try:
+            # Parse current version
+            if current_version.startswith(current_date):
+                # Same day, increment build number
+                parts = current_version.split('.')
+                if len(parts) == 4:
+                    build_num = int(parts[3]) + 1
+                else:
+                    build_num = 1
+            else:
+                # New day, reset to 001
+                build_num = 1
+            
+            new_version = f"{current_date}.{build_num:03d}"
+            self.set_system_info('build_version', new_version)
+            logger.info(f"Build version updated to: {new_version}")
+            return new_version
+            
+        except Exception as e:
+            logger.error(f"Failed to increment build version: {e}")
+            # Return default version for current date
+            fallback_version = f"{current_date}.001"
+            self.set_system_info('build_version', fallback_version)
+            return fallback_version
 
 # Global database instance
 db = Database()

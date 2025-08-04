@@ -45,7 +45,7 @@ class OllamaClient:
                 prompt: str, 
                 system_prompt: str = None,
                 temperature: float = 0.7,
-                max_tokens: int = 4000,
+                max_tokens: int = 8000,
                 stream: bool = False) -> Dict[str, Any]:
         """
         Generate text using Ollama.
@@ -223,7 +223,7 @@ class OllamaProvider:
                          system_prompt: str, 
                          user_input: str, 
                          temperature: float = 0.7,
-                         max_tokens: int = 4000) -> str:
+                         max_tokens: int = 8000) -> str:
         """Generate response using Ollama."""
         try:
             result = self.client.generate(
@@ -259,7 +259,7 @@ OLLAMA_CONFIGS = {
     "high_quality": {
         "model": "llama3.1:70b",
         "temperature": 0.5,
-        "max_tokens": 4000
+        "max_tokens": 8000
     },
     "code_focused": {
         "model": "codellama:34b",

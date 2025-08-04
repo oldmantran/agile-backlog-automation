@@ -40,6 +40,9 @@ class Notifier:
         print(f"📊 Statistics received: {stats}")
         print(f"📋 Workflow data keys: {list(workflow_data.keys())}")
 
+        # Get staging summary for upload results
+        staging_summary = self._get_staging_summary(workflow_data)
+
         # --- Persist job to database ---
         try:
             from db import add_backlog_job
@@ -64,6 +67,7 @@ class Notifier:
                     'test_cases_generated': stats.get('test_cases_generated', 0),
                     'execution_time_seconds': stats.get('execution_time_seconds'),
                     'ado_summary': workflow_data.get('azure_integration', {}),
+                    'staging_summary': staging_summary,
                     'created_at': stats.get('created_at')
                 }
             )
@@ -111,10 +115,13 @@ class Notifier:
             error_list = "\n".join([f"• {error}" for error in errors])
             warning += f"\n\n⚠️ *Warnings/Issues Encountered:*\n{error_list}"
         
-        # Add Azure DevOps integration info if available
-        ado_summary = ""
-        if azure_integration.get('work_items_created'):
-            ado_summary = f"\n**Azure DevOps Work Items Created:** {azure_integration['work_items_created']}"
+        # Generate upload summary from staging data
+        upload_summary = self._format_upload_summary(staging_summary)
+        
+        # Calculate total items generated
+        total_generated = (stats.get('epics_generated', 0) + stats.get('features_generated', 0) + 
+                          stats.get('user_stories_generated', 0) + stats.get('tasks_generated', 0) + 
+                          stats.get('test_cases_generated', 0))
         
         message = f"""
 🎉 **Agile Backlog Automation Complete**
@@ -122,14 +129,20 @@ class Notifier:
 **Project:** {project_name}
 **Azure DevOps Project:** {ado_project}
 **Area Path:** {ado_area_path}
-**Epics Generated:** {stats.get('epics_generated', 0)}
-**Features Generated:** {stats.get('features_generated', 0)}
-**User Stories Generated:** {stats.get('user_stories_generated', 0)}
-**Tasks Generated:** {stats.get('tasks_generated', 0)}
-**Test Cases Generated:** {stats.get('test_cases_generated', 0)}
-**Execution Time:** {exec_time_str}{ado_summary}{warning}
 
-✅ All stages completed. Review above for any warnings.
+**Generation Summary:**
+• Total Work Items: {total_generated}
+• Epics: {stats.get('epics_generated', 0)}
+• Features: {stats.get('features_generated', 0)}
+• User Stories: {stats.get('user_stories_generated', 0)}
+• Tasks: {stats.get('tasks_generated', 0)}
+• Test Cases: {stats.get('test_cases_generated', 0)}
+• Generation Time: {exec_time_str}
+
+**Upload Results:**
+{upload_summary}{warning}
+
+{self._get_retry_instructions(staging_summary)}
         """.strip()
         
         success_count = 0
@@ -334,3 +347,67 @@ Check the application logs for detailed issue descriptions and remediation steps
                 return str(text).encode('utf-8', errors='replace').decode('utf-8')
             except Exception:
                 return str(text).encode('ascii', errors='ignore').decode('ascii')
+    
+    def _get_staging_summary(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get staging summary from job data."""
+        try:
+            job_id = workflow_data.get('metadata', {}).get('job_id')
+            if not job_id:
+                return {}
+            
+            from models.work_item_staging import WorkItemStaging
+            staging = WorkItemStaging()
+            return staging.get_staging_summary(job_id)
+        except Exception as e:
+            print(f"Warning: Could not get staging summary: {e}")
+            return {}
+    
+    def _format_upload_summary(self, staging_summary: Dict[str, Any]) -> str:
+        """Format staging summary for email notification."""
+        if not staging_summary:
+            return "• Upload status: Not available"
+        
+        by_status = staging_summary.get('by_status', {})
+        total_items = staging_summary.get('total_items', 0)
+        success_count = by_status.get('success', 0)
+        failed_count = by_status.get('failed', 0)
+        skipped_count = by_status.get('skipped', 0)
+        
+        if total_items == 0:
+            return "• No items were staged for upload"
+        
+        success_rate = (success_count / total_items) * 100 if total_items > 0 else 0
+        
+        summary_lines = [
+            f"• Successfully Uploaded: {success_count}/{total_items} ({success_rate:.1f}%)"
+        ]
+        
+        if failed_count > 0:
+            summary_lines.append(f"• Failed Uploads: {failed_count}")
+        
+        if skipped_count > 0:
+            summary_lines.append(f"• Skipped (due to parent failures): {skipped_count}")
+        
+        return "\n".join(summary_lines)
+    
+    def _get_retry_instructions(self, staging_summary: Dict[str, Any]) -> str:
+        """Generate retry instructions if there are failures."""
+        if not staging_summary:
+            return ""
+        
+        by_status = staging_summary.get('by_status', {})
+        failed_count = by_status.get('failed', 0)
+        job_id = staging_summary.get('job_id', '')
+        
+        if failed_count == 0:
+            return "✅ All items uploaded successfully."
+        
+        return f"""
+⚠️ **{failed_count} items failed to upload**
+
+To retry failed uploads:
+1. Use the retry function in the My Projects screen
+2. Or run: `python tools/retry_failed_uploads.py {job_id} retry`
+
+Your generated work items are safely stored and can be retried without regenerating.
+        """.strip()

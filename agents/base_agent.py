@@ -247,12 +247,8 @@ class Agent:
             context = context or {}
             
             # Add debug logging for context variables
-            logger.info(f"DEBUG: Generating prompt for {self.name} with context keys: {list(context.keys())}")
-            if 'product_vision' in context:
-                logger.info(f"DEBUG: product_vision present in context, length: {len(context['product_vision'])}")
-            else:
-                logger.warning(f"DEBUG: product_vision NOT present in context for {self.name}")
-                logger.info(f"DEBUG: Available context keys: {list(context.keys())}")
+            # Generate prompt using template system
+            logger.debug(f"Generating prompt for {self.name} with {len(context)} context variables")
             
             return prompt_manager.get_prompt(self.name, context)
         except Exception as e:
@@ -336,7 +332,7 @@ class Agent:
                 system_prompt=system_prompt,
                 user_input=user_input,
                 temperature=0.7,
-                max_tokens=4000
+                max_tokens=8000
             )
         except Exception as e:
             logger.error(f"❌ Ollama inference failed: {e}")
@@ -351,7 +347,7 @@ class Agent:
                 {"role": "user", "content": user_input}
             ],
             "temperature": 0.7,
-            "max_tokens": 4000
+            "max_tokens": 8000
         }
     
     def _make_api_request(self, payload: dict) -> requests.Response:
