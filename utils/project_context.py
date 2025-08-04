@@ -14,6 +14,7 @@ class ProjectContext:
             # Project Information
             'project_name': self.config.settings.get('project', {}).get('name', 'Agile Project'),
             'domain': 'dynamic',  # Will be set dynamically based on vision analysis
+            'product_vision': '',  # Will be set dynamically from project data
             'methodology': 'Agile/Scrum',
             
             # Technical Context

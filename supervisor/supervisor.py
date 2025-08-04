@@ -603,11 +603,15 @@ class WorkflowSupervisor:
         # Refresh agent configurations to ensure latest LLM settings are used
         self._refresh_agent_configurations()
         
-        # Update project context with actual project name if available
+        # Update project context with actual project name and product vision
+        context_updates = {}
         if self.project:
-            self.project_context.update_context({
-                'project_name': self.project
-            })
+            context_updates['project_name'] = self.project
+        if product_vision:
+            context_updates['product_vision'] = product_vision
+        
+        if context_updates:
+            self.project_context.update_context(context_updates)
         
         # Extract domain from product vision using VisionContextExtractor
         try:

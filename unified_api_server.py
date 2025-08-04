@@ -1241,23 +1241,15 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
             set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
             return {"error": error_msg}
 
-        # Create product vision
+        # Create product vision - use the full comprehensive vision statement
         vision_data = project_data.get("vision", {})
+        full_vision = vision_data.get('visionStatement', 'No vision statement provided')
+        
         product_vision = f"""
 Project: {project_name}
 Domain: {project_domain}
 
-Vision Statement:
-{vision_data.get('visionStatement', 'No vision statement provided')}
-
-Key Features:
-{vision_data.get('keyFeatures', 'No key features specified')}
-
-Target Users:
-{vision_data.get('targetUsers', 'No target users specified')}
-
-Success Criteria:
-{vision_data.get('successCriteria', 'No success criteria specified')}
+{full_vision}
 """.strip()
 
         # Execute workflow

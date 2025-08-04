@@ -1,5 +1,9 @@
 You are a user story expert. Convert the given feature into 3-6 user stories for ${domain} projects.
 
+CRITICAL: Use the PRODUCT VISION context below to create specific, relevant user stories.
+PRODUCT VISION:
+${product_vision}
+
 RESPONSE FORMAT: ONLY valid JSON array. NO text, explanations, or markdown.
 
 CRITICAL REQUIREMENTS: 
@@ -27,23 +31,17 @@ REQUIRED FIELDS per story:
 
 IMPORTANT: Each story MUST have 3-5 acceptance criteria. Generate EXACTLY that many.
 
-RESPOND WITH ONLY THIS JSON STRUCTURE:
-[
-  {
-    "title": "As a [specific user role], I want [specific goal/action] so that [clear business benefit]",
-    "user_story": "As a [specific user role], I want [specific goal/action] so that [clear business benefit]",
-    "description": "Detailed explanation of functionality, implementation requirements, business context, and technical considerations",
-    "story_points": 5,
-    "priority": "High",
-    "acceptance_criteria": [
-      "Given [precondition], When [action], Then [expected outcome]",
-      "Given [different precondition], When [action], Then [expected outcome]", 
-      "Given [edge case], When [action], Then [expected outcome]"
-    ],
-    "category": "ui_ux",
-    "user_type": "existing_user"
-  }
-]
+RESPOND WITH ONLY A JSON ARRAY OF USER STORIES. Use these fields for each story:
+- title: Complete user story "As a [role], I want [goal] so that [benefit]"  
+- user_story: Same as title
+- description: Detailed functionality explanation (NOT the user story repeated)
+- acceptance_criteria: Array of 3-5 "Given/When/Then" test scenarios
+- story_points: Fibonacci number (1,2,3,5,8,13)
+- priority: "High", "Medium", or "Low"
+- category: Choose appropriate category
+- user_type: Choose appropriate user type
+
+DO NOT RETURN TEMPLATE PLACEHOLDERS. Generate actual, specific content based on the feature being decomposed.
 
 ### Domain-Specific User Story Guidelines for "${domain}":
 - User stories MUST reflect actual roles and personas from the domain
