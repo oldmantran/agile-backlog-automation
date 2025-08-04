@@ -60,16 +60,26 @@ def retry_failed_uploads(job_id: str, work_item_type: str = None):
         organization_url = os.getenv('AZURE_DEVOPS_ORG', 'https://dev.azure.com/c4workx')
         project = os.getenv('AZURE_DEVOPS_PROJECT', 'Backlog Automation')
         pat = os.getenv('AZURE_DEVOPS_PAT')
+        area_path = os.getenv('AREA_PATH', 'Backlog Automation')
+        iteration_path = os.getenv('ITERATION_PATH', f'{project}\\Sprint 1')
         
         if not pat:
             print("ERROR: AZURE_DEVOPS_PAT environment variable not set")
             return False
         
+        print(f"Azure DevOps Configuration:")
+        print(f"  Organization: {organization_url}")
+        print(f"  Project: {project}")
+        print(f"  Area Path: {area_path}")
+        print(f"  Iteration Path: {iteration_path}")
+        
         # Initialize Azure DevOps integrator
         ado_integrator = AzureDevOpsIntegrator(
             organization_url=organization_url,
             project=project,
-            personal_access_token=pat
+            personal_access_token=pat,
+            area_path=area_path,
+            iteration_path=iteration_path
         )
         
         # Initialize outbox uploader
