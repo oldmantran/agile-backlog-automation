@@ -232,6 +232,15 @@ Edge Cases: {feature.get('edge_cases', [])}
                     return enhanced_stories
             elif isinstance(user_stories, dict) and 'user_stories' in user_stories:
                 return self._validate_and_enhance_user_stories(user_stories['user_stories'], max_user_stories)
+            elif isinstance(user_stories, dict):
+                # Check if this is a single user story object (LLM returned object instead of array)
+                if self._looks_like_user_story(user_stories):
+                    print("INFO: LLM returned single user story object instead of array, wrapping in array...")
+                    return self._validate_and_enhance_user_stories([user_stories], max_user_stories)
+                else:
+                    print("WARNING: LLM response was not in expected format. Attempting to extract user stories from response...")
+                    # Try to extract any user story-like content from the response
+                    return self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
             else:
                 print("WARNING: LLM response was not in expected format. Attempting to extract user stories from response...")
                 # Try to extract any user story-like content from the response
@@ -240,6 +249,22 @@ Edge Cases: {feature.get('edge_cases', [])}
         except json.JSONDecodeError as e:
             # Try to extract user stories from the raw response text
             return self._extract_user_stories_from_text(response, feature, max_user_stories)
+    
+    def _looks_like_user_story(self, obj: dict) -> bool:
+        """Check if a dictionary object looks like a user story."""
+        if not isinstance(obj, dict):
+            return False
+        
+        # Check for common user story fields
+        user_story_fields = ['title', 'user_story', 'description', 'acceptance_criteria']
+        has_user_story_fields = sum(1 for field in user_story_fields if field in obj) >= 2
+        
+        # Check if title or user_story contains "As a" pattern
+        title = obj.get('title', '')
+        user_story = obj.get('user_story', '')
+        has_user_story_pattern = ('As a' in title or 'As a' in user_story)
+        
+        return has_user_story_fields or has_user_story_pattern
 
     def _extract_user_stories_from_any_format(self, response_data: any, feature: dict = None, max_user_stories: int = None) -> list[dict]:
         """Extract user stories from any response format the LLM provides."""
