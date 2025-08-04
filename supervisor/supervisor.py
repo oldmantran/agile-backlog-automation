@@ -609,9 +609,19 @@ class WorkflowSupervisor:
             context_updates['project_name'] = self.project
         if product_vision:
             context_updates['product_vision'] = product_vision
+            self.logger.info(f"DEBUG: execute_workflow - Adding product_vision to context_updates, length: {len(product_vision)}")
         
         if context_updates:
+            self.logger.info(f"DEBUG: execute_workflow - Updating project context with keys: {list(context_updates.keys())}")
             self.project_context.update_context(context_updates)
+            
+            # Verify the update worked immediately
+            test_context = self.project_context.get_context()
+            if 'product_vision' in test_context:
+                self.logger.info(f"DEBUG: execute_workflow - VERIFIED: product_vision in context after update, length: {len(test_context['product_vision'])}")
+            else:
+                self.logger.error(f"DEBUG: execute_workflow - FAILED: product_vision NOT in context after update!")
+                self.logger.error(f"DEBUG: Available context keys: {list(test_context.keys())}")
         
         # Extract domain from product vision using VisionContextExtractor
         try:
@@ -988,6 +998,25 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing features into user stories (parallel mode: %s)", self.parallel_config['stages']['user_story_decomposer_agent'])
         agent = self.agents['user_story_decomposer_agent']
         context = self.project_context.get_context('user_story_decomposer_agent')
+        
+        # CRITICAL DEBUG: Check if product_vision is in context
+        self.logger.info(f"DEBUG: _execute_user_story_decomposition - Context keys: {list(context.keys())}")
+        if 'product_vision' in context:
+            vision_length = len(context['product_vision']) if context['product_vision'] else 0
+            self.logger.info(f"DEBUG: _execute_user_story_decomposition - product_vision found, length: {vision_length}")
+            if vision_length > 0:
+                self.logger.info(f"DEBUG: product_vision preview: '{context['product_vision'][:100]}...'")
+        else:
+            self.logger.error(f"DEBUG: _execute_user_story_decomposition - CRITICAL: product_vision NOT in context!")
+            self.logger.error(f"DEBUG: This will cause template variable errors!")
+            
+            # Try to get it from workflow_data as a fallback
+            workflow_vision = self.workflow_data.get('product_vision', '')
+            if workflow_vision:
+                self.logger.info(f"DEBUG: Found product_vision in workflow_data, adding to context, length: {len(workflow_vision)}")
+                context['product_vision'] = workflow_vision
+            else:
+                self.logger.error(f"DEBUG: product_vision also NOT in workflow_data!")
         
         # Get limits from settings manager if available, otherwise fall back to config
         max_user_stories = None

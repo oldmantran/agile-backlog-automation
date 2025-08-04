@@ -38,7 +38,8 @@ class UserStoryDecomposerAgent(Agent):
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
-            'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint'
+            'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
+            'product_vision': context.get('product_vision', 'No product vision provided') if context else 'No product vision provided'
         }
         
         user_input = f"""

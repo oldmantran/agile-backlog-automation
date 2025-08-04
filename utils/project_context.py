@@ -47,11 +47,41 @@ class ProjectContext:
     
     def update_context(self, updates: Dict[str, Any]) -> None:
         """Update context with new values."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"DEBUG: ProjectContext.update_context called with keys: {list(updates.keys())}")
+        if 'product_vision' in updates:
+            vision_length = len(updates['product_vision']) if updates['product_vision'] else 0
+            logger.info(f"DEBUG: Updating product_vision, length: {vision_length}")
+            if vision_length > 0:
+                logger.info(f"DEBUG: product_vision preview: '{updates['product_vision'][:100]}...'")
+        
         self._context.update(updates)
+        
+        # Verify the update worked
+        if 'product_vision' in updates:
+            stored_vision = self._context.get('product_vision', '')
+            stored_length = len(stored_vision) if stored_vision else 0
+            logger.info(f"DEBUG: After update, stored product_vision length: {stored_length}")
+            if stored_length != vision_length:
+                logger.error(f"DEBUG: MISMATCH! Input length {vision_length} != stored length {stored_length}")
     
     def get_context(self, agent_type: str = None) -> Dict[str, Any]:
         """Get context appropriate for the specified agent type."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         base_context = self._context.copy()
+        
+        # Debug logging
+        logger.info(f"DEBUG: ProjectContext.get_context for {agent_type}")
+        logger.info(f"DEBUG: Context keys in _context: {list(self._context.keys())}")
+        if 'product_vision' in self._context:
+            vision_length = len(self._context['product_vision']) if self._context['product_vision'] else 0
+            logger.info(f"DEBUG: product_vision in _context, length: {vision_length}")
+        else:
+            logger.warning(f"DEBUG: product_vision NOT in _context for {agent_type}")
         
         # Add agent-specific context
         if agent_type == 'epic_strategist':
@@ -74,6 +104,14 @@ class ProjectContext:
                 'focus': 'quality assurance and risk mitigation',
                 'scope': 'comprehensive test coverage'
             })
+        
+        # Final verification
+        logger.info(f"DEBUG: Final context keys being returned: {list(base_context.keys())}")
+        if 'product_vision' in base_context:
+            vision_length = len(base_context['product_vision']) if base_context['product_vision'] else 0
+            logger.info(f"DEBUG: Returning product_vision, length: {vision_length}")
+        else:
+            logger.error(f"DEBUG: CRITICAL - product_vision NOT in final context for {agent_type}")
         
         return base_context
     
