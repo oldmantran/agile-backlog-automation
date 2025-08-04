@@ -90,7 +90,11 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const jobId = (job.raw_summary as any)?.job_id || 'N/A';
 
   return (
-    <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:shadow-lg transition-all">
+    <Card className={`tron-card bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all ${
+      metrics.hasFailures 
+        ? 'border-orange-500/50 shadow-orange-500/20 shadow-md' 
+        : 'border-primary/30'
+    }`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -152,7 +156,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">Upload Results</span>
             {metrics.hasFailures && (
-              <Badge variant="destructive" className="text-xs">
+              <Badge variant="destructive" className="text-xs animate-pulse">
                 {metrics.failureRate}% Failed
               </Badge>
             )}
@@ -168,8 +172,8 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
               className="h-2"
             />
             {metrics.totalFailed > 0 && (
-              <div className="text-xs text-red-500">
-                {metrics.totalFailed} items failed to upload
+              <div className="text-xs text-orange-600 bg-orange-50 dark:bg-orange-950 px-2 py-1 rounded">
+                ⚠️ {metrics.totalFailed} items failed to upload - click retry button below
               </div>
             )}
           </div>
@@ -181,17 +185,17 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
             {metrics.hasFailures && (
               <Button
                 size="sm"
-                variant="outline"
+                variant={isRetrying ? "outline" : "default"}
                 onClick={onRetry}
                 disabled={isRetrying}
-                className="text-xs"
+                className={`text-xs ${!isRetrying ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}`}
               >
                 {isRetrying ? (
                   <FiActivity className="w-3 h-3 mr-1 animate-spin" />
                 ) : (
                   <FiRotateCcw className="w-3 h-3 mr-1" />
                 )}
-                {isRetrying ? 'Retrying...' : 'Retry Upload'}
+                {isRetrying ? 'Retrying...' : 'Retry Failed Uploads'}
               </Button>
             )}
           </div>

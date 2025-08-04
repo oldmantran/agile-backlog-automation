@@ -402,12 +402,17 @@ Check the application logs for detailed issue descriptions and remediation steps
         if failed_count == 0:
             return "✅ All items uploaded successfully."
         
+        # Get the application URL from config or environment
+        app_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+        retry_url = f"{app_url}/my-projects"
+        
         return f"""
 ⚠️ **{failed_count} items failed to upload**
 
-To retry failed uploads:
-1. Use the retry function in the My Projects screen
-2. Or run: `python tools/retry_failed_uploads.py {job_id} retry`
+**📋 Next Steps:**
+1. Open the application: {retry_url}
+2. Find your project card in "Project History"
+3. Click the orange "Retry Failed Uploads" button
 
-Your generated work items are safely stored and can be retried without regenerating.
+💾 Your generated work items are safely stored and can be retried without regenerating.
         """.strip()
