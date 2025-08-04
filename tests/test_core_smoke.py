@@ -148,7 +148,7 @@ class TestCoreSmokeTests:
 
 def run_smoke_tests():
     """Run smoke tests and return success/failure."""
-    print("🚨 Running CRITICAL smoke tests...")
+    print("Running CRITICAL smoke tests...")
     print("=" * 60)
     
     try:
@@ -157,15 +157,15 @@ def run_smoke_tests():
         
         if exit_code == 0:
             print("=" * 60)
-            print("✅ ALL SMOKE TESTS PASSED - Core functionality verified")
+            print("ALL SMOKE TESTS PASSED - Core functionality verified")
             return True
         else:
             print("=" * 60)
-            print("❌ SMOKE TESTS FAILED - Application has critical issues")
+            print("SMOKE TESTS FAILED - Application has critical issues")
             return False
             
     except Exception as e:
-        print(f"❌ SMOKE TEST EXECUTION FAILED: {e}")
+        print(f"SMOKE TEST EXECUTION FAILED: {e}")
         return False
 
 

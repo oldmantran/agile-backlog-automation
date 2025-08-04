@@ -23,7 +23,7 @@ class TestVisionIntegration:
     def setup_method(self):
         """Setup method run before each test."""
         self.config = Config()
-        self.settings_manager = SettingsManager()
+        self.settings_manager = SettingsManager(self.config.settings)
         self.user_id = user_id_resolver.get_default_user_id()
         
         # Test vision that matches what API server would create
@@ -212,16 +212,16 @@ Domain: {project_domain}
 
 def run_integration_tests():
     """Run integration tests."""
-    print("🔄 Running vision processing integration tests...")
+    print("Running vision processing integration tests...")
     print("=" * 60)
     
     exit_code = pytest.main([__file__, "-v", "--tb=long"])
     
     if exit_code == 0:
-        print("✅ INTEGRATION TESTS PASSED")
+        print("INTEGRATION TESTS PASSED")
         return True
     else:
-        print("❌ INTEGRATION TESTS FAILED")
+        print("INTEGRATION TESTS FAILED")
         return False
 
 

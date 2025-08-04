@@ -10,13 +10,13 @@ from pathlib import Path
 
 def run_smoke_tests():
     """Run critical smoke tests."""
-    print("🔍 Running smoke tests to prevent regressions...")
+    print("Running smoke tests to prevent regressions...")
     
     project_root = Path(__file__).parent.parent
     smoke_test_path = project_root / "tests" / "test_core_smoke.py"
     
     if not smoke_test_path.exists():
-        print("❌ Smoke tests not found - this is a critical error!")
+        print("ERROR: Smoke tests not found - this is a critical error!")
         return False
     
     try:
@@ -32,7 +32,7 @@ def run_smoke_tests():
         return result.returncode == 0
         
     except Exception as e:
-        print(f"❌ Failed to run smoke tests: {e}")
+        print(f"ERROR: Failed to run smoke tests: {e}")
         return False
 
 def check_critical_files():
@@ -55,10 +55,10 @@ def check_critical_files():
             missing_files.append(file_path)
     
     if missing_files:
-        print(f"❌ CRITICAL FILES MISSING: {missing_files}")
+        print(f"ERROR: CRITICAL FILES MISSING: {missing_files}")
         return False
     
-    print("✅ All critical files present")
+    print("SUCCESS: All critical files present")
     return True
 
 def validate_template_integrity():
@@ -67,32 +67,32 @@ def validate_template_integrity():
     prompts_dir = project_root / "prompts"
     
     if not prompts_dir.exists():
-        print("❌ Prompts directory missing!")
+        print("ERROR: Prompts directory missing!")
         return False
     
     template_files = list(prompts_dir.glob("*.txt"))
     if len(template_files) < 5:  # Should have at least 5 agent templates
-        print(f"❌ Too few template files found: {len(template_files)}")
+        print(f"ERROR: Too few template files found: {len(template_files)}")
         return False
     
     # Check user_story_decomposer specifically since it's been problematic
     user_story_template = prompts_dir / "user_story_decomposer.txt"
     if not user_story_template.exists():
-        print("❌ user_story_decomposer.txt template missing!")
+        print("ERROR: user_story_decomposer.txt template missing!")
         return False
     
     # Check that it contains product_vision variable
     template_content = user_story_template.read_text()
     if "${product_vision}" not in template_content:
-        print("❌ user_story_decomposer.txt missing ${product_vision} variable!")
+        print("ERROR: user_story_decomposer.txt missing ${product_vision} variable!")
         return False
     
-    print("✅ Template integrity validated")
+    print("SUCCESS: Template integrity validated")
     return True
 
 def main():
     """Run all pre-commit checks."""
-    print("🛡️  PRE-COMMIT REGRESSION CHECK")
+    print("PRE-COMMIT REGRESSION CHECK")
     print("=" * 50)
     
     checks = [
@@ -104,24 +104,24 @@ def main():
     all_passed = True
     
     for check_name, check_func in checks:
-        print(f"\n🔍 Running {check_name}...")
+        print(f"\nRunning {check_name}...")
         try:
             if not check_func():
-                print(f"❌ {check_name} FAILED")
+                print(f"FAILED: {check_name}")
                 all_passed = False
             else:
-                print(f"✅ {check_name} PASSED")
+                print(f"PASSED: {check_name}")
         except Exception as e:
-            print(f"❌ {check_name} FAILED with exception: {e}")
+            print(f"FAILED: {check_name} with exception: {e}")
             all_passed = False
     
     print("\n" + "=" * 50)
     if all_passed:
-        print("✅ ALL PRE-COMMIT CHECKS PASSED - Safe to commit")
+        print("ALL PRE-COMMIT CHECKS PASSED - Safe to commit")
         return 0
     else:
-        print("❌ PRE-COMMIT CHECKS FAILED - DO NOT COMMIT")
-        print("\n🚨 CRITICAL: Fix all issues before committing to prevent regressions!")
+        print("PRE-COMMIT CHECKS FAILED - DO NOT COMMIT")
+        print("\nCRITICAL: Fix all issues before committing to prevent regressions!")
         return 1
 
 if __name__ == "__main__":
