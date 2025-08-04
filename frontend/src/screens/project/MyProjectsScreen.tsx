@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiPlus, FiRotateCcw, FiCalendar, FiBarChart3 } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
@@ -86,7 +86,6 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
 
   const metrics = getUploadMetrics();
   const { date, time } = formatDate(job.created_at);
-  const stagingSummary = getStagingSummary();
   const jobId = (job.raw_summary as any)?.job_id || 'N/A';
 
   return (
@@ -113,7 +112,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
             variant={job.status === 'completed' ? 'default' : job.status === 'failed' ? 'destructive' : 'secondary'}
             className="font-mono text-xs"
           >
-            {job.status.toUpperCase()}
+            {job.status?.toUpperCase() || 'UNKNOWN'}
           </Badge>
         </div>
       </CardHeader>
@@ -122,7 +121,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
         {/* Generation Summary */}
         <div className="space-y-2">
           <div className="flex items-center space-x-2 text-sm font-medium">
-            <FiBarChart3 className="w-4 h-4 text-primary" />
+            <FiBarChart className="w-4 h-4 text-primary" />
             <span>Generation Summary</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -271,7 +270,7 @@ const MyProjectsScreen: React.FC = () => {
   const hasMounted = useRef(false);
   
   // SSE progress hook for real-time updates
-  const { isConnected: sseConnected, lastUpdate: sseUpdate, error: sseError, connect: connectSSE, disconnect: disconnectSSE } = useSSEProgress();
+  const { lastUpdate: sseUpdate, error: sseError, connect: connectSSE, disconnect: disconnectSSE } = useSSEProgress();
 
   // Enhanced error logging
   const logError = (component: string, error: any, details?: any) => {
@@ -402,7 +401,7 @@ const MyProjectsScreen: React.FC = () => {
   const handleRetryFailedUploads = useCallback(async (job: BacklogJob) => {
     try {
       const jobId = job.id;
-      setRetryingJobs(prev => new Set([...prev, jobId]));
+      setRetryingJobs(prev => new Set([...Array.from(prev), jobId]));
       
       console.log(`Retrying failed uploads for job ${jobId}...`);
       
@@ -436,7 +435,7 @@ const MyProjectsScreen: React.FC = () => {
       logError('handleRetryFailedUploads', error, { jobId: job.id });
     } finally {
       setRetryingJobs(prev => {
-        const updated = new Set(prev);
+        const updated = new Set(Array.from(prev));
         updated.delete(job.id);
         return updated;
       });
