@@ -1280,9 +1280,9 @@ class WorkflowSupervisor:
             else:
                 self.logger.info("Pre-integration validation passed successfully")
             
-            # Proceed with ADO integration
-            self.logger.info("Starting Azure DevOps work item creation...")
-            results = self.azure_integrator.create_work_items(self.workflow_data)
+            # Proceed with ADO integration using outbox pattern
+            self.logger.info("Starting Azure DevOps work item creation with outbox pattern...")
+            results = self._create_work_items_with_outbox(self.workflow_data)
             
             # Check if results are valid
             if results is None:
@@ -2366,6 +2366,73 @@ class WorkflowSupervisor:
                 
             except Exception as e:
                 self.logger.error(f"Failed to send completion notification: {e}")
+    
+    def _create_work_items_with_outbox(self, workflow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Create work items using the outbox pattern for reliable upload.
+        
+        Returns:
+            List of successfully uploaded work items
+        """
+        try:
+            # Import outbox components
+            from models.work_item_staging import WorkItemStaging
+            from integrators.outbox_uploader import OutboxUploader
+            
+            # Initialize staging and uploader
+            staging = WorkItemStaging()
+            uploader = OutboxUploader(self.azure_integrator)
+            
+            # Stage all work items first (zero data loss)
+            self.logger.info("Staging work items to local database...")
+            staged_count = staging.stage_backlog(self.job_id, workflow_data)
+            self.logger.info(f"Successfully staged {staged_count} work items")
+            
+            # Get staging summary for notification
+            staging_summary = staging.get_staging_summary(self.job_id)
+            self.logger.info(f"Staging summary: {staging_summary}")
+            
+            # Upload staged items with retry logic
+            self.logger.info("Starting outbox upload to Azure DevOps...")
+            upload_results = uploader.upload_job(self.job_id, resume=False)
+            
+            # Convert staging results to traditional format for compatibility
+            successful_uploads = upload_results['uploaded']
+            failed_uploads = upload_results['failed']
+            
+            self.logger.info(f"Upload completed: {successful_uploads} successful, {failed_uploads} failed")
+            
+            if failed_uploads > 0:
+                self.logger.warning(f"Some items failed to upload. They remain staged for retry.")
+                self.logger.warning("Use the retry functionality to attempt failed uploads again.")
+            
+            # Clean up successful items but keep failed ones for retry
+            if successful_uploads > 0:
+                staging.cleanup_successful_job(self.job_id, keep_failed=True)
+                self.logger.info(f"Cleaned up {successful_uploads} successful uploads from staging")
+            
+            # Return mock results in expected format for notifications
+            # The actual upload details are in the upload_results
+            mock_results = []
+            for i in range(successful_uploads):
+                mock_results.append({
+                    'id': f'staged_{i}',
+                    'type': 'OutboxUpload',
+                    'title': f'Uploaded item {i+1}',
+                    'status': 'success'
+                })
+            
+            # Store outbox results in workflow data for detailed reporting
+            workflow_data['outbox_upload_results'] = upload_results
+            workflow_data['staging_summary'] = staging_summary
+            
+            return mock_results
+            
+        except Exception as e:
+            self.logger.error(f"Outbox upload failed: {e}")
+            # Fall back to traditional upload method
+            self.logger.warning("Falling back to traditional upload method...")
+            return self.azure_integrator.create_work_items(workflow_data)
     
     def _get_default_stages(self) -> List[str]:
         """Get the default workflow stages including Azure integration."""

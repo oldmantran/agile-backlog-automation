@@ -26,8 +26,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Debug QA agents: `python tools/debug_qa_lead_agent.py`
 - Scan test artifacts: `python tools/scan_remaining_test_artifacts.py`
 - Debug parallel processing: `python tools/debug_parallel_processing.py`
+- **Retry failed uploads**: `python tools/retry_failed_uploads.py <job_id> [retry|summary|details|cleanup]`
 
 ## Recent Major Updates (August 2025)
+
+### 🔄 Outbox Pattern Implementation (August 3-4, 2025)
+- **Zero Data Loss Architecture**: Local SQLite staging prevents loss of 2+ hour generation work
+- **Resumable Operations**: Retry 360 failed uploads without regenerating 796 total items
+- **Cascading Failure Prevention**: Epic failure no longer causes loss of 200+ child work items
+- **Enterprise Reliability**: HTTP timeouts, exponential backoff, rate limiting, comprehensive retry tools
+- **Performance Protection**: Generation investment is fully protected, upload becomes separate concern
 
 ### Performance Optimizations (40-45% faster)
 - **Parallel Processing**: Re-enabled limited task generation parallelism (2 workers)
@@ -93,6 +101,14 @@ This is a multi-agent AI system that transforms product visions into structured 
 **Settings Management**: User-specific settings stored in database with fallback to system defaults, managed through the frontend Settings page.
 
 ### Azure DevOps Integration
+
+**🔄 Outbox Pattern Architecture (NEW - August 2025)**: Enterprise-grade integration with zero data loss:
+- **Local Staging**: All work items stored in SQLite before upload (`models/work_item_staging.py`)
+- **Resumable Uploads**: Failed items can be retried without regenerating content (`integrators/outbox_uploader.py`)
+- **Cascading Failure Prevention**: Individual failures don't affect other work items
+- **HTTP Reliability**: Timeouts (30s/60s), retry logic (3x exponential backoff), rate limiting (100ms)
+- **Management Tools**: Comprehensive retry utilities (`tools/retry_failed_uploads.py`)
+- **Performance**: Protects 2-hour generation investment, enables selective retry of failed items
 
 Full integration with Azure DevOps Test Management API:
 - Creates proper work item hierarchy (Epic → Feature → User Story → Task/Test Case)

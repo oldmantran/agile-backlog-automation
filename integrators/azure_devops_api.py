@@ -14,6 +14,9 @@ from requests.auth import HTTPBasicAuth
 import base64
 import logging
 import urllib.parse
+import time
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from config.config_loader import Config
 from clients.azure_devops_test_client import AzureDevOpsTestClient
@@ -61,6 +64,19 @@ class AzureDevOpsIntegrator:
         import urllib.parse
         self.project_encoded = urllib.parse.quote(self.project)
         self.org_base_url = f"https://dev.azure.com/{self.organization}/_apis"
+        
+        # Configure robust HTTP session with retry logic and timeouts
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=3,  # Maximum number of retries
+            status_forcelist=[408, 429, 500, 502, 503, 504],  # HTTP status codes to retry
+            method_whitelist=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"],
+            backoff_factor=1,  # Wait 1, 2, 4 seconds between retries
+            raise_on_status=False
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
         self.base_url = f"https://dev.azure.com/{self.organization}/{self.project_encoded}/_apis"
         self.project_base_url = f"https://dev.azure.com/{self.organization}/{self.project_encoded}/_apis"
         self.work_items_url = f"{self.base_url}/wit/workitems"
@@ -126,7 +142,7 @@ class AzureDevOpsIntegrator:
         }
         
         try:
-            response = requests.get(url, auth=self.auth, headers=classification_headers)
+            response = self.session.get(url, auth=self.auth, headers=classification_headers, timeout=30)
             response.raise_for_status()
             data = response.json()
             # Recursively collect all area paths
@@ -154,7 +170,7 @@ class AzureDevOpsIntegrator:
         }
         
         try:
-            response = requests.get(url, auth=self.auth, headers=classification_headers)
+            response = self.session.get(url, auth=self.auth, headers=classification_headers, timeout=30)
             response.raise_for_status()
             data = response.json()
             # Recursively collect all iteration paths
@@ -631,11 +647,12 @@ class AzureDevOpsIntegrator:
         self.logger.info(f"Work item PATCH payload: {json.dumps(patch_document, indent=2)}")
         
         try:
-            response = requests.post(
+            response = self.session.post(
                 url,
                 json=patch_document,
                 auth=self.auth,
-                headers=self.headers
+                headers=self.headers,
+                timeout=60  # 60 seconds timeout for work item creation
             )
             
             # Log response details for debugging
@@ -678,11 +695,12 @@ class AzureDevOpsIntegrator:
         }]
         
         try:
-            response = requests.patch(
+            response = self.session.patch(
                 url,
                 json=patch_document,
                 auth=self.auth,
-                headers=self.headers
+                headers=self.headers,
+                timeout=30  # 30 seconds timeout for linking operations
             )
             response.raise_for_status()
             
@@ -953,11 +971,12 @@ class AzureDevOpsIntegrator:
         }]
         
         try:
-            response = requests.patch(
+            response = self.session.patch(
                 url,
                 json=patch_document,
                 auth=self.auth,
-                headers=self.headers
+                headers=self.headers,
+                timeout=30  # 30 seconds timeout for linking operations
             )
             response.raise_for_status()
             
@@ -1001,11 +1020,12 @@ class AzureDevOpsIntegrator:
             })
         
         try:
-            response = requests.patch(
+            response = self.session.patch(
                 url,
                 json=patch_document,
                 auth=self.auth,
-                headers=self.headers
+                headers=self.headers,
+                timeout=30  # 30 seconds timeout for linking operations
             )
             response.raise_for_status()
             
