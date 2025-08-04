@@ -67,7 +67,11 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
         if (response.ok) {
           const domains = await response.json();
           console.log('Loaded domains:', domains);
-          setAvailableDomains(domains);
+          // Sort domains alphabetically by display_name for consistent ordering
+          const sortedDomains = domains.sort((a: Domain, b: Domain) => 
+            a.display_name.localeCompare(b.display_name)
+          );
+          setAvailableDomains(sortedDomains);
         } else {
           console.warn('Domains API failed with status:', response.status);
           // Use comprehensive fallback domains (same as catch block)
@@ -104,7 +108,11 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
             { id: 30, domain_key: 'workforce_management', display_name: 'Workforce Management', description: 'HR and workforce solutions', is_active: true },
             { id: 31, domain_key: 'security_safety', display_name: 'Security & Safety', description: 'Security and safety solutions', is_active: true }
           ];
-          setAvailableDomains(fallbackDomains);
+          // Sort fallback domains alphabetically for consistent ordering
+          const sortedFallbackDomains = fallbackDomains.sort((a: Domain, b: Domain) => 
+            a.display_name.localeCompare(b.display_name)
+          );
+          setAvailableDomains(sortedFallbackDomains);
         }
       } catch (error) {
         console.error('Failed to load domains:', error);
@@ -142,7 +150,11 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
           { id: 30, domain_key: 'workforce_management', display_name: 'Workforce Management', description: 'HR and workforce solutions', is_active: true },
           { id: 31, domain_key: 'security_safety', display_name: 'Security & Safety', description: 'Security and safety solutions', is_active: true }
         ];
-        setAvailableDomains(fallbackDomains);
+        // Sort fallback domains alphabetically for consistent ordering
+        const sortedFallbackDomains = fallbackDomains.sort((a: Domain, b: Domain) => 
+          a.display_name.localeCompare(b.display_name)
+        );
+        setAvailableDomains(sortedFallbackDomains);
       }
     };
     loadDomains();
