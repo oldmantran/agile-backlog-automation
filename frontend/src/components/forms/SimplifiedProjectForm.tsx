@@ -70,7 +70,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
           setAvailableDomains(domains);
         } else {
           console.warn('Domains API failed with status:', response.status);
-          // Use comprehensive fallback domains
+          // Use comprehensive fallback domains (same as catch block)
           const fallbackDomains = [
             { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
             { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
@@ -79,13 +79,36 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
             { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true },
             { id: 6, domain_key: 'manufacturing', display_name: 'Manufacturing', description: 'Manufacturing and industrial automation', is_active: true },
             { id: 7, domain_key: 'real_estate', display_name: 'Real Estate', description: 'Real estate and property management', is_active: true },
-            { id: 8, domain_key: 'logistics', display_name: 'Logistics', description: 'Supply chain and logistics management', is_active: true }
+            { id: 8, domain_key: 'logistics', display_name: 'Logistics', description: 'Supply chain and logistics management', is_active: true },
+            { id: 9, domain_key: 'oil_gas', display_name: 'Oil & Gas', description: 'Oil and gas exploration and production', is_active: true },
+            { id: 10, domain_key: 'agriculture', display_name: 'Agriculture', description: 'Farming and agricultural technology', is_active: true },
+            { id: 11, domain_key: 'telecommunications', display_name: 'Telecommunications', description: 'Telecom and communication services', is_active: true },
+            { id: 12, domain_key: 'energy', display_name: 'Energy', description: 'Renewable and traditional energy', is_active: true },
+            { id: 13, domain_key: 'transportation', display_name: 'Transportation', description: 'Transport and mobility solutions', is_active: true },
+            { id: 14, domain_key: 'hospitality_tourism', display_name: 'Hospitality & Tourism', description: 'Hotels, travel, and tourism', is_active: true },
+            { id: 15, domain_key: 'entertainment_media', display_name: 'Entertainment & Media', description: 'Media, entertainment, and content', is_active: true },
+            { id: 16, domain_key: 'construction', display_name: 'Construction', description: 'Construction and building', is_active: true },
+            { id: 17, domain_key: 'automotive', display_name: 'Automotive', description: 'Automotive industry and vehicles', is_active: true },
+            { id: 18, domain_key: 'aerospace_defense', display_name: 'Aerospace & Defense', description: 'Aerospace and defense industry', is_active: true },
+            { id: 19, domain_key: 'pharmaceuticals_biotech', display_name: 'Pharmaceuticals & Biotech', description: 'Pharma and biotechnology', is_active: true },
+            { id: 20, domain_key: 'consumer_goods', display_name: 'Consumer Goods', description: 'Consumer products and goods', is_active: true },
+            { id: 21, domain_key: 'environmental_services', display_name: 'Environmental Services', description: 'Environmental and sustainability', is_active: true },
+            { id: 22, domain_key: 'government_public_sector', display_name: 'Government & Public Sector', description: 'Government and public services', is_active: true },
+            { id: 23, domain_key: 'insurance', display_name: 'Insurance', description: 'Insurance and risk management', is_active: true },
+            { id: 24, domain_key: 'professional_services', display_name: 'Professional Services', description: 'Consulting and professional services', is_active: true },
+            { id: 25, domain_key: 'nonprofit_social_impact', display_name: 'Nonprofit & Social Impact', description: 'Non-profit and social organizations', is_active: true },
+            { id: 26, domain_key: 'mining_natural_resources', display_name: 'Mining & Natural Resources', description: 'Mining and resource extraction', is_active: true },
+            { id: 27, domain_key: 'food_beverage', display_name: 'Food & Beverage', description: 'Food and beverage industry', is_active: true },
+            { id: 28, domain_key: 'ecommerce', display_name: 'E-commerce', description: 'Online retail and digital commerce', is_active: true },
+            { id: 29, domain_key: 'sports_fitness', display_name: 'Sports & Fitness', description: 'Sports, fitness, and wellness', is_active: true },
+            { id: 30, domain_key: 'workforce_management', display_name: 'Workforce Management', description: 'HR and workforce solutions', is_active: true },
+            { id: 31, domain_key: 'security_safety', display_name: 'Security & Safety', description: 'Security and safety solutions', is_active: true }
           ];
           setAvailableDomains(fallbackDomains);
         }
       } catch (error) {
         console.error('Failed to load domains:', error);
-        // Show comprehensive fallback to ensure UI works
+        // Show comprehensive fallback with all 31+ domains to ensure UI works
         const fallbackDomains = [
           { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
           { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
@@ -94,7 +117,30 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
           { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true },
           { id: 6, domain_key: 'manufacturing', display_name: 'Manufacturing', description: 'Manufacturing and industrial automation', is_active: true },
           { id: 7, domain_key: 'real_estate', display_name: 'Real Estate', description: 'Real estate and property management', is_active: true },
-          { id: 8, domain_key: 'logistics', display_name: 'Logistics', description: 'Supply chain and logistics management', is_active: true }
+          { id: 8, domain_key: 'logistics', display_name: 'Logistics', description: 'Supply chain and logistics management', is_active: true },
+          { id: 9, domain_key: 'oil_gas', display_name: 'Oil & Gas', description: 'Oil and gas exploration and production', is_active: true },
+          { id: 10, domain_key: 'agriculture', display_name: 'Agriculture', description: 'Farming and agricultural technology', is_active: true },
+          { id: 11, domain_key: 'telecommunications', display_name: 'Telecommunications', description: 'Telecom and communication services', is_active: true },
+          { id: 12, domain_key: 'energy', display_name: 'Energy', description: 'Renewable and traditional energy', is_active: true },
+          { id: 13, domain_key: 'transportation', display_name: 'Transportation', description: 'Transport and mobility solutions', is_active: true },
+          { id: 14, domain_key: 'hospitality_tourism', display_name: 'Hospitality & Tourism', description: 'Hotels, travel, and tourism', is_active: true },
+          { id: 15, domain_key: 'entertainment_media', display_name: 'Entertainment & Media', description: 'Media, entertainment, and content', is_active: true },
+          { id: 16, domain_key: 'construction', display_name: 'Construction', description: 'Construction and building', is_active: true },
+          { id: 17, domain_key: 'automotive', display_name: 'Automotive', description: 'Automotive industry and vehicles', is_active: true },
+          { id: 18, domain_key: 'aerospace_defense', display_name: 'Aerospace & Defense', description: 'Aerospace and defense industry', is_active: true },
+          { id: 19, domain_key: 'pharmaceuticals_biotech', display_name: 'Pharmaceuticals & Biotech', description: 'Pharma and biotechnology', is_active: true },
+          { id: 20, domain_key: 'consumer_goods', display_name: 'Consumer Goods', description: 'Consumer products and goods', is_active: true },
+          { id: 21, domain_key: 'environmental_services', display_name: 'Environmental Services', description: 'Environmental and sustainability', is_active: true },
+          { id: 22, domain_key: 'government_public_sector', display_name: 'Government & Public Sector', description: 'Government and public services', is_active: true },
+          { id: 23, domain_key: 'insurance', display_name: 'Insurance', description: 'Insurance and risk management', is_active: true },
+          { id: 24, domain_key: 'professional_services', display_name: 'Professional Services', description: 'Consulting and professional services', is_active: true },
+          { id: 25, domain_key: 'nonprofit_social_impact', display_name: 'Nonprofit & Social Impact', description: 'Non-profit and social organizations', is_active: true },
+          { id: 26, domain_key: 'mining_natural_resources', display_name: 'Mining & Natural Resources', description: 'Mining and resource extraction', is_active: true },
+          { id: 27, domain_key: 'food_beverage', display_name: 'Food & Beverage', description: 'Food and beverage industry', is_active: true },
+          { id: 28, domain_key: 'ecommerce', display_name: 'E-commerce', description: 'Online retail and digital commerce', is_active: true },
+          { id: 29, domain_key: 'sports_fitness', display_name: 'Sports & Fitness', description: 'Sports, fitness, and wellness', is_active: true },
+          { id: 30, domain_key: 'workforce_management', display_name: 'Workforce Management', description: 'HR and workforce solutions', is_active: true },
+          { id: 31, domain_key: 'security_safety', display_name: 'Security & Safety', description: 'Security and safety solutions', is_active: true }
         ];
         setAvailableDomains(fallbackDomains);
       }
