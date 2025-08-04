@@ -65,6 +65,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Major Updates (August 2025)
 
+### 🔧 Critical Workflow Fixes (August 4, 2025)
+- **Product Vision Context Scoping**: Restricted product vision to epic level only, removed from lower-level agents per architectural requirements
+- **JSON Parsing Overhaul**: Completely rewritten feature extraction with 6-layer validation system preventing truncation issues
+- **Template Variable Consistency**: Fixed template/context mismatches causing user story decomposition failures and circuit breaker activation
+- **Type Safety Improvements**: Added robust type checking for LLM responses preventing string/dict conversion crashes
+- **Fallback Text Extraction**: Enhanced intelligent parsing of non-JSON LLM responses with numbered/bullet point detection
+- **Enhanced Error Diagnostics**: Added comprehensive debug logging with response previews for troubleshooting JSON parsing issues
+
 ### 🔄 Outbox Pattern Implementation (August 3-4, 2025)
 - **Zero Data Loss Architecture**: Local SQLite staging prevents loss of 2+ hour generation work
 - **Resumable Operations**: Retry 360 failed uploads without regenerating 796 total items
