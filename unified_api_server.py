@@ -1859,9 +1859,25 @@ async def detect_domain(request: dict):
             raise HTTPException(status_code=400, detail="Text is required")
         
         # Import domain detection utility
-        from utils.domain_detector import DomainDetector
-        detector = DomainDetector()
-        detected_domain = detector.detect_domain(text)
+        try:
+            from utils.domain_detector import DomainDetector
+            detector = DomainDetector()
+            detected_domain = detector.detect_domain(text)
+        except ImportError:
+            # Fallback if domain_detector doesn't exist
+            logger.warning("DomainDetector not available, using fallback")
+            # Simple keyword-based detection
+            text_lower = text.lower()
+            if any(word in text_lower for word in ['technology', 'software', 'app', 'platform', 'system']):
+                detected_domain = "technology"
+            elif any(word in text_lower for word in ['finance', 'banking', 'payment', 'money']):
+                detected_domain = "fintech"
+            elif any(word in text_lower for word in ['health', 'medical', 'patient', 'doctor']):
+                detected_domain = "healthcare"
+            elif any(word in text_lower for word in ['retail', 'shopping', 'ecommerce', 'store']):
+                detected_domain = "retail"
+            else:
+                detected_domain = "technology"  # Default
         
         return {"domain": detected_domain}
     except Exception as e:

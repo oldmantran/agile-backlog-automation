@@ -181,11 +181,21 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       };
     }
     
+    // Get the primary domain for the basics.domain field
+    let primaryDomain = "software_development"; // Default fallback
+    if (finalDomainStrategy.strategy === 'manual' && finalDomainStrategy.domains?.length > 0) {
+      // Find the primary domain from manual selection
+      const primaryDomainObj = finalDomainStrategy.domains.find((d: any) => d.is_primary) || finalDomainStrategy.domains[0];
+      primaryDomain = primaryDomainObj?.domain_key || "software_development";
+    } else if (finalDomainStrategy.strategy === 'ai_detection' && finalDomainStrategy.detected_domain) {
+      primaryDomain = finalDomainStrategy.detected_domain;
+    }
+    
     const projectData = {
       basics: {
         name: project,
         description: data.visionStatement.substring(0, 200) + "...",
-        domain: "software_development" // Legacy field
+        domain: primaryDomain // Use the actual selected/detected domain
       },
       vision: {
         visionStatement: data.visionStatement,
