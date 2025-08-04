@@ -34,7 +34,6 @@ class FeatureDecomposerAgent(Agent):
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
             'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs',
-            'product_vision': context.get('product_vision', 'No product vision provided') if context else 'No product vision provided',
             'max_features': feature_limit if feature_limit else "unlimited"
         }
         
@@ -124,8 +123,10 @@ Dependencies: {epic.get('dependencies', [])}
             
             try:
                 features = json.loads(cleaned_response)
-            except (json.JSONDecodeError, TypeError):
-                print("⚠️ Failed to parse JSON response")
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"⚠️ Failed to parse JSON response: {e}")
+                print(f"📄 Raw response preview (first 500 chars): {response[:500]}")
+                print(f"🧹 Cleaned response preview (first 500 chars): {cleaned_response[:500]}")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
             if isinstance(features, list) and len(features) > 0:
                 # Apply the feature limit constraint if specified
@@ -169,9 +170,78 @@ Dependencies: {epic.get('dependencies', [])}
 
     def _extract_features_from_text(self, text: str, epic: dict) -> list[dict]:
         """Extract features from unstructured text using pattern matching."""
-        # No fallback - return empty list instead of creating generic work items
-        print("ℹ️ No features extracted from text, returning empty list")
-        return []
+        if not text or not text.strip():
+            print("ℹ️ Empty text provided for feature extraction")
+            return []
+        
+        print("ℹ️ Attempting to extract features from non-JSON LLM response")
+        extracted_features = []
+        
+        # Try to find feature-like content in the response
+        import re
+        
+        # Pattern 1: Look for numbered lists that might be features
+        # Example: "1. User Authentication System"
+        numbered_pattern = r'^\s*(\d+)\.?\s*(.+)$'
+        lines = text.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            match = re.match(numbered_pattern, line)
+            if match and len(match.group(2)) > 10:  # Reasonable length for a feature title
+                feature_text = match.group(2).strip()
+                
+                # Skip if it looks like JSON or code
+                if feature_text.startswith(('{', '[', '"')) or 'json' in feature_text.lower():
+                    continue
+                
+                # Create a basic feature structure
+                feature = {
+                    'title': feature_text,
+                    'description': f"Feature extracted from LLM response: {feature_text}",
+                    'priority': 'Medium',
+                    'estimated_story_points': 8,
+                    'dependencies': [],
+                    'ui_ux_requirements': ["Responsive design", "Accessibility compliance"],
+                    'technical_considerations': ["Performance optimization", "Scalability"],
+                    'business_value': f"Delivers value through {feature_text.lower()}",
+                    'edge_cases': ["Error handling scenarios", "Edge case validation"]
+                }
+                extracted_features.append(feature)
+        
+        # Pattern 2: Look for bullet points
+        # Example: "• Feature Management Dashboard"
+        if not extracted_features:
+            bullet_pattern = r'^\s*[•*-]\s*(.+)$'
+            for line in lines:
+                line = line.strip()
+                match = re.match(bullet_pattern, line)
+                if match and len(match.group(1)) > 10:
+                    feature_text = match.group(1).strip()
+                    
+                    # Skip if it looks like JSON or code
+                    if feature_text.startswith(('{', '[', '"')) or 'json' in feature_text.lower():
+                        continue
+                    
+                    feature = {
+                        'title': feature_text,
+                        'description': f"Feature extracted from LLM response: {feature_text}",
+                        'priority': 'Medium',
+                        'estimated_story_points': 8,
+                        'dependencies': [],
+                        'ui_ux_requirements': ["Responsive design", "Accessibility compliance"],
+                        'technical_considerations': ["Performance optimization", "Scalability"],
+                        'business_value': f"Delivers value through {feature_text.lower()}",
+                        'edge_cases': ["Error handling scenarios", "Edge case validation"]
+                    }
+                    extracted_features.append(feature)
+        
+        if extracted_features:
+            print(f"✅ Extracted {len(extracted_features)} features from text response")
+        else:
+            print("ℹ️ No feature-like content found in LLM response")
+        
+        return extracted_features
 
     def _validate_and_enhance_features(self, features: list) -> list[dict]:
         """Validate and enhance features to meet quality standards."""
@@ -302,29 +372,85 @@ Dependencies: {epic.get('dependencies', [])}
                 return ""
 
     def _extract_json_from_response(self, response: str) -> str:
-        """Extract JSON content from AI response with improved bracket counting and validation."""
+        """Extract JSON content from AI response with improved parsing."""
         if not response:
             return "[]"
         
         import re
+        import json
         
-        # Look for JSON inside ```json blocks
+        # Method 1: Try to parse the entire response as JSON first
+        try:
+            json.loads(response.strip())
+            return response.strip()
+        except (json.JSONDecodeError, TypeError):
+            pass
+        
+        # Method 2: Look for JSON inside ```json blocks
         json_pattern = r'```json\s*([\s\S]*?)\s*```'
         json_match = re.search(json_pattern, response, re.IGNORECASE)
         
         if json_match:
-            return json_match.group(1).strip()
+            content = json_match.group(1).strip()
+            try:
+                json.loads(content)
+                return content
+            except (json.JSONDecodeError, TypeError):
+                pass
         
-        # Look for JSON inside ``` blocks (without language specifier)
+        # Method 3: Look for JSON inside ``` blocks (without language specifier)
         code_pattern = r'```\s*([\s\S]*?)\s*```'
         code_match = re.search(code_pattern, response)
         
         if code_match:
             content = code_match.group(1).strip()
             if content.startswith(('{', '[')):
-                return content
+                try:
+                    json.loads(content)
+                    return content
+                except (json.JSONDecodeError, TypeError):
+                    pass
         
-        # Enhanced JSON extraction with proper bracket counting
+        # Method 4: Find the largest valid JSON structure using regex
+        # Look for array patterns first (most common for features)
+        array_patterns = [
+            r'\[[\s\S]*\]',  # Match from first [ to last ]
+        ]
+        
+        for pattern in array_patterns:
+            matches = re.findall(pattern, response, re.DOTALL)
+            for match in matches:
+                try:
+                    json.loads(match)
+                    print(f"🎯 Found valid JSON array: {len(match)} characters")
+                    return match
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        
+        # Method 5: Try to find object patterns
+        object_patterns = [
+            r'\{[\s\S]*\}',  # Match from first { to last }
+        ]
+        
+        for pattern in object_patterns:
+            matches = re.findall(pattern, response, re.DOTALL)
+            for match in matches:
+                try:
+                    json.loads(match)
+                    print(f"🎯 Found valid JSON object: {len(match)} characters")
+                    return match
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        
+        # Method 6: Last resort - try to extract JSON by finding balanced brackets
+        print("🔍 Using fallback bracket matching...")
+        return self._extract_json_with_balanced_brackets(response)
+
+    def _extract_json_with_balanced_brackets(self, response: str) -> str:
+        """Extract JSON using balanced bracket counting as last resort."""
+        import json
+        
+        # Find the start of JSON
         start_idx = response.find('[')
         if start_idx == -1:
             start_idx = response.find('{')
@@ -353,7 +479,12 @@ Dependencies: {epic.get('dependencies', [])}
                     elif char == ']':
                         bracket_count -= 1
                         if bracket_count == 0:
-                            return response[start_idx:i+1]
+                            candidate = response[start_idx:i+1]
+                            try:
+                                json.loads(candidate)
+                                return candidate
+                            except (json.JSONDecodeError, TypeError):
+                                continue
         else:  # Starting with '{'
             brace_count = 0
             in_string = False
@@ -375,8 +506,14 @@ Dependencies: {epic.get('dependencies', [])}
                     elif char == '}':
                         brace_count -= 1
                         if brace_count == 0:
-                            return response[start_idx:i+1]
+                            candidate = response[start_idx:i+1]
+                            try:
+                                json.loads(candidate)
+                                return candidate
+                            except (json.JSONDecodeError, TypeError):
+                                continue
         
+        # If nothing worked, return the remainder and hope for the best
         return response[start_idx:].strip()
 
     def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):

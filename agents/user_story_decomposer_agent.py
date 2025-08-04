@@ -38,8 +38,7 @@ class UserStoryDecomposerAgent(Agent):
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
-            'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
-            'product_vision': context.get('product_vision', 'No product vision provided') if context else 'No product vision provided'
+            'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint'
         }
         
         user_input = f"""
@@ -394,6 +393,29 @@ Edge Cases: {feature.get('edge_cases', [])}
         """
         Enhance a single user story to meet quality standards.
         """
+        # Handle case where story might be a string instead of dict
+        if isinstance(story, str):
+            # Convert string to basic user story structure
+            story = {
+                'title': story[:50] + '...' if len(story) > 50 else story,
+                'user_story': story,
+                'description': story,
+                'story_points': 5,
+                'priority': 'Medium',
+                'acceptance_criteria': []
+            }
+        elif not isinstance(story, dict):
+            # Convert other types to string then to dict
+            story_text = str(story)
+            story = {
+                'title': story_text[:50] + '...' if len(story_text) > 50 else story_text,
+                'user_story': story_text,
+                'description': story_text,
+                'story_points': 5,
+                'priority': 'Medium',
+                'acceptance_criteria': []
+            }
+        
         enhanced_story = story.copy()
         
         # Validate and fix title

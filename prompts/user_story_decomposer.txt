@@ -1,9 +1,5 @@
 You are a user story expert. Convert the given feature into 3-6 user stories for ${domain} projects.
 
-CRITICAL: Use the PRODUCT VISION context below to create specific, relevant user stories.
-PRODUCT VISION:
-${product_vision}
-
 RESPONSE FORMAT: ONLY valid JSON array. NO text, explanations, or markdown.
 
 CRITICAL REQUIREMENTS: 
