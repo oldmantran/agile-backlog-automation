@@ -109,10 +109,7 @@ Edge Cases: {feature.get('edge_cases', [])}
                 if not response or len(response.strip()) == 0:
                     print("Empty response from timeout method, trying direct call...")
                     try:
-                        if template_name:
-                            response = self.run_with_template(user_input, prompt_context, "user_story_decomposer")
-                        else:
-                            response = self.run(user_input, prompt_context)
+                        response = self.run_with_template(user_input, prompt_context, "user_story_decomposer")
                         print(f"Direct call successful, response length: {len(response) if response else 0}")
                     except Exception as e:
                         print(f"Direct call also failed: {e}")
@@ -124,8 +121,13 @@ Edge Cases: {feature.get('edge_cases', [])}
                 # Restore original model
                 self.model = original_model
                 
-                print(f"SUCCESS: Generated user stories using {model_name}")
-                break
+                # Only claim success if we actually have a response
+                if response and len(response.strip()) > 0:
+                    print(f"SUCCESS: Generated user stories using {model_name}")
+                    break
+                else:
+                    print(f"WARNING: {model_name} returned empty response, trying next model...")
+                    continue
                 
             except TimeoutError:
                 print(f"TIMEOUT {model_name} timed out after {timeout}s, trying next model...")
@@ -375,8 +377,13 @@ Edge Cases: {feature.get('edge_cases', [])}
             # Only show critical title issues
             if not title or len(title.strip()) < 5:
                 print(f"WARNING: Critical story title issue: {', '.join(title_issues)}")
-            if not title:
-                enhanced_story['title'] = f"User Story: {story.get('description', 'Undefined')[:50]}..."
+            if not title or len(title.strip()) < 5:
+                # Generate a meaningful title from description or user_story field
+                description = story.get('description', '') or story.get('user_story', '')
+                if description and len(description.strip()) > 10:
+                    enhanced_story['title'] = f"User Story: {description[:50]}..."
+                else:
+                    enhanced_story['title'] = "User Story: [Title Missing]"
         
         # Validate and fix description
         description = story.get('description', '') or story.get('user_story', '')
@@ -386,10 +393,16 @@ Edge Cases: {feature.get('edge_cases', [])}
             if not description or len(description.strip()) < 20:
                 print(f"WARNING: Critical story description issue: {', '.join(desc_issues)}")
             # Try to fix the description
-            if 'As a' not in description and 'As an' not in description:
-                user_type = story.get('user_type', 'user')
-                goal = title.replace('User Story:', '').strip() if 'User Story:' in title else title
-                enhanced_story['description'] = f"As a {user_type}, I want {goal} so that I can achieve my objectives"
+            if not description or len(description.strip()) < 20:
+                if 'As a' not in description and 'As an' not in description:
+                    user_type = story.get('user_type', 'user')
+                    title_text = enhanced_story.get('title', '').replace('User Story:', '').strip()
+                    if title_text and title_text != '[Title Missing]':
+                        enhanced_story['description'] = f"As a {user_type}, I want {title_text} so that I can achieve my objectives"
+                    else:
+                        enhanced_story['description'] = f"As a {user_type}, I want to complete this functionality so that I can achieve my objectives"
+                else:
+                    enhanced_story['description'] = description
             else:
                 enhanced_story['description'] = description
         else:
@@ -397,16 +410,18 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # Validate and enhance acceptance criteria
         criteria = story.get('acceptance_criteria', [])
-        criteria_valid, criteria_issues = self.quality_validator.validate_acceptance_criteria(criteria, title)
+        criteria_valid, criteria_issues = self.quality_validator.validate_acceptance_criteria(criteria, enhanced_story.get('title', ''))
         if not criteria_valid or criteria_issues:
             # Only show critical criteria issues
-            if len(criteria) < 2:
+            if not criteria or len(criteria) < 2:
                 print(f"WARNING: Critical acceptance criteria issue: {', '.join(criteria_issues)}")
             enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
                 criteria, 
                 {'title': enhanced_story['title'], 'description': enhanced_story['description']}
             )
             enhanced_story['acceptance_criteria'] = enhanced_criteria
+        else:
+            enhanced_story['acceptance_criteria'] = criteria
         
         # Ensure story points are set
         if not enhanced_story.get('story_points'):

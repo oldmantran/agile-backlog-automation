@@ -70,7 +70,7 @@ class AzureDevOpsIntegrator:
         retry_strategy = Retry(
             total=3,  # Maximum number of retries
             status_forcelist=[408, 429, 500, 502, 503, 504],  # HTTP status codes to retry
-            method_whitelist=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"],
+            allowed_methods=["HEAD", "GET", "PUT", "DELETE", "OPTIONS", "TRACE", "POST", "PATCH"],
             backoff_factor=1,  # Wait 1, 2, 4 seconds between retries
             raise_on_status=False
         )

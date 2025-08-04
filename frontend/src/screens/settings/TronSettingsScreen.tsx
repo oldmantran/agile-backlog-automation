@@ -193,13 +193,23 @@ const TronSettingsScreen: React.FC = () => {
       const savedGlowValue = localStorage.getItem('tron-glow-intensity');
       const savedLimitsValue = localStorage.getItem('work-item-limits');
       
-      if (savedGlowValue && savedLimitsValue) {
-        const savedLimits = JSON.parse(savedLimitsValue);
-        const glowChanged = savedGlowValue !== glowIntensity.toString();
-        const limitsChanged = JSON.stringify(savedLimits) !== JSON.stringify(workItemLimits);
-        
-        setUnsavedChanges(glowChanged || limitsChanged);
-      }
+      // Check glow changes
+      const defaultGlow = 70;
+      const currentGlow = savedGlowValue ? parseInt(savedGlowValue) : defaultGlow;
+      const glowChanged = glowIntensity !== currentGlow;
+      
+      // Check limits changes
+      const defaultLimits = {
+        maxEpics: 2,
+        maxFeaturesPerEpic: 3,
+        maxUserStoriesPerFeature: 5,
+        maxTasksPerUserStory: 5,
+        maxTestCasesPerUserStory: 5
+      };
+      const savedLimits = savedLimitsValue ? JSON.parse(savedLimitsValue) : defaultLimits;
+      const limitsChanged = JSON.stringify(savedLimits) !== JSON.stringify(workItemLimits);
+      
+      setUnsavedChanges(glowChanged || limitsChanged);
     }
   }, [glowIntensity, workItemLimits, isInitialized]);
 
@@ -654,6 +664,28 @@ const TronSettingsScreen: React.FC = () => {
                       );
                     })()}
                   </div>
+                </div>
+
+                {/* Action Buttons for Work Item Limits */}
+                <div className="flex space-x-4 pt-6 mt-6 border-t border-primary/20">
+                  <Button 
+                    onClick={handleSaveSettings}
+                    disabled={isLoading}
+                    className="bg-primary hover:bg-primary/80 text-primary-foreground glow-cyan"
+                  >
+                    <FiSave className="w-4 h-4 mr-2" />
+                    {isLoading ? 'Saving...' : 'Save Work Item Limits'}
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleResetToDefault}
+                    variant="outline"
+                    disabled={isLoading}
+                    className="border-accent text-accent hover:bg-accent hover:text-accent-foreground glow-cyan"
+                  >
+                    <FiRefreshCw className="w-4 h-4 mr-2" />
+                    Reset to Default
+                  </Button>
                 </div>
               </CardContent>
             </Card>

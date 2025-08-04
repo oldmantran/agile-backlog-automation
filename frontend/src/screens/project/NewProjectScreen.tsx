@@ -62,84 +62,74 @@ const NewProjectScreen: React.FC = () => {
     }
   };
 
-  const ProjectCreationContent = () => (
-    <div className="bg-gradient-to-br from-background via-background to-primary/5 min-h-screen">
-      <div className="relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 opacity-15">
-          <div className="scan-line absolute w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent"></div>
-        </div>
-
-        <div className="relative z-10 container mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-3 mb-4">
-              <FiPlay className="w-8 h-8 text-primary glow-cyan" />
-              <h1 className="text-4xl font-bold text-foreground tracking-wider glow-cyan">
-                CREATE NEW PROJECT
-              </h1>
-            </div>
-            <p className="text-muted-foreground text-lg">
-              Transform your product vision into a comprehensive Azure DevOps backlog with AI-powered domain intelligence
-            </p>
-          </div>
-
-          {/* Quick Info */}
-          <Alert className="mb-6 border-blue-500/50 bg-blue-500/10">
-            <FiInfo className="w-4 h-4" />
-            <AlertDescription className="text-blue-300 text-sm">
-              <strong>AI-Powered Generation:</strong> Choose domain intelligence and testing options to customize your backlog generation.
-            </AlertDescription>
-          </Alert>
-
-          {/* Compact Form Container */}
-          <div className="max-w-4xl mx-auto">
-            <SimplifiedProjectForm 
-              onSubmit={handleFormSubmit} 
-              isSubmitting={isSubmitting}
-              initialData={{}} 
-            />
-          </div>
-
-          {/* Status Display */}
-          {submitStatus && (
-            <div className="mt-6 max-w-4xl mx-auto">
-              <Alert className={submitStatus.success ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}>
-                <FiInfo className="w-4 h-4" />
-                <AlertDescription className={submitStatus.success ? "text-green-300" : "text-red-300"}>
-                  {submitStatus.message}
-                  {submitStatus.success && submitStatus.projectId && (
-                    <div className="mt-2">
-                      <Button 
-                        onClick={() => navigate(`/project/${submitStatus.projectId}/generation`)}
-                        className="mt-2"
-                      >
-                        View Generation Progress <FiArrowRight className="ml-2 w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-      />
-      
-      <div className="flex">
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)} 
-        />
-        <main className="flex-1 transition-all duration-300">
-          <ProjectCreationContent />
+    <div className="flex h-screen bg-background">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <main className="flex-1 overflow-y-auto">
+          <div className="bg-gradient-to-br from-background via-background to-primary/5 min-h-full">
+            <div className="relative overflow-hidden">
+              {/* Animated background elements */}
+              <div className="absolute inset-0 opacity-15">
+                <div className="scan-line absolute w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+              </div>
+
+              <div className="relative z-10 container mx-auto px-6 py-8">
+                {/* Header */}
+                <div className="mb-8">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <FiPlay className="w-8 h-8 text-primary glow-cyan" />
+                    <h1 className="text-4xl font-bold text-foreground tracking-wider glow-cyan">
+                      CREATE NEW PROJECT
+                    </h1>
+                  </div>
+                  <p className="text-muted-foreground text-lg">
+                    Transform your product vision into a comprehensive Azure DevOps backlog with AI-powered domain intelligence
+                  </p>
+                </div>
+
+                {/* Quick Info */}
+                <Alert className="mb-6 border-blue-500/50 bg-blue-500/10">
+                  <FiInfo className="w-4 h-4" />
+                  <AlertDescription className="text-blue-300 text-sm">
+                    <strong>AI-Powered Generation:</strong> Choose domain intelligence and testing options to customize your backlog generation.
+                  </AlertDescription>
+                </Alert>
+
+                {/* Compact Form Container */}
+                <div className="max-w-4xl mx-auto">
+                  <SimplifiedProjectForm 
+                    onSubmit={handleFormSubmit} 
+                    isSubmitting={isSubmitting}
+                    initialData={{}} 
+                  />
+                </div>
+
+                {/* Status Display */}
+                {submitStatus && (
+                  <div className="mt-6 max-w-4xl mx-auto">
+                    <Alert className={submitStatus.success ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10"}>
+                      <FiInfo className="w-4 h-4" />
+                      <AlertDescription className={submitStatus.success ? "text-green-300" : "text-red-300"}>
+                        {submitStatus.message}
+                        {submitStatus.success && submitStatus.projectId && (
+                          <div className="mt-2">
+                            <Button 
+                              onClick={() => navigate(`/project/${submitStatus.projectId}/generation`)}
+                              className="mt-2"
+                            >
+                              View Generation Progress <FiArrowRight className="ml-2 w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </main>
       </div>
     </div>
