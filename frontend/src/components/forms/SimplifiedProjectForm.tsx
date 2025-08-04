@@ -66,21 +66,37 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
         const response = await fetch('/api/domains');
         if (response.ok) {
           const domains = await response.json();
+          console.log('Loaded domains:', domains);
           setAvailableDomains(domains);
         } else {
-          console.warn('Domains API failed, will show loading state');
-          // Don't set fallback domains immediately, let the loading state persist
-          // The user will need to restart the backend for the full domain list
+          console.warn('Domains API failed with status:', response.status);
+          // Use comprehensive fallback domains
+          const fallbackDomains = [
+            { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
+            { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
+            { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true },
+            { id: 4, domain_key: 'retail', display_name: 'Retail', description: 'E-commerce and retail solutions', is_active: true },
+            { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true },
+            { id: 6, domain_key: 'manufacturing', display_name: 'Manufacturing', description: 'Manufacturing and industrial automation', is_active: true },
+            { id: 7, domain_key: 'real_estate', display_name: 'Real Estate', description: 'Real estate and property management', is_active: true },
+            { id: 8, domain_key: 'logistics', display_name: 'Logistics', description: 'Supply chain and logistics management', is_active: true }
+          ];
+          setAvailableDomains(fallbackDomains);
         }
       } catch (error) {
         console.error('Failed to load domains:', error);
-        // Show minimal fallback to prevent completely broken UI
-        const minimalFallback = [
+        // Show comprehensive fallback to ensure UI works
+        const fallbackDomains = [
           { id: 1, domain_key: 'technology', display_name: 'Technology', description: 'Software development and technology projects', is_active: true },
           { id: 2, domain_key: 'healthcare', display_name: 'Healthcare', description: 'Healthcare and medical technology', is_active: true },
-          { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true }
+          { id: 3, domain_key: 'finance', display_name: 'Finance', description: 'Financial services and fintech', is_active: true },
+          { id: 4, domain_key: 'retail', display_name: 'Retail', description: 'E-commerce and retail solutions', is_active: true },
+          { id: 5, domain_key: 'education', display_name: 'Education', description: 'Educational technology and learning platforms', is_active: true },
+          { id: 6, domain_key: 'manufacturing', display_name: 'Manufacturing', description: 'Manufacturing and industrial automation', is_active: true },
+          { id: 7, domain_key: 'real_estate', display_name: 'Real Estate', description: 'Real estate and property management', is_active: true },
+          { id: 8, domain_key: 'logistics', display_name: 'Logistics', description: 'Supply chain and logistics management', is_active: true }
         ];
-        setAvailableDomains(minimalFallback);
+        setAvailableDomains(fallbackDomains);
       }
     };
     loadDomains();
