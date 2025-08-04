@@ -19,6 +19,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test Ollama integration: `python tools/test_ollama_integration.py`
 - Test Azure DevOps connection: `python tools/test_ado_connection.py`
 - Test complete workflow: `python tools/test_complete_workflow.py`
+- **🛡️ REGRESSION PREVENTION**: Run full regression test suite: `tools/run_regression_tests.bat`
+- **🚨 CRITICAL**: Run pre-commit checks: `python tools/pre_commit_check.py`
+- **💨 SMOKE TESTS**: Validate core functionality: `python tests/test_core_smoke.py`
+- **🔄 INTEGRATION**: Test vision processing pipeline: `python tests/test_vision_integration.py`
 
 ### Development Scripts
 - Start application: `tools/quick_start.bat` (Windows)
@@ -27,6 +31,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Scan test artifacts: `python tools/scan_remaining_test_artifacts.py`
 - Debug parallel processing: `python tools/debug_parallel_processing.py`
 - **Retry failed uploads**: `python tools/retry_failed_uploads.py <job_id> [retry|summary|details|cleanup]`
+
+## 🛡️ REGRESSION PREVENTION PROTOCOL (August 4, 2025)
+
+**CRITICAL**: To prevent breaking core functionality, ALWAYS follow this protocol:
+
+### Before Making Any Changes:
+1. **Run regression tests**: `tools/run_regression_tests.bat`
+2. **Document what you're changing** and why
+3. **Identify potential impact areas** (vision processing, template system, context flow)
+
+### After Making Changes:
+1. **MANDATORY**: Run `python tools/pre_commit_check.py` - must pass 100%
+2. **Test specific functionality** you modified with targeted tests
+3. **Run full regression suite** before considering changes complete
+4. **Verify in browser** that basic project creation still works
+
+### Core Functions That Must NEVER Break:
+- ✅ Vision statement processing from API → Supervisor → Agents
+- ✅ Template variable resolution (especially `product_vision`)
+- ✅ Agent prompt generation and LLM communication  
+- ✅ Project context flow through all stages
+- ✅ Domain selection and basic project creation
+- ✅ Settings persistence and retrieval
+
+**If ANY regression test fails, STOP and fix before proceeding.**
+
+### Regression Test Files:
+- `tests/test_core_smoke.py` - Critical path validation
+- `tests/test_vision_integration.py` - End-to-end vision processing
+- `tools/pre_commit_check.py` - Pre-commit safety checks
+- `tools/run_regression_tests.bat` - Complete test suite
 
 ## Recent Major Updates (August 2025)
 

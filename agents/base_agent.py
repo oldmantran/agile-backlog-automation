@@ -243,6 +243,17 @@ class Agent:
             raise PromptError(f"Template validation failed for {self.name} - cannot generate prompt")
         
         try:
+            # Ensure context is not None
+            context = context or {}
+            
+            # Add debug logging for context variables
+            logger.info(f"DEBUG: Generating prompt for {self.name} with context keys: {list(context.keys())}")
+            if 'product_vision' in context:
+                logger.info(f"DEBUG: product_vision present in context, length: {len(context['product_vision'])}")
+            else:
+                logger.warning(f"DEBUG: product_vision NOT present in context for {self.name}")
+                logger.info(f"DEBUG: Available context keys: {list(context.keys())}")
+            
             return prompt_manager.get_prompt(self.name, context)
         except Exception as e:
             logger.error(f"Failed to generate prompt for {self.name}: {e}")

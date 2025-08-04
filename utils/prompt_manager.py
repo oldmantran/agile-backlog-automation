@@ -110,7 +110,20 @@ class PromptTemplateManager:
         
         if missing_vars:
             logger.error(f"Missing required template variables for {agent_name}: {missing_vars}")
-            raise ValueError(f"Cannot generate prompt for {agent_name} - missing required variables: {missing_vars}")
+            logger.error(f"Available context variables: {list(merged_context.keys())}")
+            
+            # Special handling for product_vision - it might be empty but present
+            if 'product_vision' in missing_vars and 'product_vision' in merged_context:
+                product_vision_value = merged_context.get('product_vision', '')
+                logger.info(f"product_vision is present but may be empty: '{product_vision_value[:100]}...'")
+                # Remove product_vision from missing vars if it exists but is empty
+                missing_vars = [var for var in missing_vars if var != 'product_vision']
+            
+            if missing_vars:
+                logger.error(f"Still missing required template variables for {agent_name}: {missing_vars}")
+                raise ValueError(f"Cannot generate prompt for {agent_name} - missing required variables: {missing_vars}")
+            else:
+                logger.info(f"All required variables are now available for {agent_name}")
         
         try:
             result = template.safe_substitute(**merged_context)
