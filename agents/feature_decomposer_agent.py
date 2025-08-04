@@ -34,6 +34,7 @@ class FeatureDecomposerAgent(Agent):
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
             'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs',
+            'product_vision': context.get('product_vision', 'No product vision provided') if context else 'No product vision provided',
             'max_features': feature_limit if feature_limit else "unlimited"
         }
         

@@ -882,8 +882,12 @@ class WorkflowSupervisor:
                 raise ValueError("Product vision is required for epic generation")
             
             self.logger.info(f"Generating epics from product vision: {product_vision[:100]}...")
-            self.logger.info(f"DEBUG: Full product vision being passed to agent: {product_vision}")
-            self.logger.info(f"DEBUG: Context being passed to agent: {context}")
+            # Sanitize Unicode characters for Windows console logging
+            sanitized_vision = product_vision.encode('ascii', 'replace').decode('ascii')
+            self.logger.info(f"DEBUG: Full product vision being passed to agent: {sanitized_vision}")
+            # Sanitize context for logging
+            sanitized_context = str(context).encode('ascii', 'replace').decode('ascii')
+            self.logger.info(f"DEBUG: Context being passed to agent: {sanitized_context}")
             
             # Add timeout protection for epic generation
             import threading
