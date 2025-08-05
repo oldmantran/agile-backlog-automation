@@ -164,44 +164,20 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const jobId = getJobId();
   const azureConfig = getAzureConfig();
   
-  // Get the actual project name from raw_summary if available, fallback to job.project_name
-  const getProjectDisplayName = () => {
-    try {
-      const rawSummary = job.raw_summary as any;
-      
-      // Try multiple possible locations for project name
-      if (rawSummary?.project_context?.project_name && rawSummary.project_context.project_name !== 'Unknown Project' && rawSummary.project_context.project_name !== 'Test Project') {
-        return rawSummary.project_context.project_name;
-      }
-      if (rawSummary?.project_name && rawSummary.project_name !== 'Unknown Project' && rawSummary.project_name !== 'Test Project') {
-        return rawSummary.project_name;
-      }
-      if (rawSummary?.metadata?.project_context?.project_name && rawSummary.metadata.project_context.project_name !== 'Unknown Project' && rawSummary.metadata.project_context.project_name !== 'Test Project') {
-        return rawSummary.metadata.project_context.project_name;
-      }
-      
-      // Try extracting from Azure DevOps project name if it looks like a real project
-      const azureProject = getAzureConfig().project;
-      if (azureProject && azureProject !== 'Backlog Automation' && azureProject !== 'Test Project') {
-        return azureProject;
-      }
-      
-      // Try looking in ado_summary or azure_integration
-      if (rawSummary?.ado_summary?.project && rawSummary.ado_summary.project !== 'Test Project') {
-        return rawSummary.ado_summary.project;
-      }
-      if (rawSummary?.azure_integration?.project && rawSummary.azure_integration.project !== 'Test Project') {
-        return rawSummary.azure_integration.project;
-      }
-      
-      // Fallback to the stored project_name
-      return job.project_name || 'Unknown Project';
-    } catch {
-      return job.project_name || 'Unknown Project';
-    }
+  // Use Azure DevOps project name as the title, with area path as subtitle
+  const getDisplayInfo = () => {
+    const azureConfig = getAzureConfig();
+    
+    // Use ADO project name as the main title
+    const title = azureConfig.project || job.project_name || 'Unknown Project';
+    
+    // Use area path as subtitle if available
+    const subtitle = azureConfig.areaPath || null;
+    
+    return { title, subtitle };
   };
   
-  const projectDisplayName = getProjectDisplayName();
+  const { title: projectDisplayName, subtitle: areaPathSubtitle } = getDisplayInfo();
 
   // Temporary debugging for "Test Project" 
   if (job.project_name === 'Test Project') {
@@ -232,25 +208,18 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
             <CardTitle className="text-foreground glow-cyan text-lg">
               {projectDisplayName}
             </CardTitle>
-            <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground font-mono">
+            {areaPathSubtitle && (
+              <p className="text-sm text-blue-400 font-medium mt-1">
+                {areaPathSubtitle}
+              </p>
+            )}
+            <div className="flex items-center space-x-2 mt-2 text-xs text-muted-foreground font-mono">
               <FiCalendar className="w-3 h-3" />
               <span>{date} at {time}</span>
             </div>
             <p className="text-xs text-muted-foreground font-mono mt-1">
               Job ID: {jobId.length > 20 ? `${jobId.substring(0, 20)}...` : jobId}
             </p>
-            {azureConfig.project && (
-              <div className="mt-2 space-y-1">
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-blue-400">ADO Project:</span> {azureConfig.project}
-                </p>
-                {azureConfig.areaPath && (
-                  <p className="text-xs text-muted-foreground">
-                    <span className="text-blue-400">Area Path:</span> {azureConfig.areaPath}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
           <Badge 
             variant={job.status === 'completed' ? 'default' : job.status === 'failed' ? 'destructive' : 'secondary'}
