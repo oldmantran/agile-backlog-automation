@@ -324,7 +324,7 @@ class WorkflowSupervisor:
         
         # Get LLM configuration for model management
         self.llm_provider = self.config.env.get('LLM_PROVIDER', 'openai').lower()
-        self.ollama_model = self.config.env.get('OLLAMA_MODEL', 'qwen2.5:32b')
+        self.ollama_model = self.config.env.get('OLLAMA_MODEL')
         self.sweeper_agent = None  # Will be initialized as needed
         self.sweeper_retry_tracker = {}  # {stage: {item_id: retry_count}}
         
@@ -372,7 +372,7 @@ class WorkflowSupervisor:
         Ensure the correct LLM model is loaded before agent execution.
         
         This prevents agents from using incorrect models (e.g., codellama:34b when
-        qwen2.5:32b is selected) and ensures VRAM usage stays within limits.
+        a different model is selected) and ensures VRAM usage stays within limits.
         
         Args:
             stage_name: Name of the stage about to be executed
@@ -382,6 +382,10 @@ class WorkflowSupervisor:
         """
         try:
             if self.llm_provider == 'ollama':
+                if not self.ollama_model:
+                    self.logger.warning(f"[{stage_name}] No OLLAMA_MODEL configured - skipping model verification")
+                    return True
+                
                 self.logger.info(f"🔄 [{stage_name}] Ensuring Ollama model {self.ollama_model} is loaded...")
                 
                 success = ollama_manager.ensure_model_loaded(
