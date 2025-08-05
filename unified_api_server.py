@@ -787,6 +787,78 @@ async def get_project(project_id: str):
         "data": project_info
     }
 
+@app.post("/api/projects/{project_id}/generate-test-artifacts")
+async def generate_test_artifacts(project_id: str, background_tasks: BackgroundTasks):
+    """Generate test artifacts for an existing project that was created without them."""
+    logger.info(f"🧪 Test artifact generation requested for project: {project_id}")
+    
+    try:
+        # Get project info
+        project_file = Path("output") / f"project_{project_id}.json"
+        if not project_file.exists():
+            logger.error(f"❌ Project file not found: {project_file}")
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        with open(project_file, 'r') as f:
+            project_info = json.load(f)
+        
+        # Look for the most recent backlog file for this project
+        output_dir = Path("output")
+        backlog_files = list(output_dir.glob(f"backlog_*_{project_id}.json"))
+        
+        if not backlog_files:
+            logger.error(f"❌ No backlog found for project: {project_id}")
+            raise HTTPException(status_code=404, detail="No backlog found for this project")
+        
+        # Get the most recent backlog
+        latest_backlog = max(backlog_files, key=lambda f: f.stat().st_mtime)
+        
+        with open(latest_backlog, 'r') as f:
+            backlog_data = json.load(f)
+        
+        # Check if test artifacts already exist
+        if any(epic.get('test_plan') or any(f.get('test_cases') for f in epic.get('features', [])) 
+               for epic in backlog_data.get('epics', [])):
+            logger.warning(f"⚠️ Test artifacts already exist for project: {project_id}")
+            raise HTTPException(status_code=400, detail="Test artifacts already exist for this project")
+        
+        # Generate job ID for test artifact generation
+        job_id = f"test_job_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{project_id}"
+        logger.info(f"🆔 Generated test job ID: {job_id}")
+        
+        # Initialize job status
+        set_active_job(job_id, {
+            "jobId": job_id,
+            "projectId": project_id,
+            "status": "queued",
+            "progress": 0,
+            "currentAgent": "QA Lead Agent",
+            "currentAction": "Initializing test artifact generation...",
+            "startTime": datetime.now(),
+            "error": None,
+            "endTime": None,
+            "isTestArtifactOnly": True
+        })
+        
+        # Add to background tasks
+        background_tasks.add_task(run_test_artifact_generation, job_id, project_info, backlog_data)
+        logger.info(f"✅ Background task added for test generation job: {job_id}")
+        
+        return {
+            "success": True,
+            "data": {
+                "jobId": job_id,
+                "message": "Test artifact generation started"
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"Failed to start test artifact generation: {str(e)}"
+        logger.error(f"❌ {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
+
 @app.get("/api/projects/{project_id}/backlog")
 async def get_project_backlog(project_id: str):
     """Get generated backlog for a project."""
@@ -1263,18 +1335,24 @@ Domain: {project_domain}
 {full_vision}
 """.strip()
 
+        # Get includeTestArtifacts flag - defaults to True for backward compatibility
+        include_test_artifacts = project_data.get('includeTestArtifacts', True)
+        logger.info(f"🔧 includeTestArtifacts flag: {include_test_artifacts}")
+
         # Execute workflow
         try:
             logger.info(f"🚀 Starting workflow execution for job {job_id}")
             logger.info(f"   integrate_azure: {azure_integration_enabled}")
             logger.info(f"   product_vision length: {len(product_vision)} characters")
             logger.info(f"   save_outputs: True")
+            logger.info(f"   include_test_artifacts: {include_test_artifacts}")
             
             results = supervisor.execute_workflow(
                 product_vision,
                 save_outputs=True,
                 integrate_azure=azure_integration_enabled,
-                progress_callback=progress_callback
+                progress_callback=progress_callback,
+                include_test_artifacts=include_test_artifacts
             )
             
             logger.info(f"✅ Workflow execution completed for job {job_id}")
@@ -1300,6 +1378,115 @@ Domain: {project_domain}
             return {"error": error_msg}
     except Exception as e:
         error_msg = f"Unexpected error in run_backlog_generation: {str(e)}"
+        set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
+        logger.error(error_msg)
+        return {"error": error_msg}
+
+
+def run_test_artifact_generation(job_id: str, project_info: Dict[str, Any], backlog_data: Dict[str, Any]):
+    """Generate test artifacts for an existing backlog."""
+    logger.info(f"🧪 Starting test artifact generation for job {job_id}")
+    
+    try:
+        # Update job status
+        set_active_job(job_id, {"status": "running", "progress": 10, "currentAction": "Loading project configuration"})
+        
+        # Extract project configuration
+        project_data = project_info.get('data', {})
+        azure_config = project_data.get('azureConfig', {})
+        
+        # Initialize configuration
+        config = Config()
+        
+        # Initialize supervisor for test-only workflow
+        azure_integration_enabled = bool(
+            azure_config.get('organizationUrl') and 
+            azure_config.get('project') and 
+            azure_config.get('areaPath')
+        )
+        
+        # Progress callback
+        def progress_callback(progress: int, action: str):
+            try:
+                set_active_job(job_id, {
+                    **get_active_job()[1],  # Get current job data
+                    "progress": progress,
+                    "currentAction": action,
+                    "currentAgent": "QA Lead Agent",
+                    "status": "running"
+                })
+                logger.info(f"📊 Test generation progress for job {job_id}: {progress}% - {action}")
+            except Exception as e:
+                logger.error(f"Error in progress callback for test job {job_id}: {str(e)}")
+        
+        # Update progress
+        progress_callback(20, "Initializing QA Lead Agent")
+        
+        # Initialize QA Lead Agent directly
+        from agents.qa.qa_lead_agent import QALeadAgent
+        qa_agent = QALeadAgent(config)
+        
+        # Process each epic and its features to generate test artifacts
+        epics_with_tests = []
+        total_epics = len(backlog_data.get('epics', []))
+        
+        for epic_idx, epic in enumerate(backlog_data.get('epics', [])):
+            epic_progress = 20 + (epic_idx / total_epics) * 70
+            progress_callback(int(epic_progress), f"Processing epic {epic_idx + 1}/{total_epics}: {epic.get('title', '')[:50]}...")
+            
+            # Generate test plan for epic
+            test_plan = qa_agent.generate_test_plan(epic)
+            if test_plan:
+                epic['test_plan'] = test_plan
+            
+            # Process features
+            for feature_idx, feature in enumerate(epic.get('features', [])):
+                feature_progress = epic_progress + ((feature_idx + 1) / len(epic.get('features', []))) * (70 / total_epics)
+                progress_callback(int(feature_progress), f"Generating test cases for feature: {feature.get('title', '')[:50]}...")
+                
+                # Generate test cases for each user story
+                for story in feature.get('user_stories', []):
+                    test_cases = qa_agent.generate_test_cases(story, feature, epic)
+                    if test_cases:
+                        story['test_cases'] = test_cases
+            
+            epics_with_tests.append(epic)
+        
+        # Update backlog data with test artifacts
+        backlog_data['epics'] = epics_with_tests
+        
+        # Save updated backlog
+        progress_callback(90, "Saving test artifacts")
+        
+        output_dir = Path("output")
+        output_dir.mkdir(exist_ok=True)
+        
+        # Save with test suffix
+        test_backlog_file = output_dir / f"backlog_with_tests_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{project_info['id']}.json"
+        with open(test_backlog_file, 'w') as f:
+            json.dump(backlog_data, f, indent=2)
+        
+        logger.info(f"✅ Saved test-enhanced backlog to {test_backlog_file}")
+        
+        # If Azure integration is enabled, upload test artifacts
+        if azure_integration_enabled:
+            progress_callback(95, "Uploading test artifacts to Azure DevOps")
+            # TODO: Implement test artifact upload to Azure DevOps
+            logger.info("🔄 Test artifact upload to Azure DevOps not yet implemented")
+        
+        # Update job status to completed
+        set_active_job(job_id, {
+            "status": "completed", 
+            "progress": 100, 
+            "currentAction": "Test artifact generation completed",
+            "endTime": datetime.now()
+        })
+        
+        logger.info(f"✅ Test artifact generation completed for job {job_id}")
+        return {"job_id": job_id, "status": "completed", "test_backlog_file": str(test_backlog_file)}
+        
+    except Exception as e:
+        error_msg = f"Test artifact generation failed: {str(e)}"
         set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
         logger.error(error_msg)
         return {"error": error_msg}

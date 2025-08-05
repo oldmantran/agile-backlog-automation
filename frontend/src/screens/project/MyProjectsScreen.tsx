@@ -325,6 +325,49 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                 {isRetrying ? 'Retrying...' : 'Retry Failed Uploads'}
               </Button>
             )}
+            {/* Add Test Artifacts button - only show if test artifacts weren't included originally */}
+            {!job.raw_summary?.test_artifacts_included && job.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    // Extract project ID from job data
+                    const projectId = job.raw_summary?.project_id || job.jobId?.split('_').pop() || '';
+                    if (!projectId) {
+                      console.error('No project ID found for test generation');
+                      return;
+                    }
+                    
+                    const response = await fetch(`/api/projects/${projectId}/generate-test-artifacts`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!response.ok) {
+                      const error = await response.json();
+                      console.error('Failed to start test generation:', error.detail);
+                      return;
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Test generation started:', result);
+                    
+                    // Navigate to the progress view or show a notification
+                    if (result.data?.jobId) {
+                      window.location.href = `/generation-progress?jobId=${result.data.jobId}`;
+                    }
+                  } catch (error) {
+                    console.error('Error starting test generation:', error);
+                  }
+                }}
+                className="text-xs"
+                title="Generate test plans, test suites, and test cases for this project"
+              >
+                <FiFileText className="w-3 h-3 mr-1" />
+                Add Testing
+              </Button>
+            )}
           </div>
           <Button
             size="sm"

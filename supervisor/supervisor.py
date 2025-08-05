@@ -584,7 +584,8 @@ class WorkflowSupervisor:
                         save_outputs: bool = True,
                         integrate_azure: bool = False,
                         progress_callback: Optional[callable] = None,
-                        enable_monitoring: bool = True) -> Dict[str, Any]:
+                        enable_monitoring: bool = True,
+                        include_test_artifacts: bool = True) -> Dict[str, Any]:
         """
         Execute the complete workflow or specific stages.
         
@@ -595,6 +596,8 @@ class WorkflowSupervisor:
             save_outputs: Whether to save intermediate outputs
             integrate_azure: Whether to create Azure DevOps work items
             progress_callback: Optional callback function to report progress
+            enable_monitoring: Whether to enable workflow monitoring
+            include_test_artifacts: Whether to generate test plans, suites, and cases
             
         Returns:
             Complete workflow results including all generated artifacts
@@ -603,22 +606,46 @@ class WorkflowSupervisor:
         self.execution_metadata['start_time'] = datetime.now()
         self.logger.info(f"Starting workflow execution at {self.execution_metadata['start_time']}")
         
+        # Store include_test_artifacts flag
+        self.include_test_artifacts = include_test_artifacts
+        self.logger.info(f"Include test artifacts: {include_test_artifacts}")
+        
         # Progress tracking
         stages_to_run = stages or self._get_default_stages()
+        
+        # Remove QA stages if test artifacts are not included
+        if not include_test_artifacts:
+            original_stages = stages_to_run.copy()
+            stages_to_run = [stage for stage in stages_to_run if 'qa' not in stage.lower()]
+            self.logger.info(f"Test artifacts disabled - removed QA stages: {set(original_stages) - set(stages_to_run)}")
+        
         total_stages = len(stages_to_run)
         # Updated progress mapping including ADO integration as continuous sequence
         # Most time is spent on detailed work (tasks and QA), not high-level items
-        stage_progress_mapping = {
-            0: 5,   # Initial setup complete (very fast)
-            1: 15,  # Epic generation complete (fast - high-level work)
-            2: 25,  # Feature decomposition complete (moderate - still high-level)
-            3: 35,  # User story decomposition complete (moderate - getting detailed)
-            4: 50,  # Task generation complete (significant time - detailed technical work)
-            5: 75,  # QA generation complete (most time - complex test case generation)
-            6: 85,  # ADO integration complete (work item creation and linking)
-            7: 95,  # Final validation and cleanup
-            8: 100, # Complete with notifications
-        }
+        if include_test_artifacts:
+            stage_progress_mapping = {
+                0: 5,   # Initial setup complete (very fast)
+                1: 15,  # Epic generation complete (fast - high-level work)
+                2: 25,  # Feature decomposition complete (moderate - still high-level)
+                3: 35,  # User story decomposition complete (moderate - getting detailed)
+                4: 50,  # Task generation complete (significant time - detailed technical work)
+                5: 75,  # QA generation complete (most time - complex test case generation)
+                6: 85,  # ADO integration complete (work item creation and linking)
+                7: 95,  # Final validation and cleanup
+                8: 100, # Complete with notifications
+            }
+        else:
+            # Adjusted progress mapping when QA is skipped
+            stage_progress_mapping = {
+                0: 5,   # Initial setup complete (very fast)
+                1: 20,  # Epic generation complete (fast - high-level work)
+                2: 35,  # Feature decomposition complete (moderate - still high-level)
+                3: 50,  # User story decomposition complete (moderate - getting detailed)
+                4: 70,  # Task generation complete (significant time - detailed technical work)
+                5: 85,  # ADO integration complete (work item creation and linking)
+                6: 95,  # Final validation and cleanup
+                7: 100, # Complete with notifications
+            }
         
         # Helper function to update progress with optional sub-progress
         def update_progress(stage_index: int, action: str, sub_progress: float = 0.0):
@@ -736,7 +763,8 @@ class WorkflowSupervisor:
                     'stages': stages_to_run,
                     'human_review': human_review,
                     'save_outputs': save_outputs,
-                    'integrate_azure': integrate_azure
+                    'integrate_azure': integrate_azure,
+                    'include_test_artifacts': include_test_artifacts
                 },
                 'azure_config': {
                     'organization_url': self.organization_url,
@@ -1424,7 +1452,8 @@ class WorkflowSupervisor:
             self.workflow_data['azure_integration'] = {
                 'status': 'success',
                 'work_items_created': results,
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                'test_artifacts_included': self.include_test_artifacts
             }
             self.logger.info(f"Successfully created {results_count} work items in Azure DevOps")
 
@@ -1435,17 +1464,21 @@ class WorkflowSupervisor:
             feature_count = sum(len(e.get('features', [])) for e in self.workflow_data.get('epics', []))
             user_story_count = sum(len(f.get('user_stories', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []))
             task_count = sum(len(s.get('tasks', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []) for s in f.get('user_stories', []))
-            test_case_count = sum(len(s.get('test_cases', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []) for s in f.get('user_stories', []))
-            test_plan_count = sum(1 for e in self.workflow_data.get('epics', []) for f in e.get('features', []) if f.get('test_cases') or any(s.get('test_cases') for s in f.get('user_stories', [])))
-
+            
             if user_story_count == 0:
                 missing.append('user stories')
             if task_count == 0:
                 missing.append('tasks')
-            if test_case_count == 0:
-                missing.append('test cases')
-            if test_plan_count == 0:
-                missing.append('test plans')
+                
+            # Only check for test artifacts if they were requested
+            if self.include_test_artifacts:
+                test_case_count = sum(len(s.get('test_cases', [])) for e in self.workflow_data.get('epics', []) for f in e.get('features', []) for s in f.get('user_stories', []))
+                test_plan_count = sum(1 for e in self.workflow_data.get('epics', []) for f in e.get('features', []) if f.get('test_cases') or any(s.get('test_cases') for s in f.get('user_stories', [])))
+                
+                if test_case_count == 0:
+                    missing.append('test cases')
+                if test_plan_count == 0:
+                    missing.append('test plans')
 
             if missing:
                 msg = f"WARNING: The following artifact types were not created in this run: {', '.join(missing)}. Please check agent outputs and integration logic."

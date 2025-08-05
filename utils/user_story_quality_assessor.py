@@ -224,12 +224,9 @@ class UserStoryQualityAssessor:
         present_fields = sum(1 for field in required_fields if story.get(field))
         score += (present_fields / len(required_fields)) * 40
         
-        # Story points reasonableness
-        story_points = story.get('story_points', 0)
-        if story_points in [1, 2, 3, 5, 8, 13]:
-            score += 20
-        elif story_points > 0:
-            score += 10
+        # Story points field presence (basic check only)
+        if story.get('story_points'):
+            score += 15
         
         # Priority set
         if story.get('priority') in ['High', 'Medium', 'Low']:
@@ -304,7 +301,7 @@ class UserStoryQualityAssessor:
             strengths.append("Complete story with all required fields")
         else:
             issues.append("Missing required story fields or information")
-            suggestions.append("Ensure story points, priority, and detailed description are provided")
+            suggestions.append("Ensure priority and detailed description are provided")
         
         return strengths, weaknesses, issues, suggestions
     
