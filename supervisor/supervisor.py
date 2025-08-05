@@ -690,8 +690,27 @@ class WorkflowSupervisor:
                 domain=None
             )
             
-            # Update project context with extracted domain and other context
-            if enhanced_context.get('domain') and enhanced_context['domain'] != 'dynamic':
+            # Only update domain if user hasn't explicitly set one
+            current_context = self.project_context.get_context()
+            user_domain = current_context.get('domain')
+            
+            if user_domain and user_domain != 'dynamic':
+                # User has explicitly set a domain - respect their choice
+                self.logger.info(f"Preserving user's explicit domain choice: {user_domain}")
+                # Still update other extracted context but NOT the domain
+                if enhanced_context:
+                    updates = {}
+                    if enhanced_context.get('target_users'):
+                        updates['target_users'] = enhanced_context['target_users']
+                    if enhanced_context.get('platform'):
+                        updates['platform'] = enhanced_context['platform']
+                    if enhanced_context.get('integrations'):
+                        updates['integrations'] = enhanced_context['integrations']
+                    if updates:
+                        self.project_context.update_context(updates)
+                        self.logger.info(f"Updated project context (preserving domain): {list(updates.keys())}")
+            elif enhanced_context.get('domain') and enhanced_context['domain'] != 'dynamic':
+                # No user domain set - use extracted domain as fallback
                 self.project_context.update_context({
                     'domain': enhanced_context['domain'],
                     'industry': enhanced_context.get('industry', enhanced_context['domain']),
@@ -699,9 +718,9 @@ class WorkflowSupervisor:
                     'platform': enhanced_context.get('platform', 'Web application'),
                     'integrations': enhanced_context.get('integrations', 'standard integrations')
                 })
-                self.logger.info(f"Updated project context with extracted domain: {enhanced_context['domain']}")
+                self.logger.info(f"No user domain set - using extracted domain: {enhanced_context['domain']}")
             else:
-                self.logger.info("No specific domain detected from vision, using dynamic domain")
+                self.logger.info("No domain extraction possible, using existing context")
                 
         except Exception as e:
             self.logger.warning(f"Failed to extract domain from vision: {e}")
