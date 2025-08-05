@@ -18,22 +18,22 @@ class ProjectContext:
             'methodology': 'Agile/Scrum',
             
             # Technical Context
-            'tech_stack': 'Modern Web Stack (React, Node.js, Python)',
-            'architecture_pattern': 'Microservices',
-            'database_type': 'PostgreSQL/MongoDB',
-            'cloud_platform': 'AWS/Azure',
-            'platform': 'Web Application with Mobile Support',
+            'tech_stack': 'Modern technology stack',
+            'architecture_pattern': 'Scalable architecture',
+            'database_type': 'Appropriate database solution',
+            'cloud_platform': 'Cloud platform',
+            'platform': 'Digital platform',
             
             # Team Context
             'team_size': '5-8 developers',
             'sprint_duration': '2 weeks',
             'experience_level': 'Senior',
             
-            # Business Context
-            'target_users': 'End users and administrators',
-            'timeline': '6-12 months',
-            'budget_constraints': 'Standard enterprise budget',
-            'compliance_requirements': 'GDPR, SOC2',
+            # Business Context  
+            'target_users': 'end users',
+            'timeline': '3-6 months',
+            'budget_constraints': 'Moderate budget',
+            'compliance_requirements': 'Industry standards',
             
             # Quality Context
             'test_environment': 'Automated CI/CD pipeline',

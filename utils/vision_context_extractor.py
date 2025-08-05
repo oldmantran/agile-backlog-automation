@@ -209,8 +209,9 @@ class VisionContextExtractor:
             enhanced_context['domain'] = domain
             enhanced_context['industry'] = domain.replace('_', ' ')
         
-        # Extract user types
-        user_types = self._extract_user_types(vision_statement, target_audience)
+        # Extract user types (pass detected domain for filtering)
+        detected_domain = enhanced_context.get('domain')
+        user_types = self._extract_user_types(vision_statement, target_audience, detected_domain)
         if user_types:
             enhanced_context['target_users'] = user_types
         
@@ -228,6 +229,88 @@ class VisionContextExtractor:
         
         return enhanced_context
     
+    def _get_domain_user_types(self, domain: str) -> List[str]:
+        """Get user types relevant to a specific domain."""
+        if not domain:
+            return ['managers', 'analysts', 'end_users']  # Generic fallback
+        
+        domain_mappings = {
+            'logistics': ['logistics_coordinators', 'drivers', 'warehouse_workers', 'managers', 'end_users'],
+            'healthcare': ['healthcare_providers', 'patients', 'healthcare_administrators', 'managers'],
+            'finance': ['financial_advisors', 'traders', 'financial_customers', 'compliance_officers', 'analysts'],
+            'retail': ['retailers', 'retail_customers', 'suppliers', 'managers'],
+            'education': ['educators', 'students', 'education_administrators', 'managers'],
+            'manufacturing': ['production_workers', 'quality_inspectors', 'plant_managers', 'managers'],
+            'real_estate': ['real_estate_professionals', 'property_stakeholders', 'managers'],
+            'oil_gas': ['field_operators', 'petroleum_engineers', 'managers'],
+            'agriculture': ['farmers', 'agricultural_specialists', 'farm_workers', 'managers'],
+            'technology': ['developers', 'tech_professionals', 'tech_users', 'managers'],
+            'telecommunications': ['telecom_engineers', 'telecom_customers', 'managers'],
+            'energy': ['energy_professionals', 'energy_customers', 'managers'],
+            'transportation': ['transport_operators', 'transport_passengers', 'transport_planners', 'managers'],
+            'hospitality_tourism': ['hospitality_staff', 'guests', 'managers'],
+            'entertainment_media': ['content_creators', 'audience', 'managers'],
+            'construction': ['construction_workers', 'architects_engineers', 'construction_clients', 'managers'],
+            'automotive': ['automotive_workers', 'automotive_customers', 'managers'],
+            'aerospace_defense': ['aerospace_engineers', 'defense_personnel', 'managers'],
+            'pharmaceuticals_biotech': ['researchers', 'regulatory_professionals', 'managers'],
+            'consumer_goods': ['brand_managers', 'consumers', 'managers'],
+            'environmental_services': ['environmental_specialists', 'environmental_stakeholders', 'managers'],
+            'government_public_sector': ['government_employees', 'citizens', 'managers'],
+            'insurance': ['insurance_professionals', 'insurance_customers', 'managers'],
+            'professional_services': ['consultants', 'service_clients', 'managers'],
+            'nonprofit_social_impact': ['nonprofit_staff', 'beneficiaries', 'donors', 'managers'],
+            'mining_natural_resources': ['mining_workers', 'environmental_monitors', 'managers'],
+            'food_beverage': ['food_service_staff', 'diners', 'managers'],
+            'ecommerce': ['ecommerce_professionals', 'online_shoppers', 'managers'],
+            'sports_fitness': ['fitness_professionals', 'athletes', 'managers'],
+            'workforce_management': ['hr_professionals', 'employees', 'managers'],
+            'security_safety': ['security_professionals', 'protected_individuals', 'managers']
+        }
+        
+        return domain_mappings.get(domain, ['managers', 'analysts', 'end_users'])
+    
+    def _get_domain_default_users(self, domain: str) -> str:
+        """Get default users for a domain when no specific types are detected."""
+        if not domain:
+            return 'end users'
+        
+        domain_defaults = {
+            'logistics': 'warehouse managers, logistics coordinators',
+            'healthcare': 'healthcare providers, patients',
+            'finance': 'financial advisors, clients',
+            'retail': 'store managers, customers',
+            'education': 'educators, students',
+            'manufacturing': 'production managers, workers',
+            'real_estate': 'real estate agents, clients',
+            'oil_gas': 'field operators, engineers',
+            'agriculture': 'farmers, agricultural specialists',
+            'technology': 'developers, end users',
+            'telecommunications': 'network engineers, customers',
+            'energy': 'energy professionals, customers',
+            'transportation': 'transport operators, passengers',
+            'hospitality_tourism': 'hospitality staff, guests',
+            'entertainment_media': 'content creators, audience',
+            'construction': 'construction workers, clients',
+            'automotive': 'automotive workers, customers',
+            'aerospace_defense': 'aerospace engineers, personnel',
+            'pharmaceuticals_biotech': 'researchers, regulatory professionals',
+            'consumer_goods': 'brand managers, consumers',
+            'environmental_services': 'environmental specialists',
+            'government_public_sector': 'government employees, citizens',
+            'insurance': 'insurance professionals, customers',
+            'professional_services': 'consultants, clients',
+            'nonprofit_social_impact': 'nonprofit staff, beneficiaries',
+            'mining_natural_resources': 'mining workers, specialists',
+            'food_beverage': 'food service staff, customers',
+            'ecommerce': 'ecommerce professionals, online shoppers',
+            'sports_fitness': 'fitness professionals, athletes',
+            'workforce_management': 'HR professionals, employees',
+            'security_safety': 'security professionals, protected individuals'
+        }
+        
+        return domain_defaults.get(domain, 'end users')
+    
     def _detect_domain(self, text: str) -> str:
         """Detect the primary domain from the text."""
         text_lower = text.lower()
@@ -242,23 +325,29 @@ class VisionContextExtractor:
             return max(domain_scores, key=domain_scores.get)
         return None
     
-    def _extract_user_types(self, text: str, target_audience: str = None) -> str:
-        """Extract specific user types from the text."""
+    def _extract_user_types(self, text: str, target_audience: str = None, detected_domain: str = None) -> str:
+        """Extract specific user types from the text, filtered by domain."""
         text_lower = text.lower()
         
         # Check target audience first
         if target_audience and target_audience != 'end users':
             return target_audience
         
+        # Get relevant user types based on detected domain
+        domain_user_types = self._get_domain_user_types(detected_domain)
+        
         detected_types = []
         for user_type, patterns in self.user_type_patterns.items():
-            if any(pattern in text_lower for pattern in patterns):
-                detected_types.append(user_type)
+            # Only check user types relevant to the detected domain
+            if user_type in domain_user_types:
+                if any(pattern in text_lower for pattern in patterns):
+                    detected_types.append(user_type)
         
         if detected_types:
             return ', '.join(detected_types).replace('_', ' ')
         
-        return 'end users'
+        # Domain-specific fallback
+        return self._get_domain_default_users(detected_domain)
     
     def _extract_technology_context(self, text: str) -> Dict[str, Any]:
         """Extract technology and platform information."""
