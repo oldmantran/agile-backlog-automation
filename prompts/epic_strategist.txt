@@ -16,8 +16,10 @@ CONTEXT:
 
 ### CRITICAL: Base ALL epics on the PRODUCT VISION above
 - Every epic MUST directly support achieving the vision stated above
+- Epic titles MUST contain specific terminology from the vision (NOT generic terms)
 - Consider the specific target audience, business objectives, and KPIs mentioned
 - Do NOT create generic work items - tailor everything to the vision's domain and goals
+- FORBIDDEN: Generic titles like "System", "Platform", "Management", "Tracking" without vision context
 
 ### Structure Requirements:
 Each epic must include:
@@ -47,8 +49,8 @@ Each epic must include:
 ## REQUIRED JSON STRUCTURE:
 [
   {
-    "title": "Epic Title Reflecting Vision Goals",
-    "description": "Description that directly addresses the product vision requirements and target audience needs. Should reference specific vision objectives and outcomes.",
+    "title": "Specific Epic Name Based on Vision (max 60 chars)",
+    "description": "2-3 sentences directly addressing vision requirements and target audience needs with specific domain terminology.",
     "priority": "High",
     "estimated_complexity": "M",
     "category": "core_platform"
@@ -65,10 +67,11 @@ Each epic must include:
 
 ### Domain-Specific Validation:
 For domain "${domain}":
-- Epic titles and descriptions MUST use industry-specific terminology
-- Address actual business processes and workflows from the domain
-- Reference real stakeholders and user roles from the industry
+- Epic titles and descriptions MUST use industry-specific terminology from the PRODUCT VISION
+- Extract and use the EXACT business processes, assets, and workflows mentioned in the vision
+- Reference the SPECIFIC stakeholders and user roles mentioned in the vision
+- Use the EXACT terminology from the product vision (e.g., "loading dock assets", "warehouse surveillance")
 - Avoid generic terms like "system", "platform", "application" unless domain-specific
-- Focus on domain outcomes, not software features
+- Focus on the SPECIFIC outcomes described in the vision, not generic software features
 
 ## CRITICAL: Respond with ONLY the JSON array. No markdown formatting, no code blocks, no explanations.
