@@ -386,7 +386,7 @@ class WorkflowSupervisor:
                     self.logger.warning(f"[{stage_name}] No OLLAMA_MODEL configured - skipping model verification")
                     return True
                 
-                self.logger.info(f"🔄 [{stage_name}] Ensuring Ollama model {self.ollama_model} is loaded...")
+                self.logger.info(f"[{stage_name}] Ensuring Ollama model {self.ollama_model} is loaded...")
                 
                 success = ollama_manager.ensure_model_loaded(
                     model_name=self.ollama_model,
@@ -394,9 +394,9 @@ class WorkflowSupervisor:
                 )
                 
                 if success:
-                    self.logger.info(f"✅ [{stage_name}] Model {self.ollama_model} is ready")
+                    self.logger.info(f"[{stage_name}] Model {self.ollama_model} is ready")
                 else:
-                    self.logger.error(f"❌ [{stage_name}] Failed to load model {self.ollama_model}")
+                    self.logger.error(f"[{stage_name}] Failed to load model {self.ollama_model}")
                     # Don't fail the entire workflow, but log the issue
                     self.execution_metadata['errors'].append(f"Failed to load model {self.ollama_model} for {stage_name}")
                     return False

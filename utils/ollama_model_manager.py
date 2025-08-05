@@ -48,7 +48,9 @@ class OllamaModelManager:
         try:
             result = subprocess.run(['ollama', 'ps'], 
                                   capture_output=True, 
-                                  text=True, 
+                                  text=True,
+                                  encoding='utf-8',
+                                  errors='replace',
                                   timeout=10)
             
             if result.returncode != 0:
@@ -180,7 +182,9 @@ class OllamaModelManager:
             # Use a simple prompt to load the model
             result = subprocess.run(['ollama', 'run', model_name, 'Hello'], 
                                   capture_output=True, 
-                                  text=True, 
+                                  text=True,
+                                  encoding='utf-8',
+                                  errors='replace',
                                   timeout=120)  # 2 minute timeout for model loading
             
             if result.returncode == 0:
@@ -232,7 +236,7 @@ class OllamaModelManager:
         self.logger.info(f"Current VRAM usage: {current_usage:.1f} GB / {self.max_vram_gb} GB limit")
         
         if self.is_model_loaded(model_name):
-            self.logger.info(f"✅ Model {model_name} is already loaded")
+            self.logger.info(f"Model {model_name} is already loaded")
             return True
         
         # Check if we can load the model
@@ -244,9 +248,9 @@ class OllamaModelManager:
         success = self.preload_model(model_name, force_unload_others=True)
         
         if success:
-            self.logger.info(f"✅ Model {model_name} is now ready for use")
+            self.logger.info(f"Model {model_name} is now ready for use")
         else:
-            self.logger.error(f"❌ Failed to load model {model_name}")
+            self.logger.error(f"Failed to load model {model_name}")
         
         return success
 
