@@ -2520,22 +2520,26 @@ class WorkflowSupervisor:
                 staging.cleanup_successful_job(self.job_id, keep_failed=True)
                 self.logger.info(f"Cleaned up {successful_uploads} successful uploads from staging")
             
-            # Return mock results in expected format for notifications
-            # The actual upload details are in the upload_results
-            mock_results = []
-            for i in range(successful_uploads):
-                mock_results.append({
-                    'id': f'staged_{i}',
-                    'type': 'OutboxUpload',
-                    'title': f'Uploaded item {i+1}',
-                    'status': 'success'
-                })
+            # Return actual upload results instead of mock data to prevent discrepancies
+            actual_results = []
+            
+            # Extract successful work items from upload results
+            for item_result in upload_results.get('work_items_created', []):
+                if item_result.get('status') == 'success':
+                    actual_results.append({
+                        'id': item_result.get('id'),
+                        'type': item_result.get('type', 'Work Item'),
+                        'title': item_result.get('title', 'Uploaded Work Item'),
+                        'status': 'success',
+                        'url': item_result.get('url', '')
+                    })
             
             # Store outbox results in workflow data for detailed reporting
             workflow_data['outbox_upload_results'] = upload_results
             workflow_data['staging_summary'] = staging_summary
             
-            return mock_results
+            self.logger.info(f"Returning {len(actual_results)} actual upload results (no mock data)")
+            return actual_results
             
         except Exception as e:
             self.logger.error(f"Outbox upload failed: {e}")
