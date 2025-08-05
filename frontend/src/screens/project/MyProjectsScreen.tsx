@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
@@ -326,14 +326,23 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
               </Button>
             )}
             {/* Add Test Artifacts button - only show if test artifacts weren't included originally */}
-            {!job.raw_summary?.test_artifacts_included && job.status === 'completed' && (
+            {(() => {
+              try {
+                const rawSummary = typeof job.raw_summary === 'string' ? JSON.parse(job.raw_summary) : job.raw_summary;
+                const testArtifactsIncluded = rawSummary?.test_artifacts_included;
+                return !testArtifactsIncluded && job.status === 'completed';
+              } catch {
+                return false;
+              }
+            })() && (
               <Button
                 size="sm"
                 variant="outline"
                 onClick={async () => {
                   try {
                     // Extract project ID from job data
-                    const projectId = job.raw_summary?.project_id || job.jobId?.split('_').pop() || '';
+                    const rawSummary = typeof job.raw_summary === 'string' ? JSON.parse(job.raw_summary) : job.raw_summary;
+                    const projectId = rawSummary?.project_id || jobId.split('_').pop() || '';
                     if (!projectId) {
                       console.error('No project ID found for test generation');
                       return;
