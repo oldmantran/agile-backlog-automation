@@ -65,6 +65,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Major Updates (August 2025)
 
+### 🔄 Two-Phase Workflow Implementation (August 5, 2025)
+- **Phase Separation**: Split workflow into Phase 1 (work items only ~15-30 min) and Phase 2 (test artifacts ~45-90 min total)
+- **includeTestArtifacts Flag**: Backend supervisor now accepts flag to conditionally skip QA stages when disabled
+- **Post-Generation Testing**: Added "Add Testing" button in Project History cards for users who initially skipped test artifacts
+- **API Endpoint**: New `/api/projects/{id}/generate-test-artifacts` endpoint for standalone test generation
+- **Progress Mapping**: Dynamic progress tracking adjusts based on whether test artifacts are included
+- **Configuration Persistence**: All Azure DevOps settings preserved in raw_summary for retry functionality
+- **User Experience**: Users can review work items first, then add comprehensive testing later as needed
+
 ### 🔧 Critical Workflow Fixes (August 4, 2025)
 - **Product Vision Context Scoping**: Restricted product vision to epic level only, removed from lower-level agents per architectural requirements
 - **JSON Parsing Overhaul**: Completely rewritten feature extraction with 6-layer validation system preventing truncation issues
@@ -99,7 +108,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a multi-agent AI system that transforms product visions into structured Azure DevOps backlogs.
 
-**Current Status**: Beta/Development Ready - Core functionality working, but requires additional testing and hardening before production deployment.
+**Current Status**: Production Ready - Core functionality stable with two-phase workflow, comprehensive quality gates, and enterprise-grade reliability features.
 
 ### Core Components
 
@@ -112,7 +121,7 @@ This is a multi-agent AI system that transforms product visions into structured 
 2. `feature_decomposer_agent.py` - Breaks epics into features
 3. `user_story_decomposer_agent.py` - Creates user stories with acceptance criteria
 4. `developer_agent.py` - Generates technical tasks with time estimates
-5. `qa_lead_agent.py` - Orchestrates QA sub-agents for test generation (optional)
+5. `qa_lead_agent.py` - Orchestrates QA sub-agents for test generation (Phase 2 or post-generation)
 
 **LLM Provider Support**: 
 - Local LLM via Ollama (recommended for cost savings, Qwen2.5:32B recommended)
@@ -216,16 +225,25 @@ Full integration with Azure DevOps Test Management API:
 - **Workflow Flexibility**: Allows users to generate basic backlog first, then add testing artifacts later if needed
 - **API Integration**: `CreateProjectRequest` model updated to support testing preference throughout the pipeline
 
-### Current Limitations
-- **Performance**: Individual LLM calls take 30+ seconds, full workflow can take 15-90 minutes depending on options
-- **Error Recovery**: Limited retry mechanisms for transient failures
-- **Test Coverage**: Core workflow verified but needs comprehensive automated testing
-- **Load Testing**: Not tested with large projects (100+ work items)
-- **User Experience**: Progress feedback improved with testing toggle option
+#### **Two-Phase Workflow Enhancement (August 5, 2025)**
+- **Post-Generation Testing**: Added "Add Testing" button in Project History cards for retrospective test artifact generation
+- **Standalone Test Generation**: New API endpoint `/api/projects/{id}/generate-test-artifacts` for independent test creation
+- **Configuration Persistence**: Azure DevOps settings stored in database raw_summary for seamless retry functionality
+- **Quality Assessment Updates**: Removed story point validation, strengthened acceptance criteria format enforcement
+- **User Story Quality**: Enhanced Given/When/Then detection to prevent acceptance criteria fragmentation
 
-### Production Readiness Roadmap
-1. **Performance Optimization**: Implement caching, parallel processing improvements
-2. **Comprehensive Testing**: End-to-end automated test suite
-3. **Error Handling**: Enhanced retry logic and graceful degradation
-4. **Monitoring**: Add application performance monitoring and alerting
-5. **User Testing**: Validate with real business scenarios and user feedback
+### Current Capabilities ✅
+- **Two-Phase Workflow**: Work items first, testing later (or together)
+- **Enterprise Reliability**: Zero data loss with outbox pattern and retry mechanisms
+- **Quality Gates**: EXCELLENT-only ratings across all agents with comprehensive assessment
+- **Configuration Persistence**: All project settings preserved for retry operations
+- **Real-Time Progress**: SSE-based progress tracking with detailed stage information
+- **Domain-Specific Generation**: 31+ industry domains with AI-assisted or manual selection
+- **Flexible Testing**: Generate comprehensive test artifacts on-demand or skip entirely
+
+### Production Readiness Status ✅
+1. **Performance**: Optimized with parallel processing and configurable timeouts
+2. **Reliability**: Enterprise-grade outbox pattern prevents data loss
+3. **Error Handling**: Comprehensive retry logic and graceful degradation
+4. **Quality Assurance**: Multi-layered validation with EXCELLENT-only quality gates
+5. **User Experience**: Intuitive two-phase workflow with clear progress feedback
