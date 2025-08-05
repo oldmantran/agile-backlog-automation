@@ -4,6 +4,7 @@ import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
+from utils.feature_quality_assessor import FeatureQualityAssessor
 
 class TimeoutError(Exception):
     """Custom timeout exception."""
@@ -19,6 +20,8 @@ class FeatureDecomposerAgent(Agent):
         super().__init__("feature_decomposer_agent", config)
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
+        self.feature_quality_assessor = FeatureQualityAssessor()
+        self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
 
     def decompose_epic(self, epic: dict, context: dict = None, max_features: int = None) -> list[dict]:
         """Break down an epic into detailed features with business value and strategic considerations."""
@@ -26,14 +29,18 @@ class FeatureDecomposerAgent(Agent):
         # Apply max_features constraint if specified (null = unlimited)
         feature_limit = max_features if max_features is not None else None  # None = unlimited
         
-        # Build context for prompt template
+        # Extract product vision for context cascading
+        product_vision = context.get('product_vision', '') if context else ''
+        
+        # Build context for prompt template - CASCADE FULL CONTEXT
         prompt_context = {
-            'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
+            'domain': context.get('domain', 'dynamic') if context else 'dynamic',
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
             'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs',
+            'product_vision': product_vision,  # CASCADE PRODUCT VISION
             'max_features': feature_limit if feature_limit else "unlimited"
         }
         
@@ -137,10 +144,18 @@ Dependencies: {epic.get('dependencies', [])}
                     limited_features = features[:feature_limit]
                     if len(features) > feature_limit:
                         print(f"🔧 [FeatureDecomposerAgent] Limited output from {len(features)} to {len(limited_features)} features (configuration limit)")
-                    enhanced_features = self._validate_and_enhance_features(limited_features)
+                    
+                    # Assess quality of limited features with full context
+                    quality_approved_features = self._assess_and_improve_feature_quality(
+                        limited_features, epic, context, product_vision
+                    )
+                    return quality_approved_features
                 else:
-                    enhanced_features = self._validate_and_enhance_features(features)
-                return enhanced_features
+                    # Assess quality of all features with full context
+                    quality_approved_features = self._assess_and_improve_feature_quality(
+                        features, epic, context, product_vision
+                    )
+                    return quality_approved_features
             else:
                 print("⚠️ LLM response was not a valid list")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
@@ -586,3 +601,141 @@ Dependencies: {epic.get('dependencies', [])}
             raise exception[0]
         
         return result[0]
+    
+    def _assess_and_improve_feature_quality(self, features: list, epic: dict, context: dict, product_vision: str) -> list:
+        """Assess feature quality and retry generation if not EXCELLENT."""
+        domain = context.get('domain', 'general') if context else 'general'
+        approved_features = []
+        
+        print(f"\n🔍 Starting feature quality assessment for {len(features)} features...")
+        print(f"Epic Context: {epic.get('title', 'Unknown Epic')}")
+        print(f"Domain: {domain}")
+        
+        for i, feature in enumerate(features):
+            print(f"\n{'='*60}")
+            print(f"ASSESSING FEATURE {i+1}/{len(features)}")
+            print(f"{'='*60}")
+            
+            attempt = 1
+            current_feature = feature
+            
+            while attempt <= self.max_quality_retries:
+                # Assess current feature quality
+                assessment = self.feature_quality_assessor.assess_feature(
+                    current_feature, epic, domain, product_vision
+                )
+                
+                # Log assessment
+                log_output = self.feature_quality_assessor.format_assessment_log(
+                    current_feature, assessment, attempt
+                )
+                print(log_output)
+                
+                if assessment.rating == "EXCELLENT":
+                    print(f"✅ Feature approved with EXCELLENT rating on attempt {attempt}")
+                    approved_features.append(current_feature)
+                    break
+                
+                if attempt == self.max_quality_retries:
+                    print(f"❌ Feature failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
+                    print("   Feature will be included but may need manual review")
+                    approved_features.append(current_feature)
+                    break
+                
+                # Generate improvement prompt
+                improvement_prompt = self._create_feature_improvement_prompt(
+                    current_feature, assessment, epic, product_vision, context
+                )
+                
+                print(f"🔄 Attempting to improve feature (attempt {attempt + 1}/{self.max_quality_retries})")
+                
+                try:
+                    # Re-generate the feature with improvement guidance
+                    improved_response = self._generate_improved_feature(improvement_prompt, context)
+                    if improved_response:
+                        current_feature = improved_response
+                    else:
+                        print("⚠️ Failed to generate improvement - using current version")
+                        break
+                        
+                except Exception as e:
+                    print(f"⚠️ Error during feature improvement: {e}")
+                    break
+                
+                attempt += 1
+        
+        print(f"\n✅ Feature quality assessment complete: {len(approved_features)} features approved")
+        return approved_features
+    
+    def _create_feature_improvement_prompt(self, feature: dict, assessment, epic: dict, product_vision: str, context: dict) -> str:
+        """Create a prompt to improve the feature based on quality assessment."""
+        title = feature.get('title', '')
+        description = feature.get('description', '')
+        epic_title = epic.get('title', '')
+        epic_description = epic.get('description', '')
+        
+        improvement_text = f"""FEATURE IMPROVEMENT REQUEST
+
+Current Feature:
+Title: {title}
+Description: {description}
+
+Parent Epic Context:
+Title: {epic_title}
+Description: {epic_description}
+
+Product Vision Context:
+{product_vision}
+
+Quality Issues Identified:
+{chr(10).join('• ' + issue for issue in assessment.specific_issues)}
+
+Improvement Suggestions:
+{chr(10).join('• ' + suggestion for suggestion in assessment.improvement_suggestions)}
+
+INSTRUCTIONS:
+Rewrite this feature to address the quality issues above. Focus on:
+1. Strong alignment with the parent epic "{epic_title}"
+2. Including domain-specific terminology from the product vision
+3. Adding technical implementation details (APIs, interfaces, databases)
+4. Clarifying user interactions and interface components
+5. Providing sufficient detail for user story decomposition
+6. Maintaining strong connection to the product vision goals
+
+Return only a single improved feature in this JSON format:
+{{
+  "title": "Improved feature title that aligns with epic and vision",
+  "description": "Detailed description that addresses all quality issues, includes technical implementation guidance, specifies user interactions, and provides clear context for user story decomposition.",
+  "priority": "High|Medium|Low",
+  "estimated_complexity": "XS|S|M|L|XL",
+  "category": "core_functionality|user_interface|data_management|integration|security|performance",
+  "business_value": "Clear statement of business value and user benefits",
+  "acceptance_criteria": ["Specific", "measurable", "acceptance criteria"]
+}}"""
+        return improvement_text.strip()
+    
+    def _generate_improved_feature(self, improvement_prompt: str, context: dict) -> dict:
+        """Generate an improved version of the feature."""
+        try:
+            # Use the existing run method to generate improvement
+            response = self.run(improvement_prompt, context or {})
+            
+            if not response:
+                return None
+            
+            # Extract and parse JSON
+            cleaned_response = self._extract_json_from_response(response)
+            improved_feature = json.loads(cleaned_response)
+            
+            # Validate that we got a single feature object
+            if isinstance(improved_feature, dict):
+                return improved_feature
+            elif isinstance(improved_feature, list) and len(improved_feature) > 0:
+                return improved_feature[0]  # Take first feature if array returned
+            else:
+                return None
+                
+        except Exception as e:
+            print(f"Error generating improved feature: {e}")
+            return None

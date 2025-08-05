@@ -10,6 +10,9 @@ CONTEXT:
 - Platform: ${platform}
 - Integrations: ${integrations}
 
+PRODUCT VISION:
+${product_vision}
+
 ## Epic to Feature Decomposition Guidelines:
 
 ### Structure Requirements:
@@ -25,11 +28,14 @@ Each feature must include:
 
 ### Best Practices:
 - Create **4-8 features** per epic that together fulfill the epic's objectives
+- **CRITICAL**: Each feature must directly support both the epic goals AND the product vision above
+- Use **specific terminology** from the product vision and epic description
 - Each feature should be **independently deliverable** where possible
-- Focus on **user workflows** and **job-to-be-done** scenarios
+- Focus on **user workflows** and **job-to-be-done** scenarios from the vision
 - Consider **feature cohesion** - related functionality should be grouped together
 - Design for **incremental delivery** and **MVP capability**
 - Include **cross-cutting concerns** like security, performance, and accessibility
+- Ensure features provide **clear context** for user story decomposition
 
 ## Feature Categories to Consider:
 - **core_functionality**: Primary user capabilities that directly fulfill epic goals
