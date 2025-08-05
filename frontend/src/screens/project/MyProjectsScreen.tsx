@@ -105,14 +105,25 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
           // Handle newer format with work_items_created array
           totalUploaded = adoSummary.work_items_created.length || 0;
           totalFailed = Math.max(0, totalGenerated - totalUploaded);
+        } else {
+          // Check for upload count in the email notification pattern
+          // "Note that only 88 items made it into ADO."
+          const uploadNote = job.status?.match(/only (\d+) items made it into ADO/);
+          if (uploadNote && uploadNote[1]) {
+            totalUploaded = parseInt(uploadNote[1]);
+            totalFailed = Math.max(0, totalGenerated - totalUploaded);
+          }
         }
       } catch (e) {
-        // Fallback: assume most items were uploaded if no data
-        if (totalGenerated > 0 && totalUploaded === 0 && totalFailed === 0) {
-          totalUploaded = Math.floor(totalGenerated * 0.85); // Assume 85% success rate
-          totalFailed = totalGenerated - totalUploaded;
-        }
+        // No fallback - show actual state
+        console.warn('Failed to parse upload metrics:', e);
       }
+    }
+    
+    // If we still have no data and total generated > 0, it means upload data is missing
+    if (totalGenerated > 0 && totalUploaded === 0 && totalFailed === 0 && !stagingSummary.total_items) {
+      // Don't assume - show that upload status is unknown
+      totalFailed = totalGenerated; // Assume all failed if no upload data
     }
     
     const failureRate = totalGenerated > 0 ? ((totalFailed + totalSkipped) / totalGenerated) * 100 : 0;

@@ -4,6 +4,7 @@ import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.content_enhancer import ContentEnhancer
+from utils.epic_quality_assessor import EpicQualityAssessor
 
 class TimeoutError(Exception):
     """Custom timeout exception"""
@@ -17,6 +18,8 @@ class EpicStrategist(Agent):
     def __init__(self, config: Config):
         super().__init__("epic_strategist", config)
         self.content_enhancer = ContentEnhancer()
+        self.quality_assessor = EpicQualityAssessor()
+        self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
 
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
         """Generate epics from a product vision with contextual information."""
@@ -97,14 +100,148 @@ class EpicStrategist(Agent):
                     limited_epics = epics[:epic_limit]
                     if len(epics) > epic_limit:
                         print(f"🔧 [EpicStrategist] Limited output from {len(epics)} to {len(limited_epics)} epics (configuration limit)")
-                    return limited_epics
+                    
+                    # Assess quality of limited epics
+                    quality_approved_epics = self._assess_and_improve_quality(
+                        limited_epics, product_vision, context
+                    )
+                    return quality_approved_epics
                 else:
-                    return epics
+                    # Assess quality of all epics
+                    quality_approved_epics = self._assess_and_improve_quality(
+                        epics, product_vision, context
+                    )
+                    return quality_approved_epics
             else:
                 print("⚠️ LLM response was not a list.")
                 raise ValueError("LLM response was not a list")
         except json.JSONDecodeError as e:
             raise ValueError(f"JSON decode error: {e}")
+    
+    def _assess_and_improve_quality(self, epics: list, product_vision: str, context: dict) -> list:
+        """Assess epic quality and retry generation if not EXCELLENT."""
+        domain = context.get('domain', 'general') if context else 'general'
+        approved_epics = []
+        
+        print(f"\n🔍 Starting quality assessment for {len(epics)} epics...")
+        
+        for i, epic in enumerate(epics):
+            print(f"\n{'='*60}")
+            print(f"ASSESSING EPIC {i+1}/{len(epics)}")
+            print(f"{'='*60}")
+            
+            attempt = 1
+            current_epic = epic
+            
+            while attempt <= self.max_quality_retries:
+                # Assess current epic quality
+                assessment = self.quality_assessor.assess_epic(current_epic, domain, product_vision)
+                
+                # Log assessment
+                log_output = self.quality_assessor.format_assessment_log(current_epic, assessment, attempt)
+                print(log_output)
+                
+                if assessment.rating == "EXCELLENT":
+                    print(f"✅ Epic approved with EXCELLENT rating on attempt {attempt}")
+                    approved_epics.append(current_epic)
+                    break
+                
+                if attempt == self.max_quality_retries:
+                    print(f"❌ Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
+                    print("   Epic will be included but may need manual review")
+                    approved_epics.append(current_epic)
+                    break
+                
+                # Generate improvement prompt
+                improvement_prompt = self._create_improvement_prompt(
+                    current_epic, assessment, product_vision, context
+                )
+                
+                print(f"🔄 Attempting to improve epic (attempt {attempt + 1}/{self.max_quality_retries})")
+                
+                try:
+                    # Re-generate the epic with improvement guidance
+                    improved_response = self._generate_improved_epic(improvement_prompt, context)
+                    if improved_response:
+                        current_epic = improved_response
+                    else:
+                        print("⚠️ Failed to generate improvement - using current version")
+                        break
+                        
+                except Exception as e:
+                    print(f"⚠️ Error during epic improvement: {e}")
+                    break
+                
+                attempt += 1
+        
+        print(f"\n✅ Quality assessment complete: {len(approved_epics)} epics approved")
+        return approved_epics
+    
+    def _create_improvement_prompt(self, epic: dict, assessment, product_vision: str, context: dict) -> str:
+        """Create a prompt to improve the epic based on quality assessment."""
+        title = epic.get('title', '')
+        description = epic.get('description', '')
+        
+        improvement_text = f"""
+EPIC IMPROVEMENT REQUEST
+
+Current Epic:
+Title: {title}
+Description: {description}
+
+Quality Issues Identified:
+{chr(10).join('• ' + issue for issue in assessment.specific_issues)}
+
+Improvement Suggestions:
+{chr(10).join('• ' + suggestion for suggestion in assessment.improvement_suggestions)}
+
+Product Vision Context:
+{product_vision}
+
+INSTRUCTIONS:
+Rewrite this epic to address the quality issues above. Focus on:
+1. Including domain-specific terminology from the product vision
+2. Adding technical implementation clarity
+3. Clarifying business value and user impact
+4. Providing actionable details for feature decomposition
+5. Maintaining strong alignment with the product vision
+
+Return only a single improved epic in this JSON format:
+{{
+  "title": "Improved epic title (max 60 characters)",
+  "description": "Detailed description that addresses all quality issues and provides clear context for feature decomposition.",
+  "priority": "High|Medium|Low",
+  "estimated_complexity": "XS|S|M|L|XL",
+  "category": "core_platform|user_experience|data_management|integration|security|performance|administration"
+}}
+"""
+        return improvement_text.strip()
+    
+    def _generate_improved_epic(self, improvement_prompt: str, context: dict) -> dict:
+        """Generate an improved version of the epic."""
+        try:
+            # Use the existing run method to generate improvement
+            response = self.run(improvement_prompt, context or {})
+            
+            if not response:
+                return None
+            
+            # Extract and parse JSON
+            cleaned_response = self._extract_json_from_response(response)
+            improved_epic = json.loads(cleaned_response)
+            
+            # Validate that we got a single epic object
+            if isinstance(improved_epic, dict):
+                return improved_epic
+            elif isinstance(improved_epic, list) and len(improved_epic) > 0:
+                return improved_epic[0]  # Take first epic if array returned
+            else:
+                return None
+                
+        except Exception as e:
+            print(f"Error generating improved epic: {e}")
+            return None
 
     def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
         """Run the agent with a timeout to prevent hanging."""
