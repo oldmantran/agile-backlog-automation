@@ -56,7 +56,26 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const getAzureConfig = () => {
     try {
       const rawSummary = job.raw_summary as any;
-      return rawSummary?.azure_config || {};
+      
+      // Try multiple possible locations for Azure config
+      if (rawSummary?.azure_config) {
+        return rawSummary.azure_config;
+      }
+      if (rawSummary?.metadata?.azure_config) {
+        return rawSummary.metadata.azure_config;
+      }
+      
+      // Try constructing from ado_summary or azure_integration
+      const adoSummary = rawSummary?.ado_summary || rawSummary?.azure_integration || {};
+      if (adoSummary.project || adoSummary.area_path) {
+        return {
+          project: adoSummary.project,
+          areaPath: adoSummary.area_path || adoSummary.areaPath,
+          iterationPath: adoSummary.iteration_path || adoSummary.iterationPath
+        };
+      }
+      
+      return {};
     } catch {
       return {};
     }
@@ -151,14 +170,28 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
       const rawSummary = job.raw_summary as any;
       
       // Try multiple possible locations for project name
-      if (rawSummary?.project_context?.project_name && rawSummary.project_context.project_name !== 'Unknown Project') {
+      if (rawSummary?.project_context?.project_name && rawSummary.project_context.project_name !== 'Unknown Project' && rawSummary.project_context.project_name !== 'Test Project') {
         return rawSummary.project_context.project_name;
       }
-      if (rawSummary?.project_name && rawSummary.project_name !== 'Unknown Project') {
+      if (rawSummary?.project_name && rawSummary.project_name !== 'Unknown Project' && rawSummary.project_name !== 'Test Project') {
         return rawSummary.project_name;
       }
-      if (rawSummary?.metadata?.project_context?.project_name && rawSummary.metadata.project_context.project_name !== 'Unknown Project') {
+      if (rawSummary?.metadata?.project_context?.project_name && rawSummary.metadata.project_context.project_name !== 'Unknown Project' && rawSummary.metadata.project_context.project_name !== 'Test Project') {
         return rawSummary.metadata.project_context.project_name;
+      }
+      
+      // Try extracting from Azure DevOps project name if it looks like a real project
+      const azureProject = getAzureConfig().project;
+      if (azureProject && azureProject !== 'Backlog Automation' && azureProject !== 'Test Project') {
+        return azureProject;
+      }
+      
+      // Try looking in ado_summary or azure_integration
+      if (rawSummary?.ado_summary?.project && rawSummary.ado_summary.project !== 'Test Project') {
+        return rawSummary.ado_summary.project;
+      }
+      if (rawSummary?.azure_integration?.project && rawSummary.azure_integration.project !== 'Test Project') {
+        return rawSummary.azure_integration.project;
       }
       
       // Fallback to the stored project_name
@@ -172,15 +205,19 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
 
   // Temporary debugging for "Test Project" 
   if (job.project_name === 'Test Project') {
-    console.log('Test Project Debug Data:', {
-      job_id: job.id,
-      project_name: job.project_name,
-      projectDisplayName,
-      jobId,
-      raw_summary: job.raw_summary,
-      metrics,
-      azureConfig
+    console.log('=== Test Project Debug Data ===');
+    console.log('Basic job info:', {
+      database_id: job.id,
+      stored_project_name: job.project_name,
+      calculated_display_name: projectDisplayName,
+      calculated_job_id: jobId,
+      created_at: job.created_at
     });
+    console.log('Raw summary structure:', job.raw_summary);
+    console.log('Azure config extracted:', azureConfig);
+    console.log('Staging summary:', getStagingSummary());
+    console.log('Upload metrics:', metrics);
+    console.log('=== End Debug Data ===');
   }
 
   return (
