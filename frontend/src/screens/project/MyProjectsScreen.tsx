@@ -69,7 +69,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                           job.tasks_generated + job.test_cases_generated;
     const totalUploaded = byStatus.success || 0;
     const totalFailed = byStatus.failed || 0;
-    const failureRate = totalGenerated > 0 ? ((totalFailed + byStatus.skipped || 0) / totalGenerated) * 100 : 0;
+    const failureRate = totalGenerated > 0 ? ((totalFailed + (byStatus.skipped || 0)) / totalGenerated) * 100 : 0;
     
     return {
       totalGenerated,
@@ -98,6 +98,24 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const { date, time } = formatDate(job.created_at);
   const jobId = (job.raw_summary as any)?.job_id || 'N/A';
   const azureConfig = getAzureConfig();
+  
+  // Get the actual project name from raw_summary if available, fallback to job.project_name
+  const getProjectDisplayName = () => {
+    try {
+      const rawSummary = job.raw_summary as any;
+      // Check if there's a project context with project name
+      const projectContext = rawSummary?.project_context;
+      if (projectContext?.project_name && projectContext.project_name !== 'Unknown Project') {
+        return projectContext.project_name;
+      }
+      // Fallback to the stored project_name
+      return job.project_name || 'Unknown Project';
+    } catch {
+      return job.project_name || 'Unknown Project';
+    }
+  };
+  
+  const projectDisplayName = getProjectDisplayName();
 
   return (
     <Card className={`tron-card bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all ${
@@ -109,7 +127,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-foreground glow-cyan text-lg">
-              {job.project_name}
+              {projectDisplayName}
             </CardTitle>
             <div className="flex items-center space-x-2 mt-1 text-xs text-muted-foreground font-mono">
               <FiCalendar className="w-3 h-3" />
@@ -836,42 +854,6 @@ const MyProjectsScreen: React.FC = () => {
               )}
             </div>
 
-            {/* Projects Section */}
-            {projects.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                  YOUR PROJECTS
-                </h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {projects.map((project) => (
-                    <Card key={project.id} className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:shadow-lg transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="text-foreground glow-cyan">
-                          {project.basics?.name || 'Untitled Project'}
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          {project.basics?.description || 'No description'}
-                        </p>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex justify-between items-center">
-                          <Badge variant="outline" className="font-mono">
-                            {project.basics?.domain || 'General'}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            onClick={() => navigate(`/project/${project.id}`)}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Project History Section */}
             {backlogJobs.length > 0 && (

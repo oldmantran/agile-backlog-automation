@@ -25,5 +25,9 @@
     "files.associations": {
         "*.yaml": "yaml",
         "*.yml": "yaml"
-    }
+    },
+    "scm.defaultViewMode": "tree",
+    "git.decorations.enabled": true,
+    "git.ignoreLimitWarning": true,
+    "explorer.excludeGitIgnore": true
 }
