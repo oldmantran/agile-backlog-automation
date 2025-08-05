@@ -2539,9 +2539,9 @@ class WorkflowSupervisor:
             
         except Exception as e:
             self.logger.error(f"Outbox upload failed: {e}")
-            # Fall back to traditional upload method
-            self.logger.warning("Falling back to traditional upload method...")
-            return self.azure_integrator.create_work_items(workflow_data)
+            # Don't fall back - re-raise the exception to diagnose the issue
+            self.logger.error("Outbox upload failure - investigate and fix the root cause")
+            raise
     
     def _get_default_stages(self) -> List[str]:
         """Get the default workflow stages including Azure integration."""

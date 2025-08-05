@@ -101,6 +101,10 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
         if (adoSummary.total_created !== undefined) {
           totalUploaded = adoSummary.total_created || 0;
           totalFailed = Math.max(0, totalGenerated - totalUploaded);
+        } else if (adoSummary.work_items_created) {
+          // Handle newer format with work_items_created array
+          totalUploaded = adoSummary.work_items_created.length || 0;
+          totalFailed = Math.max(0, totalGenerated - totalUploaded);
         }
       } catch (e) {
         // Fallback: assume most items were uploaded if no data

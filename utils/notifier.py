@@ -68,7 +68,7 @@ class Notifier:
                     'test_cases_generated': stats.get('test_cases_generated', 0),
                     'execution_time_seconds': stats.get('execution_time_seconds'),
                     'ado_summary': workflow_data.get('azure_integration', {}),
-                    'azure_config': workflow_data.get('azure_config', {}),
+                    'azure_config': workflow_data.get('metadata', {}).get('azure_config', {}),
                     'staging_summary': staging_summary,
                     'created_at': stats.get('created_at')
                 }

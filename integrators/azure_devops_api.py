@@ -83,13 +83,19 @@ class AzureDevOpsIntegrator:
         self.test_plans_url = f"{self.base_url}/testplan/plans"
         self.test_suites_url = f"{self.base_url}/testplan/suites"
         
-        # Initialize test management client
+        # Initialize test management client with error handling
         if self.enabled:
-            self.test_client = AzureDevOpsTestClient(
-                organization=self.organization,
-                project=self.project,
-                personal_access_token=self.pat
-            )
+            try:
+                self.test_client = AzureDevOpsTestClient(
+                    organization=self.organization,
+                    project=self.project,
+                    personal_access_token=self.pat
+                )
+                self.logger.info("Azure DevOps Test Client initialized successfully")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize Azure DevOps Test Client: {e}")
+                self.logger.warning("Test plan and test suite creation will be disabled")
+                self.test_client = None
         else:
             self.test_client = None
         
