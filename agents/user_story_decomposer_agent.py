@@ -6,6 +6,7 @@ from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
 from utils.json_extractor import JSONExtractor
+from utils.user_story_quality_assessor import UserStoryQualityAssessor
 
 class TimeoutError(Exception):
     """Custom timeout exception."""
@@ -21,6 +22,8 @@ class UserStoryDecomposerAgent(Agent):
         super().__init__("user_story_decomposer", config)
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
+        self.user_story_quality_assessor = UserStoryQualityAssessor()
+        self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
 
     def decompose_feature_to_user_stories(self, feature: dict, context: dict = None, max_user_stories: int = 5) -> list[dict]:
         """Decompose a feature into user stories."""
@@ -31,14 +34,20 @@ class UserStoryDecomposerAgent(Agent):
         feature_description = feature.get('description', '')
         feature_title = feature.get('title', 'Feature')
         
-        # Build context for prompt template
+        # Extract full context for cascading
+        product_vision = context.get('product_vision', '') if context else ''
+        epic_context = context.get('epic_context', '') if context else ''
+        
+        # Build context for prompt template - CASCADE FULL CONTEXT
         prompt_context = {
             'domain': context.get('domain', 'dynamic') if context else 'dynamic',
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'platform': context.get('platform', 'web application') if context else 'web application',
-            'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint'
+            'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
+            'product_vision': product_vision,  # CASCADE PRODUCT VISION
+            'epic_context': epic_context  # CASCADE EPIC CONTEXT
         }
         
         user_input = f"""
@@ -224,26 +233,32 @@ Edge Cases: {feature.get('edge_cases', [])}
                                     'priority': feature_item.get('priority', 'Medium'),
                                     'acceptance_criteria': []  # Will be populated during enhancement
                                 })
-                    return self._validate_and_enhance_user_stories(extracted_stories, max_user_stories)
+                    # Apply quality assessment to extracted stories
+                    return self._assess_and_improve_user_story_quality(extracted_stories, feature, context, product_vision, max_user_stories)
                 else:
-                    # This looks like actual user stories - validate and enhance them
-                    enhanced_stories = self._validate_and_enhance_user_stories(user_stories, max_user_stories)
-                    return enhanced_stories
+                    # This looks like actual user stories - apply quality assessment
+                    return self._assess_and_improve_user_story_quality(user_stories, feature, context, product_vision, max_user_stories)
             elif isinstance(user_stories, dict) and 'user_stories' in user_stories:
-                return self._validate_and_enhance_user_stories(user_stories['user_stories'], max_user_stories)
+                return self._assess_and_improve_user_story_quality(user_stories['user_stories'], feature, context, product_vision, max_user_stories)
             elif isinstance(user_stories, dict):
                 # Check if this is a single user story object (LLM returned object instead of array)
                 if self._looks_like_user_story(user_stories):
                     print("INFO: LLM returned single user story object instead of array, wrapping in array...")
-                    return self._validate_and_enhance_user_stories([user_stories], max_user_stories)
+                    return self._assess_and_improve_user_story_quality([user_stories], feature, context, product_vision, max_user_stories)
                 else:
                     print("WARNING: LLM response was not in expected format. Attempting to extract user stories from response...")
                     # Try to extract any user story-like content from the response
-                    return self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
+                    fallback_stories = self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
+                    if fallback_stories:
+                        return self._assess_and_improve_user_story_quality(fallback_stories, feature, context, product_vision, max_user_stories)
+                    return fallback_stories
             else:
                 print("WARNING: LLM response was not in expected format. Attempting to extract user stories from response...")
                 # Try to extract any user story-like content from the response
-                return self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
+                fallback_stories = self._extract_user_stories_from_any_format(user_stories, feature, max_user_stories)
+                if fallback_stories:
+                    return self._assess_and_improve_user_story_quality(fallback_stories, feature, context, product_vision, max_user_stories)
+                return fallback_stories
                 
         except json.JSONDecodeError as e:
             # Try to extract user stories from the raw response text
@@ -853,4 +868,164 @@ Edge Cases: {feature.get('edge_cases', [])}
             
         except Exception as e:
             print(f"❌ Manual JSON extraction error: {e}")
+            return None
+
+    def _assess_and_improve_user_story_quality(self, user_stories: list, feature: dict, context: dict, 
+                                             product_vision: str, max_user_stories: int = None) -> list:
+        """Assess user story quality and retry generation if not EXCELLENT."""
+        if not user_stories:
+            return []
+        
+        # Apply limit first if specified
+        if max_user_stories and len(user_stories) > max_user_stories:
+            user_stories = user_stories[:max_user_stories]
+        
+        domain = context.get('domain', 'general') if context else 'general'
+        approved_stories = []
+        
+        print(f"\n🔍 Starting user story quality assessment for {len(user_stories)} stories...")
+        print(f"Feature Context: {feature.get('title', 'Unknown Feature')}")
+        print(f"Domain: {domain}")
+        
+        for i, story in enumerate(user_stories):
+            print(f"\n{'='*60}")
+            print(f"ASSESSING USER STORY {i+1}/{len(user_stories)}")
+            print(f"{'='*60}")
+            
+            attempt = 1
+            current_story = story
+            
+            while attempt <= self.max_quality_retries:
+                # Assess current story quality
+                assessment = self.user_story_quality_assessor.assess_user_story(
+                    current_story, feature, domain, product_vision
+                )
+                
+                # Log assessment
+                log_output = self.user_story_quality_assessor.format_assessment_log(
+                    current_story, assessment, attempt
+                )
+                print(log_output)
+                
+                if assessment.rating == "EXCELLENT":
+                    print(f"✅ User story approved with EXCELLENT rating on attempt {attempt}")
+                    approved_stories.append(current_story)
+                    break
+                
+                if attempt == self.max_quality_retries:
+                    print(f"❌ User story failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
+                    print("   Story will be included but may need manual review")
+                    approved_stories.append(current_story)
+                    break
+                
+                # Generate improvement prompt
+                improvement_prompt = self._create_user_story_improvement_prompt(
+                    current_story, assessment, feature, product_vision, context
+                )
+                
+                print(f"🔄 Attempting to improve user story (attempt {attempt + 1}/{self.max_quality_retries})")
+                
+                try:
+                    # Re-generate the story with improvement guidance
+                    improved_response = self._generate_improved_user_story(improvement_prompt, context)
+                    if improved_response:
+                        current_story = improved_response
+                    else:
+                        print("⚠️ Failed to generate improvement - using current version")
+                        break
+                        
+                except Exception as e:
+                    print(f"⚠️ Error during user story improvement: {e}")
+                    break
+                
+                attempt += 1
+        
+        print(f"\n✅ User story quality assessment complete: {len(approved_stories)} stories approved")
+        return approved_stories
+    
+    def _create_user_story_improvement_prompt(self, story: dict, assessment, feature: dict, 
+                                            product_vision: str, context: dict) -> str:
+        """Create a prompt to improve the user story based on quality assessment."""
+        title = story.get('title', '')
+        description = story.get('description', story.get('user_story', ''))
+        acceptance_criteria = story.get('acceptance_criteria', [])
+        feature_title = feature.get('title', '')
+        feature_description = feature.get('description', '')
+        
+        improvement_text = f"""USER STORY IMPROVEMENT REQUEST
+
+Current User Story:
+Title: {title}
+Description: {description}
+Acceptance Criteria: {acceptance_criteria}
+
+Parent Feature Context:
+Title: {feature_title}
+Description: {feature_description}
+
+Product Vision Context:
+{product_vision}
+
+Quality Issues Identified:
+{chr(10).join('• ' + issue for issue in assessment.specific_issues)}
+
+Improvement Suggestions:
+{chr(10).join('• ' + suggestion for suggestion in assessment.improvement_suggestions)}
+
+CRITICAL REQUIREMENTS:
+1. Do NOT create separate user stories for Given/When/Then components
+2. Include 3-5 complete acceptance criteria within ONE story
+3. Each acceptance criterion should be a complete test scenario
+4. Use proper "Given/When/Then" format within each criterion
+
+INSTRUCTIONS:
+Rewrite this user story to address the quality issues above. Focus on:
+1. Creating ONE complete user story with proper "As a [user], I want [goal] so that [benefit]" format
+2. Including 3-5 complete acceptance criteria (NOT separate stories)
+3. Each criterion should be testable and include Given/When/Then components
+4. Strong alignment with feature "{feature_title}"
+5. Domain-specific terminology and context
+6. Clear user value and benefit
+
+Return only a single improved user story in this JSON format:
+{{
+  "title": "As a [specific user role], I want [specific goal] so that [clear benefit]",
+  "user_story": "Same as title - the complete user story statement",
+  "description": "Detailed explanation of the functionality and implementation requirements",
+  "acceptance_criteria": [
+    "Given [context], When [action], Then [expected result]",
+    "Given [context], When [action], Then [expected result]", 
+    "Given [context], When [action], Then [expected result]"
+  ],
+  "story_points": 1|2|3|5|8|13,
+  "priority": "High|Medium|Low",
+  "category": "authentication|data_management|ui_ux|integration|security|performance|administration",
+  "user_type": "new_user|existing_user|admin|power_user|casual_user"
+}}"""
+        return improvement_text.strip()
+    
+    def _generate_improved_user_story(self, improvement_prompt: str, context: dict) -> dict:
+        """Generate an improved version of the user story."""
+        try:
+            # Use the existing run method to generate improvement
+            response = self.run(improvement_prompt, context or {})
+            
+            if not response:
+                return None
+            
+            # Extract and parse JSON
+            cleaned_response = JSONExtractor.extract_json_from_response(response)
+            improved_story = json.loads(cleaned_response)
+            
+            # Validate that we got a single story object
+            if isinstance(improved_story, dict):
+                return improved_story
+            elif isinstance(improved_story, list) and len(improved_story) > 0:
+                return improved_story[0]  # Take first story if array returned
+            else:
+                return None
+                
+        except Exception as e:
+            print(f"Error generating improved user story: {e}")
             return None

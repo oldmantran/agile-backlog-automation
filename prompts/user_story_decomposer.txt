@@ -15,11 +15,18 @@ CONTEXT:
 - Domain: ${domain}
 - Platform: ${platform}
 
+PRODUCT VISION:
+${product_vision}
+
+PARENT EPIC CONTEXT:
+${epic_context}
+
 REQUIRED FIELDS per story:
 - title: Use the complete user story format "As a [user], I want [goal] so that [benefit]" (max 150 chars)
 - user_story: Same as title - the complete user story statement
 - description: Detailed functionality explanation, implementation requirements, and business context (NOT the user story again)
 - acceptance_criteria: Array of exactly 3-5 testable conditions using "Given/When/Then" format (REQUIRED: minimum 3, maximum 5)
+  CRITICAL: These are acceptance criteria WITHIN ONE story, NOT separate user stories
 - story_points: Use Fibonacci (1,2,3,5,8,13): 1=simple change, 3=medium feature, 5=complex feature, 8=large feature
 - priority: "High", "Medium", or "Low"
 - category: "authentication", "data_management", "ui_ux", "integration", "security", "performance", or "administration"
@@ -46,4 +53,24 @@ DO NOT RETURN TEMPLATE PLACEHOLDERS. Generate actual, specific content based on 
 - Reference actual workflows, processes, and outcomes from the domain
 - Consider domain-specific regulations, standards, and best practices
 
-Note: The acceptance_criteria array MUST contain 3-5 items. No more, no less.
+## CRITICAL: Acceptance Criteria Format
+
+CORRECT Example:
+{
+  "title": "As a warehouse manager, I want to view asset health alerts so that I can schedule proactive maintenance",
+  "acceptance_criteria": [
+    "Given a dock asset has a detected anomaly, When I access the dashboard, Then I see the alert with asset details",
+    "Given multiple alerts exist, When I view the alert list, Then they are sorted by priority and timestamp", 
+    "Given an alert is acknowledged, When I mark it as reviewed, Then it moves to the reviewed section"
+  ]
+}
+
+WRONG - DO NOT DO THIS:
+Do NOT create separate stories like:
+- "Given a dock asset has a detected anomaly"
+- "When I access the dashboard" 
+- "Then I see the alert with asset details"
+
+These are acceptance criteria components, NOT individual user stories!
+
+Note: The acceptance_criteria array MUST contain 3-5 complete Given/When/Then statements. No more, no less.
