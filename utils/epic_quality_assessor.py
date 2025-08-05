@@ -101,11 +101,11 @@ class EpicQualityAssessor:
         suggestions = self._generate_improvement_suggestions(specific_issues, domain, product_vision)
         
         # Determine rating based on score
-        if score >= 90:
+        if score >= 80:
             rating = "EXCELLENT"
-        elif score >= 75:
+        elif score >= 65:
             rating = "GOOD"
-        elif score >= 50:
+        elif score >= 45:
             rating = "FAIR"
         else:
             rating = "POOR"

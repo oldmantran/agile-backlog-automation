@@ -75,7 +75,7 @@ Dependencies: {epic.get('dependencies', [])}
         # Try each model until one succeeds
         for model_name, timeout in models_to_try:
             try:
-                print(f"🔄 Trying {model_name} with {timeout}s timeout...")
+                print(f"Trying {model_name} with {timeout}s timeout...")
                 
                 # Temporarily switch to this model
                 original_model = self.model
@@ -87,7 +87,7 @@ Dependencies: {epic.get('dependencies', [])}
                         from utils.ollama_client import create_ollama_provider
                         self.ollama_provider = create_ollama_provider(preset='balanced')
                     except Exception as e:
-                        print(f"⚠️ Failed to switch to {model_name}: {e}")
+                        print(f"Failed to switch to {model_name}: {e}")
                         continue
                 
                 response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
@@ -95,28 +95,28 @@ Dependencies: {epic.get('dependencies', [])}
                 # Restore original model
                 self.model = original_model
                 
-                print(f"✅ Successfully generated features using {model_name}")
+                print(f"Successfully generated features using {model_name}")
                 break
                 
             except TimeoutError:
-                print(f"⏱️ {model_name} timed out after {timeout}s, trying next model...")
+                print(f"{model_name} timed out after {timeout}s, trying next model...")
                 # Restore original model before continuing
                 self.model = original_model
                 continue
             except Exception as e:
-                print(f"❌ {model_name} failed: {e}, trying next model...")
+                print(f"{model_name} failed: {e}, trying next model...")
                 # Restore original model before continuing
                 self.model = original_model
                 continue
         else:
             # All models failed
-            print("❌ All models failed for feature generation")
+            print("All models failed for feature generation")
             return []
 
         try:
             # Handle empty response
             if not response or not response.strip():
-                print("⚠️ Empty response from LLM")
+                print("Empty response from LLM")
                 return self._extract_features_from_any_format("", epic, feature_limit)
             
             # Check for markdown code blocks
@@ -125,25 +125,25 @@ Dependencies: {epic.get('dependencies', [])}
             
             # Safety check for empty or invalid JSON
             if not cleaned_response or cleaned_response.strip() == "[]":
-                print("⚠️ Empty or invalid JSON response")
+                print("Empty or invalid JSON response")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
             
             try:
                 features = json.loads(cleaned_response)
             except (json.JSONDecodeError, TypeError) as e:
-                print(f"⚠️ Failed to parse JSON response: {e}")
-                print(f"📄 Raw response length: {len(response)} chars")
-                print(f"🧹 Cleaned response length: {len(cleaned_response)} chars")
-                print(f"📄 Raw response preview (first 500 chars): {response[:500]}")
-                print(f"🧹 Cleaned response preview (first 500 chars): {cleaned_response[:500]}")
-                print(f"🧹 Cleaned response ending (last 100 chars): ...{cleaned_response[-100:]}")
+                print(f"Failed to parse JSON response: {e}")
+                print(f"Raw response length: {len(response)} chars")
+                print(f"Cleaned response length: {len(cleaned_response)} chars")
+                print(f"Raw response preview (first 500 chars): {response[:500]}")
+                print(f"Cleaned response preview (first 500 chars): {cleaned_response[:500]}")
+                print(f"Cleaned response ending (last 100 chars): ...{cleaned_response[-100:]}")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
             if isinstance(features, list) and len(features) > 0:
                 # Apply the feature limit constraint if specified
                 if feature_limit:
                     limited_features = features[:feature_limit]
                     if len(features) > feature_limit:
-                        print(f"🔧 [FeatureDecomposerAgent] Limited output from {len(features)} to {len(limited_features)} features (configuration limit)")
+                        print(f"[FeatureDecomposerAgent] Limited output from {len(features)} to {len(limited_features)} features (configuration limit)")
                     
                     # Assess quality of limited features with full context
                     quality_approved_features = self._assess_and_improve_feature_quality(
@@ -157,18 +157,18 @@ Dependencies: {epic.get('dependencies', [])}
                     )
                     return quality_approved_features
             else:
-                print("⚠️ LLM response was not a valid list")
+                print("LLM response was not a valid list")
                 return self._extract_features_from_any_format(response, epic, feature_limit)
                 
         except json.JSONDecodeError as e:
-            print(f"❌ Failed to parse JSON: {e}")
+            print(f"Failed to parse JSON: {e}")
             print(f"Raw response: {response}")
             return self._extract_features_from_any_format(response, epic, feature_limit)
 
     def _extract_features_from_any_format(self, response: str, epic: dict, max_features: int = None) -> list[dict]:
         """Extract features from LLM response in any format using intelligent parsing."""
         if not response or not response.strip():
-            print("❌ Empty response received")
+            print("Empty response received")
             return []
         
         # Try to extract features from text format
@@ -177,22 +177,22 @@ Dependencies: {epic.get('dependencies', [])}
         # Apply limit if specified
         if max_features and len(extracted_features) > max_features:
             extracted_features = extracted_features[:max_features]
-            print(f"ℹ️ Limited features to {max_features}")
+            print(f"Limited features to {max_features}")
         
         if extracted_features:
-            print(f"✅ Successfully extracted {len(extracted_features)} features from response")
+            print(f"Successfully extracted {len(extracted_features)} features from response")
             return self._validate_and_enhance_features(extracted_features)
         else:
-            print("❌ Failed to extract any features from response")
+            print("Failed to extract any features from response")
             return []
 
     def _extract_features_from_text(self, text: str, epic: dict) -> list[dict]:
         """Extract features from unstructured text using pattern matching."""
         if not text or not text.strip():
-            print("ℹ️ Empty text provided for feature extraction")
+            print("Empty text provided for feature extraction")
             return []
         
-        print("ℹ️ Attempting to extract features from non-JSON LLM response")
+        print("Attempting to extract features from non-JSON LLM response")
         extracted_features = []
         
         # Try to find feature-like content in the response
@@ -255,9 +255,9 @@ Dependencies: {epic.get('dependencies', [])}
                     extracted_features.append(feature)
         
         if extracted_features:
-            print(f"✅ Extracted {len(extracted_features)} features from text response")
+            print(f"Extracted {len(extracted_features)} features from text response")
         else:
-            print("ℹ️ No feature-like content found in LLM response")
+            print("No feature-like content found in LLM response")
         
         return extracted_features
 
@@ -288,7 +288,7 @@ Dependencies: {epic.get('dependencies', [])}
         if not title_valid:
             # Only show critical title issues
             if not title or len(title.strip()) < 5:
-                print(f"⚠️ Critical feature title issue: {', '.join(title_issues)}")
+                print(f"Critical feature title issue: {', '.join(title_issues)}")
             if not title:
                 enhanced_feature['title'] = f"Feature: {feature.get('description', 'Undefined')[:50]}..."
         
@@ -297,7 +297,7 @@ Dependencies: {epic.get('dependencies', [])}
         if not description or len(description.strip()) < 20:
             # Only show critical description issues
             if not description or len(description.strip()) < 10:
-                print(f"⚠️ Critical feature description issue: description too short")
+                print(f"Critical feature description issue: description too short")
             enhanced_feature['description'] = f"Feature providing: {title}. " + (description or "Details to be defined during user story creation.")
         
         # Ensure required fields exist
@@ -376,17 +376,17 @@ Dependencies: {epic.get('dependencies', [])}
                 return data["choices"][0]["message"]["content"].strip()
             
         except Exception as e:
-            print(f"⚠️ Template {template_to_use} failed: {e}")
-            print("🔄 Falling back to default prompt...")
+            print(f"Template {template_to_use} failed: {e}")
+            print("Falling back to default prompt...")
             # Use timeout protection for fallback call
             try:
                 timeout = 180 if self.model and "70b" in self.model.lower() else 60
                 return self._run_with_timeout(user_input, context, timeout=timeout)
             except TimeoutError:
-                print("⚠️ Fallback generation timed out")
+                print("Fallback generation timed out")
                 return ""
             except Exception as fallback_e:
-                print(f"❌ Fallback generation failed: {fallback_e}")
+                print(f"Fallback generation failed: {fallback_e}")
                 return ""
 
     def _extract_json_from_response(self, response: str) -> str:
@@ -607,7 +607,7 @@ Dependencies: {epic.get('dependencies', [])}
         domain = context.get('domain', 'general') if context else 'general'
         approved_features = []
         
-        print(f"\n🔍 Starting feature quality assessment for {len(features)} features...")
+        print(f"\nStarting feature quality assessment for {len(features)} features...")
         print(f"Epic Context: {epic.get('title', 'Unknown Epic')}")
         print(f"Domain: {domain}")
         
@@ -632,15 +632,15 @@ Dependencies: {epic.get('dependencies', [])}
                 print(log_output)
                 
                 if assessment.rating == "EXCELLENT":
-                    print(f"✅ Feature approved with EXCELLENT rating on attempt {attempt}")
+                    print(f"+ Feature approved with EXCELLENT rating on attempt {attempt}")
                     approved_features.append(current_feature)
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"❌ Feature failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"- Feature failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   Feature will be included but may need manual review")
-                    approved_features.append(current_feature)
+                    print("   Feature REJECTED - EXCELLENT rating required")
+                    # Do NOT add to approved_features - only EXCELLENT features allowed
                     break
                 
                 # Generate improvement prompt
@@ -648,7 +648,7 @@ Dependencies: {epic.get('dependencies', [])}
                     current_feature, assessment, epic, product_vision, context
                 )
                 
-                print(f"🔄 Attempting to improve feature (attempt {attempt + 1}/{self.max_quality_retries})")
+                print(f"Attempting to improve feature (attempt {attempt + 1}/{self.max_quality_retries})")
                 
                 try:
                     # Re-generate the feature with improvement guidance
@@ -656,16 +656,16 @@ Dependencies: {epic.get('dependencies', [])}
                     if improved_response:
                         current_feature = improved_response
                     else:
-                        print("⚠️ Failed to generate improvement - using current version")
+                        print("Failed to generate improvement - using current version")
                         break
                         
                 except Exception as e:
-                    print(f"⚠️ Error during feature improvement: {e}")
+                    print(f"Error during feature improvement: {e}")
                     break
                 
                 attempt += 1
         
-        print(f"\n✅ Feature quality assessment complete: {len(approved_features)} features approved")
+        print(f"\n+ Feature quality assessment complete: {len(approved_features)} features approved")
         return approved_features
     
     def _create_feature_improvement_prompt(self, feature: dict, assessment, epic: dict, product_vision: str, context: dict) -> str:

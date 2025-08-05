@@ -63,11 +63,11 @@ class UserStoryQualityAssessor:
         total_score = sum(scores.values()) // len(scores)
         
         # Determine rating
-        if total_score >= 90:
+        if total_score >= 80:
             rating = "EXCELLENT"
-        elif total_score >= 75:
+        elif total_score >= 65:
             rating = "GOOD" 
-        elif total_score >= 60:
+        elif total_score >= 45:
             rating = "FAIR"
         else:
             rating = "POOR"

@@ -913,10 +913,10 @@ Edge Cases: {feature.get('edge_cases', [])}
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"❌ User story failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"- User story failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   Story will be included but may need manual review")
-                    approved_stories.append(current_story)
+                    print("   Story REJECTED - EXCELLENT rating required")
+                    # Do NOT add to approved_stories - only EXCELLENT stories allowed
                     break
                 
                 # Generate improvement prompt
