@@ -60,12 +60,25 @@ class OutboxUploader:
         }
         
         try:
-            # Upload in hierarchy order to maintain parent-child relationships
-            hierarchy_levels = [0, 1, 2, 3]  # Epic, Feature, UserStory, Task/TestCase
+            # Upload in dependency order to maintain parent-child relationships
+            # Special handling for test artifacts which have cross-level dependencies
+            upload_phases = [
+                {'level': 0, 'description': 'Epics'},
+                {'level': 1, 'types': ['Feature'], 'description': 'Features'}, 
+                {'level': 1, 'types': ['Test Plan'], 'description': 'Test Plans'},
+                {'level': 2, 'description': 'User Stories'},
+                {'level': 3, 'types': ['Task'], 'description': 'Tasks'},
+                {'level': 3, 'types': ['Test Suite'], 'description': 'Test Suites'}, 
+                {'level': 3, 'types': ['Test Case'], 'description': 'Test Cases'}
+            ]
             
-            for level in hierarchy_levels:
-                self.logger.info(f"Processing hierarchy level {level}")
-                level_results = self._upload_hierarchy_level(job_id, level, resume)
+            for phase in upload_phases:
+                level = phase['level']
+                types_filter = phase.get('types')
+                description = phase['description']
+                
+                self.logger.info(f"Processing {description} (level {level})")
+                level_results = self._upload_hierarchy_level(job_id, level, resume, types_filter)
                 
                 results['uploaded'] += level_results['uploaded']
                 results['failed'] += level_results['failed']
@@ -101,8 +114,9 @@ class OutboxUploader:
         
         return results
     
-    def _upload_hierarchy_level(self, job_id: str, hierarchy_level: int, resume: bool) -> Dict[str, Any]:
-        """Upload all work items at a specific hierarchy level."""
+    def _upload_hierarchy_level(self, job_id: str, hierarchy_level: int, resume: bool, 
+                               types_filter: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Upload all work items at a specific hierarchy level, optionally filtered by type."""
         results = {'uploaded': 0, 'failed': 0, 'skipped': 0, 'errors': []}
         
         # Get items at this hierarchy level that need uploading
@@ -117,6 +131,10 @@ class OutboxUploader:
         
         # Filter by hierarchy level
         level_items = [item for item in items if item['hierarchy_level'] == hierarchy_level]
+        
+        # Further filter by work item types if specified
+        if types_filter:
+            level_items = [item for item in level_items if item['work_item_type'] in types_filter]
         
         if not level_items:
             self.logger.debug(f"No items to upload at hierarchy level {hierarchy_level}")
@@ -242,18 +260,21 @@ class OutboxUploader:
             result = self.ado_integrator._create_test_plan(generated_data['feature_data'], parent_ado_id)
             
         elif work_item_type == WorkItemType.TEST_SUITE.value:
-            # Test suite creation is more complex - handle based on data structure
+            # Test suite requires parent test plan ID (Azure DevOps ID, not local staging ID)
+            if not parent_ado_id:
+                raise ValueError("Test suite requires parent test plan Azure DevOps ID")
+            
             if 'user_story_data' in generated_data:
                 result = self.ado_integrator._create_test_suite(
                     generated_data['user_story_data'], 
-                    generated_data['test_plan_id'], 
-                    parent_ado_id
+                    parent_ado_id,  # Use Azure DevOps test plan ID
+                    None  # Test suite doesn't need a separate parent
                 )
             else:
                 result = self.ado_integrator._create_default_test_suite(
                     generated_data['feature_data'],
-                    generated_data['test_plan_id'],
-                    parent_ado_id
+                    parent_ado_id,  # Use Azure DevOps test plan ID
+                    None  # Test suite doesn't need a separate parent
                 )
             
         elif work_item_type == WorkItemType.TEST_CASE.value:
