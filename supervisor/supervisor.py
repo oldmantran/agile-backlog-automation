@@ -31,6 +31,7 @@ from agents.backlog_sweeper_agent import BacklogSweeperAgent
 from utils.project_context import ProjectContext
 from utils.logger import setup_logger
 from utils.notifier import Notifier
+from utils.ollama_model_manager import ollama_manager
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 
@@ -320,6 +321,10 @@ class WorkflowSupervisor:
             'errors': [],
             'outputs_generated': []
         }
+        
+        # Get LLM configuration for model management
+        self.llm_provider = self.config.env.get('LLM_PROVIDER', 'openai').lower()
+        self.ollama_model = self.config.env.get('OLLAMA_MODEL', 'qwen2.5:32b')
         self.sweeper_agent = None  # Will be initialized as needed
         self.sweeper_retry_tracker = {}  # {stage: {item_id: retry_count}}
         
@@ -361,6 +366,45 @@ class WorkflowSupervisor:
                 self.logger.info(f"Refreshed config for {agent_name}: {agent.llm_provider} ({agent.model})")
             except Exception as e:
                 self.logger.warning(f"Failed to refresh config for {agent_name}: {e}")
+    
+    def _ensure_model_loaded(self, stage_name: str) -> bool:
+        """
+        Ensure the correct LLM model is loaded before agent execution.
+        
+        This prevents agents from using incorrect models (e.g., codellama:34b when
+        qwen2.5:32b is selected) and ensures VRAM usage stays within limits.
+        
+        Args:
+            stage_name: Name of the stage about to be executed
+            
+        Returns:
+            True if model is ready, False if failed
+        """
+        try:
+            if self.llm_provider == 'ollama':
+                self.logger.info(f"🔄 [{stage_name}] Ensuring Ollama model {self.ollama_model} is loaded...")
+                
+                success = ollama_manager.ensure_model_loaded(
+                    model_name=self.ollama_model,
+                    provider=self.llm_provider
+                )
+                
+                if success:
+                    self.logger.info(f"✅ [{stage_name}] Model {self.ollama_model} is ready")
+                else:
+                    self.logger.error(f"❌ [{stage_name}] Failed to load model {self.ollama_model}")
+                    # Don't fail the entire workflow, but log the issue
+                    self.execution_metadata['errors'].append(f"Failed to load model {self.ollama_model} for {stage_name}")
+                    return False
+            else:
+                self.logger.debug(f"[{stage_name}] Using {self.llm_provider} provider - no model preloading needed")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ [{stage_name}] Error ensuring model is loaded: {e}")
+            self.execution_metadata['errors'].append(f"Model loading error for {stage_name}: {str(e)}")
+            return False
     
     def _get_parallel_config(self) -> Dict[str, Any]:
         """Get parallel processing configuration from settings."""
@@ -857,6 +901,10 @@ class WorkflowSupervisor:
         """Execute epic generation stage."""
         self.logger.info("Generating epics from product vision")
         
+        # Ensure correct model is loaded before agent execution
+        if not self._ensure_model_loaded("Epic Generation"):
+            self.logger.warning("Model loading failed but continuing with epic generation")
+        
         try:
             agent = self.agents['epic_strategist']
             context = self.project_context.get_context('epic_strategist')
@@ -959,6 +1007,11 @@ class WorkflowSupervisor:
     def _execute_feature_decomposition(self):
         """Execute feature decomposition stage (parallelized if enabled)."""
         self.logger.info("Decomposing epics into features (parallel mode: %s)", self.parallel_config['stages']['feature_decomposer_agent'])
+        
+        # Ensure correct model is loaded before agent execution
+        if not self._ensure_model_loaded("Feature Decomposition"):
+            self.logger.warning("Model loading failed but continuing with feature decomposition")
+        
         agent = self.agents['feature_decomposer_agent']
         context = self.project_context.get_context('feature_decomposer_agent')
         
@@ -1000,6 +1053,11 @@ class WorkflowSupervisor:
     def _execute_user_story_decomposition(self):
         """Execute user story decomposition stage (parallelized if enabled)."""
         self.logger.info("Decomposing features into user stories (parallel mode: %s)", self.parallel_config['stages']['user_story_decomposer_agent'])
+        
+        # Ensure correct model is loaded before agent execution
+        if not self._ensure_model_loaded("User Story Decomposition"):
+            self.logger.warning("Model loading failed but continuing with user story decomposition")
+        
         agent = self.agents['user_story_decomposer_agent']
         context = self.project_context.get_context('user_story_decomposer_agent')
         
@@ -1061,6 +1119,11 @@ class WorkflowSupervisor:
     def _execute_task_generation(self, update_progress_callback=None, stage_index=4):
         """Execute developer task generation stage (parallelized if enabled)."""
         self.logger.info("Generating developer tasks (parallel mode: %s)", self.parallel_config['stages']['developer_agent'])
+        
+        # Ensure correct model is loaded before agent execution
+        if not self._ensure_model_loaded("Task Generation"):
+            self.logger.warning("Model loading failed but continuing with task generation")
+        
         agent = self.agents['developer_agent']
         context = self.project_context.get_context('developer_agent')
         user_stories = [(epic, feature, user_story) for epic in self.workflow_data['epics'] for feature in epic.get('features', []) for user_story in feature.get('user_stories', [])]
@@ -1098,6 +1161,11 @@ class WorkflowSupervisor:
     def _execute_qa_generation(self, update_progress_callback=None, stage_index=5):
         """Execute QA generation using hierarchical QA Lead Agent with granular progress tracking (parallelized if enabled)."""
         self.logger.info("Generating QA artifacts using QA Lead Agent (parallel mode: %s)", self.parallel_config['stages']['qa_lead_agent'])
+        
+        # Ensure correct model is loaded before agent execution - CRITICAL for QA agents
+        if not self._ensure_model_loaded("QA Generation"):
+            self.logger.warning("Model loading failed but continuing with QA generation")
+        
         agent = self.agents['qa_lead_agent']
         context = self.project_context.get_context('qa_lead_agent')
         if hasattr(self, 'azure_integrator') and self.azure_integrator:
