@@ -60,6 +60,7 @@ class Notifier:
                 execution_time_seconds=stats.get('execution_time_seconds'),
                 raw_summary={
                     'project_name': workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project'),
+                    'job_id': workflow_data.get('metadata', {}).get('job_id', ''),
                     'epics_generated': stats.get('epics_generated', 0),
                     'features_generated': stats.get('features_generated', 0),
                     'user_stories_generated': stats.get('user_stories_generated', 0),
@@ -67,6 +68,7 @@ class Notifier:
                     'test_cases_generated': stats.get('test_cases_generated', 0),
                     'execution_time_seconds': stats.get('execution_time_seconds'),
                     'ado_summary': workflow_data.get('azure_integration', {}),
+                    'azure_config': workflow_data.get('azure_config', {}),
                     'staging_summary': staging_summary,
                     'created_at': stats.get('created_at')
                 }

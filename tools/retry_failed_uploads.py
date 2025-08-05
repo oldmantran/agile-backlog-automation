@@ -56,15 +56,42 @@ def retry_failed_uploads(job_id: str, work_item_type: str = None):
     
     # Initialize components
     try:
-        # Load Azure DevOps configuration from environment
-        organization_url = os.getenv('AZURE_DEVOPS_ORG', 'https://dev.azure.com/c4workx')
-        project = os.getenv('AZURE_DEVOPS_PROJECT', 'Backlog Automation')
-        pat = os.getenv('AZURE_DEVOPS_PAT')
-        area_path = os.getenv('AREA_PATH', 'Backlog Automation')
-        iteration_path = os.getenv('ITERATION_PATH', f'{project}\\Sprint 1')
+        # Get Azure DevOps configuration from the original job's raw_summary
+        azure_config = None
+        try:
+            from db import db
+            
+            # Extract the base job ID from the staging job ID
+            # job_20250804_162036_proj_20250804_162036 -> look for a backlog job from around that time
+            import re
+            match = re.search(r'(\d{8}_\d{6})', job_id)
+            if match:
+                timestamp_part = match.group(1)
+                # Look for backlog jobs from that timeframe
+                all_jobs = db.get_backlog_jobs(limit=50)  # Get more jobs to search
+                for job in all_jobs:
+                    if job.get('raw_summary') and isinstance(job['raw_summary'], dict):
+                        stored_job_id = job['raw_summary'].get('job_id', '')
+                        if timestamp_part in stored_job_id:
+                            azure_config = job['raw_summary'].get('azure_config', {})
+                            print(f"Found Azure config from backlog job {job['id']}")
+                            break
+        except Exception as e:
+            print(f"Warning: Could not retrieve Azure config from database: {e}")
+        
+        # Fallback to environment variables if no stored config found
+        if not azure_config:
+            print("Using fallback Azure DevOps configuration from environment variables")
+            azure_config = {}
+        
+        organization_url = azure_config.get('organizationUrl') or os.getenv('AZURE_DEVOPS_ORG', 'https://dev.azure.com/c4workx')
+        project = azure_config.get('project') or os.getenv('AZURE_DEVOPS_PROJECT', 'Backlog Automation')
+        pat = azure_config.get('personalAccessToken') or os.getenv('AZURE_DEVOPS_PAT')
+        area_path = azure_config.get('areaPath') or os.getenv('AREA_PATH', 'Backlog Automation')
+        iteration_path = azure_config.get('iterationPath') or os.getenv('ITERATION_PATH', f'{project}\\Sprint 1')
         
         if not pat:
-            print("ERROR: AZURE_DEVOPS_PAT environment variable not set")
+            print("ERROR: No Azure DevOps PAT found in stored config or environment variables")
             return False
         
         print(f"Azure DevOps Configuration:")
@@ -72,6 +99,7 @@ def retry_failed_uploads(job_id: str, work_item_type: str = None):
         print(f"  Project: {project}")
         print(f"  Area Path: {area_path}")
         print(f"  Iteration Path: {iteration_path}")
+        print(f"  Config source: {'Stored job data' if azure_config else 'Environment variables'}")
         
         # Initialize Azure DevOps integrator
         ado_integrator = AzureDevOpsIntegrator(
