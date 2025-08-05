@@ -79,19 +79,36 @@ def retry_failed_uploads(job_id: str, work_item_type: str = None):
         except Exception as e:
             print(f"Warning: Could not retrieve Azure config from database: {e}")
         
-        # Fallback to environment variables if no stored config found
+        # No fallback - require stored configuration
         if not azure_config:
-            print("Using fallback Azure DevOps configuration from environment variables")
-            azure_config = {}
+            print("ERROR: No stored Azure DevOps configuration found for this job")
+            print("Cannot proceed with retry - the original job configuration is required")
+            print("This usually means the job was created before configuration persistence was implemented")
+            return False
         
-        organization_url = azure_config.get('organizationUrl') or os.getenv('AZURE_DEVOPS_ORG', 'https://dev.azure.com/c4workx')
-        project = azure_config.get('project') or os.getenv('AZURE_DEVOPS_PROJECT', 'Backlog Automation')
-        pat = azure_config.get('personalAccessToken') or os.getenv('AZURE_DEVOPS_PAT')
-        area_path = azure_config.get('areaPath') or os.getenv('AREA_PATH', 'Backlog Automation')
-        iteration_path = azure_config.get('iterationPath') or os.getenv('ITERATION_PATH', f'{project}\\Sprint 1')
+        # Extract required configuration values
+        organization_url = azure_config.get('organizationUrl')
+        project = azure_config.get('project')
+        pat = azure_config.get('personalAccessToken')
+        area_path = azure_config.get('areaPath')
+        iteration_path = azure_config.get('iterationPath')
         
+        # Validate all required configuration is present
+        missing_config = []
+        if not organization_url:
+            missing_config.append('organizationUrl')
+        if not project:
+            missing_config.append('project')
         if not pat:
-            print("ERROR: No Azure DevOps PAT found in stored config or environment variables")
+            missing_config.append('personalAccessToken')
+        if not area_path:
+            missing_config.append('areaPath')
+        if not iteration_path:
+            missing_config.append('iterationPath')
+        
+        if missing_config:
+            print(f"ERROR: Missing required Azure DevOps configuration: {', '.join(missing_config)}")
+            print("Cannot proceed with retry - incomplete stored configuration")
             return False
         
         print(f"Azure DevOps Configuration:")
@@ -99,7 +116,7 @@ def retry_failed_uploads(job_id: str, work_item_type: str = None):
         print(f"  Project: {project}")
         print(f"  Area Path: {area_path}")
         print(f"  Iteration Path: {iteration_path}")
-        print(f"  Config source: {'Stored job data' if azure_config else 'Environment variables'}")
+        print(f"  Config source: Stored job data")
         
         # Initialize Azure DevOps integrator
         ado_integrator = AzureDevOpsIntegrator(

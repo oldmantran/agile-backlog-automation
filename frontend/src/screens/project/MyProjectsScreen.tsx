@@ -52,6 +52,16 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
     }
   };
 
+  // Parse Azure DevOps configuration from raw_summary
+  const getAzureConfig = () => {
+    try {
+      const rawSummary = job.raw_summary as any;
+      return rawSummary?.azure_config || {};
+    } catch {
+      return {};
+    }
+  };
+
   const getUploadMetrics = () => {
     const stagingSummary = getStagingSummary();
     const byStatus = stagingSummary.by_status || {};
@@ -87,6 +97,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const metrics = getUploadMetrics();
   const { date, time } = formatDate(job.created_at);
   const jobId = (job.raw_summary as any)?.job_id || 'N/A';
+  const azureConfig = getAzureConfig();
 
   return (
     <Card className={`tron-card bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all ${
@@ -107,6 +118,18 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
             <p className="text-xs text-muted-foreground font-mono mt-1">
               Job ID: {jobId.length > 20 ? `${jobId.substring(0, 20)}...` : jobId}
             </p>
+            {azureConfig.project && (
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-blue-400">ADO Project:</span> {azureConfig.project}
+                </p>
+                {azureConfig.areaPath && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-blue-400">Area Path:</span> {azureConfig.areaPath}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <Badge 
             variant={job.status === 'completed' ? 'default' : job.status === 'failed' ? 'destructive' : 'secondary'}
