@@ -70,7 +70,7 @@ For domain "${domain}":
 - Epic titles and descriptions MUST use industry-specific terminology from the PRODUCT VISION
 - Extract and use the EXACT business processes, assets, and workflows mentioned in the vision
 - Reference the SPECIFIC stakeholders and user roles mentioned in the vision
-- Use the EXACT terminology from the product vision (e.g., "loading dock assets", "warehouse surveillance")
+- Use the EXACT terminology from the product vision above
 - Avoid generic terms like "system", "platform", "application" unless domain-specific
 - Focus on the SPECIFIC outcomes described in the vision, not generic software features
 
