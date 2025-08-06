@@ -160,12 +160,14 @@ class Agent:
             self.llm_provider = provider_config['provider']
             
             if self.llm_provider == "openai":
-                self.model = provider_config.get('model', 'gpt-4')
+                # Use model from database if available, otherwise from environment
+                self.model = provider_config.get('model') or self.config.get_env("OPENAI_MODEL") or 'gpt-4'
                 # Always get OpenAI API key from environment for security
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
             elif self.llm_provider == "grok":
-                self.model = provider_config.get('model', 'grok-4-latest')
+                # Use model from database if available, otherwise from environment
+                self.model = provider_config.get('model') or self.config.get_env("GROK_MODEL") or 'grok-4-latest'
                 # Always get Grok API key from environment for security
                 self.api_key = self.config.get_env("GROK_API_KEY")
                 self.api_url = "https://api.x.ai/v1/chat/completions"
