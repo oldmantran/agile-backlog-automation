@@ -148,9 +148,16 @@ class EpicStrategist(Agent):
                 if attempt == self.max_quality_retries:
                     print(f"❌ Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   Epic will be included but may need manual review")
-                    approved_epics.append(current_epic)
-                    break
+                    print("   STOPPING WORKFLOW - Subpar work items are not acceptable")
+                    
+                    # Raise exception to stop the entire workflow
+                    raise ValueError(
+                        f"Epic quality assessment failed: '{current_epic.get('title', 'Unknown Epic')}' "
+                        f"achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT. "
+                        f"This indicates either insufficient input quality or inadequate LLM training "
+                        f"for the {context.get('domain', 'unknown')} domain. "
+                        f"Please review the product vision or consider using a more capable model."
+                    )
                 
                 # Generate improvement prompt
                 improvement_prompt = self._create_improvement_prompt(
@@ -175,6 +182,17 @@ class EpicStrategist(Agent):
                 attempt += 1
         
         print(f"\n✅ Quality assessment complete: {len(approved_epics)} epics approved")
+        
+        # CRITICAL: If no epics reach EXCELLENT rating, stop the workflow
+        if len(approved_epics) == 0:
+            domain = context.get('domain', 'unknown') if context else 'unknown'
+            raise ValueError(
+                f"WORKFLOW STOPPED: No epics achieved EXCELLENT quality rating. "
+                f"This indicates either insufficient input quality or inadequate LLM training "
+                f"for the {domain} domain. "
+                f"Please review the product vision or consider using a more capable model."
+            )
+        
         return approved_epics
     
     def _create_improvement_prompt(self, epic: dict, assessment, product_vision: str, context: dict) -> str:
