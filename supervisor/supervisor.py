@@ -887,8 +887,25 @@ class WorkflowSupervisor:
                     except Exception as e:
                         self.logger.error(f"{stage} failed with exception: {e}")
                         self.execution_metadata['errors'].append(f"{stage} failed: {e}")
-                        # Don't send immediate error notification - collect as warning
-                        completed = True  # Move to next stage even on error
+                        
+                        # Check if this is a critical failure that should stop the workflow
+                        error_msg = str(e).lower()
+                        is_critical_failure = (
+                            "quality assessment failed" in error_msg or
+                            "epic generation failed completely" in error_msg or
+                            "no epics achieved excellent" in error_msg or
+                            isinstance(e, (RuntimeError, ValueError)) and stage in ['epic_strategist']
+                        )
+                        
+                        if is_critical_failure:
+                            self.logger.error(f"CRITICAL FAILURE in {stage} - STOPPING WORKFLOW")
+                            self.execution_metadata['status'] = 'failed'
+                            self.execution_metadata['critical_error'] = str(e)
+                            self.execution_metadata['failed_stage'] = stage
+                            raise e  # Re-raise to stop the workflow completely
+                        else:
+                            # Non-critical errors: collect as warning and continue
+                            completed = True
             
             # Final processing
             try:

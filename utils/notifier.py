@@ -40,6 +40,40 @@ class Notifier:
         print(f"📊 Statistics received: {stats}")
         print(f"📋 Workflow data keys: {list(workflow_data.keys())}")
 
+        # CRITICAL: Check if this is actually a failure disguised as completion
+        total_work_items = (stats.get('epics_generated', 0) + stats.get('features_generated', 0) + 
+                           stats.get('user_stories_generated', 0) + stats.get('tasks_generated', 0))
+        
+        execution_metadata = workflow_data.get('metadata', {}).get('execution_metadata', {})
+        errors = execution_metadata.get('errors', [])
+        critical_error = execution_metadata.get('critical_error')
+        failed_stage = execution_metadata.get('failed_stage')
+        
+        # Detect quality assessment failures or zero work items
+        has_quality_failure = any('quality assessment failed' in str(error).lower() for error in errors)
+        has_critical_failure = critical_error is not None
+        
+        if total_work_items == 0 or has_quality_failure or has_critical_failure:
+            print("🚨 DETECTED WORKFLOW FAILURE - Sending error notification instead of completion")
+            # This is actually a failure, not a completion
+            failure_reason = (
+                critical_error or 
+                "Quality assessment failed - no EXCELLENT work items generated" if has_quality_failure else
+                "Workflow completed but generated zero work items"
+            )
+            
+            self.send_error_notification(
+                Exception(failure_reason),
+                {
+                    'stages_completed': workflow_data.get('metadata', {}).get('stages_completed', []),
+                    'start_time': workflow_data.get('metadata', {}).get('execution_metadata', {}).get('start_time'),
+                    'failed_stage': failed_stage,
+                    'total_errors': len(errors),
+                    'domain': workflow_data.get('metadata', {}).get('project_context', {}).get('domain', 'unknown')
+                }
+            )
+            return
+
         # Get staging summary for upload results
         staging_summary = self._get_staging_summary(workflow_data)
 
@@ -180,16 +214,46 @@ class Notifier:
             return
         
         stages_completed = metadata.get('stages_completed', [])
+        failed_stage = metadata.get('failed_stage', 'Unknown')
+        domain = metadata.get('domain', 'unknown')
+        error_str = str(error)
         
-        message = f"""
+        # Check if this is a quality assessment failure
+        is_quality_failure = 'quality assessment failed' in error_str.lower()
+        is_domain_issue = 'inadequate llm training' in error_str.lower()
+        
+        if is_quality_failure:
+            message = f"""
+❌ **Agile Backlog Automation - Quality Assessment Failed**
+
+**Issue:** Work items failed to meet EXCELLENT quality standards
+**Domain:** {domain}
+**Failed Stage:** {failed_stage}
+**Stages Completed:** {', '.join(stages_completed) if stages_completed else 'None'}
+
+**Root Cause Analysis:**
+{error_str}
+
+**Recommended Actions:**
+1. **Review Product Vision**: Ensure the vision statement is comprehensive and domain-specific
+2. **Check LLM Model**: Consider using a more capable model (e.g., upgrade from 8B to 32B+ parameters)
+3. **Domain Expertise**: Verify the model has adequate training for the {domain} domain
+4. **Input Quality**: Provide more detailed requirements and context
+
+**What This Means:**
+The AI agents could not generate work items that meet professional quality standards. Rather than creating subpar content that would require manual cleanup, the system stopped the workflow to maintain quality standards.
+            """.strip()
+        else:
+            message = f"""
 ❌ **Agile Backlog Automation Failed**
 
-**Error:** {str(error)}
+**Error:** {error_str}
+**Failed Stage:** {failed_stage}
 **Stages Completed:** {', '.join(stages_completed) if stages_completed else 'None'}
 **Time:** {metadata.get('start_time', 'Unknown')}
 
 Please check the logs for more details.
-        """.strip()
+            """.strip()
         
         if 'teams' in self.channels:
             self.send_teams(message)
