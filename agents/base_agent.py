@@ -161,11 +161,13 @@ class Agent:
             
             if self.llm_provider == "openai":
                 self.model = provider_config.get('model', 'gpt-4')
-                self.api_key = provider_config.get('api_key', '')
+                # Always get OpenAI API key from environment for security
+                self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
             elif self.llm_provider == "grok":
                 self.model = provider_config.get('model', 'grok-4-latest')
-                self.api_key = provider_config.get('api_key', '')
+                # Always get Grok API key from environment for security
+                self.api_key = self.config.get_env("GROK_API_KEY")
                 self.api_url = "https://api.x.ai/v1/chat/completions"
             elif self.llm_provider == "ollama":
                 self.model = provider_config.get('model', 'llama3.1:8b')
