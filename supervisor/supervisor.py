@@ -1045,15 +1045,10 @@ class WorkflowSupervisor:
                 
         except Exception as e:
             self.logger.error(f"Epic generation failed: {e}")
-            # Create a fallback epic to prevent workflow failure
-            fallback_epic = {
-                "title": "Core System Implementation",
-                "description": "Implement the core system functionality based on the product vision",
-                "priority": "High",
-                "business_value": "Critical for system operation"
-            }
-            self.workflow_data['epics'] = [fallback_epic]
-            self.logger.warning("Using fallback epic due to exception")
+            # CRITICAL: Do NOT create fallback epics - fail cleanly instead
+            self.workflow_data['epics'] = []
+            self.execution_metadata['errors'].append(f"Epic generation failed: {str(e)}")
+            raise RuntimeError(f"Epic generation failed completely: {e}")
     
     def _execute_feature_decomposition(self):
         """Execute feature decomposition stage (parallelized if enabled)."""

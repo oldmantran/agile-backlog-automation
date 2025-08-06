@@ -400,7 +400,10 @@ Edge Cases: {feature.get('edge_cases', [])}
         for story in user_stories:
             # Validate and fix user story structure
             enhanced_story = self._enhance_single_user_story(story)
-            enhanced_stories.append(enhanced_story)
+            if enhanced_story is not None:  # Skip stories that couldn't be enhanced
+                enhanced_stories.append(enhanced_story)
+            else:
+                print(f"WARNING: Skipping invalid user story that couldn't be enhanced")
         
         return enhanced_stories
 
@@ -446,7 +449,9 @@ Edge Cases: {feature.get('edge_cases', [])}
                 if description and len(description.strip()) > 10:
                     enhanced_story['title'] = f"User Story: {description[:50]}..."
                 else:
-                    enhanced_story['title'] = "User Story: [Title Missing]"
+                    # CRITICAL: Do NOT create generic titles - skip invalid stories
+                    print(f"ERROR: User story has no valid title or description - skipping")
+                    return None  # Signal to skip this story entirely
         
         # Validate and fix description
         description = story.get('description', '') or story.get('user_story', '')
@@ -455,17 +460,10 @@ Edge Cases: {feature.get('edge_cases', [])}
             # Only show critical description issues
             if not description or len(description.strip()) < 20:
                 print(f"WARNING: Critical story description issue: {', '.join(desc_issues)}")
-            # Try to fix the description
+            # CRITICAL: Do NOT create generic descriptions
             if not description or len(description.strip()) < 20:
-                if 'As a' not in description and 'As an' not in description:
-                    user_type = story.get('user_type', 'user')
-                    title_text = enhanced_story.get('title', '').replace('User Story:', '').strip()
-                    if title_text and title_text != '[Title Missing]':
-                        enhanced_story['description'] = f"As a {user_type}, I want {title_text} so that I can achieve my objectives"
-                    else:
-                        enhanced_story['description'] = f"As a {user_type}, I want to complete this functionality so that I can achieve my objectives"
-                else:
-                    enhanced_story['description'] = description
+                print(f"ERROR: User story has no valid description - skipping")
+                return None  # Skip stories without proper descriptions
             else:
                 enhanced_story['description'] = description
         else:
@@ -478,11 +476,12 @@ Edge Cases: {feature.get('edge_cases', [])}
             # Only show critical criteria issues
             if not criteria or len(criteria) < 2:
                 print(f"WARNING: Critical acceptance criteria issue: {', '.join(criteria_issues)}")
-            enhanced_criteria = self.quality_validator.enhance_acceptance_criteria(
-                criteria, 
-                {'title': enhanced_story['title'], 'description': enhanced_story['description']}
-            )
-            enhanced_story['acceptance_criteria'] = enhanced_criteria
+            # CRITICAL: Do NOT generate generic acceptance criteria
+            # If the LLM didn't provide good criteria, fail cleanly
+            if not criteria or len(criteria) < 1:
+                print(f"ERROR: User story has no valid acceptance criteria - skipping")
+                return None  # Skip stories without proper acceptance criteria
+            enhanced_story['acceptance_criteria'] = criteria  # Use original criteria, don't enhance
         else:
             enhanced_story['acceptance_criteria'] = criteria
         
