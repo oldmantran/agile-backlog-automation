@@ -53,14 +53,13 @@ class EpicStrategist(Agent):
         # Debug: Check what the actual prompt looks like after template substitution
         try:
             actual_prompt = self.get_prompt(prompt_context)
-            print(f"DEBUG: Actual system prompt after template substitution:")
-            print(f"=====================================")
-            print(actual_prompt)
-            print(f"=====================================")
+            print(f"DEBUG: Successfully generated prompt for epic_strategist")
             print(f"DEBUG: User input: {user_input}")
-            print(f"=====================================")
         except Exception as e:
             print(f"DEBUG: Error getting prompt: {e}")
+            print(f"DEBUG: prompt_context keys: {list(prompt_context.keys())}")
+            print(f"DEBUG: max_epics value: {prompt_context.get('max_epics', 'NOT_FOUND')}")
+            raise
         
         # Add timeout protection
         try:
@@ -221,8 +220,20 @@ Return only a single improved epic in this JSON format:
     def _generate_improved_epic(self, improvement_prompt: str, context: dict) -> dict:
         """Generate an improved version of the epic."""
         try:
+            # Build proper context for template (similar to generate_epics)
+            prompt_context = {
+                'product_vision': context.get('product_vision', '') if context else '',
+                'domain': context.get('domain', 'dynamic') if context else 'dynamic',
+                'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+                'target_users': context.get('target_users', 'end users') if context else 'end users',
+                'timeline': context.get('timeline', 'not specified') if context else 'not specified',
+                'budget_constraints': context.get('budget_constraints', 'standard budget') if context else 'standard budget',
+                'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
+                'max_epics': 1  # For improvement, we're generating just one epic
+            }
+            
             # Use the existing run method to generate improvement
-            response = self.run(improvement_prompt, context or {})
+            response = self.run(improvement_prompt, prompt_context)
             
             if not response:
                 return None
@@ -243,14 +254,14 @@ Return only a single improved epic in this JSON format:
             print(f"Error generating improved epic: {e}")
             return None
 
-    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
+    def _run_with_timeout(self, user_input: str, prompt_context: dict, timeout: int = 60):
         """Run the agent with a timeout to prevent hanging."""
         result = [None]
         exception = [None]
         
         def target():
             try:
-                result[0] = self.run(user_input, context)
+                result[0] = self.run(user_input, prompt_context)
             except Exception as e:
                 exception[0] = e
         

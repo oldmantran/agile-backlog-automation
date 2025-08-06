@@ -1083,6 +1083,29 @@ class WorkflowSupervisor:
         
         epics = self.workflow_data['epics']
         
+        # Debug logging to diagnose type issues
+        self.logger.info(f"DEBUG: Type of epics: {type(epics)}")
+        self.logger.info(f"DEBUG: Number of epics: {len(epics) if epics else 0}")
+        if epics and len(epics) > 0:
+            self.logger.info(f"DEBUG: Type of first epic: {type(epics[0])}")
+            if isinstance(epics[0], dict):
+                self.logger.info(f"DEBUG: First epic title: {epics[0].get('title', 'No title')}")
+            else:
+                self.logger.info(f"DEBUG: First epic value: {epics[0]}")
+        
+        # Validate epics are dictionaries
+        valid_epics = []
+        for i, epic in enumerate(epics):
+            if isinstance(epic, dict):
+                valid_epics.append(epic)
+            else:
+                self.logger.error(f"DEBUG: Epic at index {i} is not a dictionary, it's a {type(epic)}: {epic}")
+        
+        if len(valid_epics) != len(epics):
+            self.logger.warning(f"DEBUG: Found {len(epics) - len(valid_epics)} invalid epics out of {len(epics)} total")
+            epics = valid_epics
+            self.workflow_data['epics'] = valid_epics
+        
         if self.parallel_config['enabled'] and self.parallel_config['stages']['feature_decomposer_agent'] and len(epics) > 1:
             def process_epic(epic):
                 self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
@@ -1097,9 +1120,13 @@ class WorkflowSupervisor:
                     epics[epic_index]['features'] = features
         else:
             for epic in epics:
-                self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
-                features = agent.decompose_epic(epic, context, max_features=max_features)
-                epic['features'] = features
+                if isinstance(epic, dict):
+                    self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
+                    features = agent.decompose_epic(epic, context, max_features=max_features)
+                    epic['features'] = features
+                else:
+                    self.logger.error(f"DEBUG: Skipping invalid epic of type {type(epic)}: {epic}")
+                    epic['features'] = []  # Ensure we have an empty features list
     
     def _execute_user_story_decomposition(self):
         """Execute user story decomposition stage (parallelized if enabled)."""
