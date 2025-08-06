@@ -945,9 +945,16 @@ class WorkflowSupervisor:
                 execution_time = (self.execution_metadata['end_time'] - self.execution_metadata['start_time']).total_seconds()
                 self.logger.info(f"Workflow execution time before failure: {execution_time:.2f} seconds")
             
-            # Only send error notification for critical workflow failures
-            # For individual stage failures, collect as warnings in final notification
-            if len(self.execution_metadata['errors']) > 5:  # Only if too many errors
+            # Send error notification for critical workflow failures
+            # Check if this is a critical failure that should send immediate notification
+            is_critical = (
+                self.execution_metadata.get('critical_error') is not None or
+                self.execution_metadata.get('failed_stage') == 'epic_strategist' or
+                'quality assessment failed' in str(e).lower() or
+                isinstance(e, (RuntimeError, ValueError))
+            )
+            
+            if is_critical or len(self.execution_metadata['errors']) > 5:
                 self._send_error_notifications(e)
             raise
         finally:
