@@ -111,11 +111,11 @@ workflow:
     enabled: true   # Re-enabled with limited parallelism to improve performance
     max_workers: 2  # Reduced from 4 to 2 to minimize race conditions
     rate_limit_per_second: 8  # Reduced rate limit for stability
-    feature_decomposition: false
-    user_story_decomposition: false
+    feature_decomposition: true  # Enable parallel feature decomposition
+    user_story_decomposition: true  # Enable parallel user story decomposition
     task_generation: true  # Enable parallel task generation (biggest bottleneck: 157 tasks)
-    qa_generation: false
-    qa_sub_agent_parallel: false  # Keep QA sequential to avoid test management conflicts
+    qa_generation: true  # Enable parallel QA generation
+    qa_sub_agent_parallel: false  # Keep QA sub-agents sequential to avoid test management conflicts
 
 notifications:
   enabled: true

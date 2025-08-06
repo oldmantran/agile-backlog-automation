@@ -336,7 +336,7 @@ class Agent:
                 system_prompt=system_prompt,
                 user_input=user_input,
                 temperature=0.7,
-                max_tokens=8000
+                max_tokens=4000  # Reduced for consistency
             )
         except Exception as e:
             logger.error(f"❌ Ollama inference failed: {e}")
@@ -351,7 +351,7 @@ class Agent:
                 {"role": "user", "content": user_input}
             ],
             "temperature": 0.7,
-            "max_tokens": 8000
+            "max_tokens": 4000  # Reduced from 8000 to fit within smaller model context limits
         }
     
     def _make_api_request(self, payload: dict) -> requests.Response:
@@ -402,8 +402,18 @@ class Agent:
                         raise CommunicationError(f"Server error after {max_retries} attempts")
                 else:
                     # Other client errors
-                    error_data = response.json() if response.content else {}
-                    error_msg = error_data.get('error', {}).get('message', f"HTTP {response.status_code}")
+                    try:
+                        error_data = response.json() if response.content else {}
+                        # Handle string responses (some APIs return plain text errors)
+                        if isinstance(error_data, str):
+                            error_msg = error_data
+                        else:
+                            # Handle nested error structure
+                            error_msg = error_data.get('error', {}).get('message', f"HTTP {response.status_code}")
+                    except:
+                        # If JSON parsing fails, use response text
+                        error_msg = response.text if response.text else f"HTTP {response.status_code}"
+                    
                     raise CommunicationError(f"API error: {error_msg}")
                     
             except requests.exceptions.Timeout:

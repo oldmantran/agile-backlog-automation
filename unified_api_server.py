@@ -1100,7 +1100,13 @@ async def run_backlog_generation_threaded(job_id: str, project_info: Dict[str, A
 
 def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
     """Synchronous version of backlog generation that runs in a separate thread."""
-    logger.info(f"Starting backlog generation for job {job_id}")
+    
+    # Start auto-logging to capture all output for this job
+    from utils.auto_log_dumper import start_auto_logging, stop_auto_logging
+    log_dumper = start_auto_logging(job_id=job_id)
+    
+    try:
+        logger.info(f"Starting backlog generation for job {job_id}")
     
     try:
         # Update job status to running (job is already initialized)
@@ -1381,6 +1387,14 @@ Domain: {project_domain}
         set_active_job(job_id, {"status": "failed", "error": error_msg, "endTime": datetime.now()})
         logger.error(error_msg)
         return {"error": error_msg}
+    finally:
+        # Always save the log file regardless of success or failure
+        try:
+            log_file = stop_auto_logging()
+            if log_file:
+                logger.info(f"📋 Backend log automatically saved to: {log_file}")
+        except Exception as log_error:
+            logger.warning(f"⚠️ Failed to save auto log: {log_error}")
 
 
 def run_test_artifact_generation(job_id: str, project_info: Dict[str, Any], backlog_data: Dict[str, Any]):

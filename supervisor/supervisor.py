@@ -1198,7 +1198,10 @@ class WorkflowSupervisor:
             def process_feature(args):
                 epic, feature = args
                 self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
-                user_stories = agent.decompose_feature_to_user_stories(feature, context=context, max_user_stories=max_user_stories)
+                # Add epic context for user story generation
+                story_context = context.copy()
+                story_context['epic_context'] = epic.get('description', '')
+                user_stories = agent.decompose_feature_to_user_stories(feature, context=story_context, max_user_stories=max_user_stories)
                 return feature, user_stories
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
                 # Use indices instead of dictionaries as keys
@@ -1210,7 +1213,10 @@ class WorkflowSupervisor:
         else:
             for epic, feature in features:
                 self.logger.info(f"Decomposing feature to user stories: {feature.get('title', 'Untitled')}")
-                user_stories = agent.decompose_feature_to_user_stories(feature, context=context, max_user_stories=max_user_stories)
+                # Add epic context for user story generation
+                story_context = context.copy()
+                story_context['epic_context'] = epic.get('description', '')
+                user_stories = agent.decompose_feature_to_user_stories(feature, context=story_context, max_user_stories=max_user_stories)
                 feature['user_stories'] = user_stories
     
     def _execute_task_generation(self, update_progress_callback=None, stage_index=4):
@@ -1230,7 +1236,11 @@ class WorkflowSupervisor:
         def process_story(args):
             epic, feature, user_story = args
             self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
-            tasks = agent.generate_tasks(user_story, context)
+            # Add epic and feature context for task generation
+            task_context = context.copy()
+            task_context['epic_context'] = epic.get('description', '')
+            task_context['feature_context'] = feature.get('description', '')
+            tasks = agent.generate_tasks(user_story, task_context)
             return user_story, tasks
         
         if self.parallel_config['enabled'] and self.parallel_config['stages']['developer_agent'] and total_stories > 1:
@@ -1248,7 +1258,11 @@ class WorkflowSupervisor:
         else:
             for epic, feature, user_story in user_stories:
                 self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
-                tasks = agent.generate_tasks(user_story, context)
+                # Add epic and feature context for task generation
+                task_context = context.copy()
+                task_context['epic_context'] = epic.get('description', '')
+                task_context['feature_context'] = feature.get('description', '')
+                tasks = agent.generate_tasks(user_story, task_context)
                 user_story['tasks'] = tasks
                 processed_stories += 1
                 if update_progress_callback and total_stories > 0:
