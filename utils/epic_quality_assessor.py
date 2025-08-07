@@ -281,11 +281,42 @@ class EpicQualityAssessor:
     
     def _extract_key_phrases(self, text: str) -> List[str]:
         """Extract key phrases from vision text."""
-        # Simple extraction of 2-3 word phrases that might be important
-        phrases = re.findall(r'\b\w+\s+\w+(?:\s+\w+)?\b', text)
-        # Filter for meaningful phrases (not common stop words)
-        stop_patterns = ['the', 'and', 'for', 'with', 'this', 'that', 'are', 'can', 'will', 'has', 'have']
-        return [phrase for phrase in phrases if not any(stop in phrase for stop in stop_patterns)][:10]
+        key_phrases = []
+        
+        # Extract product/app names (capitalized multi-word phrases)
+        product_names = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:app|application|platform|system|survey|tool|solution)\b', text, re.IGNORECASE)
+        key_phrases.extend([name.lower() for name in product_names])
+        
+        # Extract role/user references
+        user_patterns = r'\b(warehouse\s+(?:managers?|operators?|teams?|inspectors?)|maintenance\s+teams?|' \
+                       r'distribution\s+centers?|loading\s+dock\s+(?:assets?|doors?|gates?)|' \
+                       r'customers?|patients?|students?|teachers?|traders?|investors?)\b'
+        users = re.findall(user_patterns, text, re.IGNORECASE)
+        key_phrases.extend([user.lower() for user in users])
+        
+        # Extract platform-specific terms
+        platform_patterns = r'\b(ipad-based|web-based|mobile|cloud-based|ai-powered|real-time|' \
+                           r'camera-based|visual\s+inspection|360-degree\s+view|' \
+                           r'intuitive\s+\w+\s+interface|smart\s+monitoring|predictive\s+insights)\b'
+        platforms = re.findall(platform_patterns, text, re.IGNORECASE)
+        key_phrases.extend([p.lower() for p in platforms])
+        
+        # Extract key features (verb + noun patterns)
+        feature_patterns = r'\b(monitor(?:ing)?\s+\w+|track(?:ing)?\s+\w+|analyz(?:e|ing)\s+\w+|' \
+                          r'detect(?:ing)?\s+\w+|predict(?:ing)?\s+\w+|report(?:ing)?\s+\w+|' \
+                          r'inspect(?:ing|ion)?\s+\w+|assess(?:ing|ment)?\s+\w+)\b'
+        features = re.findall(feature_patterns, text, re.IGNORECASE)
+        key_phrases.extend([f.lower() for f in features])
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_phrases = []
+        for phrase in key_phrases:
+            if phrase not in seen and len(phrase.split()) <= 4:  # Max 4 words
+                seen.add(phrase)
+                unique_phrases.append(phrase)
+        
+        return unique_phrases[:20]  # Return top 20 phrases
     
     def _extract_key_nouns(self, text: str) -> List[str]:
         """Extract key nouns from text."""

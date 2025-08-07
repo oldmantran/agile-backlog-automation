@@ -15,18 +15,24 @@ CONTEXT:
 ## EXCELLENT Epic Creation Framework (80+ Quality Score):
 
 ### STEP 1: Vision Analysis (MANDATORY)
-Before creating any epic, you MUST:
-1. Identify the SPECIFIC business problem from the vision above
-2. Extract the EXACT terminology, processes, and stakeholders mentioned
-3. Note the PRECISE outcomes and success criteria described
-4. Understand the SPECIFIC domain context and requirements
+Before creating any epic, you MUST extract and use:
+1. **Product/App Name**: Find the specific product name (e.g., "X App", "Y Platform", "Z System")
+2. **Target Users**: Identify WHO will use it (e.g., "managers", "teams", "operators", "inspectors")
+3. **Key Platform/Features**: Note specific platforms (e.g., "iPad-based", "web", "mobile") and features
+4. **Business Problem**: Extract the EXACT problem being solved
+5. **Domain Terms**: List industry-specific terminology from the vision
 
 ### STEP 2: Epic Design Principles (REQUIRED for EXCELLENT rating)
-✅ **Vision Alignment (20 points)**: Every word directly serves the vision above
+✅ **Vision Alignment (20 points)**: Include product name & target users from vision
 ✅ **Domain Specificity (20 points)**: Use EXACT terminology from the vision
 ✅ **Business Value (15 points)**: Clear ROI and user outcomes from the vision
-✅ **Technical Feasibility (15 points)**: Realistic and achievable within timeline
+✅ **Technical Feasibility (15 points)**: Reference specific tech/platform from vision
 ✅ **Actionability (10 points)**: Clear, specific, and measurable deliverables
+
+### CRITICAL REQUIREMENT: Each epic MUST reference:
+- The product/solution name from the vision
+- WHO will use it (specific roles/users from vision)
+- WHAT platform/technology it uses (from vision)
 
 ### STEP 3: Quality Validation Criteria
 Each epic MUST achieve ALL of these for EXCELLENT rating:
@@ -87,12 +93,13 @@ Each epic MUST include:
 
 ## FINAL QUALITY CHECKLIST (MANDATORY for EXCELLENT):
 Before submitting, verify EACH epic has:
+✅ Product name from vision is included (or clear reference to it)
+✅ Target users are explicitly mentioned (WHO will use this epic's features)
 ✅ Title uses EXACT terminology from the product vision (not generic terms)
 ✅ Description references SPECIFIC processes/assets mentioned in vision
+✅ Platform/technology from vision is referenced (e.g., "iPad", "web", "mobile")
 ✅ Clear connection to SPECIFIC business outcomes in the vision
-✅ Addresses the EXACT target audience mentioned in vision
 ✅ Uses domain-specific language from the vision (not generic software terms)
-✅ Contributes to achieving the PRECISE goals stated in the vision above
 
 ## Domain "${domain}" Specific Requirements:
 - MANDATORY: Use the EXACT business terminology from the product vision above
