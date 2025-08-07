@@ -124,7 +124,7 @@ class EpicStrategist(Agent):
         domain = context.get('domain', 'general') if context else 'general'
         approved_epics = []
         
-        print(f"\n🔍 Starting quality assessment for {len(epics)} epics...")
+        print(f"\n[SEARCH] Starting quality assessment for {len(epics)} epics...")
         
         for i, epic in enumerate(epics):
             print(f"\n{'='*60}")
