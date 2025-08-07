@@ -28,6 +28,11 @@ class EpicStrategist(Agent):
         
         # Preload models for fast switching
         self.model_fallback.preload_models()
+        
+        # Set initial model to fallback system primary model if not configured
+        if not hasattr(self, 'model') or not self.model:
+            self.model = self.model_fallback.epic_models[0].name
+            self.logger.info(f"[MODEL INIT] Using fallback system primary model: {self.model}")
 
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
         """Generate epics using intelligent model fallback for optimal quality."""

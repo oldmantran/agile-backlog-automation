@@ -1,8 +1,9 @@
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"
-    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
-    timeout_seconds: 300  # 5 minutes with pre-loading
+    # model: removed to enable intelligent model fallback system
+    # Uses llama3.1:8b-instruct-q4_K_M first, then qwen2.5:14b-instruct-q4_K_M
+    timeout_seconds: 180  # Will be overridden by fallback manager per model
   feature_decomposer_agent:
     prompt_file: "prompts/feature_decomposer_agent.txt"
     model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
