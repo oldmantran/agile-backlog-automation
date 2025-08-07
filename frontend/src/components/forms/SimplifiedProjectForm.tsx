@@ -43,7 +43,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       areaPath: initialData.areaPath || '',
       iterationPath: initialData.iterationPath || '',
       selectedDomains: initialData.selectedDomains || [],
-      useAiDetection: initialData.useAiDetection !== false, // Default to true
+      useAiDetection: initialData.useAiDetection === true, // Default to false (manual selection)
       includeTestArtifacts: initialData.includeTestArtifacts === true, // Default to false
     }
   });
@@ -348,7 +348,7 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                 <div>
                   <p className="font-medium">Enable AI Domain Detection</p>
                   <p className="text-sm text-muted-foreground">
-                    Automatically detect industry domain from your vision statement
+                    Automatically detect industry domain from your vision statement (Manual selection is default)
                   </p>
                 </div>
                 <Controller
@@ -406,9 +406,9 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
               {!useAiDetection && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="font-medium">Manual Domain Selection</Label>
+                    <Label className="font-medium">Manual Domain Selection (Default)</Label>
                     <div className="text-xs text-muted-foreground">
-                      AI Detection Disabled - Manual Selection Active
+                      Select domains manually for precise control
                     </div>
                   </div>
                   

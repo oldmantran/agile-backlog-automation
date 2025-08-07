@@ -1,18 +1,22 @@
 agents:
   epic_strategist:
     prompt_file: "prompts/epic_strategist.txt"
+    timeout_seconds: 300  # 5 minutes for large models like llama3.1:70b
   feature_decomposer_agent:
     prompt_file: "prompts/feature_decomposer_agent.txt"
+    timeout_seconds: 300  # 5 minutes for large models
   user_story_decomposer_agent:
     prompt_file: "prompts/user_story_decomposer.txt"
+    timeout_seconds: 300  # 5 minutes for large models
   decomposition_agent:
     prompt_file: "prompts/decomposition_agent.txt"  # Legacy support
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
+    timeout_seconds: 300  # 5 minutes for large models
   qa_lead_agent:
     prompt_file: "prompts/qa_lead_agent.txt"
-    timeout_seconds: 180  # Longer timeout for QA operations
+    timeout_seconds: 300  # 5 minutes for large models and complex QA operations
     
     # Test organization requirements
     test_organization:
