@@ -924,8 +924,8 @@ Edge Cases: {feature.get('edge_cases', [])}
                 )
                 print(log_output)
                 
-                if assessment.rating in ["EXCELLENT", "GOOD"]:  # Temporarily accept GOOD stories too
-                    print(f"SUCCESS: User story approved with {assessment.rating} rating on attempt {attempt}")
+                if assessment.rating == "EXCELLENT":
+                    print(f"SUCCESS: User story approved with EXCELLENT rating on attempt {attempt}")
                     approved_stories.append(current_story)
                     break
                 
@@ -1032,10 +1032,23 @@ Return only a single improved user story in this JSON format:
     def _generate_improved_user_story(self, improvement_prompt: str, context: dict) -> dict:
         """Generate an improved version of the user story."""
         try:
-            # Use the existing run method but with a simpler template approach
-            # For now, return None to skip improvement and accept GOOD stories
-            print("[DEBUG] Skipping story improvement - returning None to use current version")
-            return None
+            print("[DEBUG] Attempting to improve user story using improvement prompt")
+            
+            # Build proper context for template (similar to user story generation)
+            prompt_context = {
+                'product_vision': context.get('product_vision', '') if context else '',
+                'domain': context.get('domain', 'dynamic') if context else 'dynamic',
+                'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+                'target_users': context.get('target_users', 'end users') if context else 'end users',
+                'timeline': context.get('timeline', 'not specified') if context else 'not specified',
+                'budget_constraints': context.get('budget_constraints', 'standard budget') if context else 'standard budget',
+                'epic_context': context.get('epic_context', '') if context else '',
+                'feature_context': context.get('feature_context', '') if context else ''
+            }
+            
+            # Use the base agent run method to generate improvement
+            response = self.run(improvement_prompt, prompt_context)
+            print(f"[DEBUG] Improvement response received: {len(response) if response else 0} characters")
             
             if not response:
                 return None

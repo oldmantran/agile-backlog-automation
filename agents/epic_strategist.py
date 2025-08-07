@@ -119,6 +119,8 @@ class EpicStrategist(Agent):
     
     def _assess_and_improve_quality(self, epics: list, product_vision: str, context: dict) -> list:
         """Assess epic quality and retry generation if not EXCELLENT."""
+        from utils.quality_metrics_tracker import quality_tracker
+        
         domain = context.get('domain', 'general') if context else 'general'
         approved_epics = []
         
@@ -129,6 +131,22 @@ class EpicStrategist(Agent):
             print(f"ASSESSING EPIC {i+1}/{len(epics)}")
             print(f"{'='*60}")
             
+            # Start quality tracking
+            epic_title = epic.get('title', f'Epic {i+1}')
+            tracking_context = {
+                **context,
+                'model_provider': self.llm_provider,
+                'model_name': getattr(self, 'model', 'unknown'),
+                'template_name': 'epic_strategist'
+            }
+            metrics_id = quality_tracker.start_tracking(
+                job_id=context.get('job_id', 'unknown'),
+                agent_name='epic_strategist',
+                work_item_type='Epic',
+                work_item_title=epic_title,
+                context=tracking_context
+            )
+            
             attempt = 1
             current_epic = epic
             
@@ -136,12 +154,22 @@ class EpicStrategist(Agent):
                 # Assess current epic quality
                 assessment = self.quality_assessor.assess_epic(current_epic, domain, product_vision)
                 
+                # Record attempt in quality tracker
+                quality_tracker.record_attempt(
+                    metrics_id, attempt, assessment.rating, assessment.score,
+                    assessment.strengths, assessment.weaknesses, assessment.improvement_suggestions
+                )
+                
                 # Log assessment
                 log_output = self.quality_assessor.format_assessment_log(current_epic, assessment, attempt)
                 print(log_output)
                 
                 if assessment.rating == "EXCELLENT":
                     print(f"✅ Epic approved with EXCELLENT rating on attempt {attempt}")
+                    # Complete tracking with success
+                    quality_tracker.complete_tracking(
+                        metrics_id, assessment.rating, assessment.score, attempt
+                    )
                     approved_epics.append(current_epic)
                     break
                 
@@ -149,6 +177,13 @@ class EpicStrategist(Agent):
                     print(f"❌ Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   STOPPING WORKFLOW - Subpar work items are not acceptable")
+                    
+                    # Complete tracking with failure
+                    failure_reason = f"Failed to achieve EXCELLENT rating after {self.max_quality_retries} attempts"
+                    quality_tracker.complete_tracking(
+                        metrics_id, assessment.rating, assessment.score, None, 
+                        failed=True, failure_reason=failure_reason
+                    )
                     
                     # Raise exception to stop the entire workflow
                     raise ValueError(

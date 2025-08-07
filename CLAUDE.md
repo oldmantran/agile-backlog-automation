@@ -73,6 +73,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Major Updates (August 2025)
 
+### 🔧 User Story Improvement & Epic Enhancement (August 7, 2025)
+- **User Story Quality Fix**: Restored proper improvement mechanism in user story decomposer - removed `None` bypass and implemented actual quality improvement generation
+- **Epic Strategist Enhancement**: Deployed enhanced prompt template with explicit EXCELLENT quality scoring framework (Vision Alignment: 20pts, Domain Specificity: 20pts, etc.)
+- **Quality Standards Restored**: Reverted temporary acceptance of GOOD ratings back to EXCELLENT-only requirements across all agents
+- **Improvement Process**: User stories that fail EXCELLENT assessment now undergo proper regeneration with quality feedback instead of being skipped
+
 ### 🔧 Critical Quality Assessment Fixes (August 6, 2025)
 
 **BREAKING**: Fixed critical bug in user story quality assessment that was preventing work item generation:
