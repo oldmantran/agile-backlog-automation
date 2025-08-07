@@ -6,22 +6,22 @@ agents:
     timeout_seconds: 180  # Will be overridden by fallback manager per model
   feature_decomposer_agent:
     prompt_file: "prompts/feature_decomposer_agent.txt"
-    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    # model: removed to use default unified LLM configuration
     timeout_seconds: 180  # 3 minutes for faster model
   user_story_decomposer_agent:
     prompt_file: "prompts/user_story_decomposer.txt"
-    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    # model: removed to use default unified LLM configuration
     timeout_seconds: 180  # 3 minutes for faster model
   decomposition_agent:
     prompt_file: "prompts/decomposition_agent.txt"  # Legacy support
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
-    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    # model: removed to use default unified LLM configuration
     timeout_seconds: 180  # 3 minutes for faster model
   qa_lead_agent:
     prompt_file: "prompts/qa_lead_agent.txt"
-    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    # model: removed to use default unified LLM configuration
     timeout_seconds: 300  # 5 minutes for large models and complex QA operations
     
     # Test organization requirements
