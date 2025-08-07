@@ -202,7 +202,13 @@ class EpicStrategist(Agent):
                 'template_name': 'epic_strategist'
             }
             
-            quality_tracker.start_work_item_tracking('epic', epic_title, tracking_context)
+            metrics_id = quality_tracker.start_tracking(
+                job_id=context.get('job_id', 'unknown'),
+                agent_name='epic_strategist',
+                work_item_type='Epic',
+                work_item_title=epic_title,
+                context=tracking_context
+            )
             
             try:
                 # Assess quality with improvement attempts
@@ -210,6 +216,12 @@ class EpicStrategist(Agent):
                     assessment = self.quality_assessor.assess_epic(epic, domain, product_vision)
                     
                     self.logger.info(f"[QUALITY] Epic '{epic_title}' attempt {attempt}: {assessment.rating} ({assessment.score}/100)")
+                    
+                    # Record attempt in quality tracker
+                    quality_tracker.record_attempt(
+                        metrics_id, attempt, assessment.rating, assessment.score,
+                        assessment.strengths, assessment.weaknesses, assessment.improvement_suggestions
+                    )
                     
                     # Track best score for fallback decision
                     best_quality_score = max(best_quality_score, assessment.score)
@@ -219,7 +231,9 @@ class EpicStrategist(Agent):
                     print(log_output)
                     
                     if assessment.rating == "EXCELLENT":
-                        quality_tracker.complete_work_item_tracking('epic', epic_title, 'EXCELLENT', assessment.score)
+                        quality_tracker.complete_tracking(
+                            metrics_id, assessment.rating, assessment.score, attempt
+                        )
                         approved_epics.append(epic)
                         self.logger.info(f"[QUALITY SUCCESS] Epic '{epic_title}' achieved EXCELLENT rating")
                         break
@@ -235,7 +249,10 @@ class EpicStrategist(Agent):
                             self.logger.warning(f"[QUALITY RETRY] Epic improvement failed: {improve_error}")
                     else:
                         # Final attempt failed
-                        quality_tracker.complete_work_item_tracking('epic', epic_title, assessment.rating, assessment.score)
+                        quality_tracker.complete_tracking(
+                            metrics_id, assessment.rating, assessment.score, None, 
+                            failed=True, failure_reason=f"Failed to achieve EXCELLENT rating after {self.max_quality_retries} attempts"
+                        )
                         self.logger.warning(f"[QUALITY FAIL] Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
                         
                         # Record this attempt for fallback decision
@@ -252,7 +269,10 @@ class EpicStrategist(Agent):
                         raise ValueError(f"Epic quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT. This indicates either insufficient input quality or inadequate LLM training for the {domain} domain. Please review the product vision or consider using a more capable model.")
                         
             except Exception as e:
-                quality_tracker.complete_work_item_tracking('epic', epic_title, 'FAILED', 0)
+                quality_tracker.complete_tracking(
+                    metrics_id, 'FAILED', 0, None, 
+                    failed=True, failure_reason=str(e)
+                )
                 raise e
         
         # If we get here, all epics achieved EXCELLENT rating
