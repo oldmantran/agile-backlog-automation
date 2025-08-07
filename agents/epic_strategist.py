@@ -1,10 +1,13 @@
 import json
 import signal
 import threading
+import time
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.content_enhancer import ContentEnhancer
 from utils.epic_quality_assessor import EpicQualityAssessor
+from utils.model_fallback_manager import ModelFallbackManager
+from utils.safe_logger import get_safe_logger
 
 class TimeoutError(Exception):
     """Custom timeout exception"""
@@ -20,17 +23,25 @@ class EpicStrategist(Agent):
         self.content_enhancer = ContentEnhancer()
         self.quality_assessor = EpicQualityAssessor()
         self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
+        self.model_fallback = ModelFallbackManager()
+        self.logger = get_safe_logger(__name__)
+        
+        # Preload models for fast switching
+        self.model_fallback.preload_models()
 
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
-        """Generate epics from a product vision with contextual information."""
+        """Generate epics using intelligent model fallback for optimal quality."""
+        
+        # Reset attempt history for new generation cycle
+        self.model_fallback.reset_attempts()
         
         # Apply max_epics constraint if specified (null = unlimited)
         epic_limit = max_epics if max_epics is not None else None  # None = unlimited
         
         # Build context for prompt template
         prompt_context = {
-            'product_vision': product_vision,  # Include the actual product vision in the template
-            'domain': context.get('domain', 'dynamic') if context else 'dynamic',  # Will be determined by vision analysis
+            'product_vision': product_vision,
+            'domain': context.get('domain', 'dynamic') if context else 'dynamic',
             'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
             'target_users': context.get('target_users', 'end users') if context else 'end users',
             'timeline': context.get('timeline', 'not specified') if context else 'not specified',
@@ -39,84 +50,221 @@ class EpicStrategist(Agent):
             'max_epics': epic_limit if epic_limit else "unlimited"
         }
         
-        print(f"DEBUG: Epic strategist product_vision: {product_vision[:200]}...")
-        print(f"DEBUG: Epic strategist prompt_context: {prompt_context}")
-        print(f"DEBUG: Epic strategist context from supervisor: {context}")
-        print(f"DEBUG: Epic strategist max_epics: {epic_limit}")
+        self.logger.info(f"[EPIC GENERATION] Starting with product vision: {product_vision[:200]}...")
+        self.logger.info(f"[EPIC GENERATION] Context: domain={context.get('domain', 'N/A')}, max_epics={epic_limit}")
         
         if epic_limit:
             user_input = f"Generate {epic_limit} epics based on the product vision provided in the context above."
         else:
             user_input = "Generate epics based on the product vision provided in the context above."
 
+        # Try models with intelligent fallback
+        while True:
+            model_config, attempt_number = self.model_fallback.get_next_model_for_epics()
+            
+            self.logger.info(f"[MODEL ATTEMPT] Using {model_config.display_name} (attempt {attempt_number})")
+            
+            # Temporarily switch to this model
+            original_model = getattr(self, 'model', None)
+            original_timeout = getattr(self, 'timeout_seconds', 300)
+            
+            try:
+                # Update model configuration
+                self.model = model_config.name
+                self.timeout_seconds = model_config.timeout_seconds
+                
+                start_time = time.time()
+                
+                # Generate epics with current model
+                epics = self._generate_epics_with_model(user_input, prompt_context, epic_limit)
+                
+                duration = time.time() - start_time
+                
+                # Assess quality
+                quality_approved_epics = self._assess_and_improve_quality_with_fallback(
+                    epics, product_vision, context, model_config, attempt_number, duration
+                )
+                
+                return quality_approved_epics
+                
+            except Exception as e:
+                duration = time.time() - start_time
+                error_message = str(e)
+                
+                self.model_fallback.record_attempt(
+                    model_name=model_config.name,
+                    attempt_number=attempt_number,
+                    success=False,
+                    quality_score=0,
+                    error_message=error_message,
+                    duration_seconds=duration
+                )
+                
+                self.logger.warning(f"[MODEL FAILURE] {model_config.display_name} failed: {error_message}")
+                
+                # Check if we should try another model
+                if self.model_fallback.should_switch_models():
+                    summary = self.model_fallback.get_attempt_summary()
+                    if len(summary['models_tried']) >= len(self.model_fallback.epic_models):
+                        # All models exhausted
+                        self.logger.error("[EPIC GENERATION] All models exhausted, raising final error")
+                        raise ValueError(f"Epic generation failed with all models. Final error: {error_message}")
+                    else:
+                        self.logger.info(f"[MODEL SWITCH] Switching to next model after {attempt_number} attempts")
+                        continue
+                else:
+                    # Continue with same model for next attempt
+                    continue
+                    
+            finally:
+                # Restore original model configuration
+                if original_model:
+                    self.model = original_model
+                if original_timeout:
+                    self.timeout_seconds = original_timeout
+                    
+    def _generate_epics_with_model(self, user_input: str, prompt_context: dict, epic_limit: int = None) -> list:
+        """Generate epics using the current model configuration."""
         
         # Debug: Check what the actual prompt looks like after template substitution
         try:
             actual_prompt = self.get_prompt(prompt_context)
-            print(f"DEBUG: Successfully generated prompt for epic_strategist")
-            print(f"DEBUG: User input: {user_input}")
+            self.logger.info(f"[EPIC GEN] Successfully generated prompt for epic_strategist")
+            self.logger.info(f"[EPIC GEN] User input: {user_input}")
         except Exception as e:
-            print(f"DEBUG: Error getting prompt: {e}")
-            print(f"DEBUG: prompt_context keys: {list(prompt_context.keys())}")
-            print(f"DEBUG: max_epics value: {prompt_context.get('max_epics', 'NOT_FOUND')}")
+            self.logger.error(f"[EPIC GEN] Error getting prompt: {e}")
             raise
         
         # Add timeout protection
         try:
-            # Use configured timeout from settings, with fallback
-            timeout = self.timeout_seconds if hasattr(self, 'timeout_seconds') and self.timeout_seconds else 60
+            # Use configured timeout from current model
+            timeout = self.timeout_seconds if hasattr(self, 'timeout_seconds') and self.timeout_seconds else 180
             response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
         except TimeoutError as e:
-            print("[WARNING] Epic generation timed out")
+            self.logger.warning("[EPIC GEN] Epic generation timed out")
             raise TimeoutError("Epic generation timed out") from e
         except Exception as e:
-            print(f"[ERROR] Epic generation failed: {e}")
+            self.logger.error(f"[EPIC GEN] Epic generation failed: {e}")
             raise
 
         try:
             if not response:
-                print("[WARNING] Empty response from LLM")
                 raise ValueError("Empty response from LLM")
             
-            # Check for markdown code blocks
             # Extract JSON with improved parsing
             cleaned_response = self._extract_json_from_response(response)
             
             # Safety check for empty or invalid JSON
             if not cleaned_response or cleaned_response.strip() == "[]":
-                print("[WARNING] Empty or invalid JSON response")
                 raise ValueError("Empty or invalid JSON response")
             
             try:
                 epics = json.loads(cleaned_response)
             except (json.JSONDecodeError, TypeError) as e:
-                print("[WARNING] Failed to parse JSON response")
                 raise ValueError(f"Failed to parse JSON response: {e}")
                 
-            if isinstance(epics, list):
-                # Apply the epic limit constraint if specified
-                if epic_limit:
-                    limited_epics = epics[:epic_limit]
-                    if len(epics) > epic_limit:
-                        print(f"🔧 [EpicStrategist] Limited output from {len(epics)} to {len(limited_epics)} epics (configuration limit)")
-                    
-                    # Assess quality of limited epics
-                    quality_approved_epics = self._assess_and_improve_quality(
-                        limited_epics, product_vision, context
-                    )
-                    return quality_approved_epics
-                else:
-                    # Assess quality of all epics
-                    quality_approved_epics = self._assess_and_improve_quality(
-                        epics, product_vision, context
-                    )
-                    return quality_approved_epics
-            else:
-                print("[WARNING] LLM response was not a list.")
+            if not isinstance(epics, list):
                 raise ValueError("LLM response was not a list")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"JSON decode error: {e}")
+            
+            # Apply the epic limit constraint if specified
+            if epic_limit and len(epics) > epic_limit:
+                limited_epics = epics[:epic_limit]
+                self.logger.info(f"[EPIC GEN] Limited output from {len(epics)} to {len(limited_epics)} epics")
+                return limited_epics
+            
+            return epics
+            
+        except Exception as e:
+            raise ValueError(f"Epic parsing error: {e}")
     
+    def _assess_and_improve_quality_with_fallback(self, epics: list, product_vision: str, context: dict, 
+                                                 model_config, attempt_number: int, duration: float) -> list:
+        """Assess epic quality and handle model fallback based on results."""
+        from utils.quality_metrics_tracker import quality_tracker
+        
+        domain = context.get('domain', 'general') if context else 'general'
+        approved_epics = []
+        best_quality_score = 0
+        
+        self.logger.info(f"[QUALITY CHECK] Starting quality assessment for {len(epics)} epics...")
+        
+        for i, epic in enumerate(epics):
+            epic_title = epic.get('title', f'Epic {i+1}')
+            tracking_context = {
+                **context,
+                'model_provider': self.llm_provider,
+                'model_name': model_config.name,
+                'template_name': 'epic_strategist'
+            }
+            
+            quality_tracker.start_work_item_tracking('epic', epic_title, tracking_context)
+            
+            try:
+                # Assess quality with improvement attempts
+                for attempt in range(1, self.max_quality_retries + 1):
+                    assessment = self.quality_assessor.assess_epic(epic, domain, product_vision)
+                    
+                    self.logger.info(f"[QUALITY] Epic '{epic_title}' attempt {attempt}: {assessment.rating} ({assessment.score}/100)")
+                    
+                    # Track best score for fallback decision
+                    best_quality_score = max(best_quality_score, assessment.score)
+                    
+                    # Log assessment details
+                    log_output = self.quality_assessor.format_assessment_log(epic, assessment, attempt)
+                    print(log_output)
+                    
+                    if assessment.rating == "EXCELLENT":
+                        quality_tracker.complete_work_item_tracking('epic', epic_title, 'EXCELLENT', assessment.score)
+                        approved_epics.append(epic)
+                        self.logger.info(f"[QUALITY SUCCESS] Epic '{epic_title}' achieved EXCELLENT rating")
+                        break
+                    
+                    # Try to improve the epic if not excellent and we have attempts left
+                    if attempt < self.max_quality_retries:
+                        self.logger.info(f"[QUALITY RETRY] Attempting to improve epic (attempt {attempt + 1}/{self.max_quality_retries})")
+                        try:
+                            improved_epic = self._improve_epic_quality(epic, assessment, product_vision, domain)
+                            if improved_epic:
+                                epic = improved_epic
+                        except Exception as improve_error:
+                            self.logger.warning(f"[QUALITY RETRY] Epic improvement failed: {improve_error}")
+                    else:
+                        # Final attempt failed
+                        quality_tracker.complete_work_item_tracking('epic', epic_title, assessment.rating, assessment.score)
+                        self.logger.warning(f"[QUALITY FAIL] Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                        
+                        # Record this attempt for fallback decision
+                        self.model_fallback.record_attempt(
+                            model_name=model_config.name,
+                            attempt_number=attempt_number,
+                            success=False,
+                            quality_score=assessment.score,
+                            error_message=f"Quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT",
+                            duration_seconds=duration
+                        )
+                        
+                        # Raise error to trigger model fallback
+                        raise ValueError(f"Epic quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT. This indicates either insufficient input quality or inadequate LLM training for the {domain} domain. Please review the product vision or consider using a more capable model.")
+                        
+            except Exception as e:
+                quality_tracker.complete_work_item_tracking('epic', epic_title, 'FAILED', 0)
+                raise e
+        
+        # If we get here, all epics achieved EXCELLENT rating
+        if approved_epics:
+            self.model_fallback.record_attempt(
+                model_name=model_config.name,
+                attempt_number=attempt_number,
+                success=True,
+                quality_score=best_quality_score,
+                duration_seconds=duration
+            )
+            
+            self.logger.info(f"[EPIC SUCCESS] Generated {len(approved_epics)} EXCELLENT epics with {model_config.display_name}")
+            return approved_epics
+        else:
+            raise ValueError("No epics achieved EXCELLENT rating")
+
     def _assess_and_improve_quality(self, epics: list, product_vision: str, context: dict) -> list:
         """Assess epic quality and retry generation if not EXCELLENT."""
         from utils.quality_metrics_tracker import quality_tracker
