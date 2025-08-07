@@ -367,36 +367,47 @@ class WorkflowSupervisor:
             except Exception as e:
                 self.logger.warning(f"Failed to refresh config for {agent_name}: {e}")
     
-    def _ensure_model_loaded(self, stage_name: str) -> bool:
+    def _ensure_model_loaded(self, stage_name: str, agent_name: str = None) -> bool:
         """
         Ensure the correct LLM model is loaded before agent execution.
         
-        This prevents agents from using incorrect models (e.g., codellama:34b when
-        a different model is selected) and ensures VRAM usage stays within limits.
+        This prevents agents from using incorrect models and ensures VRAM usage stays within limits.
+        Now supports per-agent model loading.
         
         Args:
             stage_name: Name of the stage about to be executed
+            agent_name: Name of the agent (for per-agent model lookup)
             
         Returns:
             True if model is ready, False if failed
         """
         try:
             if self.llm_provider == 'ollama':
-                if not self.ollama_model:
-                    self.logger.warning(f"[{stage_name}] No OLLAMA_MODEL configured - skipping model verification")
+                # Determine which model to load
+                model_to_load = self.ollama_model  # Default global model
+                
+                # Check for agent-specific model override
+                if agent_name and hasattr(self, 'agents') and agent_name in self.agents:
+                    agent = self.agents[agent_name]
+                    if hasattr(agent, 'model'):
+                        model_to_load = agent.model
+                        self.logger.info(f"[{stage_name}] Using agent-specific model: {model_to_load}")
+                
+                if not model_to_load:
+                    self.logger.warning(f"[{stage_name}] No model configured - skipping model verification")
                     return True
                 
-                self.logger.info(f"[{stage_name}] Ensuring Ollama model {self.ollama_model} is loaded...")
+                self.logger.info(f"[{stage_name}] Ensuring Ollama model {model_to_load} is loaded...")
                 
                 success = ollama_manager.ensure_model_loaded(
-                    model_name=self.ollama_model,
+                    model_name=model_to_load,
                     provider=self.llm_provider
                 )
                 
                 if success:
-                    self.logger.info(f"[{stage_name}] Model {self.ollama_model} is ready")
+                    self.logger.info(f"[{stage_name}] Model {model_to_load} is ready")
                 else:
-                    self.logger.error(f"[{stage_name}] Failed to load model {self.ollama_model}")
+                    self.logger.error(f"[{stage_name}] Failed to load model {model_to_load}")
                     # Don't fail the entire workflow, but log the issue
                     self.execution_metadata['errors'].append(f"Failed to load model {self.ollama_model} for {stage_name}")
                     return False
@@ -977,7 +988,7 @@ class WorkflowSupervisor:
         self.logger.info("Generating epics from product vision")
         
         # Ensure correct model is loaded before agent execution
-        if not self._ensure_model_loaded("Epic Generation"):
+        if not self._ensure_model_loaded("Epic Generation", "epic_strategist"):
             self.logger.warning("Model loading failed but continuing with epic generation")
         
         try:
@@ -1079,7 +1090,7 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing epics into features (parallel mode: %s)", self.parallel_config['stages']['feature_decomposer_agent'])
         
         # Ensure correct model is loaded before agent execution
-        if not self._ensure_model_loaded("Feature Decomposition"):
+        if not self._ensure_model_loaded("Feature Decomposition", "feature_decomposer_agent"):
             self.logger.warning("Model loading failed but continuing with feature decomposition")
         
         agent = self.agents['feature_decomposer_agent']
@@ -1152,7 +1163,7 @@ class WorkflowSupervisor:
         self.logger.info("Decomposing features into user stories (parallel mode: %s)", self.parallel_config['stages']['user_story_decomposer_agent'])
         
         # Ensure correct model is loaded before agent execution
-        if not self._ensure_model_loaded("User Story Decomposition"):
+        if not self._ensure_model_loaded("User Story Decomposition", "user_story_decomposer_agent"):
             self.logger.warning("Model loading failed but continuing with user story decomposition")
         
         agent = self.agents['user_story_decomposer_agent']
@@ -1224,7 +1235,7 @@ class WorkflowSupervisor:
         self.logger.info("Generating developer tasks (parallel mode: %s)", self.parallel_config['stages']['developer_agent'])
         
         # Ensure correct model is loaded before agent execution
-        if not self._ensure_model_loaded("Task Generation"):
+        if not self._ensure_model_loaded("Task Generation", "developer_agent"):
             self.logger.warning("Model loading failed but continuing with task generation")
         
         agent = self.agents['developer_agent']
@@ -1274,7 +1285,7 @@ class WorkflowSupervisor:
         self.logger.info("Generating QA artifacts using QA Lead Agent (parallel mode: %s)", self.parallel_config['stages']['qa_lead_agent'])
         
         # Ensure correct model is loaded before agent execution - CRITICAL for QA agents
-        if not self._ensure_model_loaded("QA Generation"):
+        if not self._ensure_model_loaded("QA Generation", "qa_lead_agent"):
             self.logger.warning("Model loading failed but continuing with QA generation")
         
         agent = self.agents['qa_lead_agent']

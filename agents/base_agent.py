@@ -59,11 +59,17 @@ def with_timeout(timeout_seconds: int):
             thread = threading.Thread(target=target)
             thread.daemon = True
             thread.start()
-            thread.join(timeout_seconds)
+            
+            # Use instance timeout if available, otherwise use decorator timeout
+            actual_timeout = timeout_seconds
+            if len(args) > 0 and hasattr(args[0], 'timeout_seconds'):
+                actual_timeout = args[0].timeout_seconds
+            
+            thread.join(actual_timeout)
             
             if thread.is_alive():
-                logger.error(f"Function {func.__name__} timed out after {timeout_seconds} seconds")
-                raise TimeoutError(f"Function {func.__name__} timed out after {timeout_seconds} seconds")
+                logger.error(f"Function {func.__name__} timed out after {actual_timeout} seconds")
+                raise TimeoutError(f"Function {func.__name__} timed out after {actual_timeout} seconds")
             
             if exception[0]:
                 raise exception[0]
@@ -144,6 +150,12 @@ class Agent:
         agent_config = config.settings.get('agents', {}).get(name, {})
         self.timeout_seconds = agent_config.get('timeout_seconds', 120)  # Default 2 minutes
         
+        # Check for agent-specific model override
+        agent_model_override = agent_config.get('model')
+        if agent_model_override:
+            print(f"[MODEL] Agent {name} using model override: {agent_model_override}")
+            self.model = agent_model_override
+        
         logger.info(f"Initialized agent: {name} with provider: {self.llm_provider}, timeout: {self.timeout_seconds}s")
     
     def _setup_llm_config(self):
@@ -185,7 +197,7 @@ class Agent:
             else:
                 raise AgentError(f"Unsupported LLM provider: {self.llm_provider}")
             
-            logger.info(f"📋 Loaded LLM config from database: {self.llm_provider} ({self.model})")
+            logger.info(f"[CONFIG] Loaded LLM config from database: {self.llm_provider} ({self.model})")
             
         except Exception as e:
             logger.warning(f"Failed to load LLM config from database: {e}. Falling back to environment variables.")
@@ -216,7 +228,7 @@ class Agent:
             else:
                 raise AgentError(f"Unsupported LLM provider: {self.llm_provider}")
             
-            logger.info(f"📋 Loaded LLM config from environment: {self.llm_provider} ({self.model})")
+            logger.info(f"[CONFIG] Loaded LLM config from environment: {self.llm_provider} ({self.model})")
         
         # Validate API key (except for Ollama)
         if self.llm_provider != "ollama" and not self.api_key:
@@ -275,26 +287,26 @@ class Agent:
             # Update success tracking
             self.success_count += 1
             execution_time = (datetime.now() - start_time).total_seconds()
-            logger.info(f"✅ {self.name} completed successfully in {execution_time:.2f}s")
+            logger.info(f"[SUCCESS] {self.name} completed successfully in {execution_time:.2f}s")
             
             return result
             
         except CircuitBreakerError as e:
             self.error_count += 1
-            error_msg = f"❌ {self.name} circuit breaker is open - too many recent failures"
+            error_msg = f"[ERROR] {self.name} circuit breaker is open - too many recent failures"
             logger.error(error_msg)
             raise AgentError(error_msg) from e
             
         except TimeoutError as e:
             self.error_count += 1
-            error_msg = f"❌ {self.name} timed out after {self.timeout_seconds} seconds"
+            error_msg = f"[ERROR] {self.name} timed out after {self.timeout_seconds} seconds"
             logger.error(error_msg)
             raise AgentError(error_msg) from e
             
         except Exception as e:
             self.error_count += 1
             execution_time = (datetime.now() - start_time).total_seconds()
-            error_msg = f"❌ {self.name} failed after {execution_time:.2f}s: {str(e)}"
+            error_msg = f"[ERROR] {self.name} failed after {execution_time:.2f}s: {str(e)}"
             logger.error(error_msg)
             raise AgentError(error_msg) from e
     
@@ -331,7 +343,7 @@ class Agent:
     def _run_ollama(self, system_prompt: str, user_input: str) -> str:
         """Run inference using local Ollama."""
         try:
-            logger.info(f"🤖 Using local Ollama model: {self.model}")
+            logger.info(f"[OLLAMA] Using local Ollama model: {self.model}")
             return self.ollama_provider.generate_response(
                 system_prompt=system_prompt,
                 user_input=user_input,
@@ -339,7 +351,7 @@ class Agent:
                 max_tokens=4000  # Reduced for consistency
             )
         except Exception as e:
-            logger.error(f"❌ Ollama inference failed: {e}")
+            logger.error(f"[ERROR] Ollama inference failed: {e}")
             raise CommunicationError(f"Ollama inference failed: {str(e)}")
     
     def _prepare_request_payload(self, system_prompt: str, user_input: str) -> dict:
@@ -377,7 +389,7 @@ class Agent:
                 
                 # Handle different response status codes
                 if response.status_code == 200:
-                    logger.info(f"✅ API request successful on attempt {attempt + 1}")
+                    logger.info(f"[SUCCESS] API request successful on attempt {attempt + 1}")
                     return response
                 elif response.status_code == 401:
                     raise CommunicationError(f"Authentication failed for {self.llm_provider}")

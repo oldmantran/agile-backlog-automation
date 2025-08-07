@@ -58,8 +58,15 @@ class AutoLogDumper:
         
         # Register cleanup handlers
         atexit.register(self._save_log_on_exit)
-        signal.signal(signal.SIGINT, self._save_log_on_signal)
-        signal.signal(signal.SIGTERM, self._save_log_on_signal)
+        
+        # Only register signal handlers if we're in the main thread
+        # (signal handlers don't work in threads)
+        try:
+            signal.signal(signal.SIGINT, self._save_log_on_signal)
+            signal.signal(signal.SIGTERM, self._save_log_on_signal)
+        except ValueError:
+            # We're not in the main thread, skip signal handlers
+            print("⚠️ Running in thread - signal handlers disabled (logs will still be saved on normal exit)")
         
         print(f"📝 Auto log capture started - saving to: {self.log_filename}")
     

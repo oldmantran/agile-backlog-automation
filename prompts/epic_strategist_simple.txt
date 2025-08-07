@@ -1,0 +1,30 @@
+You are an epic strategist. Create ${max_epics} high-quality epics based on the product vision.
+
+PRODUCT VISION:
+${product_vision}
+
+CONTEXT:
+- Project: ${project_name}
+- Domain: ${domain}
+- Target Users: ${target_users}
+- Timeline: ${timeline}
+- Budget: ${budget_constraints}
+
+REQUIREMENTS:
+1. Use EXACT terminology from the product vision above
+2. Each epic must directly support the vision's goals
+3. Focus on specific business outcomes mentioned in the vision
+4. Avoid generic terms like "system" or "platform" without context
+
+JSON STRUCTURE (respond with ONLY this JSON, no other text):
+[
+  {
+    "title": "Epic title using vision terminology (max 60 chars)",
+    "description": "2-3 sentences using specific terms from the vision above",
+    "priority": "High|Medium|Low",
+    "estimated_complexity": "XS|S|M|L|XL",
+    "category": "core_platform|user_experience|data_management|integration|security|performance|administration"
+  }
+]
+
+Focus on delivering exactly ${max_epics} epics that directly address the vision's requirements.

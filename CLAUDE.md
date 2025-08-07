@@ -73,6 +73,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Major Updates (August 2025)
 
+## 🚨 CRITICAL DEVELOPMENT GUIDELINES (August 7, 2025)
+
+### Unicode Encoding Prevention (MANDATORY)
+**NEVER use emojis in code** - Windows cp1252 encoding causes UnicodeEncodeError crashes.
+
+```python
+# ❌ FORBIDDEN - Will crash on Windows
+print("✅ Success")
+logger.info("❌ Failed")
+
+# ✅ REQUIRED - Always use safe logging
+from utils.safe_logger import get_safe_logger, safe_print
+logger = get_safe_logger(__name__)
+logger.info("Success")  # Auto-converts to [SUCCESS]
+safe_print("Failed")    # Auto-converts to [ERROR]
+```
+
+**Before ANY code changes**:
+1. Use `get_safe_logger(__name__)` instead of `logging.getLogger()`
+2. Use `safe_print()` instead of `print()` with dynamic content
+3. Replace existing emojis: ❌→[ERROR], ✅→[SUCCESS], ⚠️→[WARNING]
+4. See `docs/UNICODE_PREVENTION_GUIDE.md` for complete guidelines
+
+### LLM Configuration Consolidation
+**Single source of truth**: Use `utils.unified_llm_config.get_agent_config()` for ALL LLM configuration.
+
+**Configuration priority** (highest to lowest):
+1. Runtime overrides (temporary)
+2. Database user settings (persistent)  
+3. Settings.yaml agent config (project defaults)
+4. Environment variables (deployment)
+5. Hard-coded fallbacks
+
+```python
+# ✅ NEW WAY - Unified configuration
+from utils.unified_llm_config import get_agent_config
+config = get_agent_config("epic_strategist", user_id="123")
+
+# ❌ OLD WAY - Multiple conflicting sources
+# Don't use separate env/database/settings loading
+```
+
 ### 🔧 User Story Improvement & Epic Enhancement (August 7, 2025)
 - **User Story Quality Fix**: Restored proper improvement mechanism in user story decomposer - removed `None` bypass and implemented actual quality improvement generation
 - **Epic Strategist Enhancement**: Deployed enhanced prompt template with explicit EXCELLENT quality scoring framework (Vision Alignment: 20pts, Domain Specificity: 20pts, etc.)

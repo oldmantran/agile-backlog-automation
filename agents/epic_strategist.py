@@ -63,19 +63,19 @@ class EpicStrategist(Agent):
         
         # Add timeout protection
         try:
-            # Set a longer timeout for larger models (70B needs more time)
-            timeout = 180 if self.model and "70b" in self.model.lower() else 60
+            # Use configured timeout from settings, with fallback
+            timeout = self.timeout_seconds if hasattr(self, 'timeout_seconds') and self.timeout_seconds else 60
             response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
         except TimeoutError as e:
-            print("⚠️ Epic generation timed out")
+            print("[WARNING] Epic generation timed out")
             raise TimeoutError("Epic generation timed out") from e
         except Exception as e:
-            print(f"❌ Epic generation failed: {e}")
+            print(f"[ERROR] Epic generation failed: {e}")
             raise
 
         try:
             if not response:
-                print("⚠️ Empty response from LLM")
+                print("[WARNING] Empty response from LLM")
                 raise ValueError("Empty response from LLM")
             
             # Check for markdown code blocks
@@ -84,13 +84,13 @@ class EpicStrategist(Agent):
             
             # Safety check for empty or invalid JSON
             if not cleaned_response or cleaned_response.strip() == "[]":
-                print("⚠️ Empty or invalid JSON response")
+                print("[WARNING] Empty or invalid JSON response")
                 raise ValueError("Empty or invalid JSON response")
             
             try:
                 epics = json.loads(cleaned_response)
             except (json.JSONDecodeError, TypeError) as e:
-                print("⚠️ Failed to parse JSON response")
+                print("[WARNING] Failed to parse JSON response")
                 raise ValueError(f"Failed to parse JSON response: {e}")
                 
             if isinstance(epics, list):
@@ -112,7 +112,7 @@ class EpicStrategist(Agent):
                     )
                     return quality_approved_epics
             else:
-                print("⚠️ LLM response was not a list.")
+                print("[WARNING] LLM response was not a list.")
                 raise ValueError("LLM response was not a list")
         except json.JSONDecodeError as e:
             raise ValueError(f"JSON decode error: {e}")
@@ -165,7 +165,7 @@ class EpicStrategist(Agent):
                 print(log_output)
                 
                 if assessment.rating == "EXCELLENT":
-                    print(f"✅ Epic approved with EXCELLENT rating on attempt {attempt}")
+                    print(f"[SUCCESS] Epic approved with EXCELLENT rating on attempt {attempt}")
                     # Complete tracking with success
                     quality_tracker.complete_tracking(
                         metrics_id, assessment.rating, assessment.score, attempt
@@ -174,7 +174,7 @@ class EpicStrategist(Agent):
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"❌ Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"[ERROR] Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   STOPPING WORKFLOW - Subpar work items are not acceptable")
                     
@@ -199,7 +199,7 @@ class EpicStrategist(Agent):
                     current_epic, assessment, product_vision, context
                 )
                 
-                print(f"🔄 Attempting to improve epic (attempt {attempt + 1}/{self.max_quality_retries})")
+                print(f"[RETRY] Attempting to improve epic (attempt {attempt + 1}/{self.max_quality_retries})")
                 
                 try:
                     # Re-generate the epic with improvement guidance
@@ -207,16 +207,16 @@ class EpicStrategist(Agent):
                     if improved_response:
                         current_epic = improved_response
                     else:
-                        print("⚠️ Failed to generate improvement - using current version")
+                        print("[WARNING] Failed to generate improvement - using current version")
                         break
                         
                 except Exception as e:
-                    print(f"⚠️ Error during epic improvement: {e}")
+                    print(f"[WARNING] Error during epic improvement: {e}")
                     break
                 
                 attempt += 1
         
-        print(f"\n✅ Quality assessment complete: {len(approved_epics)} epics approved")
+        print(f"\n[SUCCESS] Quality assessment complete: {len(approved_epics)} epics approved")
         
         # CRITICAL: If no epics reach EXCELLENT rating, stop the workflow
         if len(approved_epics) == 0:
@@ -324,7 +324,7 @@ Return only a single improved epic in this JSON format:
         thread.join(timeout)
         
         if thread.is_alive():
-            print(f"⚠️ Epic generation timed out after {timeout} seconds")
+            print(f"[WARNING] Epic generation timed out after {timeout} seconds")
             return None
         
         if exception[0]:

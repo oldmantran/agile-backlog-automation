@@ -1107,8 +1107,7 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
     
     try:
         logger.info(f"Starting backlog generation for job {job_id}")
-    
-    try:
+        
         # Update job status to running (job is already initialized)
         set_active_job(job_id, {"status": "running", "currentAction": "Starting workflow execution..."})
         

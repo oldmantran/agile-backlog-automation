@@ -82,7 +82,8 @@ class TestCoreSmokeTests:
                 'product_vision': self.test_vision,
                 'project_name': 'Test Project',
                 'domain': 'technology',
-                'platform': 'Web Application'
+                'platform': 'Web Application',
+                'epic_context': 'Test epic context for user story decomposer'
             }
             
             # CRITICAL: This must not throw an exception

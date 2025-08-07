@@ -23,7 +23,7 @@ class OllamaClient:
         self.base_url = base_url
         self.model = model
         self.session = requests.Session()
-        self.session.timeout = 120  # 2 minute timeout for local inference
+        # Don't set session timeout - we'll use per-request timeouts instead
         
         # Test connection
         self._test_connection()
@@ -31,14 +31,14 @@ class OllamaClient:
     def _test_connection(self):
         """Test connection to Ollama server."""
         try:
-            response = self.session.get(f"{self.base_url}/api/tags")
+            response = self.session.get(f"{self.base_url}/api/tags", timeout=10)
             if response.status_code == 200:
-                logger.info(f"✅ Connected to Ollama server at {self.base_url}")
-                logger.info(f"📦 Available models: {[m['name'] for m in response.json().get('models', [])]}")
+                logger.info(f"[OLLAMA] Connected to Ollama server at {self.base_url}")
+                logger.info(f"[OLLAMA] Available models: {[m['name'] for m in response.json().get('models', [])]}")
             else:
                 raise ConnectionError(f"Ollama server returned status {response.status_code}")
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Ollama server: {e}")
+            logger.error(f"[ERROR] Failed to connect to Ollama server: {e}")
             raise ConnectionError(f"Cannot connect to Ollama server at {self.base_url}")
     
     def generate(self, 
@@ -82,8 +82,8 @@ class OllamaClient:
                 "stream": stream
             }
             
-            logger.info(f"🤖 Generating with Ollama model: {self.model}")
-            logger.debug(f"📤 Request payload: {json.dumps(payload, indent=2)}")
+            logger.info(f"[OLLAMA] Generating with Ollama model: {self.model}")
+            logger.debug(f"[OLLAMA] Request payload: {json.dumps(payload, indent=2)}")
             
             # Make request
             start_time = time.time()
@@ -103,8 +103,8 @@ class OllamaClient:
             generation_time = time.time() - start_time
             tokens_used = data.get("eval_count", 0)
             
-            logger.info(f"✅ Generated {len(content)} characters in {generation_time:.2f}s")
-            logger.info(f"📊 Tokens used: {tokens_used}")
+            logger.info(f"[OLLAMA] Generated {len(content)} characters in {generation_time:.2f}s")
+            logger.info(f"[OLLAMA] Tokens used: {tokens_used}")
             
             return {
                 "content": content,
@@ -118,39 +118,40 @@ class OllamaClient:
             }
             
         except Exception as e:
-            logger.error(f"❌ Ollama generation failed: {e}")
+            logger.error(f"[ERROR] Ollama generation failed: {e}")
             raise Exception(f"Ollama generation error: {str(e)}")
     
     def list_models(self) -> List[Dict[str, Any]]:
         """List available models."""
         try:
-            response = self.session.get(f"{self.base_url}/api/tags")
+            response = self.session.get(f"{self.base_url}/api/tags", timeout=10)
             if response.status_code == 200:
                 return response.json().get("models", [])
             else:
                 raise Exception(f"Failed to list models: {response.status_code}")
         except Exception as e:
-            logger.error(f"❌ Failed to list models: {e}")
+            logger.error(f"[ERROR] Failed to list models: {e}")
             return []
     
     def pull_model(self, model_name: str) -> bool:
         """Pull/download a model."""
         try:
-            logger.info(f"📥 Pulling model: {model_name}")
+            logger.info(f"[OLLAMA] Pulling model: {model_name}")
             response = self.session.post(
                 f"{self.base_url}/api/pull",
-                json={"name": model_name}
+                json={"name": model_name},
+                timeout=300  # Model pulling can take a while
             )
             
             if response.status_code == 200:
-                logger.info(f"✅ Successfully pulled model: {model_name}")
+                logger.info(f"[OLLAMA] Successfully pulled model: {model_name}")
                 return True
             else:
-                logger.error(f"❌ Failed to pull model: {response.status_code}")
+                logger.error(f"[ERROR] Failed to pull model: {response.status_code}")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ Error pulling model {model_name}: {e}")
+            logger.error(f"[ERROR] Error pulling model {model_name}: {e}")
             return False
     
     def get_model_info(self, model_name: str = None) -> Dict[str, Any]:
@@ -159,7 +160,8 @@ class OllamaClient:
         try:
             response = self.session.post(
                 f"{self.base_url}/api/show",
-                json={"name": model}
+                json={"name": model},
+                timeout=10  # Quick info request
             )
             
             if response.status_code == 200:
@@ -235,12 +237,12 @@ class OllamaProvider:
             
             # Log cost estimate
             cost_estimate = self.client.estimate_cost(result["tokens_used"])
-            logger.info(f"💰 Local inference cost: ${cost_estimate['total_cost']:.4f}")
+            logger.info(f"[COST] Local inference cost: ${cost_estimate['total_cost']:.4f}")
             
             return result["content"]
             
         except Exception as e:
-            logger.error(f"❌ Ollama provider error: {e}")
+            logger.error(f"[ERROR] Ollama provider error: {e}")
             raise Exception(f"Ollama generation failed: {str(e)}")
 
 

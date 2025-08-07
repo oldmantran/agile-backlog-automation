@@ -1,21 +1,26 @@
 agents:
   epic_strategist:
-    prompt_file: "prompts/epic_strategist.txt"
-    timeout_seconds: 300  # 5 minutes for large models like llama3.1:70b
+    prompt_file: "prompts/epic_strategist_simple.txt"
+    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    timeout_seconds: 300  # 5 minutes with pre-loading
   feature_decomposer_agent:
     prompt_file: "prompts/feature_decomposer_agent.txt"
-    timeout_seconds: 300  # 5 minutes for large models
+    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    timeout_seconds: 180  # 3 minutes for faster model
   user_story_decomposer_agent:
     prompt_file: "prompts/user_story_decomposer.txt"
-    timeout_seconds: 300  # 5 minutes for large models
+    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    timeout_seconds: 180  # 3 minutes for faster model
   decomposition_agent:
     prompt_file: "prompts/decomposition_agent.txt"  # Legacy support
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
-    timeout_seconds: 300  # 5 minutes for large models
+    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
+    timeout_seconds: 180  # 3 minutes for faster model
   qa_lead_agent:
     prompt_file: "prompts/qa_lead_agent.txt"
+    model: "qwen2.5:32b"  # Use qwen2.5:32B for all agents
     timeout_seconds: 300  # 5 minutes for large models and complex QA operations
     
     # Test organization requirements
