@@ -443,6 +443,22 @@ Return only a single improved epic in this JSON format:
 """
         return improvement_text.strip()
     
+    def _improve_epic_quality(self, epic: dict, assessment, product_vision: str, domain: str) -> dict:
+        """Improve epic quality based on assessment feedback."""
+        try:
+            # Create improvement prompt using existing method
+            context = {'domain': domain, 'product_vision': product_vision}
+            improvement_prompt = self._create_improvement_prompt(epic, assessment, product_vision, context)
+            
+            # Generate improved epic using existing method
+            improved_epic = self._generate_improved_epic(improvement_prompt, context)
+            
+            return improved_epic
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to improve epic quality: {e}")
+            return None
+    
     def _generate_improved_epic(self, improvement_prompt: str, context: dict) -> dict:
         """Generate an improved version of the epic."""
         try:
