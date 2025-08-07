@@ -230,12 +230,12 @@ class EpicStrategist(Agent):
                     log_output = self.quality_assessor.format_assessment_log(epic, assessment, attempt)
                     print(log_output)
                     
-                    if assessment.rating == "EXCELLENT":
+                    if assessment.rating in ["EXCELLENT", "GOOD"]:
                         quality_tracker.complete_tracking(
                             metrics_id, assessment.rating, assessment.score, attempt
                         )
                         approved_epics.append(epic)
-                        self.logger.info(f"[QUALITY SUCCESS] Epic '{epic_title}' achieved EXCELLENT rating")
+                        self.logger.info(f"[QUALITY SUCCESS] Epic '{epic_title}' achieved {assessment.rating} rating")
                         break
                     
                     # Try to improve the epic if not excellent and we have attempts left
@@ -251,9 +251,9 @@ class EpicStrategist(Agent):
                         # Final attempt failed
                         quality_tracker.complete_tracking(
                             metrics_id, assessment.rating, assessment.score, None, 
-                            failed=True, failure_reason=f"Failed to achieve EXCELLENT rating after {self.max_quality_retries} attempts"
+                            failed=True, failure_reason=f"Failed to achieve GOOD or better rating after {self.max_quality_retries} attempts"
                         )
-                        self.logger.warning(f"[QUALITY FAIL] Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                        self.logger.warning(f"[QUALITY FAIL] Epic failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                         
                         # Record this attempt for fallback decision
                         self.model_fallback.record_attempt(
@@ -266,7 +266,7 @@ class EpicStrategist(Agent):
                         )
                         
                         # Raise error to trigger model fallback
-                        raise ValueError(f"Epic quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT. This indicates either insufficient input quality or inadequate LLM training for the {domain} domain. Please review the product vision or consider using a more capable model.")
+                        raise ValueError(f"Epic quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of GOOD or better. This indicates either insufficient input quality or inadequate LLM training for the {domain} domain. Please review the product vision or consider using a more capable model.")
                         
             except Exception as e:
                 quality_tracker.complete_tracking(
@@ -337,8 +337,8 @@ class EpicStrategist(Agent):
                 log_output = self.quality_assessor.format_assessment_log(current_epic, assessment, attempt)
                 print(log_output)
                 
-                if assessment.rating == "EXCELLENT":
-                    print(f"[SUCCESS] Epic approved with EXCELLENT rating on attempt {attempt}")
+                if assessment.rating in ["EXCELLENT", "GOOD"]:
+                    print(f"[SUCCESS] Epic approved with {assessment.rating} rating on attempt {attempt}")
                     # Complete tracking with success
                     quality_tracker.complete_tracking(
                         metrics_id, assessment.rating, assessment.score, attempt
@@ -347,7 +347,7 @@ class EpicStrategist(Agent):
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"[ERROR] Epic failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"[ERROR] Epic failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   STOPPING WORKFLOW - Subpar work items are not acceptable")
                     
