@@ -21,7 +21,7 @@ class FeatureDecomposerAgent(Agent):
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.feature_quality_assessor = FeatureQualityAssessor()
-        self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
+        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
 
     def decompose_epic(self, epic: dict, context: dict = None, max_features: int = None) -> list[dict]:
         """Break down an epic into detailed features with business value and strategic considerations."""
@@ -603,7 +603,7 @@ Dependencies: {epic.get('dependencies', [])}
         return result[0]
     
     def _assess_and_improve_feature_quality(self, features: list, epic: dict, context: dict, product_vision: str) -> list:
-        """Assess feature quality and retry generation if not EXCELLENT."""
+        """Assess feature quality and retry generation if not GOOD or better."""
         domain = context.get('domain', 'general') if context else 'general'
         approved_features = []
         
@@ -631,16 +631,16 @@ Dependencies: {epic.get('dependencies', [])}
                 )
                 print(log_output)
                 
-                if assessment.rating == "EXCELLENT":
-                    print(f"+ Feature approved with EXCELLENT rating on attempt {attempt}")
+                if assessment.rating in ["EXCELLENT", "GOOD"]:
+                    print(f"+ Feature approved with {assessment.rating} rating on attempt {attempt}")
                     approved_features.append(current_feature)
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"- Feature failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"- Feature failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   Feature REJECTED - EXCELLENT rating required")
-                    # Do NOT add to approved_features - only EXCELLENT features allowed
+                    print("   Feature REJECTED - GOOD or better rating required")
+                    # Do NOT add to approved_features - only GOOD+ features allowed
                     break
                 
                 # Generate improvement prompt

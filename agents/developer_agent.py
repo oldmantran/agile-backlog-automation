@@ -20,7 +20,7 @@ class DeveloperAgent(Agent):
         # Initialize quality validator and task quality assessor
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.task_quality_assessor = TaskQualityAssessor()
-        self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
+        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
         
         # Azure DevOps integration will be set by supervisor when needed
         self.azure_api = None
@@ -92,7 +92,7 @@ User Type: {user_story.get('user_type', 'user')}
     
     def _assess_and_improve_task_quality(self, tasks: list, user_story: dict, context: dict, 
                                        product_vision: str) -> list:
-        """Assess task quality and retry generation if not EXCELLENT."""
+        """Assess task quality and retry generation if not GOOD or better."""
         if not tasks:
             return []
         
@@ -123,16 +123,16 @@ User Type: {user_story.get('user_type', 'user')}
                 )
                 print(log_output)
                 
-                if assessment.rating == "EXCELLENT":
-                    print(f"+ Task approved with EXCELLENT rating on attempt {attempt}")
+                if assessment.rating in ["EXCELLENT", "GOOD"]:
+                    print(f"+ Task approved with {assessment.rating} rating on attempt {attempt}")
                     approved_tasks.append(current_task)
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"- Task failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"- Task failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   Task REJECTED - EXCELLENT rating required")
-                    # Do NOT add to approved_tasks - only EXCELLENT tasks allowed
+                    print("   Task REJECTED - GOOD or better rating required")
+                    # Do NOT add to approved_tasks - only GOOD+ tasks allowed
                     break
                 
                 # Generate improvement prompt

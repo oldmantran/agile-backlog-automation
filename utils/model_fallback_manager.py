@@ -34,20 +34,21 @@ class ModelFallbackManager:
         self.attempt_history: List[ModelAttempt] = []
         
         # Define model hierarchy for epic generation
+        # Order: qwen2.5:14b first (better quality), then llama3.1:8b (faster fallback)
         self.epic_models = [
-            ModelConfig(
-                name="llama3.1:8b-instruct-q4_K_M",
-                display_name="Llama 3.1 8B Instruct",
-                timeout_seconds=180,
-                max_attempts=3,
-                strengths=["instruction_following", "structured_output", "speed"]
-            ),
             ModelConfig(
                 name="qwen2.5:14b-instruct-q4_K_M", 
                 display_name="Qwen 2.5 14B Instruct",
-                timeout_seconds=240,
+                timeout_seconds=300,  # Increased from 240 for better success rate
                 max_attempts=3,
                 strengths=["domain_knowledge", "detailed_output", "quality"]
+            ),
+            ModelConfig(
+                name="llama3.1:8b-instruct-q4_K_M",
+                display_name="Llama 3.1 8B Instruct",
+                timeout_seconds=240,  # Increased from 180 for better success rate
+                max_attempts=3,
+                strengths=["instruction_following", "structured_output", "speed"]
             )
         ]
         

@@ -26,13 +26,9 @@ class EpicStrategist(Agent):
         self.model_fallback = ModelFallbackManager()
         self.logger = get_safe_logger(__name__)
         
-        # Preload models for fast switching
-        self.model_fallback.preload_models()
-        
-        # Set initial model to fallback system primary model if not configured
-        if not hasattr(self, 'model') or not self.model:
-            self.model = self.model_fallback.epic_models[0].name
-            self.logger.info(f"[MODEL INIT] Using fallback system primary model: {self.model}")
+        # Don't set a model attribute - let the unified LLM config system handle it
+        # The fallback system will manage model switching during generation
+        self.logger.info(f"[MODEL INIT] Epic strategist will use intelligent model fallback system")
 
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
         """Generate epics using intelligent model fallback for optimal quality."""
@@ -85,7 +81,7 @@ class EpicStrategist(Agent):
                 
                 duration = time.time() - start_time
                 
-                # Assess quality
+                # Assess quality using fallback-aware method
                 quality_approved_epics = self._assess_and_improve_quality_with_fallback(
                     epics, product_vision, context, model_config, attempt_number, duration
                 )
@@ -144,16 +140,18 @@ class EpicStrategist(Agent):
         try:
             # Use configured timeout from current model
             timeout = self.timeout_seconds if hasattr(self, 'timeout_seconds') and self.timeout_seconds else 180
+            self.logger.info(f"[EPIC GEN] Calling LLM with timeout={timeout}s, model={self.model}")
             response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
         except TimeoutError as e:
-            self.logger.warning("[EPIC GEN] Epic generation timed out")
-            raise TimeoutError("Epic generation timed out") from e
+            self.logger.warning(f"[EPIC GEN] Epic generation timed out after {timeout} seconds")
+            raise TimeoutError(f"Epic generation timed out after {timeout} seconds") from e
         except Exception as e:
             self.logger.error(f"[EPIC GEN] Epic generation failed: {e}")
             raise
 
         try:
             if not response:
+                self.logger.error(f"[EPIC GEN] Empty response from model {self.model}")
                 raise ValueError("Empty response from LLM")
             
             # Extract JSON with improved parsing

@@ -1055,7 +1055,17 @@ class WorkflowSupervisor:
             thread.start()
             
             # Wait for completion with timeout (longer for larger models)
-            timeout = 300  # 5 minutes for 70B models
+            # Add buffer time to account for overhead and allow agent to complete
+            # For epic strategist, use a longer timeout to accommodate model fallback system
+            if hasattr(agent, 'model_fallback'):
+                # Epic strategist with fallback system - use max possible timeout
+                agent_timeout = 300  # Max timeout from fallback system
+                self.logger.info("Epic strategist detected - using fallback system max timeout")
+            else:
+                agent_timeout = getattr(agent, 'timeout_seconds', 300)
+            
+            timeout = agent_timeout + 30  # Add 30 second buffer for overhead
+            self.logger.info(f"Waiting for epic generation with timeout={timeout}s (agent timeout={agent_timeout}s + 30s buffer)")
             thread.join(timeout)
             
             if thread.is_alive():

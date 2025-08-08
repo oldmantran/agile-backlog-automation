@@ -23,7 +23,7 @@ class UserStoryDecomposerAgent(Agent):
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.user_story_quality_assessor = UserStoryQualityAssessor()
-        self.max_quality_retries = 3  # Maximum attempts to achieve EXCELLENT rating
+        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
 
     def decompose_feature_to_user_stories(self, feature: dict, context: dict = None, max_user_stories: int = 5) -> list[dict]:
         """Decompose a feature into user stories."""
@@ -882,7 +882,7 @@ Edge Cases: {feature.get('edge_cases', [])}
 
     def _assess_and_improve_user_story_quality(self, user_stories: list, feature: dict, context: dict, 
                                              product_vision: str, max_user_stories: int = None) -> list:
-        """Assess user story quality and retry generation if not EXCELLENT."""
+        """Assess user story quality and retry generation if not GOOD or better."""
         if not user_stories:
             return []
         
@@ -924,16 +924,16 @@ Edge Cases: {feature.get('edge_cases', [])}
                 )
                 print(log_output)
                 
-                if assessment.rating == "EXCELLENT":
-                    print(f"SUCCESS: User story approved with EXCELLENT rating on attempt {attempt}")
+                if assessment.rating in ["EXCELLENT", "GOOD"]:
+                    print(f"SUCCESS: User story approved with {assessment.rating} rating on attempt {attempt}")
                     approved_stories.append(current_story)
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"- User story failed to reach EXCELLENT rating after {self.max_quality_retries} attempts")
+                    print(f"- User story failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   Story REJECTED - EXCELLENT rating required")
-                    # Do NOT add to approved_stories - only EXCELLENT stories allowed
+                    print("   Story REJECTED - GOOD or better rating required")
+                    # Do NOT add to approved_stories - only GOOD+ stories allowed
                     break
                 
                 # Generate improvement prompt
