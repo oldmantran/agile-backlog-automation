@@ -655,25 +655,25 @@ class Database:
     def create_default_llm_configurations(self, user_id: str) -> bool:
         """Create default LLM configurations for a new user."""
         try:
-            # Create Ollama configuration
+            # Create OpenAI configuration (now default)
             self.save_llm_configuration(
                 user_id=user_id,
-                name="Ollama Local (8B)",
-                provider="ollama",
-                model="llama3.1:8b",
-                base_url="http://localhost:11434",
-                preset="fast",
+                name="OpenAI GPT-4o-mini",
+                provider="openai",
+                model="gpt-4o-mini",
+                api_key="",  # User will need to set this
                 is_default=True,
                 is_active=True
             )
             
-            # Create OpenAI configuration
+            # Create Ollama configuration
             self.save_llm_configuration(
                 user_id=user_id,
-                name="OpenAI GPT-4",
-                provider="openai",
-                model="gpt-4",
-                api_key="",  # User will need to set this
+                name="Ollama Local (14B)",
+                provider="ollama",
+                model="qwen2.5:14b-instruct-q4_K_M",
+                base_url="http://localhost:11434",
+                preset="balanced",
                 is_default=False,
                 is_active=False
             )

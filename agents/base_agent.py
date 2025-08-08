@@ -173,7 +173,7 @@ class Agent:
             
             if self.llm_provider == "openai":
                 # Use model from database if available, otherwise from environment
-                self.model = provider_config.get('model') or self.config.get_env("OPENAI_MODEL") or 'gpt-4'
+                self.model = provider_config.get('model') or self.config.get_env("OPENAI_MODEL") or 'gpt-4o-mini'
                 # Always get OpenAI API key from environment for security
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
@@ -184,7 +184,7 @@ class Agent:
                 self.api_key = self.config.get_env("GROK_API_KEY")
                 self.api_url = "https://api.x.ai/v1/chat/completions"
             elif self.llm_provider == "ollama":
-                self.model = provider_config.get('model', 'llama3.1:8b')
+                self.model = provider_config.get('model') or self.config.get_env("OLLAMA_MODEL") or 'qwen2.5:14b-instruct-q4_K_M'
                 self.api_key = None  # No API key needed for local Ollama
                 self.api_url = provider_config.get('base_url', 'http://localhost:11434')
                 # Import Ollama provider
@@ -206,7 +206,7 @@ class Agent:
             self.llm_provider = self.config.get_env("LLM_PROVIDER") or "openai"
             
             if self.llm_provider == "openai":
-                self.model = self.config.get_env("OPENAI_MODEL") or "gpt-4"
+                self.model = self.config.get_env("OPENAI_MODEL") or "gpt-4o-mini"
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
             elif self.llm_provider == "grok":
@@ -214,7 +214,7 @@ class Agent:
                 self.api_key = self.config.get_env("GROK_API_KEY")
                 self.api_url = "https://api.x.ai/v1/chat/completions"
             elif self.llm_provider == "ollama":
-                self.model = self.config.get_env("OLLAMA_MODEL") or "llama3.1:8b"
+                self.model = self.config.get_env("OLLAMA_MODEL") or "qwen2.5:14b-instruct-q4_K_M"
                 self.api_key = None  # No API key needed for local Ollama
                 self.api_url = self.config.get_env("OLLAMA_BASE_URL") or "http://localhost:11434"
                 # Import Ollama provider

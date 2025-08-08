@@ -22,7 +22,7 @@ logger = get_safe_logger(__name__)
 class LLMConfig:
     """Complete LLM configuration for an agent."""
     provider: str = "openai"
-    model: str = "gpt-4"
+    model: str = "gpt-4o-mini"  # Updated default to match current OpenAI model
     api_key: Optional[str] = None
     api_url: Optional[str] = None
     base_url: Optional[str] = None
