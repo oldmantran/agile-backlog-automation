@@ -223,6 +223,30 @@ Edge Cases: {feature.get('edge_cases', [])}
                         print(f"[DEBUG] Item {i} keys: {list(item.keys())}")
                     elif isinstance(item, str):
                         print(f"[DEBUG] Item {i} string value: {item[:100]}...")
+                
+                # CRITICAL FIX: Handle case where LLM returns array of strings instead of user story objects
+                if user_stories and all(isinstance(item, str) for item in user_stories):
+                    print("[DEBUG] LLM returned array of strings instead of user story objects - converting...")
+                    converted_stories = []
+                    for i, story_text in enumerate(user_stories):
+                        # Create proper user story structure from the string
+                        converted_story = {
+                            'title': f"As a user, I want {story_text[:80]}{'...' if len(story_text) > 80 else ''}",
+                            'user_story': f"As a user, I want {story_text[:80]}{'...' if len(story_text) > 80 else ''}",
+                            'description': story_text,
+                            'acceptance_criteria': [
+                                f"Given the system is ready, When I {story_text[:60]}{'...' if len(story_text) > 60 else ''}, Then it should work as expected",
+                                f"Given valid conditions, When I interact with the feature, Then the outcome should meet requirements",
+                                f"Given the feature is implemented, When I test it, Then it should satisfy the acceptance criteria"
+                            ],
+                            'story_points': 3,
+                            'priority': 'Medium',
+                            'category': 'feature_implementation',
+                            'user_type': 'general_user'
+                        }
+                        converted_stories.append(converted_story)
+                    user_stories = converted_stories
+                    print(f"[DEBUG] Converted {len(converted_stories)} string entries to proper user story objects")
                         
             # Handle different response formats
             if isinstance(user_stories, list) and len(user_stories) > 0:
@@ -901,6 +925,25 @@ Edge Cases: {feature.get('edge_cases', [])}
             print(f"\n{'='*60}")
             print(f"ASSESSING USER STORY {i+1}/{len(user_stories)}")
             print(f"{'='*60}")
+            
+            # CRITICAL FIX: Handle case where story is a string instead of dict object
+            if isinstance(story, str):
+                print(f"[DEBUG] Story {i+1} is a string instead of dict - converting...")
+                story = {
+                    'title': f"As a user, I want {story[:80]}{'...' if len(story) > 80 else ''}",
+                    'user_story': f"As a user, I want {story[:80]}{'...' if len(story) > 80 else ''}",
+                    'description': story,
+                    'acceptance_criteria': [
+                        f"Given the system is ready, When I {story[:60]}{'...' if len(story) > 60 else ''}, Then it should work as expected",
+                        f"Given valid conditions, When I interact with the feature, Then the outcome should meet requirements",
+                        f"Given the feature is implemented, When I test it, Then it should satisfy the acceptance criteria"
+                    ],
+                    'story_points': 3,
+                    'priority': 'Medium',
+                    'category': 'feature_implementation',
+                    'user_type': 'general_user'
+                }
+                print(f"[DEBUG] Converted string to proper user story object")
             
             attempt = 1
             current_story = story
