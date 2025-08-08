@@ -81,9 +81,17 @@ class EpicStrategist(Agent):
                 
                 duration = time.time() - start_time
                 
+                # Add original inputs to context for replacement generation
+                context_with_inputs = {
+                    **context,
+                    'original_user_input': user_input,
+                    'original_prompt_context': prompt_context,
+                    'epic_limit': epic_limit
+                }
+                
                 # Assess quality using fallback-aware method
                 quality_approved_epics = self._assess_and_improve_quality_with_fallback(
-                    epics, product_vision, context, model_config, attempt_number, duration
+                    epics, product_vision, context_with_inputs, model_config, attempt_number, duration
                 )
                 
                 return quality_approved_epics
@@ -188,8 +196,12 @@ class EpicStrategist(Agent):
         domain = context.get('domain', 'general') if context else 'general'
         approved_epics = []
         best_quality_score = 0
+        epic_limit = context.get('epic_limit', len(epics))  # Track requested number
         
-        self.logger.info(f"[QUALITY CHECK] Starting quality assessment for {len(epics)} epics...")
+        self.logger.info(f"[QUALITY CHECK] Starting quality assessment for {len(epics)} epics (target: {epic_limit})...")
+        
+        # Track failed epics that need replacement
+        failed_epic_count = 0
         
         for i, epic in enumerate(epics):
             epic_title = epic.get('title', f'Epic {i+1}')
@@ -263,9 +275,10 @@ class EpicStrategist(Agent):
                             duration_seconds=duration
                         )
                         
-                        # CHANGED: Skip failed epic instead of failing entire batch
+                        # CHANGED: Skip failed epic and count for replacement generation
+                        failed_epic_count += 1
                         self.logger.warning(f"[QUALITY SKIP] Skipping epic '{epic_title}' - failed to achieve GOOD+ rating ({assessment.rating} {assessment.score}/100)")
-                        # Continue to next epic instead of raising error
+                        self.logger.info(f"[REPLACEMENT NEEDED] Will generate {failed_epic_count} replacement epic(s) to maintain target of {epic_limit}")
                         
             except Exception as e:
                 quality_tracker.complete_tracking(
@@ -273,6 +286,38 @@ class EpicStrategist(Agent):
                     failed=True, failure_reason=str(e)
                 )
                 raise e
+        
+        # Generate replacement epics if we have failures and haven't reached target count
+        if failed_epic_count > 0 and len(approved_epics) < epic_limit:
+            replacements_needed = min(failed_epic_count, epic_limit - len(approved_epics))
+            self.logger.info(f"[REPLACEMENT] Generating {replacements_needed} replacement epics to reach target of {epic_limit}")
+            
+            try:
+                # Generate replacement epics using same context
+                user_input = context.get('original_user_input', '')
+                prompt_context = context.get('original_prompt_context', {})
+                
+                replacement_epics = self._generate_epics_with_model(user_input, prompt_context, replacements_needed)
+                
+                # Assess quality of replacement epics
+                for i, replacement_epic in enumerate(replacement_epics):
+                    epic_title = replacement_epic.get('title', f'Replacement Epic {i+1}')
+                    
+                    # Quick quality check (1 attempt only for replacements)
+                    assessment = self.quality_assessor.assess_epic(replacement_epic, domain, product_vision)
+                    
+                    if assessment.rating in ["EXCELLENT", "GOOD"]:
+                        approved_epics.append(replacement_epic)
+                        self.logger.info(f"[REPLACEMENT SUCCESS] Added replacement epic '{epic_title}' with {assessment.rating} rating")
+                        
+                        # Stop when we reach target count
+                        if len(approved_epics) >= epic_limit:
+                            break
+                    else:
+                        self.logger.warning(f"[REPLACEMENT SKIP] Replacement epic '{epic_title}' also failed ({assessment.rating})")
+                        
+            except Exception as replacement_error:
+                self.logger.warning(f"[REPLACEMENT FAILED] Could not generate replacement epics: {replacement_error}")
         
         # Check if we have any approved epics (EXCELLENT or GOOD rating)
         if approved_epics:
