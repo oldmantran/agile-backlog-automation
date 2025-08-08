@@ -31,10 +31,7 @@ class EpicStrategist(Agent):
         self.logger.info(f"[MODEL INIT] Epic strategist will use intelligent model fallback system")
 
     def generate_epics(self, product_vision: str, context: dict = None, max_epics: int = None) -> list[dict]:
-        """Generate epics using intelligent model fallback for optimal quality."""
-        
-        # Reset attempt history for new generation cycle
-        self.model_fallback.reset_attempts()
+        """Generate epics using current LLM configuration."""
         
         # Apply max_epics constraint if specified (null = unlimited)
         epic_limit = max_epics if max_epics is not None else None  # None = unlimited
@@ -53,12 +50,48 @@ class EpicStrategist(Agent):
         
         self.logger.info(f"[EPIC GENERATION] Starting with product vision: {product_vision[:200]}...")
         self.logger.info(f"[EPIC GENERATION] Context: domain={context.get('domain', 'N/A')}, max_epics={epic_limit}")
+        self.logger.info(f"[EPIC GENERATION] Using provider: {self.llm_provider}, model: {getattr(self, 'model', 'default')}")
         
         if epic_limit:
             user_input = f"Generate {epic_limit} epics based on the product vision provided in the context above."
         else:
             user_input = "Generate epics based on the product vision provided in the context above."
 
+        # Check if we should use fallback system (Ollama only) or direct generation
+        if self.llm_provider == "ollama":
+            return self._generate_epics_with_ollama_fallback(user_input, product_vision, context, prompt_context, epic_limit)
+        else:
+            return self._generate_epics_with_current_provider(user_input, product_vision, context, prompt_context, epic_limit)
+    
+    def _generate_epics_with_current_provider(self, user_input: str, product_vision: str, context: dict, prompt_context: dict, epic_limit: int = None) -> list[dict]:
+        """Generate epics using the current provider (OpenAI, etc.) without fallback."""
+        self.logger.info(f"[DIRECT GENERATION] Using {self.llm_provider} provider without model fallback")
+        
+        start_time = time.time()
+        
+        try:
+            # Generate epics directly with current configuration
+            epics = self._generate_epics_with_model(user_input, prompt_context, epic_limit)
+            duration = time.time() - start_time
+            
+            # Assess quality using simple quality assessment (no fallback)
+            approved_epics = self._assess_and_improve_quality(epics, product_vision, context)
+            
+            self.logger.info(f"[DIRECT SUCCESS] Generated {len(approved_epics)} epics in {duration:.1f}s")
+            return approved_epics
+            
+        except Exception as e:
+            duration = time.time() - start_time
+            self.logger.error(f"[DIRECT FAILURE] Epic generation failed after {duration:.1f}s: {e}")
+            raise
+    
+    def _generate_epics_with_ollama_fallback(self, user_input: str, product_vision: str, context: dict, prompt_context: dict, epic_limit: int = None) -> list[dict]:
+        """Generate epics using Ollama with intelligent model fallback."""
+        self.logger.info("[OLLAMA FALLBACK] Using intelligent model fallback system for Ollama")
+        
+        # Reset attempt history for new generation cycle
+        self.model_fallback.reset_attempts()
+        
         # Try models with intelligent fallback
         while True:
             model_config, attempt_number = self.model_fallback.get_next_model_for_epics()
@@ -382,7 +415,10 @@ class EpicStrategist(Agent):
                 log_output = self.quality_assessor.format_assessment_log(current_epic, assessment, attempt)
                 print(log_output)
                 
-                if assessment.rating in ["EXCELLENT", "GOOD"]:
+                # For OpenAI, require EXCELLENT; for Ollama, accept GOOD+
+                acceptable_ratings = ["EXCELLENT"] if self.llm_provider != "ollama" else ["EXCELLENT", "GOOD"]
+                
+                if assessment.rating in acceptable_ratings:
                     print(f"[SUCCESS] Epic approved with {assessment.rating} rating on attempt {attempt}")
                     # Complete tracking with success
                     quality_tracker.complete_tracking(
@@ -392,12 +428,13 @@ class EpicStrategist(Agent):
                     break
                 
                 if attempt == self.max_quality_retries:
-                    print(f"[ERROR] Epic failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
+                    required_rating = "EXCELLENT" if self.llm_provider != "ollama" else "GOOD or better"
+                    print(f"[ERROR] Epic failed to reach {required_rating} rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   STOPPING WORKFLOW - Subpar work items are not acceptable")
                     
                     # Complete tracking with failure
-                    failure_reason = f"Failed to achieve EXCELLENT rating after {self.max_quality_retries} attempts"
+                    failure_reason = f"Failed to achieve {required_rating} rating after {self.max_quality_retries} attempts"
                     quality_tracker.complete_tracking(
                         metrics_id, assessment.rating, assessment.score, None, 
                         failed=True, failure_reason=failure_reason
@@ -406,7 +443,7 @@ class EpicStrategist(Agent):
                     # Raise exception to stop the entire workflow
                     raise ValueError(
                         f"Epic quality assessment failed: '{current_epic.get('title', 'Unknown Epic')}' "
-                        f"achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT. "
+                        f"achieved {assessment.rating} ({assessment.score}/100) instead of {required_rating}. "
                         f"This indicates either insufficient input quality or inadequate LLM training "
                         f"for the {context.get('domain', 'unknown')} domain. "
                         f"Please review the product vision or consider using a more capable model."
@@ -436,11 +473,12 @@ class EpicStrategist(Agent):
         
         print(f"\n[SUCCESS] Quality assessment complete: {len(approved_epics)} epics approved")
         
-        # CRITICAL: If no epics reach EXCELLENT rating, stop the workflow
+        # CRITICAL: If no epics reach required rating, stop the workflow
         if len(approved_epics) == 0:
             domain = context.get('domain', 'unknown') if context else 'unknown'
+            required_rating = "EXCELLENT" if self.llm_provider != "ollama" else "GOOD or better"
             raise ValueError(
-                f"WORKFLOW STOPPED: No epics achieved EXCELLENT quality rating. "
+                f"WORKFLOW STOPPED: No epics achieved {required_rating} quality rating. "
                 f"This indicates either insufficient input quality or inadequate LLM training "
                 f"for the {domain} domain. "
                 f"Please review the product vision or consider using a more capable model."
