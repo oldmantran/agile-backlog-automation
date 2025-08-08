@@ -91,7 +91,7 @@ class OllamaClient:
                 f"{self.base_url}/api/chat",
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=300  # 5 minute timeout for 70B models
+                timeout=600  # 10 minute timeout for quality processing
             )
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
@@ -140,7 +140,7 @@ class OllamaClient:
             response = self.session.post(
                 f"{self.base_url}/api/pull",
                 json={"name": model_name},
-                timeout=300  # Model pulling can take a while
+                timeout=600  # Model pulling can take a while
             )
             
             if response.status_code == 200:
