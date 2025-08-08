@@ -23,7 +23,7 @@ class UserStoryDecomposerAgent(Agent):
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.user_story_quality_assessor = UserStoryQualityAssessor()
-        self.max_quality_retries = 1  # Reduced to prevent timeouts with replacement generation
+        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
 
     def decompose_feature_to_user_stories(self, feature: dict, context: dict = None, max_user_stories: int = 5) -> list[dict]:
         """Decompose a feature into user stories."""

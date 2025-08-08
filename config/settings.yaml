@@ -3,26 +3,26 @@ agents:
     prompt_file: "prompts/epic_strategist.txt"
     # model: removed to enable intelligent model fallback system
     # Uses qwen2.5:14b-instruct-q4_K_M first, then llama3.1:8b-instruct-q4_K_M
-    timeout_seconds: 300  # Default timeout - will be adjusted by fallback manager per model
+    timeout_seconds: 600  # 10 minutes for quality improvement and replacement generation
   feature_decomposer_agent:
     prompt_file: "prompts/feature_decomposer_agent.txt"
     # model: removed to use default unified LLM configuration
-    timeout_seconds: 180  # 3 minutes for faster model
+    timeout_seconds: 600  # 10 minutes for quality improvement and replacement generation
   user_story_decomposer_agent:
     prompt_file: "prompts/user_story_decomposer.txt"
     # model: removed to use default unified LLM configuration
-    timeout_seconds: 180  # 3 minutes for faster model
+    timeout_seconds: 600  # 10 minutes for quality improvement and replacement generation
   decomposition_agent:
     prompt_file: "prompts/decomposition_agent.txt"  # Legacy support
   developer_agent:
     prompt_file: "prompts/developer_agent.txt"
     estimation_unit: "hours"
     # model: removed to use default unified LLM configuration
-    timeout_seconds: 180  # 3 minutes for faster model
+    timeout_seconds: 600  # 10 minutes for quality improvement and replacement generation
   qa_lead_agent:
     prompt_file: "prompts/qa_lead_agent.txt"
     # model: removed to use default unified LLM configuration
-    timeout_seconds: 300  # 5 minutes for large models and complex QA operations
+    timeout_seconds: 600  # 10 minutes for quality improvement and replacement generation
     
     # Test organization requirements
     test_organization:

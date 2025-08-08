@@ -22,7 +22,7 @@ class EpicStrategist(Agent):
         super().__init__("epic_strategist", config)
         self.content_enhancer = ContentEnhancer()
         self.quality_assessor = EpicQualityAssessor()
-        self.max_quality_retries = 1  # Reduced to 1 to prevent timeouts with replacement generation
+        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
         self.model_fallback = ModelFallbackManager()
         self.logger = get_safe_logger(__name__)
         
