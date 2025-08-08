@@ -98,8 +98,10 @@ User Type: {user_story.get('user_type', 'user')}
         
         domain = context.get('domain', 'general') if context else 'general'
         approved_tasks = []
+        task_limit = len(tasks)  # Track original target count
+        failed_task_count = 0  # Track failed tasks for replacement
         
-        print(f"\nStarting task quality assessment for {len(tasks)} tasks...")
+        print(f"\nStarting task quality assessment for {len(tasks)} tasks (target: {task_limit})...")
         print(f"User Story Context: {user_story.get('title', 'Unknown Story')}")
         print(f"Domain: {domain}")
         
@@ -129,9 +131,12 @@ User Type: {user_story.get('user_type', 'user')}
                     break
                 
                 if attempt == self.max_quality_retries:
+                    failed_task_count += 1
+                    task_title = current_task.get('title', f'Task {i+1}')
                     print(f"- Task failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   Task REJECTED - GOOD or better rating required")
+                    print(f"[REPLACEMENT NEEDED] Will generate {failed_task_count} replacement task(s) to maintain target of {task_limit}")
                     # Do NOT add to approved_tasks - only GOOD+ tasks allowed
                     break
                 
@@ -156,6 +161,69 @@ User Type: {user_story.get('user_type', 'user')}
                     break
                 
                 attempt += 1
+        
+        # Generate replacement tasks if we have failures and haven't reached target count
+        if failed_task_count > 0 and len(approved_tasks) < task_limit:
+            replacements_needed = min(failed_task_count, task_limit - len(approved_tasks))
+            print(f"\n[REPLACEMENT] Generating {replacements_needed} replacement tasks to reach target of {task_limit}")
+            
+            try:
+                # Build user input for replacement generation
+                user_input = f"""
+User Story: {user_story.get('title', 'Unknown User Story')}
+Description: {user_story.get('description', user_story.get('user_story', 'No description provided'))}
+Acceptance Criteria: {user_story.get('acceptance_criteria', [])}
+Story Points: {user_story.get('story_points', 'Not specified')}
+Priority: {user_story.get('priority', 'Medium')}
+User Type: {user_story.get('user_type', 'user')}
+
+Generate a maximum of {replacements_needed} tasks only.
+"""
+                
+                # Build context similar to main generation
+                prompt_context = {
+                    'domain': context.get('domain', 'dynamic') if context else 'dynamic',
+                    'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+                    'tech_stack': context.get('tech_stack', 'Modern Web Stack') if context else 'Modern Web Stack',
+                    'architecture_pattern': context.get('architecture_pattern', 'MVC') if context else 'MVC',
+                    'database_type': context.get('database_type', 'SQL Database') if context else 'SQL Database',
+                    'cloud_platform': context.get('cloud_platform', 'Cloud Platform') if context else 'Cloud Platform',
+                    'team_size': context.get('team_size', '5-8 developers') if context else '5-8 developers',
+                    'sprint_duration': context.get('sprint_duration', '2 weeks') if context else '2 weeks',
+                    'product_vision': context.get('product_vision', '') if context else '',
+                    'epic_context': context.get('epic_context', '') if context else '',
+                    'feature_context': context.get('feature_context', '') if context else ''
+                }
+                
+                # Generate replacement tasks
+                replacement_response = self.run_with_template(user_input, prompt_context, "developer_agent")
+                
+                if replacement_response:
+                    # Parse replacement tasks
+                    from utils.json_extractor import JSONExtractor
+                    cleaned_response = JSONExtractor.extract_json_from_response(replacement_response)
+                    replacement_tasks = json.loads(cleaned_response) if cleaned_response else []
+                    
+                    # Quick quality check for replacements (1 attempt only)
+                    for i, replacement_task in enumerate(replacement_tasks):
+                        task_title = replacement_task.get('title', f'Replacement Task {i+1}')
+                        
+                        assessment = self.task_quality_assessor.assess_task(
+                            replacement_task, user_story, domain, product_vision
+                        )
+                        
+                        if assessment.rating in ["EXCELLENT", "GOOD"]:
+                            approved_tasks.append(replacement_task)
+                            print(f"[REPLACEMENT SUCCESS] Added replacement task '{task_title}' with {assessment.rating} rating")
+                            
+                            # Stop when we reach target count
+                            if len(approved_tasks) >= task_limit:
+                                break
+                        else:
+                            print(f"[REPLACEMENT SKIP] Replacement task '{task_title}' also failed ({assessment.rating})")
+                            
+            except Exception as replacement_error:
+                print(f"[REPLACEMENT FAILED] Could not generate replacement tasks: {replacement_error}")
         
         print(f"\n+ Task quality assessment complete: {len(approved_tasks)} tasks approved")
         return approved_tasks

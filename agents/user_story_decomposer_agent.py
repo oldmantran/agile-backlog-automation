@@ -916,8 +916,10 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         domain = context.get('domain', 'general') if context else 'general'
         approved_stories = []
+        story_limit = len(user_stories)  # Track original target count
+        failed_story_count = 0  # Track failed stories for replacement
         
-        print(f"\nStarting user story quality assessment for {len(user_stories)} stories...")
+        print(f"\nStarting user story quality assessment for {len(user_stories)} stories (target: {story_limit})...")
         print(f"Feature Context: {feature.get('title', 'Unknown Feature')}")
         print(f"Domain: {domain}")
         
@@ -973,9 +975,12 @@ Edge Cases: {feature.get('edge_cases', [])}
                     break
                 
                 if attempt == self.max_quality_retries:
+                    failed_story_count += 1
+                    story_title = current_story.get('title', f'Story {i+1}')
                     print(f"- User story failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   Story REJECTED - GOOD or better rating required")
+                    print(f"[REPLACEMENT NEEDED] Will generate {failed_story_count} replacement user story(s) to maintain target of {story_limit}")
                     # Do NOT add to approved_stories - only GOOD+ stories allowed
                     break
                 
@@ -1007,6 +1012,87 @@ Edge Cases: {feature.get('edge_cases', [])}
                     break
                 
                 attempt += 1
+        
+        # Generate replacement user stories if we have failures and haven't reached target count
+        if failed_story_count > 0 and len(approved_stories) < story_limit:
+            replacements_needed = min(failed_story_count, story_limit - len(approved_stories))
+            print(f"\n[REPLACEMENT] Generating {replacements_needed} replacement user stories to reach target of {story_limit}")
+            
+            try:
+                # Build user input for replacement generation
+                user_input = f"""
+Feature: {feature.get('title', 'Unknown Feature')}
+Description: {feature.get('description', 'No description provided')}
+Priority: {feature.get('priority', 'Medium')}
+Estimated Story Points: {feature.get('estimated_story_points', 'Not specified')}
+Business Value: {feature.get('business_value', 'Not specified')}
+Dependencies: {feature.get('dependencies', [])}
+UI/UX Requirements: {feature.get('ui_ux_requirements', [])}
+Edge Cases: {feature.get('edge_cases', [])}
+"""
+                
+                # Build context similar to main decomposition
+                prompt_context = {
+                    'domain': context.get('domain', 'dynamic') if context else 'dynamic',
+                    'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+                    'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
+                    'target_users': context.get('target_users', 'end users') if context else 'end users',
+                    'platform': context.get('platform', 'web application') if context else 'web application',
+                    'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
+                    'product_vision': context.get('product_vision', '') if context else '',
+                    'epic_context': context.get('epic_context', '') if context else ''
+                }
+                
+                # Generate replacement user stories
+                replacement_response = self.run_with_template(user_input, prompt_context, "user_story_decomposer")
+                
+                if replacement_response:
+                    # Parse replacement user stories
+                    from utils.json_extractor import JSONExtractor
+                    cleaned_response = JSONExtractor.extract_json_from_response(replacement_response)
+                    replacement_stories = json.loads(cleaned_response) if cleaned_response else []
+                    
+                    # Handle case where replacement stories are also strings
+                    if replacement_stories and all(isinstance(item, str) for item in replacement_stories):
+                        converted_stories = []
+                        for story_text in replacement_stories:
+                            converted_story = {
+                                'title': f"As a user, I want {story_text[:80]}{'...' if len(story_text) > 80 else ''}",
+                                'user_story': f"As a user, I want {story_text[:80]}{'...' if len(story_text) > 80 else ''}",
+                                'description': story_text,
+                                'acceptance_criteria': [
+                                    f"Given the system is ready, When I {story_text[:60]}{'...' if len(story_text) > 60 else ''}, Then it should work as expected",
+                                    f"Given valid conditions, When I interact with the feature, Then the outcome should meet requirements",
+                                    f"Given the feature is implemented, When I test it, Then it should satisfy the acceptance criteria"
+                                ],
+                                'story_points': 3,
+                                'priority': 'Medium',
+                                'category': 'feature_implementation',
+                                'user_type': 'general_user'
+                            }
+                            converted_stories.append(converted_story)
+                        replacement_stories = converted_stories
+                    
+                    # Quick quality check for replacements (1 attempt only)
+                    for i, replacement_story in enumerate(replacement_stories):
+                        story_title = replacement_story.get('title', f'Replacement Story {i+1}')
+                        
+                        assessment = self.user_story_quality_assessor.assess_user_story(
+                            replacement_story, feature, domain, product_vision
+                        )
+                        
+                        if assessment.rating in ["EXCELLENT", "GOOD"]:
+                            approved_stories.append(replacement_story)
+                            print(f"[REPLACEMENT SUCCESS] Added replacement user story '{story_title}' with {assessment.rating} rating")
+                            
+                            # Stop when we reach target count
+                            if len(approved_stories) >= story_limit:
+                                break
+                        else:
+                            print(f"[REPLACEMENT SKIP] Replacement user story '{story_title}' also failed ({assessment.rating})")
+                            
+            except Exception as replacement_error:
+                print(f"[REPLACEMENT FAILED] Could not generate replacement user stories: {replacement_error}")
         
         print(f"\nSUCCESS: User story quality assessment complete: {len(approved_stories)} stories approved")
         return approved_stories

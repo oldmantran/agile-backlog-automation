@@ -606,8 +606,10 @@ Dependencies: {epic.get('dependencies', [])}
         """Assess feature quality and retry generation if not GOOD or better."""
         domain = context.get('domain', 'general') if context else 'general'
         approved_features = []
+        feature_limit = len(features)  # Track original target count
+        failed_feature_count = 0  # Track failed features for replacement
         
-        print(f"\nStarting feature quality assessment for {len(features)} features...")
+        print(f"\nStarting feature quality assessment for {len(features)} features (target: {feature_limit})...")
         print(f"Epic Context: {epic.get('title', 'Unknown Epic')}")
         print(f"Domain: {domain}")
         
@@ -637,9 +639,12 @@ Dependencies: {epic.get('dependencies', [])}
                     break
                 
                 if attempt == self.max_quality_retries:
+                    failed_feature_count += 1
+                    feature_title = feature.get('title', f'Feature {i+1}')
                     print(f"- Feature failed to reach GOOD or better rating after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
                     print("   Feature REJECTED - GOOD or better rating required")
+                    print(f"[REPLACEMENT NEEDED] Will generate {failed_feature_count} replacement feature(s) to maintain target of {feature_limit}")
                     # Do NOT add to approved_features - only GOOD+ features allowed
                     break
                 
@@ -664,6 +669,65 @@ Dependencies: {epic.get('dependencies', [])}
                     break
                 
                 attempt += 1
+        
+        # Generate replacement features if we have failures and haven't reached target count
+        if failed_feature_count > 0 and len(approved_features) < feature_limit:
+            replacements_needed = min(failed_feature_count, feature_limit - len(approved_features))
+            print(f"\n[REPLACEMENT] Generating {replacements_needed} replacement features to reach target of {feature_limit}")
+            
+            try:
+                # Build user input for replacement generation
+                user_input = f"""
+Epic: {epic.get('title', 'Unknown Epic')}
+Description: {epic.get('description', 'No description provided')}
+Priority: {epic.get('priority', 'Medium')}
+Business Value: {epic.get('business_value', 'Not specified')}
+Strategic Objectives: {epic.get('strategic_objectives', 'Not specified')}
+Success Metrics: {epic.get('success_metrics', 'Not specified')}
+Dependencies: {epic.get('dependencies', [])}
+"""
+                
+                # Build context similar to main decomposition
+                prompt_context = {
+                    'domain': context.get('domain', 'dynamic') if context else 'dynamic',
+                    'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+                    'methodology': context.get('methodology', 'Agile/Scrum') if context else 'Agile/Scrum',
+                    'target_users': context.get('target_users', 'end users') if context else 'end users',
+                    'platform': context.get('platform', 'web application') if context else 'web application',
+                    'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs',
+                    'product_vision': context.get('product_vision', '') if context else '',
+                    'max_features': replacements_needed
+                }
+                
+                # Generate replacement features
+                replacement_response = self.run_with_template(user_input, prompt_context, "feature_decomposer_agent")
+                
+                if replacement_response:
+                    # Parse replacement features
+                    from utils.json_extractor import JSONExtractor
+                    cleaned_response = JSONExtractor.extract_json_from_response(replacement_response)
+                    replacement_features = json.loads(cleaned_response) if cleaned_response else []
+                    
+                    # Quick quality check for replacements (1 attempt only)
+                    for i, replacement_feature in enumerate(replacement_features):
+                        feature_title = replacement_feature.get('title', f'Replacement Feature {i+1}')
+                        
+                        assessment = self.feature_quality_assessor.assess_feature(
+                            replacement_feature, epic, domain, product_vision
+                        )
+                        
+                        if assessment.rating in ["EXCELLENT", "GOOD"]:
+                            approved_features.append(replacement_feature)
+                            print(f"[REPLACEMENT SUCCESS] Added replacement feature '{feature_title}' with {assessment.rating} rating")
+                            
+                            # Stop when we reach target count
+                            if len(approved_features) >= feature_limit:
+                                break
+                        else:
+                            print(f"[REPLACEMENT SKIP] Replacement feature '{feature_title}' also failed ({assessment.rating})")
+                            
+            except Exception as replacement_error:
+                print(f"[REPLACEMENT FAILED] Could not generate replacement features: {replacement_error}")
         
         print(f"\n+ Feature quality assessment complete: {len(approved_features)} features approved")
         return approved_features
