@@ -65,6 +65,7 @@ class UnifiedLLMConfigManager:
                    runtime_overrides: Optional[Dict[str, Any]] = None) -> LLMConfig:
         """
         Get unified LLM configuration for an agent.
+        FRONTEND IS THE SINGLE SOURCE OF TRUTH - Database configurations take precedence.
         
         Args:
             agent_name: Name of the agent
@@ -77,45 +78,38 @@ class UnifiedLLMConfigManager:
         config = LLMConfig()
         sources = []
         
-        # 5. Hard-coded fallbacks (already set in LLMConfig)
+        # 1. Hard-coded fallbacks (lowest priority)
         sources.append("fallback")
         
-        # 4. Environment variables
-        env_provider = os.getenv("LLM_PROVIDER")
-        if env_provider:
-            config.provider = env_provider
-            sources.append("environment")
-        
-        # 3. Settings.yaml agent-specific config
-        agent_config = self._agent_configs.get(agent_name, {})
-        if agent_config:
-            if 'model' in agent_config:
-                config.model = agent_config['model']
-                sources.append(f"settings.yaml[{agent_name}]")
-            if 'timeout_seconds' in agent_config:
-                config.timeout_seconds = agent_config['timeout_seconds']
-            if 'temperature' in agent_config:
-                config.temperature = agent_config.get('temperature', config.temperature)
-            if 'max_tokens' in agent_config:
-                config.max_tokens = agent_config.get('max_tokens', config.max_tokens)
-        
-        # 2. Database user settings
+        # 2. Database user settings (HIGHEST PRIORITY - Frontend is the source of truth)
         if user_id:
             try:
                 from utils.llm_config_manager import LLMConfigManager
                 db_config_manager = LLMConfigManager()
-                db_config = db_config_manager.get_active_configuration(user_id)
                 
-                if db_config and db_config.get('provider'):
-                    config.provider = db_config['provider']
-                    if 'model' in db_config and db_config['model']:
-                        config.model = db_config['model']
-                    sources.append("database")
+                # Try to get agent-specific configuration first
+                agent_config = self._get_agent_specific_config(user_id, agent_name)
+                if agent_config:
+                    config.provider = agent_config['provider']
+                    config.model = agent_config['model']
+                    if 'preset' in agent_config:
+                        config.preset = agent_config['preset']
+                    sources.append(f"database[{agent_name}]")
+                else:
+                    # Fall back to global user configuration
+                    db_config = db_config_manager.get_active_configuration(user_id)
+                    if db_config and db_config.get('provider'):
+                        config.provider = db_config['provider']
+                        if 'model' in db_config and db_config['model']:
+                            config.model = db_config['model']
+                        if 'preset' in db_config:
+                            config.preset = db_config['preset']
+                        sources.append("database[global]")
                     
             except Exception as e:
                 logger.warning(f"Could not load database config for user {user_id}: {e}")
         
-        # 1. Runtime overrides (highest priority)
+        # 3. Runtime overrides (highest priority for temporary changes)
         if runtime_overrides:
             for key, value in runtime_overrides.items():
                 if hasattr(config, key) and value is not None:
@@ -124,28 +118,15 @@ class UnifiedLLMConfigManager:
             if runtime_overrides:
                 sources.append("runtime")
         
-        # Load provider-specific configuration from environment (after provider is determined)
+        # Load provider-specific configuration (API keys, URLs) from environment ONLY
         if config.provider == "openai":
-            if not config.api_key:  # Only load if not already set
-                config.api_key = os.getenv("OPENAI_API_KEY")
-            if not config.model or config.model == "gpt-5-mini":  # Load env model if default
-                env_model = os.getenv("OPENAI_MODEL")
-                if env_model:
-                    config.model = env_model
+            config.api_key = os.getenv("OPENAI_API_KEY")
             config.api_url = "https://api.openai.com/v1/chat/completions"
         elif config.provider == "grok":
-            if not config.api_key:
-                config.api_key = os.getenv("GROK_API_KEY") 
-            if not config.model or config.model == "grok-beta":
-                env_model = os.getenv("GROK_MODEL")
-                if env_model:
-                    config.model = env_model
+            config.api_key = os.getenv("GROK_API_KEY") 
             config.api_url = "https://api.x.ai/v1/chat/completions"
         elif config.provider == "ollama":
-            if not config.model or config.model == "gpt-5-mini":  # Reset default if ollama
-                config.model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
             config.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-            config.preset = os.getenv("OLLAMA_PRESET", "balanced")
         
         # Set source tracking (using safe characters for Windows)
         config.source = " -> ".join(sources)
@@ -155,6 +136,36 @@ class UnifiedLLMConfigManager:
         
         logger.info(f"Agent {agent_name} config: {config.provider}:{config.model} (sources: {config.source})")
         return config
+    
+    def _get_agent_specific_config(self, user_id: str, agent_name: str) -> Optional[Dict[str, Any]]:
+        """Get agent-specific configuration from database."""
+        try:
+            import sqlite3
+            conn = sqlite3.connect('backlog_jobs.db')
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT provider, model, preset
+                FROM llm_configurations 
+                WHERE user_id = ? AND agent_name = ? AND is_active = 1
+                ORDER BY updated_at DESC
+                LIMIT 1
+            ''', (user_id, agent_name))
+            
+            row = cursor.fetchone()
+            conn.close()
+            
+            if row:
+                return {
+                    'provider': row[0],
+                    'model': row[1],
+                    'preset': row[2]
+                }
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Could not load agent-specific config for {agent_name}: {e}")
+            return None
     
     def _validate_config(self, config: LLMConfig, agent_name: str):
         """Validate the final configuration."""

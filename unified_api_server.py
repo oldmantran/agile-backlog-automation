@@ -2124,6 +2124,155 @@ async def detect_domain(request: dict):
         # Return a fallback domain instead of failing
         return {"domain": "technology"}
 
+# Agent-Specific LLM Configuration Endpoints
+
+class AgentLLMConfigRequest(BaseModel):
+    agent_name: str
+    provider: str
+    model: str
+    custom_model: Optional[str] = None
+    preset: str = "balanced"
+
+class AgentLLMConfigResponse(BaseModel):
+    agent_name: str
+    provider: str
+    model: str
+    preset: str
+    is_active: bool
+
+@app.get("/api/llm-configurations/{user_id}")
+async def get_agent_llm_configurations(user_id: str):
+    """Get all agent-specific LLM configurations for a user."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect('backlog_jobs.db')
+        cursor = conn.cursor()
+        
+        # Get all configurations for this user
+        cursor.execute('''
+            SELECT agent_name, provider, model, preset, is_active
+            FROM llm_configurations 
+            WHERE user_id = ?
+            ORDER BY agent_name, updated_at DESC
+        ''', (user_id,))
+        
+        results = cursor.fetchall()
+        conn.close()
+        
+        configurations = []
+        for row in results:
+            configurations.append({
+                "agent_name": row[0] or "global",
+                "provider": row[1],
+                "model": row[2],
+                "preset": row[3] or "balanced",
+                "is_active": bool(row[4])
+            })
+        
+        return {
+            "success": True,
+            "data": configurations
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get LLM configurations for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/llm-configurations/{user_id}")
+async def save_agent_llm_configurations(user_id: str, configurations: List[AgentLLMConfigRequest]):
+    """Save agent-specific LLM configurations for a user."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect('backlog_jobs.db')
+        cursor = conn.cursor()
+        
+        # Deactivate all existing configurations for this user
+        cursor.execute('''
+            UPDATE llm_configurations 
+            SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (user_id,))
+        
+        # Insert or update new configurations
+        for config in configurations:
+            # Use custom_model if provided, otherwise use model
+            final_model = config.custom_model if config.custom_model else config.model
+            
+            # Check if configuration exists
+            cursor.execute('''
+                SELECT id FROM llm_configurations 
+                WHERE user_id = ? AND agent_name = ? AND provider = ?
+            ''', (user_id, config.agent_name, config.provider))
+            
+            existing = cursor.fetchone()
+            
+            if existing:
+                # Update existing
+                cursor.execute('''
+                    UPDATE llm_configurations 
+                    SET model = ?, preset = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                ''', (final_model, config.preset, existing[0]))
+            else:
+                # Insert new
+                cursor.execute('''
+                    INSERT INTO llm_configurations 
+                    (user_id, name, provider, model, agent_name, preset, is_active, is_default) 
+                    VALUES (?, ?, ?, ?, ?, ?, 1, 0)
+                ''', (
+                    user_id,
+                    f"{config.provider.title()} {final_model} ({config.agent_name})",
+                    config.provider,
+                    final_model,
+                    config.agent_name,
+                    config.preset
+                ))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Saved {len(configurations)} LLM configurations for user {user_id}")
+        
+        return {
+            "success": True,
+            "message": f"Saved {len(configurations)} LLM configurations",
+            "data": {"user_id": user_id, "configurations_count": len(configurations)}
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to save LLM configurations for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/llm-configurations/{user_id}")
+async def reset_agent_llm_configurations(user_id: str):
+    """Reset all LLM configurations for a user to defaults."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect('backlog_jobs.db')
+        cursor = conn.cursor()
+        
+        # Deactivate all configurations for this user
+        cursor.execute('''
+            UPDATE llm_configurations 
+            SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (user_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Reset LLM configurations for user {user_id}")
+        
+        return {
+            "success": True,
+            "message": "LLM configurations reset to defaults",
+            "data": {"user_id": user_id}
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to reset LLM configurations for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Build Version Endpoint
 @app.get("/api/build-version")
 async def get_build_version():

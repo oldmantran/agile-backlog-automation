@@ -148,6 +148,14 @@ class Database:
                 except sqlite3.OperationalError:
                     # Column already exists
                     pass
+
+                # Add agent_name column to llm_configurations for per-agent model support
+                try:
+                    cursor.execute('ALTER TABLE llm_configurations ADD COLUMN agent_name TEXT')
+                    logger.info("Added agent_name column to llm_configurations table")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
                 
                 conn.commit()
                 logger.info("Database initialized successfully")
