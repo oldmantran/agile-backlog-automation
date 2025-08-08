@@ -20,7 +20,7 @@ class DeveloperAgent(Agent):
         # Initialize quality validator and task quality assessor
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.task_quality_assessor = TaskQualityAssessor()
-        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
+        self.max_quality_retries = 1  # Reduced to prevent timeouts with replacement generation
         
         # Azure DevOps integration will be set by supervisor when needed
         self.azure_api = None
