@@ -24,7 +24,7 @@ class Config:
             "GROK_MODEL": os.getenv("GROK_MODEL", "grok-3-latest"),
             # OpenAI
             "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
-            "OPENAI_MODEL": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            "OPENAI_MODEL": os.getenv("OPENAI_MODEL", "gpt-5-mini"),
             # Ollama (Local LLM)
             "OLLAMA_MODEL": os.getenv("OLLAMA_MODEL"),
             "OLLAMA_BASE_URL": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),

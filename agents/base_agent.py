@@ -173,7 +173,7 @@ class Agent:
             
             if self.llm_provider == "openai":
                 # Use model from database if available, otherwise from environment
-                self.model = provider_config.get('model') or self.config.get_env("OPENAI_MODEL") or 'gpt-4o-mini'
+                self.model = provider_config.get('model') or self.config.get_env("OPENAI_MODEL") or 'gpt-5-mini'
                 # Always get OpenAI API key from environment for security
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
@@ -206,7 +206,7 @@ class Agent:
             self.llm_provider = self.config.get_env("LLM_PROVIDER") or "openai"
             
             if self.llm_provider == "openai":
-                self.model = self.config.get_env("OPENAI_MODEL") or "gpt-4o-mini"
+                self.model = self.config.get_env("OPENAI_MODEL") or "gpt-5-mini"
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
             elif self.llm_provider == "grok":

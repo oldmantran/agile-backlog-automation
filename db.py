@@ -658,9 +658,9 @@ class Database:
             # Create OpenAI configuration (now default)
             self.save_llm_configuration(
                 user_id=user_id,
-                name="OpenAI GPT-4o-mini",
+                name="OpenAI GPT-5-mini",
                 provider="openai",
-                model="gpt-4o-mini",
+                model="gpt-5-mini",
                 api_key="",  # User will need to set this
                 is_default=True,
                 is_active=True
