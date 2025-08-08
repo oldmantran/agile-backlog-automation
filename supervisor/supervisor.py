@@ -356,6 +356,23 @@ class WorkflowSupervisor:
         self.logger.info(f"Initialized {len(agents)} agents successfully")
         return agents
     
+    def _get_parallel_config(self) -> Dict[str, Any]:
+        """Get parallel processing configuration from settings."""
+        workflow_config = self.config.settings.get('workflow', {})
+        parallel_config = workflow_config.get('parallel_processing', {})
+        
+        return {
+            'enabled': parallel_config.get('enabled', True),
+            'max_workers': parallel_config.get('max_workers', 2),
+            'rate_limit_per_second': parallel_config.get('rate_limit_per_second', 8),
+            'stages': {
+                'feature_decomposer_agent': parallel_config.get('feature_decomposition', True),
+                'user_story_decomposer_agent': parallel_config.get('user_story_decomposition', True),
+                'developer_agent': parallel_config.get('task_generation', True),
+                'qa_lead_agent': parallel_config.get('qa_generation', True)
+            }
+        }
+    
     def _refresh_agent_configurations(self):
         """Refresh LLM configurations for all agents."""
         self.logger.info("Refreshing agent configurations...")

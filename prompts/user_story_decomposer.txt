@@ -22,9 +22,9 @@ PARENT EPIC CONTEXT:
 ${epic_context}
 
 REQUIRED FIELDS per story:
-- title: Use the complete user story format "As a [user], I want [goal] so that [benefit]" (max 150 chars)
-- user_story: Same as title - the complete user story statement
-- description: Detailed functionality explanation, implementation requirements, and business context (NOT the user story again)
+- title: A concise summary of the user story (max 60 chars) - e.g., "User Login Authentication" or "Dashboard Analytics View"
+- user_story: The complete user story format "As a [user], I want [goal] so that [benefit]"
+- description: Start with the full user story, then provide detailed functionality explanation, implementation requirements, and business context
 - acceptance_criteria: Array of exactly 3-5 testable conditions using "Given/When/Then" format (REQUIRED: minimum 3, maximum 5)
   CRITICAL: These are acceptance criteria WITHIN ONE story, NOT separate user stories
 - story_points: Use Fibonacci (1,2,3,5,8,13): 1=simple change, 3=medium feature, 5=complex feature, 8=large feature
@@ -35,9 +35,9 @@ REQUIRED FIELDS per story:
 IMPORTANT: Each story MUST have 3-5 acceptance criteria. Generate EXACTLY that many.
 
 RESPOND WITH ONLY A JSON ARRAY OF USER STORIES. Use these fields for each story:
-- title: Complete user story "As a [role], I want [goal] so that [benefit]"  
-- user_story: Same as title
-- description: Detailed functionality explanation (NOT the user story repeated)
+- title: Concise summary (max 60 chars) - NOT the full user story  
+- user_story: Complete "As a [role], I want [goal] so that [benefit]"
+- description: Start with full user story, then detailed functionality explanation
 - acceptance_criteria: Array of 3-5 "Given/When/Then" test scenarios
 - story_points: Fibonacci number (1,2,3,5,8,13)
 - priority: "High", "Medium", or "Low"
@@ -57,7 +57,9 @@ DO NOT RETURN TEMPLATE PLACEHOLDERS. Generate actual, specific content based on 
 
 CORRECT Example:
 {
-  "title": "As a warehouse manager, I want to view asset health alerts so that I can schedule proactive maintenance",
+  "title": "Asset Health Alert Dashboard",
+  "user_story": "As a warehouse manager, I want to view asset health alerts so that I can schedule proactive maintenance",
+  "description": "As a warehouse manager, I want to view asset health alerts so that I can schedule proactive maintenance. This feature provides real-time visibility into dock asset health status through a centralized dashboard interface. Warehouse managers can view anomaly alerts, track asset conditions, and prioritize maintenance activities based on severity and impact.",
   "acceptance_criteria": [
     "Given a dock asset has a detected anomaly, When I access the dashboard, Then I see the alert with asset details",
     "Given multiple alerts exist, When I view the alert list, Then they are sorted by priority and timestamp", 
