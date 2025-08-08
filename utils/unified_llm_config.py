@@ -86,19 +86,6 @@ class UnifiedLLMConfigManager:
             config.provider = env_provider
             sources.append("environment")
         
-        if config.provider == "openai":
-            config.api_key = os.getenv("OPENAI_API_KEY")
-            config.model = os.getenv("OPENAI_MODEL", config.model)
-            config.api_url = "https://api.openai.com/v1/chat/completions"
-        elif config.provider == "grok":
-            config.api_key = os.getenv("GROK_API_KEY") 
-            config.model = os.getenv("GROK_MODEL", "grok-beta")
-            config.api_url = "https://api.x.ai/v1/chat/completions"
-        elif config.provider == "ollama":
-            config.model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
-            config.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-            config.preset = os.getenv("OLLAMA_PRESET", "balanced")
-        
         # 3. Settings.yaml agent-specific config
         agent_config = self._agent_configs.get(agent_name, {})
         if agent_config:
@@ -117,7 +104,7 @@ class UnifiedLLMConfigManager:
             try:
                 from utils.llm_config_manager import LLMConfigManager
                 db_config_manager = LLMConfigManager()
-                db_config = db_config_manager.get_configuration(user_id)
+                db_config = db_config_manager.get_active_configuration(user_id)
                 
                 if db_config and db_config.get('provider'):
                     config.provider = db_config['provider']
@@ -137,8 +124,31 @@ class UnifiedLLMConfigManager:
             if runtime_overrides:
                 sources.append("runtime")
         
-        # Set source tracking
-        config.source = " → ".join(sources)
+        # Load provider-specific configuration from environment (after provider is determined)
+        if config.provider == "openai":
+            if not config.api_key:  # Only load if not already set
+                config.api_key = os.getenv("OPENAI_API_KEY")
+            if not config.model or config.model == "gpt-5-mini":  # Load env model if default
+                env_model = os.getenv("OPENAI_MODEL")
+                if env_model:
+                    config.model = env_model
+            config.api_url = "https://api.openai.com/v1/chat/completions"
+        elif config.provider == "grok":
+            if not config.api_key:
+                config.api_key = os.getenv("GROK_API_KEY") 
+            if not config.model or config.model == "grok-beta":
+                env_model = os.getenv("GROK_MODEL")
+                if env_model:
+                    config.model = env_model
+            config.api_url = "https://api.x.ai/v1/chat/completions"
+        elif config.provider == "ollama":
+            if not config.model or config.model == "gpt-5-mini":  # Reset default if ollama
+                config.model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+            config.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+            config.preset = os.getenv("OLLAMA_PRESET", "balanced")
+        
+        # Set source tracking (using safe characters for Windows)
+        config.source = " -> ".join(sources)
         
         # Validate final configuration
         self._validate_config(config, agent_name)
