@@ -349,7 +349,7 @@ Return only a single improved task in this JSON format:
                 }
                 
                 import requests
-                timeout = 120 if self.model and "70b" in self.model.lower() else 60
+                timeout = 600  # 10 minutes for all models
                 response = requests.post(url, headers=headers, json=payload, timeout=timeout)
                 response.raise_for_status()
                 data = response.json()

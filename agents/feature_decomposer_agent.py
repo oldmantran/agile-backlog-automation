@@ -61,16 +61,16 @@ Dependencies: {epic.get('dependencies', [])}
         # Smart model selection with fallback strategy
         models_to_try = []
         
-        # Use configured model with appropriate timeout
+        # Use configured model with appropriate timeout (extended for quality)
         if self.model and ("70b" in self.model.lower()):
             # 70B model needs longer timeout
-            models_to_try = [(self.model, 120)]
+            models_to_try = [(self.model, 600)]
         elif self.model and ("34b" in self.model.lower()):
-            # 34B model with standard timeout
-            models_to_try = [(self.model, 60)]
+            # 34B model with extended timeout for quality
+            models_to_try = [(self.model, 600)]
         else:
-            # 8B or other models with standard timeout
-            models_to_try = [(self.model, 60)]
+            # 8B, 14B or other models with extended timeout for quality
+            models_to_try = [(self.model, 600)]
         
         # Try each model until one succeeds
         for model_name, timeout in models_to_try:
@@ -367,8 +367,8 @@ Dependencies: {epic.get('dependencies', [])}
                 }
                 
                 import requests
-                # Use longer timeout for 70B models
-                timeout = 300 if self.model and "70b" in self.model.lower() else 60
+                # Use extended timeout for quality (all models)
+                timeout = 600  # 10 minutes for all models
                 response = requests.post(url, headers=headers, json=payload, timeout=timeout)
                 response.raise_for_status()
                 data = response.json()
@@ -380,7 +380,7 @@ Dependencies: {epic.get('dependencies', [])}
             print("Falling back to default prompt...")
             # Use timeout protection for fallback call
             try:
-                timeout = 180 if self.model and "70b" in self.model.lower() else 60
+                timeout = 600  # 10 minutes for all models
                 return self._run_with_timeout(user_input, context, timeout=timeout)
             except TimeoutError:
                 print("Fallback generation timed out")
@@ -577,7 +577,7 @@ Dependencies: {epic.get('dependencies', [])}
         # If nothing worked, return the remainder and hope for the best
         return response[start_idx:].strip()
 
-    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60):
+    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 600):
         """Run the agent with a timeout to prevent hanging."""
         result = [None]
         exception = [None]

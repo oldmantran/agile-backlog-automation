@@ -63,21 +63,21 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
         
-        # Use configured model with appropriate timeout
+        # Use configured model with extended timeout for quality
         models_to_try = []
         
         if self.model and ("70b" in self.model.lower()):
-            # 70B model needs longer timeout
-            models_to_try = [(self.model, 180)]
+            # 70B model with extended timeout for quality
+            models_to_try = [(self.model, 600)]
         elif self.model and ("32b" in self.model.lower()):
-            # 32B model is actually quite fast - reduced timeout
-            models_to_try = [(self.model, 45)]
+            # 32B model with extended timeout for quality
+            models_to_try = [(self.model, 600)]
         elif self.model and ("34b" in self.model.lower()):
-            # 34B model needs more time - increased from 60 to 120 seconds
-            models_to_try = [(self.model, 120)]
+            # 34B model with extended timeout for quality
+            models_to_try = [(self.model, 600)]
         else:
-            # 8B or other models with standard timeout
-            models_to_try = [(self.model, 60)]
+            # 8B, 14B or other models with extended timeout for quality
+            models_to_try = [(self.model, 600)]
         
         # Try each model until one succeeds
         response = None
@@ -597,8 +597,8 @@ Edge Cases: {feature.get('edge_cases', [])}
                 }
                 
                 import requests
-                # Use longer timeout for 70B models
-                timeout = 300 if self.model and "70b" in self.model.lower() else 60
+                # Use extended timeout for quality (all models)
+                timeout = 600  # 10 minutes for all models
                 response = requests.post(url, headers=headers, json=payload, timeout=timeout)
                 response.raise_for_status()
                 data = response.json()
@@ -610,7 +610,7 @@ Edge Cases: {feature.get('edge_cases', [])}
             print("Falling back to default prompt...")
             # Use timeout protection for fallback call
             try:
-                timeout = 180 if self.model and "70b" in self.model.lower() else 60
+                timeout = 600  # 10 minutes for all models
                 return self._run_with_timeout(user_input, context, timeout=timeout)
             except TimeoutError:
                 print("WARNING: Fallback generation timed out")
@@ -786,7 +786,7 @@ Edge Cases: {feature.get('edge_cases', [])}
         
         return cleaned_json
 
-    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 60, template_name: str = None):
+    def _run_with_timeout(self, user_input: str, context: dict, timeout: int = 600, template_name: str = None):
         """Run the agent with a timeout to prevent hanging."""
         result = [None]
         exception = [None]

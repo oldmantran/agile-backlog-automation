@@ -147,7 +147,7 @@ class EpicStrategist(Agent):
         # Add timeout protection
         try:
             # Use configured timeout from current model
-            timeout = self.timeout_seconds if hasattr(self, 'timeout_seconds') and self.timeout_seconds else 180
+            timeout = self.timeout_seconds if hasattr(self, 'timeout_seconds') and self.timeout_seconds else 600
             self.logger.info(f"[EPIC GEN] Calling LLM with timeout={timeout}s, model={self.model}")
             response = self._run_with_timeout(user_input, prompt_context, timeout=timeout)
         except TimeoutError as e:
@@ -541,7 +541,7 @@ Return only a single improved epic in this JSON format:
             print(f"Error generating improved epic: {e}")
             return None
 
-    def _run_with_timeout(self, user_input: str, prompt_context: dict, timeout: int = 60):
+    def _run_with_timeout(self, user_input: str, prompt_context: dict, timeout: int = 600):
         """Run the agent with a timeout to prevent hanging."""
         result = [None]
         exception = [None]
