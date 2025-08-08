@@ -259,12 +259,13 @@ class EpicStrategist(Agent):
                             attempt_number=attempt_number,
                             success=False,
                             quality_score=assessment.score,
-                            error_message=f"Quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of EXCELLENT",
+                            error_message=f"Quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of GOOD+",
                             duration_seconds=duration
                         )
                         
-                        # Raise error to trigger model fallback
-                        raise ValueError(f"Epic quality assessment failed: '{epic_title}' achieved {assessment.rating} ({assessment.score}/100) instead of GOOD or better. This indicates either insufficient input quality or inadequate LLM training for the {domain} domain. Please review the product vision or consider using a more capable model.")
+                        # CHANGED: Skip failed epic instead of failing entire batch
+                        self.logger.warning(f"[QUALITY SKIP] Skipping epic '{epic_title}' - failed to achieve GOOD+ rating ({assessment.rating} {assessment.score}/100)")
+                        # Continue to next epic instead of raising error
                         
             except Exception as e:
                 quality_tracker.complete_tracking(
@@ -273,7 +274,7 @@ class EpicStrategist(Agent):
                 )
                 raise e
         
-        # If we get here, all epics achieved EXCELLENT rating
+        # Check if we have any approved epics (EXCELLENT or GOOD rating)
         if approved_epics:
             self.model_fallback.record_attempt(
                 model_name=model_config.name,
@@ -283,10 +284,11 @@ class EpicStrategist(Agent):
                 duration_seconds=duration
             )
             
-            self.logger.info(f"[EPIC SUCCESS] Generated {len(approved_epics)} EXCELLENT epics with {model_config.display_name}")
+            self.logger.info(f"[EPIC SUCCESS] Generated {len(approved_epics)} GOOD+ rated epics with {model_config.display_name}")
             return approved_epics
         else:
-            raise ValueError("No epics achieved EXCELLENT rating")
+            # Only fail if NO epics achieved GOOD+ rating
+            raise ValueError(f"No epics achieved GOOD or better rating. This indicates either insufficient input quality or inadequate LLM training for the {domain} domain. Please review the product vision or consider using a more capable model.")
 
     def _assess_and_improve_quality(self, epics: list, product_vision: str, context: dict) -> list:
         """Assess epic quality and retry generation if not EXCELLENT."""
