@@ -1039,6 +1039,7 @@ Return only a single improved user story in this JSON format:
                 'product_vision': context.get('product_vision', '') if context else '',
                 'domain': context.get('domain', 'dynamic') if context else 'dynamic',
                 'project_name': context.get('project_name', 'Agile Project') if context else 'Agile Project',
+                'platform': context.get('platform', 'Web application') if context else 'Web application',
                 'target_users': context.get('target_users', 'end users') if context else 'end users',
                 'timeline': context.get('timeline', 'not specified') if context else 'not specified',
                 'budget_constraints': context.get('budget_constraints', 'standard budget') if context else 'standard budget',
