@@ -116,16 +116,21 @@ workflow:
   
   output_format: "azure_devops"
   
-  # Parallel processing configuration
+  # Parallel processing configuration (hardware auto-optimized)
   parallel_processing:
-    enabled: true   # Re-enabled with limited parallelism to improve performance
-    max_workers: 2  # Reduced from 4 to 2 to minimize race conditions
-    rate_limit_per_second: 8  # Reduced rate limit for stability
+    enabled: true   # Hardware-aware auto-scaling enabled
+    max_workers: null  # Auto-detected based on CPU cores and memory (removed hardcoded limit)
+    rate_limit_per_second: null  # Auto-calculated based on CPU performance (removed hardcoded limit)
     feature_decomposition: true  # Enable parallel feature decomposition
     user_story_decomposition: true  # Enable parallel user story decomposition
-    task_generation: true  # Enable parallel task generation (biggest bottleneck: 157 tasks)
+    task_generation: true  # Enable parallel task generation (biggest bottleneck)
     qa_generation: true  # Enable parallel QA generation
     qa_sub_agent_parallel: false  # Keep QA sub-agents sequential to avoid test management conflicts
+    # Note: Actual worker counts and rate limits are now auto-calculated based on:
+    # - CPU cores and threads
+    # - Available memory
+    # - Current system load
+    # - Stage-specific computational requirements
 
 notifications:
   enabled: true

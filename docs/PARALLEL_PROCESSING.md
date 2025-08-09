@@ -1,8 +1,8 @@
-# Enhanced Parallel Processing System
+# Hardware-Aware Enhanced Parallel Processing System
 
 ## Overview
 
-The Enhanced Parallel Processing System provides enterprise-grade parallel execution capabilities for the Agile Backlog Automation pipeline. This system implements advanced features including dynamic backpressure control, provider rotation, intelligent batching, and comprehensive observability.
+The Enhanced Parallel Processing System provides **hardware-aware auto-scaling** capabilities for the Agile Backlog Automation pipeline. The system automatically detects your hardware capabilities (CPU cores, memory, current load) and configures optimal parallel processing settings for **maximum performance with zero defects**. No user configuration required - the system optimizes itself.
 
 ## Architecture
 

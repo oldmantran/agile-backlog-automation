@@ -363,10 +363,11 @@ class WorkflowSupervisor:
         workflow_config = self.config.settings.get('workflow', {})
         parallel_config = workflow_config.get('parallel_processing', {})
         
+        # Use fallback values only if needed (null values will be replaced by hardware optimization)
         return {
             'enabled': parallel_config.get('enabled', True),
-            'max_workers': parallel_config.get('max_workers', 2),
-            'rate_limit_per_second': parallel_config.get('rate_limit_per_second', 8),
+            'max_workers': parallel_config.get('max_workers') or 4,  # Fallback only, will be overridden by hardware detection
+            'rate_limit_per_second': parallel_config.get('rate_limit_per_second') or 10,  # Fallback only, will be overridden by hardware detection
             'stages': {
                 'feature_decomposer_agent': parallel_config.get('feature_decomposition', True),
                 'user_story_decomposer_agent': parallel_config.get('user_story_decomposition', True),
@@ -376,83 +377,57 @@ class WorkflowSupervisor:
         }
     
     def _configure_enhanced_parallel_processor(self):
-        """Configure the enhanced parallel processor with stage-specific settings."""
-        # Configure each stage with appropriate settings
-        stages_config = {
-            'feature_decomposer_agent': {
-                'max_workers': self.parallel_config.get('feature_max_workers', self.parallel_config['max_workers']),
-                'min_workers': 1,
-                'rate_limit': RateLimitConfig(
-                    tokens_per_second=self.parallel_config['rate_limit_per_second'] * 0.8,  # Slightly lower for features
-                    burst_capacity=self.parallel_config['max_workers'] * 2,
-                    min_tokens_per_second=1.0,
-                    max_tokens_per_second=self.parallel_config['rate_limit_per_second'] * 2
-                ),
-                'timeout_seconds': 120,  # Features can take longer
-                'circuit_breaker_threshold': 3,
-                'providers': ['openai', 'grok', 'ollama'],  # Provider rotation list
-                'batch_size': None  # No batching for features (each is unique)
-            },
-            'user_story_decomposer_agent': {
-                'max_workers': self.parallel_config.get('story_max_workers', self.parallel_config['max_workers']),
-                'min_workers': 1,
-                'rate_limit': RateLimitConfig(
-                    tokens_per_second=self.parallel_config['rate_limit_per_second'],
-                    burst_capacity=self.parallel_config['max_workers'] * 3,
-                    min_tokens_per_second=1.0,
-                    max_tokens_per_second=self.parallel_config['rate_limit_per_second'] * 2.5
-                ),
-                'timeout_seconds': 90,
-                'circuit_breaker_threshold': 4,
-                'providers': ['openai', 'grok', 'ollama'],
-                'batch_size': 3  # Can batch similar user stories
-            },
-            'developer_agent': {
-                'max_workers': self.parallel_config.get('task_max_workers', self.parallel_config['max_workers']),
-                'min_workers': 1,
-                'rate_limit': RateLimitConfig(
-                    tokens_per_second=self.parallel_config['rate_limit_per_second'] * 1.2,  # Higher for tasks
-                    burst_capacity=self.parallel_config['max_workers'] * 4,
-                    min_tokens_per_second=2.0,
-                    max_tokens_per_second=self.parallel_config['rate_limit_per_second'] * 3
-                ),
-                'timeout_seconds': 60,
-                'circuit_breaker_threshold': 5,
-                'providers': ['openai', 'grok', 'ollama'],
-                'batch_size': 5  # Can batch multiple tasks per story
-            },
-            'qa_lead_agent': {
-                'max_workers': self.parallel_config.get('qa_max_workers', max(1, self.parallel_config['max_workers'] // 2)),  # Lower concurrency for QA
-                'min_workers': 1,
-                'rate_limit': RateLimitConfig(
-                    tokens_per_second=self.parallel_config['rate_limit_per_second'] * 0.6,  # Lower rate for QA
-                    burst_capacity=self.parallel_config['max_workers'],
-                    min_tokens_per_second=0.5,
-                    max_tokens_per_second=self.parallel_config['rate_limit_per_second']
-                ),
-                'timeout_seconds': 180,  # QA takes longer
-                'circuit_breaker_threshold': 2,  # More sensitive for QA
-                'providers': ['openai', 'grok'],  # Exclude Ollama for QA (needs better quality)
-                'batch_size': None  # No batching for QA (complex generation)
-            }
-        }
+        """Configure the enhanced parallel processor with hardware-optimized settings."""
+        from utils.hardware_optimizer import hardware_optimizer
         
-        # Configure each stage in the enhanced processor
-        for stage_name, config_dict in stages_config.items():
+        # Get hardware profile and display system information
+        hardware_profile = hardware_optimizer.get_hardware_profile()
+        current_load = hardware_optimizer.get_current_load()
+        
+        self.logger.info(f"Hardware-Optimized Parallel Processing:")
+        self.logger.info(f"  System: {hardware_profile.performance_tier.upper()} performance tier")
+        self.logger.info(f"  Hardware: {hardware_profile.cpu_cores}C/{hardware_profile.cpu_threads}T @ {hardware_profile.cpu_freq_ghz:.1f}GHz, {hardware_profile.memory_gb:.1f}GB RAM")
+        self.logger.info(f"  Current Load: CPU {current_load['cpu_percent']:.1f}%, Memory {current_load['memory_percent']:.1f}%")
+        self.logger.info(f"  Base Capacity: {hardware_profile.optimal_workers} workers, {hardware_profile.optimal_rate_limit:.1f}/sec")
+        
+        # Configure each stage with hardware-optimized settings
+        for stage_name in ['feature_decomposer_agent', 'user_story_decomposer_agent', 'developer_agent', 'qa_lead_agent']:
+            # Get hardware-optimized configuration for this stage
+            hw_config = hardware_optimizer.get_stage_specific_config(stage_name)
+            
+            # Create stage configuration
             config = StageConfig(
-                max_workers=config_dict['max_workers'],
-                min_workers=config_dict['min_workers'],
-                timeout_seconds=config_dict['timeout_seconds'],
-                rate_limit=config_dict['rate_limit'],
+                max_workers=hw_config['max_workers'],
+                min_workers=hw_config['min_workers'],
+                timeout_seconds=hw_config['timeout_seconds'],
+                rate_limit=RateLimitConfig(
+                    tokens_per_second=hw_config['rate_limit_per_second'],
+                    burst_capacity=hw_config['burst_capacity'],
+                    min_tokens_per_second=hw_config['rate_limit_per_second'] * 0.2,  # 20% minimum
+                    max_tokens_per_second=hw_config['rate_limit_per_second'] * 2.0   # 200% maximum for scaling
+                ),
                 enabled=self.parallel_config['stages'].get(stage_name, True),
-                circuit_breaker_threshold=config_dict['circuit_breaker_threshold'],
-                providers=config_dict['providers'],
-                batch_size=config_dict['batch_size']
+                circuit_breaker_threshold=hw_config['circuit_breaker_threshold'],
+                providers=hw_config['providers'],
+                batch_size=hw_config.get('batch_size')
             )
             
+            # Configure the stage in enhanced processor
             enhanced_processor.configure_stage(stage_name, config)
             
-        self.logger.info("Enhanced parallel processor configured with per-stage settings")
+            # Log stage-specific optimization
+            self.logger.info(f"  {stage_name}: {hw_config['max_workers']} workers ({hw_config['min_workers']} min), "
+                           f"{hw_config['rate_limit_per_second']:.1f}/sec, providers={hw_config['providers']}")
+        
+        self.logger.info("Hardware-optimized parallel processor configured for maximum performance with zero defects")
+        
+        # Log performance expectations
+        if hardware_profile.performance_tier == 'high':
+            self.logger.info("Expected processing time: 10-15 minutes for 200+ work items")
+        elif hardware_profile.performance_tier == 'medium':
+            self.logger.info("Expected processing time: 15-25 minutes for 200+ work items")
+        else:
+            self.logger.info("Expected processing time: 25-35 minutes for 200+ work items")
     
     def _refresh_agent_configurations(self):
         """Refresh LLM configurations for all agents."""

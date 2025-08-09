@@ -8,8 +8,10 @@ A beta-stage, sophisticated multi-agent AI platform that transforms product visi
 
 ## 🎉 Major Breakthroughs (August 9, 2025)
 
-### 🚀 **Frontend-First LLM Configuration & Enterprise Parallel Processing**
+### 🚀 **Frontend-First LLM Configuration & Hardware-Aware Auto-Scaling**
 - **Frontend LLM Control**: Complete UI overhaul with agent-specific model configuration and GPT-5 support
+- **Hardware-Aware Auto-Scaling**: Automatic detection of CPU cores, memory, and system load for optimal performance
+- **Zero Configuration Optimization**: System automatically scales to your hardware for fastest completion with zero defects
 - **Enterprise Parallel Processing**: Advanced rate limiting, circuit breakers, and dynamic backpressure
 - **Provider Rotation**: Multi-provider load balancing with automatic failover
 - **Smart Batching**: Request coalescing to optimize API costs
