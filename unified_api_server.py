@@ -46,7 +46,7 @@ try:
     from utils.settings_manager import SettingsManager
     from utils.user_id_resolver import user_id_resolver
     from auth.auth_routes import router as auth_router
-    from auth.user_auth import auth_manager
+    from auth.user_auth import auth_manager, IS_PRODUCTION
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Current directory: {current_dir}")
@@ -181,12 +181,37 @@ app = FastAPI(
 # (api_server_jobs.py functionality was consolidated here)
 
 # Add CORS middleware for frontend integration
+if IS_PRODUCTION:
+    # Production CORS settings - restrict to specific origins
+    # TODO: Replace with your actual production domain(s)
+    cors_origins = [
+        "https://agile-backlog.yourdomain.com",  # Main production domain
+        "https://api.yourdomain.com",            # API subdomain if used
+        # Add additional production domains as needed
+    ]
+else:
+    # Development CORS settings - allow localhost
+    cors_origins = [
+        "http://localhost:3000",   # React dev server
+        "http://localhost:8000",   # Local backend
+        "http://127.0.0.1:3000",   # Alternative localhost
+        "http://127.0.0.1:8000",   # Alternative localhost
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for testing
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "X-CSRF-Token",
+    ],
 )
 
 # Include authentication routes

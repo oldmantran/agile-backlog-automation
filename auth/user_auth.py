@@ -23,6 +23,11 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", secrets.token_urlsafe(32))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+JWT_ISSUER = "agile-backlog-automation"
+JWT_AUDIENCE = "agile-backlog-users"
+
+# Environment detection
+IS_PRODUCTION = os.getenv("ENVIRONMENT", "development") == "production"
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -90,9 +95,33 @@ class UserAuthManager:
         self.logger = get_safe_logger(__name__)
         self._create_tables()
     
+    def _migrate_database(self):
+        """Migrate existing database to add new columns."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Check if jti column exists in user_sessions
+                try:
+                    cursor.execute("PRAGMA table_info(user_sessions)")
+                    columns = [col[1] for col in cursor.fetchall()]
+                    
+                    if 'jti' not in columns and len(columns) > 0:
+                        conn.execute("ALTER TABLE user_sessions ADD COLUMN jti TEXT")
+                        self.logger.info("Added jti column to user_sessions table")
+                        conn.commit()
+                except sqlite3.OperationalError:
+                    # Table doesn't exist yet, will be created in _create_tables
+                    pass
+        except Exception as e:
+            self.logger.warning(f"Database migration warning: {e}")
+    
     def _create_tables(self):
         """Create user authentication tables if they don't exist."""
         try:
+            # Run migration first for existing databases
+            self._migrate_database()
+            
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS users (
@@ -114,6 +143,30 @@ class UserAuthManager:
                         refresh_token_hash TEXT NOT NULL,
                         expires_at TIMESTAMP NOT NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        jti TEXT UNIQUE,
+                        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                    )
+                """)
+                
+                # Add failed login attempts tracking
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS login_attempts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL,
+                        ip_address TEXT,
+                        attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        success BOOLEAN DEFAULT 0
+                    )
+                """)
+                
+                # Add token blacklist
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS token_blacklist (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        jti TEXT UNIQUE NOT NULL,
+                        user_id INTEGER NOT NULL,
+                        blacklisted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        reason TEXT,
                         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
                     )
                 """)
@@ -123,6 +176,16 @@ class UserAuthManager:
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON user_sessions(user_id)")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at)")
+                
+                # Create jti index only if column exists
+                try:
+                    conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_jti ON user_sessions(jti)")
+                except sqlite3.OperationalError:
+                    pass  # jti column doesn't exist yet
+                
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_login_attempts_username ON login_attempts(username)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_login_attempts_time ON login_attempts(attempted_at)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_blacklist_jti ON token_blacklist(jti)")
                 
                 conn.commit()
                 self.logger.info("User authentication tables created successfully")
@@ -139,17 +202,26 @@ class UserAuthManager:
         """Verify a password against its hash."""
         return pwd_context.verify(plain_password, hashed_password)
     
-    def _create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
-        """Create a JWT access token."""
+    def _create_access_token(self, data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> tuple[str, str]:
+        """Create a JWT access token with JTI."""
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
         else:
             expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         
-        to_encode.update({"exp": expire})
+        # Add JWT claims
+        jti = secrets.token_urlsafe(16)
+        to_encode.update({
+            "exp": expire,
+            "iat": datetime.utcnow(),
+            "iss": JWT_ISSUER,
+            "aud": JWT_AUDIENCE,
+            "jti": jti
+        })
+        
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt
+        return encoded_jwt, jti
     
     def _create_refresh_token(self, user_id: int) -> str:
         """Create and store a refresh token."""
@@ -157,6 +229,7 @@ class UserAuthManager:
         refresh_token = secrets.token_urlsafe(32)
         refresh_token_hash = pwd_context.hash(refresh_token)
         expires_at = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+        jti = secrets.token_urlsafe(16)
         
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -166,11 +239,18 @@ class UserAuthManager:
                     (user_id, datetime.utcnow())
                 )
                 
-                # Store new refresh token
-                conn.execute(
-                    "INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at) VALUES (?, ?, ?)",
-                    (user_id, refresh_token_hash, expires_at)
-                )
+                # Store new refresh token (handle case where jti column might not exist yet)
+                try:
+                    conn.execute(
+                        "INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at, jti) VALUES (?, ?, ?, ?)",
+                        (user_id, refresh_token_hash, expires_at, jti)
+                    )
+                except sqlite3.OperationalError:
+                    # Fallback for databases without jti column
+                    conn.execute(
+                        "INSERT INTO user_sessions (user_id, refresh_token_hash, expires_at) VALUES (?, ?, ?)",
+                        (user_id, refresh_token_hash, expires_at)
+                    )
                 conn.commit()
                 
         except Exception as e:
@@ -270,7 +350,7 @@ class UserAuthManager:
                 "user_id": user.id,
                 "email": user.email
             }
-            access_token = self._create_access_token(access_token_data)
+            access_token, jti = self._create_access_token(access_token_data)
             
             # Create refresh token
             refresh_token = self._create_refresh_token(user.id)
@@ -286,13 +366,25 @@ class UserAuthManager:
             raise ValueError("Failed to create authentication tokens")
     
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Verify and decode a JWT token."""
+        """Verify and decode a JWT token with audience/issuer validation."""
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(
+                token, 
+                SECRET_KEY, 
+                algorithms=[ALGORITHM],
+                audience=JWT_AUDIENCE,
+                issuer=JWT_ISSUER
+            )
+            
             username: str = payload.get("sub")
             user_id: int = payload.get("user_id")
+            jti: str = payload.get("jti")
             
-            if username is None or user_id is None:
+            if username is None or user_id is None or jti is None:
+                return None
+            
+            # Check if token is blacklisted
+            if self._is_token_blacklisted(jti):
                 return None
                 
             return payload
@@ -323,7 +415,7 @@ class UserAuthManager:
                             "user_id": session['user_id'],
                             "email": session['email']
                         }
-                        access_token = self._create_access_token(access_token_data)
+                        access_token, jti = self._create_access_token(access_token_data)
                         
                         return TokenData(
                             access_token=access_token,
@@ -405,6 +497,116 @@ class UserAuthManager:
                     
         except Exception as e:
             self.logger.error(f"Session cleanup error: {e}")
+    
+    def _is_token_blacklisted(self, jti: str) -> bool:
+        """Check if a token JTI is blacklisted."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                result = conn.execute(
+                    "SELECT id FROM token_blacklist WHERE jti = ?",
+                    (jti,)
+                ).fetchone()
+                return result is not None
+        except Exception as e:
+            self.logger.error(f"Blacklist check error: {e}")
+            return True  # Fail secure - assume blacklisted on error
+    
+    def blacklist_token(self, jti: str, user_id: int, reason: str = "logout") -> bool:
+        """Add a token to the blacklist."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "INSERT INTO token_blacklist (jti, user_id, reason) VALUES (?, ?, ?)",
+                    (jti, user_id, reason)
+                )
+                conn.commit()
+                return True
+        except Exception as e:
+            self.logger.error(f"Token blacklist error: {e}")
+            return False
+    
+    def invalidate_all_user_tokens(self, user_id: int, reason: str = "password_change") -> bool:
+        """Invalidate all tokens for a user (on password change)."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                # Get all active sessions for user (handle jti column optionally)
+                try:
+                    sessions = conn.execute(
+                        "SELECT jti FROM user_sessions WHERE user_id = ? AND expires_at > ?",
+                        (user_id, datetime.utcnow())
+                    ).fetchall()
+                    
+                    # Blacklist all tokens
+                    for session in sessions:
+                        if session.get('jti'):
+                            conn.execute(
+                                "INSERT INTO token_blacklist (jti, user_id, reason) VALUES (?, ?, ?)",
+                                (session['jti'], user_id, reason)
+                            )
+                except sqlite3.OperationalError:
+                    # jti column doesn't exist, skip blacklisting step
+                    pass
+                
+                # Delete all sessions
+                conn.execute(
+                    "DELETE FROM user_sessions WHERE user_id = ?",
+                    (user_id,)
+                )
+                
+                conn.commit()
+                self.logger.info(f"Invalidated all tokens for user {user_id}")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Token invalidation error: {e}")
+            return False
+    
+    def track_login_attempt(self, username: str, ip_address: str = None, success: bool = False) -> None:
+        """Track login attempt for rate limiting."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute(
+                    "INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, ?)",
+                    (username, ip_address, success)
+                )
+                conn.commit()
+        except Exception as e:
+            self.logger.error(f"Login tracking error: {e}")
+    
+    def is_account_locked(self, username: str, lockout_minutes: int = 15, max_attempts: int = 5) -> bool:
+        """Check if account is locked due to failed attempts."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cutoff_time = datetime.utcnow() - timedelta(minutes=lockout_minutes)
+                
+                failed_attempts = conn.execute(
+                    """SELECT COUNT(*) as count FROM login_attempts 
+                       WHERE username = ? AND attempted_at > ? AND success = 0""",
+                    (username, cutoff_time)
+                ).fetchone()
+                
+                return failed_attempts[0] >= max_attempts
+                
+        except Exception as e:
+            self.logger.error(f"Account lock check error: {e}")
+            return False  # Fail open for usability
+    
+    def cleanup_old_login_attempts(self, days: int = 30) -> None:
+        """Clean up old login attempt records."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cutoff_time = datetime.utcnow() - timedelta(days=days)
+                result = conn.execute(
+                    "DELETE FROM login_attempts WHERE attempted_at < ?",
+                    (cutoff_time,)
+                )
+                conn.commit()
+                
+                if result.rowcount > 0:
+                    self.logger.info(f"Cleaned up {result.rowcount} old login attempts")
+                    
+        except Exception as e:
+            self.logger.error(f"Login attempt cleanup error: {e}")
 
 
 # Global auth manager instance

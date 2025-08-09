@@ -212,10 +212,23 @@ SIMPLIFIED_*.md
 TEMP_*.md
 frontend_domain_selector.tsx
 
+# Cleanup and analysis result files
+*cleanup_results*.json
+*cleanup_analysis*.json
+backlog_cleanup_analysis*.json
+area_paths_cleanup_results*.json
+enhanced_area_paths_cleanup_results*.json
+master_backlog_cleanup_results*.json
+test_artifacts_cleanup_results*.json
+work_items_cleanup_results*.json
+
 # Temporary prompts and tools (keep this commented out since we want to commit prompt improvements)
 # prompts/*.txt
 tools/test_*.py
 tools/quick_*.py
+tools/cleanup_*.py
+tools/query_*.py
+tools/master_*.py
 
 # Node.js / Frontend dependencies and build artifacts
 frontend/node_modules/
