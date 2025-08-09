@@ -14,6 +14,26 @@ from utils.llm_config_manager import get_llm_provider_config
 
 logger = logging.getLogger(__name__)
 
+# Preset configurations that apply to all providers
+PRESET_CONFIGS = {
+    "fast": {
+        "temperature": 0.8,  # Higher temperature for creative/fast responses
+        "max_tokens": 2000   # Shorter responses for speed
+    },
+    "balanced": {
+        "temperature": 0.5,  # Moderate temperature for balanced output
+        "max_tokens": 4000   # Standard response length
+    },
+    "high_quality": {
+        "temperature": 0.2,  # Lower temperature for focused, deterministic output
+        "max_tokens": 8000   # Longer responses for comprehensive coverage
+    },
+    "code_focused": {
+        "temperature": 0.1,  # Very low temperature for precise code generation
+        "max_tokens": 6000   # Good length for code + explanations
+    }
+}
+
 class AgentError(Exception):
     """Base exception for agent-related errors."""
     pass
@@ -177,12 +197,16 @@ class Agent:
                 # Always get OpenAI API key from environment for security
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
+                # Store preset for later use
+                self.llm_preset = provider_config.get('preset', 'high_quality')
             elif self.llm_provider == "grok":
                 # Use model from database if available, otherwise from environment
                 self.model = provider_config.get('model') or self.config.get_env("GROK_MODEL") or 'grok-4-latest'
                 # Always get Grok API key from environment for security
                 self.api_key = self.config.get_env("GROK_API_KEY")
                 self.api_url = "https://api.x.ai/v1/chat/completions"
+                # Store preset for later use
+                self.llm_preset = provider_config.get('preset', 'high_quality')
             elif self.llm_provider == "ollama":
                 self.model = provider_config.get('model') or self.config.get_env("OLLAMA_MODEL") or 'qwen2.5:14b-instruct-q4_K_M'
                 self.api_key = None  # No API key needed for local Ollama
@@ -191,7 +215,15 @@ class Agent:
                 try:
                     from utils.ollama_client import create_ollama_provider
                     preset = provider_config.get('preset', 'high_quality')
-                    self.ollama_provider = create_ollama_provider(preset=preset)
+                    self.ollama_provider = create_ollama_provider(
+                        preset=preset,
+                        custom_config={
+                            'model': self.model,
+                            'base_url': self.api_url
+                        }
+                    )
+                    # Store preset for later use
+                    self.llm_preset = preset
                 except ImportError:
                     raise AgentError("Ollama client not available. Install with: pip install ollama-python")
             else:
@@ -209,10 +241,14 @@ class Agent:
                 self.model = self.config.get_env("OPENAI_MODEL") or "gpt-5-mini"
                 self.api_key = self.config.get_env("OPENAI_API_KEY")
                 self.api_url = "https://api.openai.com/v1/chat/completions"
+                # Default to high_quality preset
+                self.llm_preset = 'high_quality'
             elif self.llm_provider == "grok":
                 self.model = self.config.get_env("GROK_MODEL") or "grok-beta"
                 self.api_key = self.config.get_env("GROK_API_KEY")
                 self.api_url = "https://api.x.ai/v1/chat/completions"
+                # Default to high_quality preset
+                self.llm_preset = 'high_quality'
             elif self.llm_provider == "ollama":
                 self.model = self.config.get_env("OLLAMA_MODEL") or "qwen2.5:14b-instruct-q4_K_M"
                 self.api_key = None  # No API key needed for local Ollama
@@ -220,9 +256,16 @@ class Agent:
                 # Import Ollama provider
                 try:
                     from utils.ollama_client import create_ollama_provider
+                    preset = self.config.get_env("OLLAMA_PRESET") or "high_quality"
                     self.ollama_provider = create_ollama_provider(
-                        preset=self.config.get_env("OLLAMA_PRESET") or "balanced"
+                        preset=preset,
+                        custom_config={
+                            'model': self.model,
+                            'base_url': self.api_url
+                        }
                     )
+                    # Store preset for later use
+                    self.llm_preset = preset
                 except ImportError:
                     raise AgentError("Ollama client not available. Install with: pip install ollama-python")
             else:
@@ -343,12 +386,13 @@ class Agent:
     def _run_ollama(self, system_prompt: str, user_input: str) -> str:
         """Run inference using local Ollama."""
         try:
-            logger.info(f"[OLLAMA] Using local Ollama model: {self.model}")
+            logger.info(f"[OLLAMA] Using local Ollama model: {self.model} with preset: {getattr(self, 'llm_preset', 'high_quality')}")
+            # Ollama provider already has the preset configurations built-in
+            # Just call generate_response without overriding temperature/max_tokens
             return self.ollama_provider.generate_response(
                 system_prompt=system_prompt,
-                user_input=user_input,
-                temperature=0.7,
-                max_tokens=4000  # Reduced for consistency
+                user_input=user_input
+                # Temperature and max_tokens are handled by the provider based on preset
             )
         except Exception as e:
             logger.error(f"[ERROR] Ollama inference failed: {e}")
@@ -364,15 +408,21 @@ class Agent:
             ]
         }
         
+        # Get preset configuration
+        preset = getattr(self, 'llm_preset', 'high_quality')
+        preset_config = PRESET_CONFIGS.get(preset, PRESET_CONFIGS['high_quality'])
+        
         # GPT-5 models have different API requirements
         if self.model and 'gpt-5' in self.model.lower():
             # GPT-5 models use 'max_completion_tokens' instead of 'max_tokens'
-            payload["max_completion_tokens"] = 4000
+            payload["max_completion_tokens"] = preset_config["max_tokens"]
             # GPT-5 models only support default temperature (1.0), don't set custom temperature
+            logger.info(f"[API] Using GPT-5 model {self.model} with preset {preset} (max_tokens: {preset_config['max_tokens']})")
         else:
             # All other models (GPT-4, GPT-3.5, Grok, etc.)
-            payload["temperature"] = 0.7
-            payload["max_tokens"] = 4000
+            payload["temperature"] = preset_config["temperature"]
+            payload["max_tokens"] = preset_config["max_tokens"]
+            logger.info(f"[API] Using {self.llm_provider} model {self.model} with preset {preset} (temp: {preset_config['temperature']}, max_tokens: {preset_config['max_tokens']})")
         
         return payload
     

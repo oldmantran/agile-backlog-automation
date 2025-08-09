@@ -224,15 +224,21 @@ class OllamaProvider:
     def generate_response(self, 
                          system_prompt: str, 
                          user_input: str, 
-                         temperature: float = 0.7,
-                         max_tokens: int = 8000) -> str:
+                         temperature: float = None,
+                         max_tokens: int = None) -> str:
         """Generate response using Ollama."""
         try:
+            # Use values from config if not explicitly provided
+            temp = temperature if temperature is not None else self.config.get("temperature", 0.2)
+            tokens = max_tokens if max_tokens is not None else self.config.get("max_tokens", 8000)
+            
+            logger.info(f"[OLLAMA] Generating with temp: {temp}, max_tokens: {tokens}")
+            
             result = self.client.generate(
                 prompt=user_input,
                 system_prompt=system_prompt,
-                temperature=temperature,
-                max_tokens=max_tokens
+                temperature=temp,
+                max_tokens=tokens
             )
             
             # Log cost estimate
@@ -247,26 +253,23 @@ class OllamaProvider:
 
 
 # Configuration presets for different use cases
+# NOTE: Presets only affect temperature and max_tokens, NOT the model selection
 OLLAMA_CONFIGS = {
     "fast": {
-        "model": "llama3.1:8b",
-        "temperature": 0.7,
-        "max_tokens": 2000
+        "temperature": 0.8,  # Higher temperature for creative/fast responses
+        "max_tokens": 2000   # Shorter responses for speed
     },
     "balanced": {
-        "model": "codellama:34b", 
-        "temperature": 0.6,
-        "max_tokens": 3000
+        "temperature": 0.5,  # Moderate temperature for balanced output
+        "max_tokens": 4000   # Standard response length
     },
     "high_quality": {
-        "model": "llama3.1:70b",
-        "temperature": 0.5,
-        "max_tokens": 8000
+        "temperature": 0.2,  # Lower temperature for focused, deterministic output
+        "max_tokens": 8000   # Longer responses for comprehensive coverage
     },
     "code_focused": {
-        "model": "codellama:34b",
-        "temperature": 0.3,
-        "max_tokens": 2500
+        "temperature": 0.1,  # Very low temperature for precise code generation
+        "max_tokens": 6000   # Good length for code + explanations
     }
 }
 
@@ -277,13 +280,19 @@ def create_ollama_provider(preset: str = "balanced", custom_config: Dict[str, An
     
     Args:
         preset: Configuration preset ("fast", "balanced", "high_quality", "code_focused")
-        custom_config: Custom configuration overrides
+        custom_config: Custom configuration overrides (including model selection)
         
     Returns:
         Configured OllamaProvider instance
     """
-    config = OLLAMA_CONFIGS.get(preset, OLLAMA_CONFIGS["balanced"]).copy()
+    # Get preset temperature and token settings (NOT model)
+    preset_config = OLLAMA_CONFIGS.get(preset, OLLAMA_CONFIGS["balanced"]).copy()
     
+    # Start with empty config, then apply preset settings
+    config = {}
+    config.update(preset_config)
+    
+    # Apply custom config including user's model selection
     if custom_config:
         config.update(custom_config)
     
