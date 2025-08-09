@@ -67,9 +67,41 @@ class Database:
                         status TEXT DEFAULT 'completed',
                         raw_summary TEXT,
                         is_deleted INTEGER DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        -- Progress tracking columns for hybrid SSE + DB polling
+                        progress INTEGER DEFAULT 0,
+                        current_action TEXT,
+                        current_agent TEXT,
+                        last_progress_update TIMESTAMP,
+                        progress_etag TEXT
                     )
                 ''')
+                
+                # Add progress columns to existing backlog_jobs if they don't exist
+                try:
+                    cursor.execute("ALTER TABLE backlog_jobs ADD COLUMN progress INTEGER DEFAULT 0")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+                
+                try:
+                    cursor.execute("ALTER TABLE backlog_jobs ADD COLUMN current_action TEXT")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+                    
+                try:
+                    cursor.execute("ALTER TABLE backlog_jobs ADD COLUMN current_agent TEXT")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+                    
+                try:
+                    cursor.execute("ALTER TABLE backlog_jobs ADD COLUMN last_progress_update TIMESTAMP")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+                    
+                try:
+                    cursor.execute("ALTER TABLE backlog_jobs ADD COLUMN progress_etag TEXT")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
                 
                 # Create user settings table with proper constraints
                 cursor.execute('''
@@ -865,6 +897,131 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to delete backlog job {job_id}: {e}")
             return False
+    
+    def update_job_progress(self, job_id: str, progress: int, current_action: str = None, 
+                           current_agent: str = None, force_write: bool = False) -> bool:
+        """
+        Update job progress with throttled database writes.
+        
+        Args:
+            job_id: Job ID (matches raw_summary.job_id)
+            progress: Progress percentage (0-100)
+            current_action: Current action description
+            current_agent: Current agent name
+            force_write: Force write even if recently updated
+            
+        Returns:
+            bool: True if update was written to DB, False if throttled
+        """
+        import hashlib
+        import time
+        
+        try:
+            # Generate etag from progress data for conditional updates
+            etag_data = f"{progress}:{current_action}:{current_agent}"
+            new_etag = hashlib.md5(etag_data.encode()).hexdigest()[:8]
+            
+            with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+                cursor = conn.cursor()
+                
+                # Find job by job_id in raw_summary
+                cursor.execute("""
+                    SELECT id, progress, last_progress_update, progress_etag
+                    FROM backlog_jobs 
+                    WHERE raw_summary LIKE ? AND is_deleted = 0
+                    ORDER BY created_at DESC LIMIT 1
+                """, (f'%"job_id":"{job_id}"%',))
+                
+                result = cursor.fetchone()
+                if not result:
+                    logger.warning(f"No backlog job found with job_id: {job_id}")
+                    return False
+                
+                db_id, old_progress, last_update, old_etag = result
+                
+                # Throttle writes: only update if progress changed significantly or forced
+                current_time = time.time()
+                last_update_time = 0
+                if last_update:
+                    try:
+                        last_update_dt = datetime.fromisoformat(last_update.replace('Z', '+00:00'))
+                        last_update_time = last_update_dt.timestamp()
+                    except:
+                        pass
+                
+                # Skip if recently updated and no significant change
+                if not force_write and (current_time - last_update_time) < 2.0:
+                    if old_etag == new_etag or abs((old_progress or 0) - progress) < 5:
+                        return False  # Throttled
+                
+                # Update progress
+                cursor.execute("""
+                    UPDATE backlog_jobs 
+                    SET progress = ?, current_action = ?, current_agent = ?,
+                        last_progress_update = CURRENT_TIMESTAMP, progress_etag = ?
+                    WHERE id = ?
+                """, (progress, current_action, current_agent, new_etag, db_id))
+                
+                conn.commit()
+                logger.debug(f"Progress updated for job {job_id}: {progress}% - {current_action}")
+                return True
+                
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e):
+                logger.warning(f"Database locked during progress update for job {job_id}, skipping")
+                return False
+            logger.error(f"Failed to update job progress for {job_id}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to update job progress for {job_id}: {e}")
+            return False
+    
+    def get_job_progress(self, job_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get job progress from database by job_id.
+        
+        Args:
+            job_id: Job ID (matches raw_summary.job_id)
+            
+        Returns:
+            Dict with progress data or None if not found
+        """
+        try:
+            with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT progress, current_action, current_agent, 
+                           last_progress_update, progress_etag, status
+                    FROM backlog_jobs 
+                    WHERE raw_summary LIKE ? AND is_deleted = 0
+                    ORDER BY created_at DESC LIMIT 1
+                """, (f'%"job_id":"{job_id}"%',))
+                
+                result = cursor.fetchone()
+                if not result:
+                    return None
+                
+                return {
+                    "progress": result["progress"] or 0,
+                    "currentAction": result["current_action"],
+                    "currentAgent": result["current_agent"],
+                    "status": result["status"],
+                    "lastUpdated": result["last_progress_update"],
+                    "etag": result["progress_etag"],
+                    "jobId": job_id
+                }
+                
+        except sqlite3.OperationalError as e:
+            if "database is locked" in str(e):
+                logger.warning(f"Database locked during progress read for job {job_id}")
+                return None
+            logger.error(f"Failed to get job progress for {job_id}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get job progress for {job_id}: {e}")
+            return None
 
 # Global database instance
 db = Database()

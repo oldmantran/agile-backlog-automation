@@ -5,14 +5,15 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText } from 'react-icons/fi';
+// Note: Simplified implementation without tooltip/toast dependencies for now
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText, FiInfo } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
 import { BacklogJob } from '../../types/backlogJob';
 import { Project } from '../../types/project';
-import { useSSEProgress } from '../../hooks/useSSEProgress';
+import { useHybridProgress } from '../../hooks/useHybridProgress';
 
 interface JobInfo {
   jobId: string;
@@ -42,6 +43,11 @@ interface ProjectHistoryCardProps {
 }
 
 const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, onRetry, isRetrying = false }) => {
+  // Simple alert-based feedback instead of toast for now
+  const showAlert = (title: string, message: string, type: 'success' | 'error' = 'success') => {
+    alert(`${title}: ${message}`);
+  };
+
   // Parse staging summary from raw_summary
   const getStagingSummary = () => {
     try {
@@ -84,16 +90,23 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const getUploadMetrics = () => {
     const stagingSummary = getStagingSummary();
     const byStatus = stagingSummary.by_status || {};
-    const totalGenerated = job.epics_generated + job.features_generated + job.user_stories_generated + 
-                          job.tasks_generated + job.test_cases_generated;
+    
+    // Calculate total generated including all work item types
+    const totalGenerated = (job.epics_generated || 0) + 
+                          (job.features_generated || 0) + 
+                          (job.user_stories_generated || 0) + 
+                          (job.tasks_generated || 0) + 
+                          (job.test_cases_generated || 0) + 
+                          (job.test_plans_generated || 0);
     
     // For older projects without staging data, estimate from Azure DevOps summary
     let totalUploaded = byStatus.success || 0;
     let totalFailed = byStatus.failed || 0;
     let totalSkipped = byStatus.skipped || 0;
+    let uploadDataAvailable = !!stagingSummary.total_items;
     
     // If no staging data available, try to get from Azure DevOps summary
-    if (!stagingSummary.total_items && job.raw_summary) {
+    if (!uploadDataAvailable && job.raw_summary) {
       try {
         const rawSummary = job.raw_summary as any;
         const adoSummary = rawSummary.ado_summary || rawSummary.azure_integration || {};
@@ -101,29 +114,43 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
         if (adoSummary.total_created !== undefined) {
           totalUploaded = adoSummary.total_created || 0;
           totalFailed = Math.max(0, totalGenerated - totalUploaded);
+          uploadDataAvailable = true;
         } else if (adoSummary.work_items_created) {
           // Handle newer format with work_items_created array
           totalUploaded = adoSummary.work_items_created.length || 0;
           totalFailed = Math.max(0, totalGenerated - totalUploaded);
+          uploadDataAvailable = true;
         } else {
           // Check for upload count in the email notification pattern
-          // "Note that only 88 items made it into ADO."
           const uploadNote = job.status?.match(/only (\d+) items made it into ADO/);
           if (uploadNote && uploadNote[1]) {
             totalUploaded = parseInt(uploadNote[1]);
             totalFailed = Math.max(0, totalGenerated - totalUploaded);
+            uploadDataAvailable = true;
           }
         }
       } catch (e) {
-        // No fallback - show actual state
         console.warn('Failed to parse upload metrics:', e);
       }
     }
     
-    // If we still have no data and total generated > 0, it means upload data is missing
-    if (totalGenerated > 0 && totalUploaded === 0 && totalFailed === 0 && !stagingSummary.total_items) {
-      // Don't assume - show that upload status is unknown
-      totalFailed = totalGenerated; // Assume all failed if no upload data
+    // If no upload data is available, don't assume failure
+    if (!uploadDataAvailable && totalGenerated > 0) {
+      // Check if this is a content-only generation (no Azure DevOps integration)
+      const azureConfig = getAzureConfig();
+      const hasAzureConfig = azureConfig.project && azureConfig.areaPath;
+      
+      if (!hasAzureConfig) {
+        // Content-only generation - no upload expected
+        totalUploaded = 0;
+        totalFailed = 0;
+        totalSkipped = 0;
+      } else {
+        // Expected upload but no data - mark as unknown status rather than failed
+        totalUploaded = 0;
+        totalFailed = 0;
+        totalSkipped = 0;
+      }
     }
     
     const failureRate = totalGenerated > 0 ? ((totalFailed + totalSkipped) / totalGenerated) * 100 : 0;
@@ -134,7 +161,8 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
       totalFailed,
       totalSkipped,
       failureRate: Math.round(failureRate * 10) / 10,
-      hasFailures: totalFailed > 0 || totalSkipped > 0
+      hasFailures: totalFailed > 0 || totalSkipped > 0,
+      uploadDataAvailable
     };
   };
 
@@ -155,29 +183,68 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
   const metrics = getUploadMetrics();
   const { date, time } = formatDate(job.created_at);
   
-  // Get job ID with multiple fallback strategies
-  const getJobId = () => {
+  // Robust staging job ID resolution
+  const getJobIdInfo = () => {
     try {
       const rawSummary = job.raw_summary as any;
       
-      // Try multiple possible locations for job_id
-      if (rawSummary?.job_id) return rawSummary.job_id;
-      if (rawSummary?.metadata?.job_id) return rawSummary.metadata.job_id;
-      
-      // Generate from timestamp if available
-      if (job.created_at) {
-        const timestamp = new Date(job.created_at).toISOString().replace(/[:\-T]/g, '').slice(0, 15);
-        return `job_${timestamp}`;
+      // Prefer authoritative raw_summary.job_id
+      if (rawSummary?.job_id) {
+        return {
+          jobId: rawSummary.job_id,
+          source: 'authoritative',
+          canRetry: true
+        };
       }
       
-      return `job_${job.id || 'unknown'}`;
+      if (rawSummary?.metadata?.job_id) {
+        return {
+          jobId: rawSummary.metadata.job_id,
+          source: 'metadata',
+          canRetry: true
+        };
+      }
+      
+      // Fallback to timestamp-based ID - but this cannot be retried reliably
+      if (job.created_at) {
+        const timestamp = new Date(job.created_at).toISOString().replace(/[:\-T]/g, '').slice(0, 15);
+        return {
+          jobId: `job_${timestamp}`,
+          source: 'timestamp_fallback',
+          canRetry: false
+        };
+      }
+      
+      return {
+        jobId: `job_${job.id || 'unknown'}`,
+        source: 'database_fallback',
+        canRetry: false
+      };
     } catch {
-      return `job_${job.id || 'unknown'}`;
+      return {
+        jobId: `job_${job.id || 'unknown'}`,
+        source: 'error_fallback',
+        canRetry: false
+      };
     }
   };
   
-  const jobId = getJobId();
+  const jobIdInfo = getJobIdInfo();
   const azureConfig = getAzureConfig();
+  
+  // Check if Azure config is complete for retry operations
+  const getAzureConfigStatus = () => {
+    const requiredFields = ['organizationUrl', 'project', 'personalAccessToken', 'areaPath', 'iterationPath'];
+    const missingFields = requiredFields.filter(field => !azureConfig[field]);
+    
+    return {
+      isComplete: missingFields.length === 0,
+      missingFields,
+      hasBasicConfig: azureConfig.project && azureConfig.areaPath
+    };
+  };
+  
+  const azureConfigStatus = getAzureConfigStatus();
   
   // Use Azure DevOps project name as the title, with area path as subtitle
   const getDisplayInfo = () => {
@@ -186,8 +253,13 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
     // Use ADO project name as the main title
     const title = azureConfig.project || job.project_name || 'Unknown Project';
     
-    // Use area path as subtitle if available
-    const subtitle = azureConfig.areaPath || null;
+    // Use area path as subtitle if available and different from project name
+    let subtitle = azureConfig.areaPath || azureConfig.area_path || null;
+    
+    // Don't show area path if it's the same as project name or empty
+    if (subtitle === title || !subtitle || subtitle.trim() === '') {
+      subtitle = null;
+    }
     
     return { title, subtitle };
   };
@@ -232,9 +304,26 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
               <FiCalendar className="w-3 h-3" />
               <span>{date} at {time}</span>
             </div>
-            <p className="text-xs text-muted-foreground font-mono mt-1">
-              Job ID: {jobId.length > 20 ? `${jobId.substring(0, 20)}...` : jobId}
-            </p>
+            <div className="flex items-center space-x-2 mt-1">
+              <p className="text-xs text-muted-foreground font-mono">
+                Job ID: {jobIdInfo.jobId.length > 20 ? `${jobIdInfo.jobId.substring(0, 20)}...` : jobIdInfo.jobId}
+              </p>
+              {jobIdInfo.source !== 'authoritative' && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <FiInfo className="w-3 h-3 text-yellow-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        Job ID from {jobIdInfo.source.replace('_', ' ')} - 
+                        {jobIdInfo.canRetry ? 'retry may work' : 'retry not possible'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
           </div>
           <Badge 
             variant={job.status === 'completed' ? 'default' : job.status === 'failed' ? 'destructive' : 'secondary'}
@@ -251,6 +340,35 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
           <div className="flex items-center space-x-2 text-sm font-medium">
             <FiBarChart className="w-4 h-4 text-primary" />
             <span>Generation Summary</span>
+            {metrics.uploadDataAvailable && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <FiInfo className="w-3 h-3 text-blue-500 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs space-y-1">
+                      <div><strong>Staging Breakdown:</strong></div>
+                      {Object.entries(getStagingSummary().by_type || {}).map(([type, counts]: [string, any]) => (
+                        <div key={type} className="flex justify-between space-x-4">
+                          <span>{type}:</span>
+                          <span>✅{counts.success || 0} ❌{counts.failed || 0} ⏭️{counts.skipped || 0}</span>
+                        </div>
+                      ))}
+                      <div className="border-t pt-1 mt-1">
+                        <div><strong>Status Summary:</strong></div>
+                        {Object.entries(getStagingSummary().by_status || {}).map(([status, count]) => (
+                          <div key={status} className="flex justify-between space-x-4">
+                            <span className="capitalize">{status}:</span>
+                            <span>{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex justify-between">
@@ -262,18 +380,30 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
               <span className="font-mono">{formatDuration(job.execution_time_seconds || 0)}</span>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="text-center">
               <div className="text-muted-foreground">Epics</div>
-              <div className="font-mono font-semibold">{job.epics_generated}</div>
+              <div className="font-mono font-semibold">{job.epics_generated || 0}</div>
             </div>
             <div className="text-center">
               <div className="text-muted-foreground">Features</div>
-              <div className="font-mono font-semibold">{job.features_generated}</div>
+              <div className="font-mono font-semibold">{job.features_generated || 0}</div>
             </div>
             <div className="text-center">
               <div className="text-muted-foreground">Stories</div>
-              <div className="font-mono font-semibold">{job.user_stories_generated}</div>
+              <div className="font-mono font-semibold">{job.user_stories_generated || 0}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground">Tasks</div>
+              <div className="font-mono font-semibold">{job.tasks_generated || 0}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground">Test Cases</div>
+              <div className="font-mono font-semibold">{job.test_cases_generated || 0}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-muted-foreground">Test Plans</div>
+              <div className="font-mono font-semibold">{job.test_plans_generated || 0}</div>
             </div>
           </div>
         </div>
@@ -306,16 +436,38 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
           </div>
         </div>
 
+        {/* Azure Config Warning */}
+        {azureConfigStatus.hasBasicConfig && !azureConfigStatus.isComplete && (
+          <div className="flex items-center space-x-2 p-2 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded text-xs">
+            <FiAlertTriangle className="w-3 h-3 text-yellow-600" />
+            <span className="text-yellow-700 dark:text-yellow-300">
+              Incomplete Azure config - missing: {azureConfigStatus.missingFields.join(', ')}
+            </span>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-between items-center pt-2 border-t border-border">
           <div className="flex space-x-2">
-            {metrics.hasFailures && (
+            {/* Only show retry button if there are actual failures with upload data available */}
+            {metrics.hasFailures && metrics.uploadDataAvailable && jobIdInfo.canRetry && azureConfigStatus.isComplete ? (
               <Button
                 size="sm"
                 variant={isRetrying ? "outline" : "default"}
-                onClick={onRetry}
+                onClick={async () => {
+                  try {
+                    await onRetry();
+                    // Success alert will be handled by the parent component
+                  } catch (error) {
+                    showAlert(
+                      "Retry Failed",
+                      error instanceof Error ? error.message : "Unknown error occurred"
+                    );
+                  }
+                }}
                 disabled={isRetrying}
                 className={`text-xs ${!isRetrying ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}`}
+                title={`Retry uploading ${metrics.totalFailed + metrics.totalSkipped} failed work items to Azure DevOps`}
               >
                 {isRetrying ? (
                   <FiActivity className="w-3 h-3 mr-1 animate-spin" />
@@ -323,6 +475,26 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                   <FiRotateCcw className="w-3 h-3 mr-1" />
                 )}
                 {isRetrying ? 'Retrying...' : 'Retry Failed Uploads'}
+              </Button>
+            ) : metrics.hasFailures && metrics.uploadDataAvailable && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  let message = "Cannot retry uploads.";
+                  if (!jobIdInfo.canRetry) {
+                    message += " No authoritative job ID found. Please run a new job with Azure DevOps enabled.";
+                  } else if (!azureConfigStatus.isComplete) {
+                    message += ` Missing Azure configuration: ${azureConfigStatus.missingFields.join(', ')}.`;
+                  }
+                  showAlert("Retry Not Available", message);
+                }}
+                disabled
+                className="text-xs opacity-50 cursor-not-allowed"
+                title="Retry not possible - check job ID or Azure configuration"
+              >
+                <FiRotateCcw className="w-3 h-3 mr-1" />
+                Retry Unavailable
               </Button>
             )}
             {/* Add Test Artifacts button - only show if test artifacts weren't included originally */}
@@ -342,7 +514,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                   try {
                     // Extract project ID from job data
                     const rawSummary = typeof job.raw_summary === 'string' ? JSON.parse(job.raw_summary) : job.raw_summary;
-                    const projectId = rawSummary?.project_id || jobId.split('_').pop() || '';
+                    const projectId = rawSummary?.project_id || jobIdInfo.jobId.split('_').pop() || '';
                     if (!projectId) {
                       console.error('No project ID found for test generation');
                       return;
@@ -449,8 +621,8 @@ const MyProjectsScreen: React.FC = () => {
   const [retryingJobs, setRetryingJobs] = useState<Set<number>>(new Set());
   const hasMounted = useRef(false);
   
-  // SSE progress hook for real-time updates
-  const { lastUpdate: sseUpdate, error: sseError, connect: connectSSE, disconnect: disconnectSSE } = useSSEProgress();
+  // Hybrid progress hook for real-time updates with polling fallback
+  const { lastUpdate: progressUpdate, error: progressError, connectionType, connect: connectProgress, disconnect: disconnectProgress } = useHybridProgress();
 
   // Enhanced error logging
   const logError = (component: string, error: any, details?: any) => {
@@ -579,6 +751,9 @@ const MyProjectsScreen: React.FC = () => {
   }, []);
 
   const handleRetryFailedUploads = useCallback(async (job: BacklogJob) => {
+    // Simple alert-based feedback instead of toast for now
+    const showAlert = (title: string, message: string) => alert(`${title}: ${message}`);
+    
     try {
       const jobId = job.id;
       setRetryingJobs(prev => new Set([...Array.from(prev), jobId]));
@@ -602,17 +777,41 @@ const MyProjectsScreen: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       const result = await response.json();
       console.log(`Retry result for job ${jobId}:`, result);
       
+      // Show outcome feedback based on structured response
+      if (result.success) {
+        // Parse success message to extract numbers if available
+        const successMatch = result.output?.match(/Successfully recovered (\\d+) items/);
+        const successCount = successMatch ? parseInt(successMatch[1]) : 0;
+        
+        showAlert(
+          \"✅ Retry Successful\",
+          successCount > 0 
+            ? `Successfully recovered ${successCount} work items to Azure DevOps`
+            : \"Retry operation completed successfully\"
+        );
+      } else {
+        throw new Error(result.error || \"Retry operation failed\");
+      }
+      
       // Refresh the backlog jobs to get updated status
       await loadBacklogJobs();
       
     } catch (error) {
+      // Show error alert with specific error message
+      showAlert(
+        \"❌ Retry Failed\",
+        error instanceof Error ? error.message : \"Unknown error occurred during retry\"
+      );
+      
       logError('handleRetryFailedUploads', error, { jobId: job.id });
+      throw error; // Re-throw for the card component to handle
     } finally {
       setRetryingJobs(prev => {
         const updated = new Set(Array.from(prev));
@@ -622,10 +821,10 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, [loadBacklogJobs]);
 
-  // SSE-based job updates
-  const updateJobsFromSSE = useCallback(() => {
+  // Hybrid progress update handler (SSE + polling fallback)
+  const updateJobsFromProgress = useCallback(() => {
     try {
-      if (!sseUpdate) return;
+      if (!progressUpdate) return;
       
       const stored = localStorage.getItem('activeJobs');
       if (!stored) {
@@ -636,19 +835,19 @@ const MyProjectsScreen: React.FC = () => {
       const updatedJobs: JobInfo[] = [];
 
       for (const job of jobs) {
-        // Check if this SSE update is for our job
-        if (sseUpdate.jobId === job.jobId) {
+        // Check if this progress update is for our job
+        if (progressUpdate.jobId === job.jobId) {
           const updatedJob = {
             ...job,
-            status: sseUpdate.status || job.status,
-            progress: sseUpdate.progress || job.progress || 0,
-            currentAction: sseUpdate.currentAction || job.currentAction || 'Working...',
-            error: sseUpdate.message || job.error
+            status: progressUpdate.status || job.status,
+            progress: progressUpdate.progress || job.progress || 0,
+            currentAction: progressUpdate.currentAction || job.currentAction || 'Working...',
+            error: progressUpdate.type === 'error' ? progressUpdate.message : job.error
           };
           
           // Only log progress changes
-          if (sseUpdate.progress !== job.progress) {
-            console.log(`📡 Job ${job.jobId} progress: ${job.progress}% → ${sseUpdate.progress}%`);
+          if (progressUpdate.progress !== job.progress) {
+            console.log(`📊 Job ${job.jobId} progress: ${job.progress}% → ${progressUpdate.progress}% (via ${connectionType})`);
           }
 
           if (updatedJob.status === 'running' || updatedJob.status === 'queued') {
@@ -660,7 +859,7 @@ const MyProjectsScreen: React.FC = () => {
             }
           }
         } else {
-          // Keep existing job if SSE update is for different job
+          // Keep existing job if progress update is for different job
           updatedJobs.push(job);
         }
       }
@@ -668,9 +867,9 @@ const MyProjectsScreen: React.FC = () => {
       setActiveJobs(prev => updatedJobs);
       localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
     } catch (error) {
-      logError('updateJobsFromSSE', error, 'SSE update error');
+      logError('updateJobsFromProgress', error, 'Progress update error');
     }
-  }, [sseUpdate]);
+  }, [progressUpdate, connectionType]);
 
   const removeJob = useCallback((jobId: string) => {
     try {
@@ -787,28 +986,31 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, [loadActiveJobs, loadProjects, loadBacklogJobs]);
 
-  // Set up SSE connections for active jobs
+  // Set up hybrid progress connections for active jobs
   useEffect(() => {
     if (activeJobs.length > 0) {
-      console.log('🔗 Setting up SSE connections for active jobs:', activeJobs.map(job => job.jobId));
+      console.log('🔗 Setting up hybrid progress tracking for active jobs:', activeJobs.map(job => job.jobId));
       
-      // Connect to SSE for the first active job (we'll handle multiple jobs later)
+      // Connect to the first active job (we'll handle multiple jobs later)
       const firstJob = activeJobs[0];
-      connectSSE(firstJob.jobId);
+      connectProgress(firstJob.jobId);
       
       return () => {
-        console.log('🔌 Disconnecting SSE');
-        disconnectSSE();
+        console.log('🔌 Disconnecting progress tracking');
+        disconnectProgress();
       };
+    } else {
+      // No active jobs, disconnect
+      disconnectProgress();
     }
-  }, [activeJobs, connectSSE, disconnectSSE]);
+  }, [activeJobs, connectProgress, disconnectProgress]);
 
-  // Effect to handle SSE updates
+  // Effect to handle progress updates from either SSE or polling
   useEffect(() => {
-    if (sseUpdate) {
-      updateJobsFromSSE();
+    if (progressUpdate) {
+      updateJobsFromProgress();
     }
-  }, [sseUpdate, updateJobsFromSSE]);
+  }, [progressUpdate]);
 
   return (
     <div className="min-h-screen">
@@ -864,14 +1066,27 @@ const MyProjectsScreen: React.FC = () => {
             {/* Debug Panel */}
             <DebugPanel />
 
-            {/* SSE Error Display */}
-            {sseError && (
-              <Alert className="mb-6 border-red-500 bg-red-50 dark:bg-red-950">
-                <FiXCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                <AlertDescription className="text-red-700 dark:text-red-300">
-                  <strong>SSE Connection Error:</strong> {sseError}
+            {/* Progress Connection Status */}
+            {progressError && (
+              <Alert className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
+                <FiXCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                <AlertDescription className="text-orange-700 dark:text-orange-300">
+                  <strong>Progress Tracking ({connectionType}):</strong> {progressError}
+                  {connectionType === 'polling' && (
+                    <span className="block text-xs mt-1 opacity-75">
+                      Switched to polling mode for compatibility
+                    </span>
+                  )}
                 </AlertDescription>
               </Alert>
+            )}
+            
+            {/* Connection Type Indicator for debugging */}
+            {process.env.NODE_ENV === 'development' && connectionType !== 'disconnected' && (
+              <div className="mb-4 text-xs text-muted-foreground">
+                📡 Progress tracking: <span className="font-mono">{connectionType}</span>
+                {connectionType === 'polling' && ' (fallback)'}
+              </div>
             )}
 
             {/* Error Display */}

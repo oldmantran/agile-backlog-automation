@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -26,6 +27,8 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Query
 from fastapi.responses import StreamingResponse
+import asyncio
+import json as json_module
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -92,13 +95,46 @@ def get_active_job():
         return None, None
 
 def set_active_job(job_id: str, job_data: Dict[str, Any]):
-    """Set a single active job, clearing any existing ones."""
+    """Set a single active job with hybrid SSE + DB persistence."""
+    import hashlib
+    
+    # Generate etag for progress data
+    progress_key = f"{job_data.get('progress', 0)}:{job_data.get('currentAction', '')}:{job_data.get('currentAgent', '')}"
+    etag = hashlib.md5(progress_key.encode()).hexdigest()[:8]
+    job_data['etag'] = etag
+    job_data['updated_at'] = datetime.now().isoformat()
+    
     with active_jobs_lock:
         # Clear any existing jobs
         active_jobs.clear()
         # Set the new job
         active_jobs[job_id] = job_data
-        logger.info(f"📋 Set active job: {job_id}")
+        logger.info(f"📋 Set active job: {job_id} (progress: {job_data.get('progress', 0)}%)")
+    
+    # Broadcast SSE update (primary real-time method)
+    progress_data = {
+        "type": "progress",
+        "jobId": job_id,
+        "progress": job_data.get("progress", 0),
+        "status": job_data.get("status", "unknown"),
+        "currentAction": job_data.get("currentAction", "Working..."),
+        "currentAgent": job_data.get("currentAgent", "Unknown"),
+        "timestamp": job_data['updated_at'],
+        "etag": etag
+    }
+    broadcast_progress_update(job_id, progress_data)
+    
+    # Throttled database persistence (fallback for polling)
+    try:
+        db.update_job_progress(
+            job_id=job_id,
+            progress=job_data.get("progress", 0),
+            current_action=job_data.get("currentAction"),
+            current_agent=job_data.get("currentAgent"),
+            force_write=job_data.get("status") in ["completed", "failed"]  # Force final states
+        )
+    except Exception as e:
+        logger.warning(f"Failed to persist progress to DB for job {job_id}: {e}")
 
 def remove_job(job_id: str):
     """Remove a specific job."""
@@ -109,6 +145,83 @@ def remove_job(job_id: str):
 
 # SSE connections for progress streaming
 sse_connections: Dict[str, List[asyncio.Queue]] = {}
+
+def broadcast_progress_update(job_id: str, progress_data: Dict[str, Any]):
+    """Broadcast progress update to all SSE connections for a job."""
+    if job_id in sse_connections:
+        message = json_module.dumps(progress_data)
+        logger.info(f"📡 Broadcasting progress update for job {job_id}: {message}")
+        
+        # Remove closed queues and send to active ones
+        active_queues = []
+        for queue in sse_connections[job_id]:
+            try:
+                # Use put_nowait to avoid blocking
+                queue.put_nowait(f"data: {message}\n\n")
+                active_queues.append(queue)
+            except asyncio.QueueFull:
+                logger.warning(f"SSE queue full for job {job_id}")
+            except Exception as e:
+                logger.warning(f"Failed to send SSE message for job {job_id}: {e}")
+        
+        # Update connections with only active queues
+        if active_queues:
+            sse_connections[job_id] = active_queues
+        else:
+            # No active connections, remove job from connections
+            del sse_connections[job_id]
+            logger.info(f"Removed SSE connections for job {job_id} (no active connections)")
+
+async def sse_generator(job_id: str, queue: asyncio.Queue):
+    """Generate SSE messages for a specific job."""
+    try:
+        # Send initial connection message
+        initial_message = json_module.dumps({
+            "type": "connected",
+            "jobId": job_id,
+            "timestamp": datetime.now().isoformat()
+        })
+        yield f"data: {initial_message}\n\n"
+        
+        # Check if job exists and send current status
+        job_data = None
+        with active_jobs_lock:
+            job_data = active_jobs.get(job_id)
+        
+        if job_data:
+            current_status = json_module.dumps({
+                "type": "progress",
+                "jobId": job_id,
+                "progress": job_data.get("progress", 0),
+                "status": job_data.get("status", "unknown"),
+                "currentAction": job_data.get("currentAction", "Working..."),
+                "timestamp": datetime.now().isoformat()
+            })
+            yield f"data: {current_status}\n\n"
+        
+        # Keep connection alive and send updates
+        while True:
+            try:
+                # Wait for new message with timeout
+                message = await asyncio.wait_for(queue.get(), timeout=30.0)
+                yield message
+                queue.task_done()
+            except asyncio.TimeoutError:
+                # Send keepalive message
+                keepalive = json_module.dumps({
+                    "type": "keepalive",
+                    "jobId": job_id,
+                    "timestamp": datetime.now().isoformat()
+                })
+                yield f"data: {keepalive}\n\n"
+            except Exception as e:
+                logger.error(f"SSE generator error for job {job_id}: {e}")
+                break
+                
+    except Exception as e:
+        logger.error(f"SSE generator failed for job {job_id}: {e}")
+    finally:
+        logger.info(f"🔌 SSE generator closed for job {job_id}")
 
 # Global state for background processes
 background_processes: Dict[str, subprocess.Popen] = {}
@@ -414,6 +527,34 @@ async def health_check():
     """Health check endpoint."""
     build_version = db.get_build_version()
     return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "2.1.0", "build": build_version}
+
+@app.get("/api/progress/stream/{job_id}")
+async def stream_progress(job_id: str):
+    """Stream job progress updates via Server-Sent Events."""
+    logger.info(f"🔗 SSE connection requested for job: {job_id}")
+    
+    # Create a queue for this connection
+    queue = asyncio.Queue(maxsize=50)  # Limit queue size to prevent memory issues
+    
+    # Add queue to connections for this job
+    if job_id not in sse_connections:
+        sse_connections[job_id] = []
+    sse_connections[job_id].append(queue)
+    
+    logger.info(f"📡 Added SSE connection for job {job_id} (total connections: {len(sse_connections[job_id])})")
+    
+    # Return streaming response
+    return StreamingResponse(
+        sse_generator(job_id, queue),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control"
+        }
+    )
 
 @app.get("/api/build-version")
 async def get_build_version():
@@ -2318,6 +2459,112 @@ async def get_build_version():
         logger.error(f"Failed to get build version: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get build version: {str(e)}")
 
+# Progress endpoints for hybrid SSE + DB polling
+@app.get("/api/jobs/{job_id}/progress")
+async def get_job_progress(job_id: str, if_none_match: str = None):
+    """
+    Get job progress with in-memory first, DB fallback approach.
+    Supports conditional requests via If-None-Match header.
+    """
+    try:
+        # First check in-memory active jobs (fastest)
+        current_job_id, active_job_data = get_active_job()
+        if current_job_id == job_id and active_job_data:
+            progress_data = {
+                "jobId": job_id,
+                "progress": active_job_data.get("progress", 0),
+                "status": active_job_data.get("status", "unknown"),
+                "currentAction": active_job_data.get("currentAction", "Working..."),
+                "currentAgent": active_job_data.get("currentAgent", "Unknown"),
+                "lastUpdated": active_job_data.get("updated_at", datetime.now().isoformat()),
+                "etag": active_job_data.get("etag"),
+                "source": "memory"
+            }
+            
+            # Check conditional request
+            if if_none_match and if_none_match == progress_data.get("etag"):
+                from fastapi import Response
+                return Response(status_code=304)  # Not Modified
+            
+            return progress_data
+        
+        # Fallback to database
+        db_progress = db.get_job_progress(job_id)
+        if db_progress:
+            # Check conditional request
+            if if_none_match and if_none_match == db_progress.get("etag"):
+                from fastapi import Response
+                return Response(status_code=304)  # Not Modified
+                
+            db_progress["source"] = "database"
+            return db_progress
+        
+        # Job not found
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting job progress for {job_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get job progress: {str(e)}")
+
+# Job History Endpoint
+@app.get("/api/jobs/history")
+async def get_job_history(limit: int = Query(6, description="Number of recent jobs to return")):
+    """Get trimmed job history for efficient Project History display."""
+    try:
+        logger.info(f"📋 Getting job history with limit: {limit}")
+        
+        # Get recent backlog jobs from database with limit
+        recent_jobs = db.get_backlog_jobs(limit=limit)
+        logger.info(f"📊 Retrieved {len(recent_jobs)} recent jobs from database")
+        
+        # Add computed fields for easier frontend consumption
+        for job in recent_jobs:
+            try:
+                # Parse raw_summary safely
+                raw_summary = job.get('raw_summary', {})
+                if isinstance(raw_summary, str):
+                    raw_summary = json.loads(raw_summary)
+                
+                # Add computed fields
+                job['computed'] = {
+                    'total_generated': sum([
+                        job.get('epics_generated', 0),
+                        job.get('features_generated', 0), 
+                        job.get('user_stories_generated', 0),
+                        job.get('tasks_generated', 0),
+                        job.get('test_cases_generated', 0),
+                        job.get('test_plans_generated', 0)
+                    ]),
+                    'has_azure_config': bool(raw_summary.get('azure_config', {}).get('project')),
+                    'job_id_source': 'authoritative' if raw_summary.get('job_id') else 'fallback',
+                    'authoritative_job_id': raw_summary.get('job_id'),
+                    'staging_available': bool(raw_summary.get('staging_summary', {})),
+                    'test_artifacts_included': raw_summary.get('test_artifacts_included', False)
+                }
+                
+            except Exception as e:
+                logger.warning(f"Error computing job fields for job {job.get('id')}: {e}")
+                job['computed'] = {
+                    'total_generated': 0,
+                    'has_azure_config': False,
+                    'job_id_source': 'error',
+                    'authoritative_job_id': None,
+                    'staging_available': False,
+                    'test_artifacts_included': False
+                }
+        
+        return {
+            "jobs": recent_jobs,
+            "total_returned": len(recent_jobs),
+            "limit_applied": limit
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting job history: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get job history: {str(e)}")
+
 # Retry Failed Uploads Endpoint
 class RetryFailedUploadsRequest(BaseModel):
     job_id: str
@@ -2353,11 +2600,49 @@ async def retry_failed_uploads(request: RetryFailedUploadsRequest):
             timeout=300  # 5 minute timeout
         )
         
+        logger.info(f"Retry tool exit code: {result.returncode}")
+        logger.info(f"Retry tool stdout: {result.stdout}")
+        if result.stderr:
+            logger.warning(f"Retry tool stderr: {result.stderr}")
+        
+        # Parse the output to extract structured information
+        output = result.stdout
+        
+        # Extract retry statistics from output
+        uploaded_count = 0
+        failed_count = 0
+        skipped_count = 0
+        
+        if "Items retried:" in output:
+            try:
+                lines = output.split('\n')
+                for line in lines:
+                    if "Items retried:" in line:
+                        match = re.search(r'Items retried: (\d+)', line)
+                        if match:
+                            retried_count = int(match.group(1))
+                    elif "Successful on retry:" in line:
+                        match = re.search(r'Successful on retry: (\d+)', line)
+                        if match:
+                            uploaded_count = int(match.group(1))
+                    elif "Still failed:" in line:
+                        match = re.search(r'Still failed: (\d+)', line)
+                        if match:
+                            failed_count = int(match.group(1))
+            except:
+                logger.warning("Could not parse retry statistics from output")
+        
         if result.returncode == 0:
             return {
                 "success": True,
-                "message": f"Retry operation completed successfully",
-                "output": result.stdout,
+                "message": "Retry operation completed successfully",
+                "output": output,
+                "summary": {
+                    "uploaded": uploaded_count,
+                    "failed": failed_count,
+                    "skipped": skipped_count,
+                    "total_processed": uploaded_count + failed_count + skipped_count
+                },
                 "job_id": job_id,
                 "action": action
             }
@@ -2365,8 +2650,16 @@ async def retry_failed_uploads(request: RetryFailedUploadsRequest):
             logger.error(f"Retry failed with return code {result.returncode}: {result.stderr}")
             return {
                 "success": False,
-                "message": f"Retry operation failed",
-                "error": result.stderr,
+                "message": "Retry operation failed",
+                "error": result.stderr or result.stdout or "Unknown error",
+                "summary": {
+                    "uploaded": uploaded_count,
+                    "failed": failed_count,
+                    "skipped": skipped_count,
+                    "total_processed": uploaded_count + failed_count + skipped_count
+                },
+                "raw_output": result.stdout,
+                "raw_error": result.stderr,
                 "job_id": job_id,
                 "action": action
             }
