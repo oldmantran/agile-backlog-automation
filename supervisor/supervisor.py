@@ -32,6 +32,7 @@ from utils.project_context import ProjectContext
 from utils.logger import setup_logger
 from utils.notifier import Notifier
 from utils.ollama_model_manager import ollama_manager
+from utils.enhanced_parallel_processor import enhanced_processor, StageConfig, RateLimitConfig
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 
@@ -337,6 +338,7 @@ class WorkflowSupervisor:
         
         # Parallel processing configuration
         self.parallel_config = self._get_parallel_config()
+        self._configure_enhanced_parallel_processor()
     
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
@@ -372,6 +374,85 @@ class WorkflowSupervisor:
                 'qa_lead_agent': parallel_config.get('qa_generation', True)
             }
         }
+    
+    def _configure_enhanced_parallel_processor(self):
+        """Configure the enhanced parallel processor with stage-specific settings."""
+        # Configure each stage with appropriate settings
+        stages_config = {
+            'feature_decomposer_agent': {
+                'max_workers': self.parallel_config.get('feature_max_workers', self.parallel_config['max_workers']),
+                'min_workers': 1,
+                'rate_limit': RateLimitConfig(
+                    tokens_per_second=self.parallel_config['rate_limit_per_second'] * 0.8,  # Slightly lower for features
+                    burst_capacity=self.parallel_config['max_workers'] * 2,
+                    min_tokens_per_second=1.0,
+                    max_tokens_per_second=self.parallel_config['rate_limit_per_second'] * 2
+                ),
+                'timeout_seconds': 120,  # Features can take longer
+                'circuit_breaker_threshold': 3,
+                'providers': ['openai', 'grok', 'ollama'],  # Provider rotation list
+                'batch_size': None  # No batching for features (each is unique)
+            },
+            'user_story_decomposer_agent': {
+                'max_workers': self.parallel_config.get('story_max_workers', self.parallel_config['max_workers']),
+                'min_workers': 1,
+                'rate_limit': RateLimitConfig(
+                    tokens_per_second=self.parallel_config['rate_limit_per_second'],
+                    burst_capacity=self.parallel_config['max_workers'] * 3,
+                    min_tokens_per_second=1.0,
+                    max_tokens_per_second=self.parallel_config['rate_limit_per_second'] * 2.5
+                ),
+                'timeout_seconds': 90,
+                'circuit_breaker_threshold': 4,
+                'providers': ['openai', 'grok', 'ollama'],
+                'batch_size': 3  # Can batch similar user stories
+            },
+            'developer_agent': {
+                'max_workers': self.parallel_config.get('task_max_workers', self.parallel_config['max_workers']),
+                'min_workers': 1,
+                'rate_limit': RateLimitConfig(
+                    tokens_per_second=self.parallel_config['rate_limit_per_second'] * 1.2,  # Higher for tasks
+                    burst_capacity=self.parallel_config['max_workers'] * 4,
+                    min_tokens_per_second=2.0,
+                    max_tokens_per_second=self.parallel_config['rate_limit_per_second'] * 3
+                ),
+                'timeout_seconds': 60,
+                'circuit_breaker_threshold': 5,
+                'providers': ['openai', 'grok', 'ollama'],
+                'batch_size': 5  # Can batch multiple tasks per story
+            },
+            'qa_lead_agent': {
+                'max_workers': self.parallel_config.get('qa_max_workers', max(1, self.parallel_config['max_workers'] // 2)),  # Lower concurrency for QA
+                'min_workers': 1,
+                'rate_limit': RateLimitConfig(
+                    tokens_per_second=self.parallel_config['rate_limit_per_second'] * 0.6,  # Lower rate for QA
+                    burst_capacity=self.parallel_config['max_workers'],
+                    min_tokens_per_second=0.5,
+                    max_tokens_per_second=self.parallel_config['rate_limit_per_second']
+                ),
+                'timeout_seconds': 180,  # QA takes longer
+                'circuit_breaker_threshold': 2,  # More sensitive for QA
+                'providers': ['openai', 'grok'],  # Exclude Ollama for QA (needs better quality)
+                'batch_size': None  # No batching for QA (complex generation)
+            }
+        }
+        
+        # Configure each stage in the enhanced processor
+        for stage_name, config_dict in stages_config.items():
+            config = StageConfig(
+                max_workers=config_dict['max_workers'],
+                min_workers=config_dict['min_workers'],
+                timeout_seconds=config_dict['timeout_seconds'],
+                rate_limit=config_dict['rate_limit'],
+                enabled=self.parallel_config['stages'].get(stage_name, True),
+                circuit_breaker_threshold=config_dict['circuit_breaker_threshold'],
+                providers=config_dict['providers'],
+                batch_size=config_dict['batch_size']
+            )
+            
+            enhanced_processor.configure_stage(stage_name, config)
+            
+        self.logger.info("Enhanced parallel processor configured with per-stage settings")
     
     def _refresh_agent_configurations(self):
         """Refresh LLM configurations for all agents."""
@@ -1163,19 +1244,40 @@ class WorkflowSupervisor:
             epics = valid_epics
             self.workflow_data['epics'] = valid_epics
         
-        if self.parallel_config['enabled'] and self.parallel_config['stages']['feature_decomposer_agent'] and len(epics) > 1:
-            def process_epic(epic):
-                self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
-                features = agent.decompose_epic(epic, context, max_features=max_features)
-                return epic, features
-            with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
-                # Use indices instead of dictionaries as keys
-                future_to_epic = {executor.submit(process_epic, epic): i for i, epic in enumerate(epics)}
-                for future in as_completed(future_to_epic):
-                    epic_index = future_to_epic[future]
-                    epic, features = future.result()
-                    epics[epic_index]['features'] = features
-        else:
+        # Use enhanced parallel processor for feature decomposition
+        def process_epic_for_features(epic, context_data, **kwargs):
+            """Process a single epic to extract features."""
+            max_features_param = kwargs.get('max_features')
+            self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
+            features = agent.decompose_epic(epic, context_data, max_features=max_features_param)
+            return (epic, features)
+        
+        # Process epics using enhanced parallel processor
+        try:
+            results = enhanced_processor.process_batch(
+                stage_name='feature_decomposer_agent',
+                items=epics,
+                process_func=process_epic_for_features,
+                context=context,
+                max_features=max_features
+            )
+            
+            # Update epics with features from results
+            for i, result in enumerate(results):
+                if result and len(result) == 2:
+                    epic, features = result
+                    if i < len(epics) and isinstance(epics[i], dict):
+                        epics[i]['features'] = features
+                    else:
+                        self.logger.warning(f"Could not assign features to epic at index {i}")
+                else:
+                    self.logger.warning(f"Invalid result for epic at index {i}: {result}")
+                    if i < len(epics) and isinstance(epics[i], dict):
+                        epics[i]['features'] = []
+                        
+        except Exception as e:
+            self.logger.error(f"Enhanced parallel processing failed for features: {e}")
+            # Fallback to sequential processing
             for epic in epics:
                 if isinstance(epic, dict):
                     self.logger.info(f"Decomposing epic: {epic.get('title', 'Untitled')}")
@@ -1183,7 +1285,7 @@ class WorkflowSupervisor:
                     epic['features'] = features
                 else:
                     self.logger.error(f"DEBUG: Skipping invalid epic of type {type(epic)}: {epic}")
-                    epic['features'] = []  # Ensure we have an empty features list
+                    epic['features'] = []
     
     def _execute_user_story_decomposition(self):
         """Execute user story decomposition stage (parallelized if enabled)."""
