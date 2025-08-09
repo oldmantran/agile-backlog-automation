@@ -521,4 +521,22 @@ Full integration with Azure DevOps Test Management API:
 - `CLAUDE.md`: Updated with comprehensive robustness improvements
 
 **System is now production-ready with professional quality standards and accurate user feedback.**
+
+---
+
+## 📋 TODAY'S UPDATES (August 9, 2025 Session 2)
+
+### 🛠️ **Configuration Mode Persistence Fix**
+- **Issue Fixed**: Configuration Mode (Global vs Agent-Specific) was not persisting after save
+- **Root Cause**: Missing API endpoints and improper mode loading when no configurations existed
+- **Solution**: Added `/api/llm-configurations/{user_id}` GET/POST endpoints with proper mode persistence
+- **Database Query**: Separate query for configuration_mode to handle empty configuration scenarios
+- **Frontend Fix**: Always check and apply configuration_mode from API response, regardless of config count
+- **Edge Case Handled**: Users with mode preference but no saved configurations now work correctly
+
+### 💡 **Key Files Modified**:
+- `unified_api_server.py`: Added GET/POST endpoints for LLM configurations with mode persistence
+- `frontend/src/components/settings/AgentLLMConfiguration.tsx`: Fixed mode loading and immediate save on toggle
+
+**Configuration mode now correctly persists between sessions as requested by the user.**
 5. **User Experience**: Intuitive two-phase workflow with clear progress feedback
