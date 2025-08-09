@@ -1991,6 +1991,109 @@ async def get_setting_history(user_id: str, setting_type: str = None):
         logger.error(f"Failed to get setting history for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# LLM Configuration Endpoints
+@app.get("/api/llm-configurations/{user_id}")
+async def get_llm_configurations(user_id: str):
+    """Get LLM configurations for a user."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect('backlog_jobs.db')
+        cursor = conn.cursor()
+        
+        # First, try to get the user's configuration mode preference
+        cursor.execute('''
+            SELECT configuration_mode 
+            FROM llm_configurations 
+            WHERE user_id = ? 
+            ORDER BY updated_at DESC
+            LIMIT 1
+        ''', (user_id,))
+        
+        mode_row = cursor.fetchone()
+        configuration_mode = mode_row[0] if mode_row and mode_row[0] else 'global'
+        
+        # Get all active configurations for the user
+        cursor.execute('''
+            SELECT agent_name, provider, model, preset, is_active, configuration_mode
+            FROM llm_configurations 
+            WHERE user_id = ? AND is_active = 1
+            ORDER BY agent_name, updated_at DESC
+        ''', (user_id,))
+        
+        configs = []
+        
+        for row in cursor.fetchall():
+            configs.append({
+                'agent_name': row[0],
+                'provider': row[1],
+                'model': row[2],
+                'preset': row[3],
+                'is_active': row[4],
+                'configuration_mode': row[5]
+            })
+        
+        conn.close()
+        
+        return {
+            "success": True,
+            "data": configs,
+            "configuration_mode": configuration_mode
+        }
+    except Exception as e:
+        logger.error(f"Failed to get LLM configurations for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AgentLLMConfigRequest(BaseModel):
+    agent_name: str
+    provider: str
+    model: str
+    custom_model: Optional[str] = None
+    preset: str = "balanced"
+    configuration_mode: Optional[str] = None
+
+@app.post("/api/llm-configurations/{user_id}")
+async def save_llm_configurations(user_id: str, configurations: List[AgentLLMConfigRequest]):
+    """Save LLM configurations for a user."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect('backlog_jobs.db')
+        cursor = conn.cursor()
+        
+        # First, deactivate all existing configurations for this user
+        cursor.execute('''
+            UPDATE llm_configurations 
+            SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        ''', (user_id,))
+        
+        # Get the configuration mode from the first config (they should all be the same)
+        configuration_mode = configurations[0].configuration_mode if configurations else 'global'
+        
+        # Insert new configurations
+        for config in configurations:
+            # Use custom_model if provided, otherwise use the regular model
+            model_to_save = config.custom_model if config.custom_model else config.model
+            
+            cursor.execute('''
+                INSERT INTO llm_configurations 
+                (user_id, agent_name, provider, model, preset, is_active, configuration_mode, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ''', (user_id, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode))
+        
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Saved {len(configurations)} LLM configurations for user {user_id} with mode: {configuration_mode}")
+        
+        return {
+            "success": True,
+            "message": f"Saved {len(configurations)} configurations",
+            "configuration_mode": configuration_mode
+        }
+    except Exception as e:
+        logger.error(f"Failed to save LLM configurations for {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/ollama/models")
 async def get_ollama_models():
     """Get available Ollama models"""

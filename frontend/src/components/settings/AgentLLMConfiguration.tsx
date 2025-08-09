@@ -119,15 +119,50 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
   const [useAgentSpecific, setUseAgentSpecific] = useState(false);
 
   // Function to handle configuration mode changes with database persistence
-  const handleModeChange = (newMode: boolean) => {
+  const handleModeChange = async (newMode: boolean) => {
     console.log('Configuration mode changed:', newMode ? 'agent-specific' : 'global');
     setUseAgentSpecific(newMode);
     
-    // Mark as having changes so the mode gets saved with next configuration save
+    // Mark as having changes
     setHasChanges(true);
     
-    // Note: Mode will be persisted to database when configurations are saved
-    console.log('Mode change will be persisted to database on next save');
+    // Save configuration mode immediately
+    try {
+      setSaveStatus({ message: 'Saving configuration mode...' });
+      
+      // Prepare configurations with the new mode
+      const currentMode = newMode ? 'agent-specific' : 'global';
+      
+      // Ensure we have at least a global configuration to save the mode
+      let configsToSave = configurations.map(config => ({
+        ...config,
+        configuration_mode: currentMode
+      }));
+      
+      // If no configurations exist, create at least a global one to persist the mode
+      if (configsToSave.length === 0) {
+        configsToSave = [{
+          agentName: 'global',
+          provider: 'openai',
+          model: 'gpt-5-mini',
+          preset: 'balanced',
+          configuration_mode: currentMode
+        }];
+      }
+      
+      console.log('Saving configuration mode to database:', currentMode);
+      console.log('Configurations to save:', configsToSave);
+      await onSave(configsToSave);
+      
+      setSaveStatus({ success: true, message: 'Configuration mode saved successfully!' });
+      setTimeout(() => setSaveStatus(null), 3000);
+      
+    } catch (error) {
+      console.error('Failed to save configuration mode:', error);
+      setSaveStatus({ success: false, message: 'Failed to save configuration mode' });
+      // Revert the UI change on error
+      setUseAgentSpecific(!newMode);
+    }
   };
 
   useEffect(() => {
@@ -144,37 +179,42 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         const data = await response.json();
         console.log('Loaded configurations from backend:', data);
         
-        if (data.success && data.data && data.data.length > 0) {
-          // Transform backend format to frontend format - ONLY use saved configurations
-          const frontendConfigs: LLMConfigEntry[] = data.data.map((config: any) => ({
-            agentName: config.agent_name,  // snake_case -> camelCase
-            provider: config.provider,
-            model: config.model,
-            customModel: undefined, // Backend doesn't return this separately
-            preset: config.preset || 'balanced'
-          }));
-          
-          console.log('Raw backend response:', data);
-          console.log('Transformed frontend configs:', frontendConfigs);
-          console.log('Configuration mapping by agent:');
-          frontendConfigs.forEach(config => {
-            console.log(`  ${config.agentName}: ${config.provider} ${config.model} (${config.preset})`);
-          });
-          setConfigurations(frontendConfigs);
-          
-          // Configuration mode is now persisted in database and returned by API
+        if (data.success) {
+          // Always check for configuration mode from the API response
           const databaseMode = data.configuration_mode || 'global';
           const shouldUseAgentSpecific = databaseMode === 'agent-specific';
           
-          console.log('Mode loaded from database:', {
-            databaseMode,
-            shouldUseAgentSpecific,
-            configCount: frontendConfigs.length,
-            note: 'Mode determined by database-persisted user preference'
+          console.log('Configuration mode from database:', {
+            mode: databaseMode,
+            shouldUseAgentSpecific
           });
           
+          // Set the mode regardless of whether we have configurations
           setUseAgentSpecific(shouldUseAgentSpecific);
-          return;
+          
+          if (data.data && data.data.length > 0) {
+            // Transform backend format to frontend format - ONLY use saved configurations
+            const frontendConfigs: LLMConfigEntry[] = data.data.map((config: any) => ({
+              agentName: config.agent_name,  // snake_case -> camelCase
+              provider: config.provider,
+              model: config.model,
+              customModel: undefined, // Backend doesn't return this separately
+              preset: config.preset || 'balanced',
+              configuration_mode: config.configuration_mode || data.configuration_mode || 'global'
+            }));
+            
+            console.log('Raw backend response:', data);
+            console.log('Transformed frontend configs:', frontendConfigs);
+            console.log('Configuration mapping by agent:');
+            frontendConfigs.forEach(config => {
+              console.log(`  ${config.agentName}: ${config.provider} ${config.model} (${config.preset})`);
+            });
+            setConfigurations(frontendConfigs);
+            return;
+          } else {
+            // No configurations but we still loaded the mode preference
+            console.log('No configurations found, but mode preference loaded:', databaseMode);
+          }
         }
       }
       
@@ -184,6 +224,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         provider: 'openai',
         model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
         preset: 'balanced',
+        configuration_mode: 'global', // Add default mode
         parallelProcessing: {
           enabled: agent.key === 'developer_agent', // Only enable for developer agent by default
           maxWorkers: 2
