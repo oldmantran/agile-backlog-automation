@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-// Note: Simplified implementation without tooltip/toast dependencies for now
+// Note: Using title attribute for tooltips instead of custom Tooltip component
 import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText, FiInfo } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
@@ -273,7 +273,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
       database_id: job.id,
       stored_project_name: job.project_name,
       calculated_display_name: projectDisplayName,
-      calculated_job_id: jobId,
+      calculated_job_id: job.id,
       created_at: job.created_at
     });
     console.log('Raw summary structure:', job.raw_summary);
@@ -309,19 +309,10 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                 Job ID: {jobIdInfo.jobId.length > 20 ? `${jobIdInfo.jobId.substring(0, 20)}...` : jobIdInfo.jobId}
               </p>
               {jobIdInfo.source !== 'authoritative' && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <FiInfo className="w-3 h-3 text-yellow-500" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">
-                        Job ID from {jobIdInfo.source.replace('_', ' ')} - 
-                        {jobIdInfo.canRetry ? 'retry may work' : 'retry not possible'}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <FiInfo 
+                  className="w-3 h-3 text-yellow-500" 
+                  title={`Job ID from ${jobIdInfo.source.replace('_', ' ')} - ${jobIdInfo.canRetry ? 'retry may work' : 'retry not possible'}`}
+                />
               )}
             </div>
           </div>
@@ -341,33 +332,10 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
             <FiBarChart className="w-4 h-4 text-primary" />
             <span>Generation Summary</span>
             {metrics.uploadDataAvailable && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <FiInfo className="w-3 h-3 text-blue-500 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs space-y-1">
-                      <div><strong>Staging Breakdown:</strong></div>
-                      {Object.entries(getStagingSummary().by_type || {}).map(([type, counts]: [string, any]) => (
-                        <div key={type} className="flex justify-between space-x-4">
-                          <span>{type}:</span>
-                          <span>✅{counts.success || 0} ❌{counts.failed || 0} ⏭️{counts.skipped || 0}</span>
-                        </div>
-                      ))}
-                      <div className="border-t pt-1 mt-1">
-                        <div><strong>Status Summary:</strong></div>
-                        {Object.entries(getStagingSummary().by_status || {}).map(([status, count]) => (
-                          <div key={status} className="flex justify-between space-x-4">
-                            <span className="capitalize">{status}:</span>
-                            <span>{count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <FiInfo 
+                className="w-3 h-3 text-blue-500 cursor-help" 
+                title="Detailed staging breakdown available in the detailed view"
+              />
             )}
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -787,17 +755,17 @@ const MyProjectsScreen: React.FC = () => {
       // Show outcome feedback based on structured response
       if (result.success) {
         // Parse success message to extract numbers if available
-        const successMatch = result.output?.match(/Successfully recovered (\\d+) items/);
+        const successMatch = result.output?.match(/Successfully recovered (\d+) items/);
         const successCount = successMatch ? parseInt(successMatch[1]) : 0;
         
         showAlert(
-          \"✅ Retry Successful\",
+          "✅ Retry Successful",
           successCount > 0 
             ? `Successfully recovered ${successCount} work items to Azure DevOps`
-            : \"Retry operation completed successfully\"
+            : "Retry operation completed successfully"
         );
       } else {
-        throw new Error(result.error || \"Retry operation failed\");
+        throw new Error(result.error || "Retry operation failed");
       }
       
       // Refresh the backlog jobs to get updated status
@@ -806,8 +774,8 @@ const MyProjectsScreen: React.FC = () => {
     } catch (error) {
       // Show error alert with specific error message
       showAlert(
-        \"❌ Retry Failed\",
-        error instanceof Error ? error.message : \"Unknown error occurred during retry\"
+        "❌ Retry Failed",
+        error instanceof Error ? error.message : "Unknown error occurred during retry"
       );
       
       logError('handleRetryFailedUploads', error, { jobId: job.id });

@@ -16,6 +16,7 @@ interface LLMConfigEntry {
   model: string;
   customModel?: string;
   preset: string;
+  configuration_mode?: string;  // Added to support database persistence
   parallelProcessing?: {
     enabled: boolean;
     maxWorkers: number | 'unlimited';
@@ -117,6 +118,18 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
   const [useCustomModel, setUseCustomModel] = useState<{[key: string]: boolean}>({});
   const [useAgentSpecific, setUseAgentSpecific] = useState(false);
 
+  // Function to handle configuration mode changes with database persistence
+  const handleModeChange = (newMode: boolean) => {
+    console.log('Configuration mode changed:', newMode ? 'agent-specific' : 'global');
+    setUseAgentSpecific(newMode);
+    
+    // Mark as having changes so the mode gets saved with next configuration save
+    setHasChanges(true);
+    
+    // Note: Mode will be persisted to database when configurations are saved
+    console.log('Mode change will be persisted to database on next save');
+  };
+
   useEffect(() => {
     loadConfigurations();
   }, [userId]);
@@ -148,6 +161,19 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             console.log(`  ${config.agentName}: ${config.provider} ${config.model} (${config.preset})`);
           });
           setConfigurations(frontendConfigs);
+          
+          // Configuration mode is now persisted in database and returned by API
+          const databaseMode = data.configuration_mode || 'global';
+          const shouldUseAgentSpecific = databaseMode === 'agent-specific';
+          
+          console.log('Mode loaded from database:', {
+            databaseMode,
+            shouldUseAgentSpecific,
+            configCount: frontendConfigs.length,
+            note: 'Mode determined by database-persisted user preference'
+          });
+          
+          setUseAgentSpecific(shouldUseAgentSpecific);
           return;
         }
       }
@@ -166,6 +192,10 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       
       console.log('Using default configurations:', defaultConfigs);
       setConfigurations(defaultConfigs);
+      
+      // For default configurations, start in Global mode (no database preference exists yet)
+      console.log('Mode for default configs: Global (no database preference exists)');
+      setUseAgentSpecific(false);
     } catch (error) {
       console.error('Failed to load configurations:', error);
       // Even if there's an error, provide minimal default configs
@@ -195,6 +225,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
     );
     setHasChanges(true);
   };
+
 
   const toggleCustomModel = (agentName: string) => {
     setUseCustomModel(prev => ({
@@ -536,15 +567,15 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                   <Switch
                     id="agent-specific-toggle"
                     checked={useAgentSpecific}
-                    onCheckedChange={setUseAgentSpecific}
+                    onCheckedChange={handleModeChange}
                   />
                 </div>
               </div>
               
               <div className="mt-3 text-xs text-muted-foreground">
                 {useAgentSpecific 
-                  ? "Configure different models for each agent (Epic Strategist, Feature Decomposer, etc.)"
-                  : "Use one configuration for all agents"
+                  ? "Configure different models for each agent (Epic Strategist, Feature Decomposer, etc.). You can switch back to Global mode at any time."
+                  : "Use one configuration for all agents. Switch to Agent-Specific to customize individual agents."
                 }
               </div>
             </div>

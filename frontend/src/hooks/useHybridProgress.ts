@@ -18,8 +18,9 @@ interface UseHybridProgressReturn {
   lastUpdate: ProgressUpdate | null;
   error: string | null;
   connectionType: 'sse' | 'polling' | 'disconnected';
+  activeJobs: string[];
   connect: (jobId: string) => void;
-  disconnect: () => void;
+  disconnect: (jobId?: string) => void; // Optional jobId to disconnect specific job
 }
 
 /**
@@ -37,8 +38,9 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
   const [lastUpdate, setLastUpdate] = useState<ProgressUpdate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connectionType, setConnectionType] = useState<'sse' | 'polling' | 'disconnected'>('disconnected');
+  const [activeJobs, setActiveJobs] = useState<string[]>([]);
 
-  // Refs for cleanup and state management
+  // Refs for cleanup and state management (single job for now, with multi-job infrastructure)
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +49,16 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
   const pollingBackoffRef = useRef<number>(3000); // Start with 3 seconds
   const maxBackoffRef = useRef<number>(30000); // Max 30 seconds
   const failedAttemptsRef = useRef<number>(0);
+  
+  // Multi-job infrastructure (for future use)
+  const multiJobDataRef = useRef<Map<string, {
+    eventSource?: EventSource;
+    pollingInterval?: NodeJS.Timeout;
+    reconnectTimeout?: NodeJS.Timeout;
+    etag?: string;
+    backoff: number;
+    failedAttempts: number;
+  }>>(new Map());
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -142,6 +154,13 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
           console.error(`❌ Too many polling failures for job ${jobId}, giving up`);
           setError('Polling failed after multiple attempts');
           cleanup();
+          return;
+        }
+        
+        // Restart polling with new backoff interval
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = setInterval(poll, pollingBackoffRef.current);
         }
       }
     };
@@ -235,12 +254,22 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
 
   // Main connect function
   const connect = useCallback((jobId: string) => {
-    cleanup(); // Clean up any existing connections
+    // Update active jobs list
+    setActiveJobs(prev => prev.includes(jobId) ? prev : [...prev, jobId]);
+    
+    // For single-job mode, clean up existing connection
+    cleanup();
     
     currentJobIdRef.current = jobId;
     lastEtagRef.current = null;
     failedAttemptsRef.current = 0;
     pollingBackoffRef.current = 3000;
+    
+    // Initialize multi-job data structure
+    multiJobDataRef.current.set(jobId, {
+      backoff: 3000,
+      failedAttempts: 0
+    });
     
     setError(null);
     
@@ -248,10 +277,25 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
     connectSSE(jobId);
   }, [connectSSE, cleanup]);
 
-  // Disconnect function
-  const disconnect = useCallback(() => {
-    currentJobIdRef.current = null;
-    cleanup();
+  // Disconnect function (supports optional specific job)
+  const disconnect = useCallback((jobId?: string) => {
+    if (jobId) {
+      // Disconnect specific job (future multi-job support)
+      setActiveJobs(prev => prev.filter(id => id !== jobId));
+      multiJobDataRef.current.delete(jobId);
+      
+      // If disconnecting current job, clean up
+      if (currentJobIdRef.current === jobId) {
+        currentJobIdRef.current = null;
+        cleanup();
+      }
+    } else {
+      // Disconnect all jobs
+      setActiveJobs([]);
+      multiJobDataRef.current.clear();
+      currentJobIdRef.current = null;
+      cleanup();
+    }
   }, [cleanup]);
 
   // Cleanup on unmount
@@ -266,6 +310,7 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
     lastUpdate,
     error,
     connectionType,
+    activeJobs,
     connect,
     disconnect
   };

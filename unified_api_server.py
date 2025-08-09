@@ -2303,6 +2303,7 @@ class AgentLLMConfigRequest(BaseModel):
     model: str
     custom_model: Optional[str] = None
     preset: str = "balanced"
+    configuration_mode: Optional[str] = None  # "global" or "agent-specific"
 
 class AgentLLMConfigResponse(BaseModel):
     agent_name: str
@@ -2310,6 +2311,12 @@ class AgentLLMConfigResponse(BaseModel):
     model: str
     preset: str
     is_active: bool
+    configuration_mode: Optional[str] = None
+
+class LLMConfigurationResponse(BaseModel):
+    success: bool
+    data: List[AgentLLMConfigResponse]
+    configuration_mode: Optional[str] = None  # User's preferred mode
 
 @app.get("/api/llm-configurations/{user_id}")
 async def get_agent_llm_configurations(user_id: str):
@@ -2321,13 +2328,20 @@ async def get_agent_llm_configurations(user_id: str):
         
         # Get all active configurations for this user
         cursor.execute('''
-            SELECT agent_name, provider, model, preset, is_active
+            SELECT agent_name, provider, model, preset, is_active, configuration_mode
             FROM llm_configurations 
             WHERE user_id = ? AND is_active = 1
             ORDER BY agent_name, updated_at DESC
         ''', (user_id,))
         
         results = cursor.fetchall()
+        
+        # Get the user's preferred configuration mode (from most recent config)
+        user_configuration_mode = None
+        if results:
+            # Use the configuration_mode from the most recent config, or default to global
+            user_configuration_mode = results[0][5] or "global"
+        
         conn.close()
         
         configurations = []
@@ -2337,13 +2351,15 @@ async def get_agent_llm_configurations(user_id: str):
                 "provider": row[1],
                 "model": row[2],
                 "preset": row[3] or "balanced",
-                "is_active": bool(row[4])
+                "is_active": bool(row[4]),
+                "configuration_mode": row[5]
             })
         
-        logger.info(f"Returning {len(configurations)} LLM configurations for user {user_id}: {configurations}")
+        logger.info(f"Returning {len(configurations)} LLM configurations for user {user_id} with mode '{user_configuration_mode}': {configurations}")
         return {
             "success": True,
-            "data": configurations  # Keep consistent with actual response format
+            "data": configurations,
+            "configuration_mode": user_configuration_mode
         }
         
     except Exception as e:
@@ -2382,22 +2398,23 @@ async def save_agent_llm_configurations(user_id: str, configurations: List[Agent
                 # Update existing
                 cursor.execute('''
                     UPDATE llm_configurations 
-                    SET model = ?, preset = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP
+                    SET model = ?, preset = ?, configuration_mode = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                ''', (final_model, config.preset, existing[0]))
+                ''', (final_model, config.preset, config.configuration_mode, existing[0]))
             else:
                 # Insert new
                 cursor.execute('''
                     INSERT INTO llm_configurations 
-                    (user_id, name, provider, model, agent_name, preset, is_active, is_default) 
-                    VALUES (?, ?, ?, ?, ?, ?, 1, 0)
+                    (user_id, name, provider, model, agent_name, preset, configuration_mode, is_active, is_default) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)
                 ''', (
                     user_id,
                     f"{config.provider.title()} {final_model} ({config.agent_name})",
                     config.provider,
                     final_model,
                     config.agent_name,
-                    config.preset
+                    config.preset,
+                    config.configuration_mode
                 ))
         
         conn.commit()

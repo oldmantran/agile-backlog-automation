@@ -189,6 +189,14 @@ class Database:
                     # Column already exists
                     pass
                 
+                # Add configuration_mode column to llm_configurations for mode persistence
+                try:
+                    cursor.execute('ALTER TABLE llm_configurations ADD COLUMN configuration_mode TEXT CHECK (configuration_mode IN ("global", "agent-specific") OR configuration_mode IS NULL)')
+                    logger.info("Added configuration_mode column to llm_configurations table")
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
+                
                 conn.commit()
                 logger.info("Database initialized successfully")
                 

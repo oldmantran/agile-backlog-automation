@@ -138,29 +138,45 @@ class UnifiedLLMConfigManager:
         return config
     
     def _get_agent_specific_config(self, user_id: str, agent_name: str) -> Optional[Dict[str, Any]]:
-        """Get agent-specific configuration from database."""
+        """Get agent-specific configuration from database, respecting configuration_mode preference."""
         try:
             import sqlite3
             conn = sqlite3.connect('backlog_jobs.db')
             cursor = conn.cursor()
             
+            # First, check if user has agent-specific mode enabled
             cursor.execute('''
-                SELECT provider, model, preset
+                SELECT configuration_mode
                 FROM llm_configurations 
-                WHERE user_id = ? AND agent_name = ? AND is_active = 1
+                WHERE user_id = ? AND is_active = 1
                 ORDER BY updated_at DESC
                 LIMIT 1
-            ''', (user_id, agent_name))
+            ''', (user_id,))
             
-            row = cursor.fetchone()
+            mode_row = cursor.fetchone()
+            config_mode = mode_row[0] if mode_row else None
+            
+            # Only return agent-specific config if mode is "agent-specific"
+            if config_mode == "agent-specific":
+                cursor.execute('''
+                    SELECT provider, model, preset
+                    FROM llm_configurations 
+                    WHERE user_id = ? AND agent_name = ? AND is_active = 1
+                    ORDER BY updated_at DESC
+                    LIMIT 1
+                ''', (user_id, agent_name))
+                
+                row = cursor.fetchone()
+                conn.close()
+                
+                if row:
+                    return {
+                        'provider': row[0],
+                        'model': row[1],
+                        'preset': row[2]
+                    }
+            
             conn.close()
-            
-            if row:
-                return {
-                    'provider': row[0],
-                    'model': row[1],
-                    'preset': row[2]
-                }
             return None
             
         except Exception as e:
