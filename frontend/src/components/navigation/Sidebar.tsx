@@ -6,11 +6,13 @@ import {
   FiSettings,
   FiHelpCircle,
   FiLogOut,
+  FiUser,
 } from 'react-icons/fi';
 import { NavLink as RouterLink, useLocation } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -47,6 +49,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon: Icon, to, children }) => {
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    onClose(); // Close sidebar after logout
+  };
+
   return (
     <div
       className={cn(
@@ -78,9 +87,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </NavItem>
         </div>
         
+        {/* User Info Section */}
+        {user && (
+          <div className="px-4 py-2 border-t border-border">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                <FiUser className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user.full_name || user.username}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <Button
           variant="ghost"
-          className="w-full justify-start pl-4 rounded-none"
+          className="w-full justify-start pl-4 rounded-none hover:bg-red-500/10 hover:text-red-400"
+          onClick={handleLogout}
         >
           <FiLogOut className="mr-3 h-5 w-5" />
           Sign Out

@@ -45,6 +45,8 @@ try:
     from db import db
     from utils.settings_manager import SettingsManager
     from utils.user_id_resolver import user_id_resolver
+    from auth.auth_routes import router as auth_router
+    from auth.user_auth import auth_manager
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Current directory: {current_dir}")
@@ -186,6 +188,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include authentication routes
+app.include_router(auth_router)
 
 # Serve static files from frontend build (only if build directory exists)
 project_root = Path(__file__).parent
