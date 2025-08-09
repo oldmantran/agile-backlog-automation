@@ -2005,36 +2005,67 @@ async def get_llm_configurations(user_id: str):
         cursor = conn.cursor()
         
         # First, try to get the user's configuration mode preference
-        cursor.execute('''
-            SELECT configuration_mode 
-            FROM llm_configurations 
-            WHERE user_id = ? 
-            ORDER BY updated_at DESC
-            LIMIT 1
-        ''', (user_id,))
-        
-        mode_row = cursor.fetchone()
-        configuration_mode = mode_row[0] if mode_row and mode_row[0] else 'global'
+        configuration_mode = 'global'  # Default
+        try:
+            cursor.execute('''
+                SELECT configuration_mode 
+                FROM llm_configurations 
+                WHERE user_id = ? 
+                ORDER BY updated_at DESC
+                LIMIT 1
+            ''', (user_id,))
+            
+            mode_row = cursor.fetchone()
+            configuration_mode = mode_row[0] if mode_row and mode_row[0] else 'global'
+        except sqlite3.OperationalError:
+            # Column doesn't exist in older schema
+            configuration_mode = 'global'
         
         # Get all active configurations for the user
-        cursor.execute('''
-            SELECT agent_name, provider, model, preset, is_active, configuration_mode
-            FROM llm_configurations 
-            WHERE user_id = ? AND is_active = 1
-            ORDER BY agent_name, updated_at DESC
-        ''', (user_id,))
-        
-        configs = []
-        
-        for row in cursor.fetchall():
-            configs.append({
-                'agent_name': row[0],
-                'provider': row[1],
-                'model': row[2],
-                'preset': row[3],
-                'is_active': row[4],
-                'configuration_mode': row[5]
-            })
+        # Try with new columns first, fall back to old schema if needed
+        try:
+            cursor.execute('''
+                SELECT agent_name, provider, model, preset, is_active, configuration_mode
+                FROM llm_configurations 
+                WHERE user_id = ? AND is_active = 1
+                ORDER BY agent_name, updated_at DESC
+            ''', (user_id,))
+            
+            configs = []
+            
+            for row in cursor.fetchall():
+                configs.append({
+                    'agent_name': row[0],
+                    'provider': row[1],
+                    'model': row[2],
+                    'preset': row[3],
+                    'is_active': row[4],
+                    'configuration_mode': row[5]
+                })
+        except sqlite3.OperationalError:
+            # Fallback for older schema without agent_name column
+            cursor.execute('''
+                SELECT name, provider, model, preset, is_active
+                FROM llm_configurations 
+                WHERE user_id = ? AND is_active = 1
+                ORDER BY name, updated_at DESC
+            ''', (user_id,))
+            
+            configs = []
+            
+            for row in cursor.fetchall():
+                # Extract agent name from the name field
+                name_parts = row[0].split('_')
+                agent_name = name_parts[0] if name_parts else 'global'
+                
+                configs.append({
+                    'agent_name': agent_name,
+                    'provider': row[1],
+                    'model': row[2],
+                    'preset': row[3],
+                    'is_active': row[4],
+                    'configuration_mode': configuration_mode
+                })
         
         conn.close()
         
@@ -2078,11 +2109,14 @@ async def save_llm_configurations(user_id: str, configurations: List[AgentLLMCon
             # Use custom_model if provided, otherwise use the regular model
             model_to_save = config.custom_model if config.custom_model else config.model
             
+            # Generate a name for this configuration
+            config_name = f"{config.agent_name}_{config.provider}_{user_id}"
+            
             cursor.execute('''
                 INSERT INTO llm_configurations 
-                (user_id, agent_name, provider, model, preset, is_active, configuration_mode, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ''', (user_id, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode))
+                (user_id, name, agent_name, provider, model, preset, is_active, configuration_mode, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ''', (user_id, config_name, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode))
         
         conn.commit()
         conn.close()
