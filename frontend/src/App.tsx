@@ -15,6 +15,7 @@ import TronBacklogSweeperScreen from './screens/TronBacklogSweeperScreen';
 import TronCleanupWorkItemsScreen from './screens/TronCleanupWorkItemsScreen';
 import TronCleanupTestCasesScreen from './screens/TronCleanupTestCasesScreen';
 import TronSettingsScreen from './screens/settings/TronSettingsScreen';
+import ConfigureEnvironmentScreen from './screens/settings/ConfigureEnvironmentScreen';
 import SearchDocumentationScreen from './screens/search/SearchDocumentationScreen';
 import TestCasesCleanupScreen from './screens/cleanup/TestCasesCleanupScreen';
 import WorkItemsCleanupScreen from './screens/cleanup/WorkItemsCleanupScreen';
@@ -67,6 +68,8 @@ function App() {
           
           {/* Settings */}
           <Route path="/settings" element={<TronSettingsScreen />} />
+          <Route path="/configure" element={<ConfigureEnvironmentScreen />} />
+          <Route path="/configure-environment" element={<ConfigureEnvironmentScreen />} />
           
           {/* Test */}
           <Route path="/test" element={<TestScreen />} />

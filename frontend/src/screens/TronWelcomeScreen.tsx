@@ -11,21 +11,9 @@ import {
   Settings, 
   Plus, 
   RefreshCw, 
-  Trash2, 
-  CheckSquare,
-  Zap,
-  Grid3X3,
-  Cpu,
-  Activity
+  Grid3X3
 } from 'lucide-react';
 import {
-  FiPlus,
-  FiTrash2,
-  FiRefreshCw,
-  FiSearch,
-  FiSettings,
-  FiActivity,
-  FiClipboard,
   FiInfo,
 } from 'react-icons/fi';
 
@@ -75,58 +63,8 @@ const TronWelcomeScreen: React.FC = () => {
       isNew: false,
       tronColor: 'green'
     },
-    {
-      title: 'Cleanup Work Items',
-      description: 'Clean up work items from specific area paths',
-      icon: Trash2,
-      route: '/cleanup-workitems',
-      color: 'primary',
-      glowColor: 'primary',
-      isNew: false,
-      tronColor: 'red'
-    },
-    {
-      title: 'Delete Project Tests',
-      description: 'Delete all test plans, suites, and test cases in area path',
-      icon: CheckSquare,
-      route: '/cleanup-tests',
-      color: 'primary',
-      glowColor: 'primary',
-      isNew: false,
-      tronColor: 'orange'
-    },
-    {
-      title: 'Search Documentation',
-      description: 'Find information in project documentation and repositories',
-      icon: FiSearch,
-      route: '/search',
-      color: 'primary',
-      glowColor: 'primary',
-      isNew: false,
-      tronColor: 'purple'
-    }
   ];
 
-  const recentActivity = [
-    {
-      title: 'Project Alpha backlog generated',
-      description: 'Successfully created 24 user stories and 8 epics',
-      timestamp: '2 hours ago',
-      type: 'success',
-    },
-    {
-      title: 'Work items cleanup completed',
-      description: 'Removed 156 orphaned work items from Data Visualization area',
-      timestamp: '1 day ago',
-      type: 'info',
-    },
-    {
-      title: 'Test cases cleanup completed',
-      description: 'Deleted 89 test cases using Test Management API',
-      timestamp: '2 days ago',
-      type: 'warning',
-    },
-  ];
 
   const getCardColorClass = (color: string) => {
     switch (color) {
@@ -140,14 +78,6 @@ const TronWelcomeScreen: React.FC = () => {
     }
   };
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'success': return 'text-green-400';
-      case 'warning': return 'text-orange-400';
-      case 'info': return 'text-blue-400';
-      default: return 'text-gray-400';
-    }
-  };
 
   return (
     <div className="min-h-screen">
@@ -226,28 +156,6 @@ const TronWelcomeScreen: React.FC = () => {
               </AlertDescription>
             </Alert>
 
-            {/* System Status Bar */}
-            <div className="tron-card mb-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-6">
-                  <div className="flex items-center space-x-2">
-                    <Cpu className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-mono text-foreground">CPU: <span className="text-green-400">ONLINE</span></span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Activity className="w-5 h-5 text-accent" />
-                    <span className="text-sm font-mono text-foreground">AI: <span className="text-green-400">READY</span></span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-mono text-foreground">DEVOPS: <span className="text-green-400">CONNECTED</span></span>
-                  </div>
-                </div>
-                <div className="text-xs font-mono text-muted-foreground">
-                  BUILD: <span className="text-primary">{buildVersion}</span>
-                </div>
-              </div>
-            </div>
 
             {/* Quick Actions Grid */}
             <div className="mb-12">
@@ -303,68 +211,7 @@ const TronWelcomeScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Recent Activity */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">RECENT ACTIVITY</h2>
-              <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
-                <CardHeader>
-                  <div className="flex items-center space-x-2">
-                    <FiActivity className="w-5 h-5 text-primary" />
-                    <CardTitle className="text-foreground">System Activity Log</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-start space-x-3 p-3 rounded-lg bg-background/50 border border-primary/20">
-                        <FiActivity className={`w-4 h-4 mt-1 ${getActivityIcon(activity.type)}`} />
-                        <div className="flex-1 space-y-1">
-                          <h4 className="font-medium text-foreground">{activity.title}</h4>
-                          <p className="text-sm text-muted-foreground">{activity.description}</p>
-                          <p className="text-xs text-primary font-mono">{activity.timestamp}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* System Status */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">SYSTEM STATUS</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/50 transition-all duration-300">
-                  <CardContent className="pt-6">
-                    <div className="text-center space-y-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full mx-auto animate-pulse"></div>
-                      <p className="font-medium text-foreground font-mono">AZURE DEVOPS API</p>
-                      <p className="text-sm text-green-400 font-mono">CONNECTED</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-primary/50 transition-all duration-300">
-                  <CardContent className="pt-6">
-                    <div className="text-center space-y-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full mx-auto animate-pulse"></div>
-                      <p className="font-medium text-foreground font-mono">AI SERVICES</p>
-                      <p className="text-sm text-green-400 font-mono">OPERATIONAL</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30 hover:border-accent/50 transition-all duration-300">
-                  <CardContent className="pt-6">
-                    <div className="text-center space-y-2">
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full mx-auto animate-pulse"></div>
-                      <p className="font-medium text-foreground font-mono">BACKGROUND JOBS</p>
-                      <p className="text-sm text-yellow-400 font-mono">2 ACTIVE</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
 
             {/* Footer */}
             <div className="text-center mt-12 text-xs font-mono text-muted-foreground">

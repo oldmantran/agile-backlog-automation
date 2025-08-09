@@ -16,6 +16,10 @@ interface LLMConfigEntry {
   model: string;
   customModel?: string;
   preset: string;
+  parallelProcessing?: {
+    enabled: boolean;
+    maxWorkers: number | 'unlimited';
+  };
 }
 
 interface AgentLLMConfigurationProps {
@@ -51,13 +55,54 @@ const PROVIDER_MODELS = {
     'grok-4'
   ],
   ollama: [
+    'llama3.3:70b',
+    'llama3.3:70b-instruct-q4_K_M',
+    'mixtral:8x7b-instruct-v0.1-q2_k',
     'llama3.1:8b',
+    'llama3.1:8b-instruct-q4_K_M',
     'llama3.1:70b',
     'qwen2.5:14b-instruct-q4_K_M',
     'qwen2.5:32b',
+    'qwen2.5:latest',
+    'qwen3:30b',
     'codellama:34b',
     'mistral:7b'
   ]
+};
+
+// Model display names for better UX
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  // Ollama models
+  'llama3.3:70b': 'Llama 3.3 70B',
+  'llama3.3:70b-instruct-q4_K_M': 'Llama 3.3 70B Instruct (Q4)',
+  'mixtral:8x7b-instruct-v0.1-q2_k': 'Mixtral 8x7B Instruct (Q2)',
+  'llama3.1:8b': 'Llama 3.1 8B',
+  'llama3.1:8b-instruct-q4_K_M': 'Llama 3.1 8B Instruct (Q4)',
+  'llama3.1:70b': 'Llama 3.1 70B',
+  'qwen2.5:14b-instruct-q4_K_M': 'Qwen 2.5 14B Instruct (Q4)',
+  'qwen2.5:32b': 'Qwen 2.5 32B',
+  'qwen2.5:latest': 'Qwen 2.5 Latest',
+  'qwen3:30b': 'Qwen 3 30B',
+  'codellama:34b': 'CodeLlama 34B',
+  'mistral:7b': 'Mistral 7B',
+  // OpenAI models
+  'gpt-5': 'GPT-5',
+  'gpt-5-mini': 'GPT-5 Mini',
+  'gpt-5-nano': 'GPT-5 Nano',
+  'gpt-5-chat-latest': 'GPT-5 Chat Latest',
+  'gpt-4o': 'GPT-4o',
+  'gpt-4o-mini': 'GPT-4o Mini',
+  'gpt-4-turbo': 'GPT-4 Turbo',
+  'gpt-4': 'GPT-4',
+  'gpt-3.5-turbo': 'GPT-3.5 Turbo',
+  // Grok models
+  'grok-beta': 'Grok Beta',
+  'grok-4-latest': 'Grok 4 Latest',
+  'grok-4': 'Grok 4'
+};
+
+const getModelDisplayName = (model: string): string => {
+  return MODEL_DISPLAY_NAMES[model] || model;
 };
 
 const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
@@ -112,7 +157,11 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         agentName: agent.key,
         provider: 'openai',
         model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-        preset: 'balanced'
+        preset: 'balanced',
+        parallelProcessing: {
+          enabled: agent.key === 'developer_agent', // Only enable for developer agent by default
+          maxWorkers: 2
+        }
       }));
       
       console.log('Using default configurations:', defaultConfigs);
@@ -124,7 +173,11 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         agentName: 'global',
         provider: 'openai',
         model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-        preset: 'balanced'
+        preset: 'balanced',
+        parallelProcessing: {
+          enabled: false,
+          maxWorkers: 2
+        }
       }];
       setConfigurations(fallbackConfigs);
     } finally {
@@ -303,7 +356,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                   <SelectContent>
                     {modelOptions.map((model) => (
                       <SelectItem key={model} value={model}>
-                        {model}
+                        {getModelDisplayName(model)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -336,12 +389,83 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             </Select>
           </div>
 
+          {/* Parallel Processing Configuration */}
+          <div>
+            <Label className="text-foreground font-medium mb-2 block">
+              Parallel Processing
+            </Label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id={`parallel-${agent.key}`}
+                    checked={config.parallelProcessing?.enabled || false}
+                    onCheckedChange={(enabled) => updateConfiguration(agent.key, { 
+                      parallelProcessing: {
+                        enabled,
+                        maxWorkers: enabled ? (config.parallelProcessing?.maxWorkers || 2) : 2
+                      }
+                    })}
+                  />
+                  <Label htmlFor={`parallel-${agent.key}`} className="text-sm text-foreground">
+                    Enable Parallel Processing
+                  </Label>
+                </div>
+                <Badge 
+                  variant={config.parallelProcessing?.enabled ? "default" : "secondary"}
+                  className={config.parallelProcessing?.enabled ? "text-green-400 border-green-400" : ""}
+                >
+                  {config.parallelProcessing?.enabled ? "ON" : "OFF"}
+                </Badge>
+              </div>
+              
+              {config.parallelProcessing?.enabled && (
+                <div className="space-y-2">
+                  <Label className="text-sm text-foreground">
+                    Maximum Workers
+                  </Label>
+                  <div className="flex items-center space-x-2">
+                    <Select 
+                      value={config.parallelProcessing.maxWorkers === 'unlimited' ? 'unlimited' : config.parallelProcessing.maxWorkers.toString()}
+                      onValueChange={(value) => updateConfiguration(agent.key, {
+                        parallelProcessing: {
+                          enabled: true,
+                          maxWorkers: value === 'unlimited' ? 'unlimited' : parseInt(value)
+                        }
+                      })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Worker</SelectItem>
+                        <SelectItem value="2">2 Workers</SelectItem>
+                        <SelectItem value="3">3 Workers</SelectItem>
+                        <SelectItem value="4">4 Workers</SelectItem>
+                        <SelectItem value="6">6 Workers</SelectItem>
+                        <SelectItem value="8">8 Workers</SelectItem>
+                        <SelectItem value="unlimited">Unlimited</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {config.parallelProcessing.maxWorkers === 'unlimited' 
+                      ? "No limit on concurrent requests (use with caution - may hit rate limits)"
+                      : `Process up to ${config.parallelProcessing.maxWorkers} requests concurrently`
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Configuration Preview */}
           <div className="p-3 rounded-lg border border-primary/20 bg-card/10">
             <div className="text-xs text-muted-foreground space-y-1">
               <div><strong>Provider:</strong> {config.provider}</div>
               <div><strong>Model:</strong> {isCustomModel ? (config.customModel || 'Not specified') : config.model}</div>
               <div><strong>Preset:</strong> {config.preset}</div>
+              <div><strong>Parallel Processing:</strong> {config.parallelProcessing?.enabled ? `${config.parallelProcessing.maxWorkers} workers` : 'Disabled'}</div>
             </div>
           </div>
         </CardContent>
@@ -438,7 +562,11 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                     agentName: 'global',
                     provider: 'openai',
                     model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-                    preset: 'balanced'
+                    preset: 'balanced',
+                    parallelProcessing: {
+                      enabled: false,
+                      maxWorkers: 2
+                    }
                   }
                 )}
               </div>
@@ -466,12 +594,16 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                 </div>
                 
                 <div className="grid gap-6">
-                  {AGENTS.map(agent => {
+                  {AGENTS.filter(agent => agent.key !== 'global').map(agent => {
                     const config = configurations.find(c => c.agentName === agent.key) || {
                       agentName: agent.key,
                       provider: 'openai',
                       model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-                      preset: 'balanced'
+                      preset: 'balanced',
+                      parallelProcessing: {
+                        enabled: agent.key === 'developer_agent', // Only enable for developer agent by default
+                        maxWorkers: 2
+                      }
                     };
                     
                     return renderAgentConfiguration(agent, config);
@@ -507,6 +639,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             <p><strong>🔄 Global Mode:</strong> One configuration applied to all agents - simple and consistent.</p>
             <p><strong>🎯 Agent-Specific Mode:</strong> Different models per agent - Epic Strategist could use GPT-4, Developer Agent could use CodeLlama, etc.</p>
             <p><strong>🚀 Custom Models:</strong> Enter future model names like "gpt-5", "claude-4", "llama4" for forward compatibility.</p>
+            <p><strong>⚡ Parallel Processing:</strong> Enable concurrent request processing for faster generation. Use cautiously to avoid rate limits.</p>
             <p><strong>🔑 API Keys:</strong> Provider selection determines which API key is used (OpenAI, Grok, or Ollama URL).</p>
           </div>
         </div>
