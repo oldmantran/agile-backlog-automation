@@ -35,6 +35,10 @@ const AGENTS = [
 
 const PROVIDER_MODELS = {
   openai: [
+    'gpt-5',
+    'gpt-5-mini',
+    'gpt-5-nano',
+    'gpt-5-chat-latest',
     'gpt-4o',
     'gpt-4o-mini', 
     'gpt-4-turbo',
@@ -66,6 +70,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
   const [saveStatus, setSaveStatus] = useState<{success?: boolean, message?: string} | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [useCustomModel, setUseCustomModel] = useState<{[key: string]: boolean}>({});
+  const [useAgentSpecific, setUseAgentSpecific] = useState(false);
 
   useEffect(() => {
     loadConfigurations();
@@ -74,17 +79,54 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
   const loadConfigurations = async () => {
     try {
       setIsLoading(true);
-      // Initialize with default global configuration
+      
+      // Try to load existing configurations from backend
+      const response = await fetch(`/api/llm-configurations/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Loaded configurations from backend:', data);
+        
+        if (data.success && data.data && data.data.length > 0) {
+          // Transform backend format to frontend format - ONLY use saved configurations
+          const frontendConfigs: LLMConfigEntry[] = data.data.map((config: any) => ({
+            agentName: config.agent_name,  // snake_case -> camelCase
+            provider: config.provider,
+            model: config.model,
+            customModel: undefined, // Backend doesn't return this separately
+            preset: config.preset || 'balanced'
+          }));
+          
+          console.log('Raw backend response:', data);
+          console.log('Transformed frontend configs:', frontendConfigs);
+          console.log('Configuration mapping by agent:');
+          frontendConfigs.forEach(config => {
+            console.log(`  ${config.agentName}: ${config.provider} ${config.model} (${config.preset})`);
+          });
+          setConfigurations(frontendConfigs);
+          return;
+        }
+      }
+      
+      // Fallback: Initialize with default configuration for all agents
       const defaultConfigs: LLMConfigEntry[] = AGENTS.map(agent => ({
         agentName: agent.key,
         provider: 'openai',
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
         preset: 'balanced'
       }));
       
+      console.log('Using default configurations:', defaultConfigs);
       setConfigurations(defaultConfigs);
     } catch (error) {
       console.error('Failed to load configurations:', error);
+      // Even if there's an error, provide minimal default configs
+      const fallbackConfigs: LLMConfigEntry[] = [{
+        agentName: 'global',
+        provider: 'openai',
+        model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
+        preset: 'balanced'
+      }];
+      setConfigurations(fallbackConfigs);
     } finally {
       setIsLoading(false);
     }
@@ -106,6 +148,26 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       ...prev,
       [agentName]: !prev[agentName]
     }));
+  };
+
+  const applyGlobalToAll = () => {
+    const globalConfig = configurations.find(c => c.agentName === 'global');
+    if (!globalConfig) return;
+
+    const updatedConfigs = configurations.map(config => 
+      config.agentName === 'global' 
+        ? config 
+        : {
+            ...config,
+            provider: globalConfig.provider,
+            model: globalConfig.model,
+            customModel: globalConfig.customModel,
+            preset: globalConfig.preset
+          }
+    );
+    
+    setConfigurations(updatedConfigs);
+    setHasChanges(true);
   };
 
   const getModelOptions = (provider: string) => {
@@ -133,9 +195,13 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
     }
   };
 
-  const renderAgentConfiguration = (agent: typeof AGENTS[0], config: LLMConfigEntry) => {
+  const renderAgentConfiguration = (agent: typeof AGENTS[0], config: LLMConfigEntry | undefined) => {
+    if (!config) {
+      return null;
+    }
+    
     const isCustomModel = useCustomModel[agent.key];
-    const modelOptions = getModelOptions(config.provider);
+    const modelOptions = getModelOptions(config.provider || 'openai');
 
     return (
       <Card key={agent.key} className="border border-primary/30 bg-card/20 backdrop-blur-sm">
@@ -176,7 +242,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                 <SelectItem value="openai">
                   <div className="flex items-center space-x-2">
                     <FiGlobe className="w-4 h-4" />
-                    <span>OpenAI (GPT-4, GPT-3.5)</span>
+                    <span>OpenAI</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="grok">
@@ -312,6 +378,13 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       </CardHeader>
 
       <CardContent>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="mb-6 p-4 text-center">
+            <p className="text-muted-foreground">Loading LLM configurations...</p>
+          </div>
+        )}
+
         {/* Save Status */}
         {saveStatus && (
           <Alert className={`mb-6 ${saveStatus.success ? 'border-green-500' : 'border-red-500'}`}>
@@ -321,35 +394,91 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
           </Alert>
         )}
 
-        {/* Global Configuration */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Global Configuration</h3>
-          {renderAgentConfiguration(
-            AGENTS[0], 
-            configurations.find(c => c.agentName === 'global') || configurations[0]
-          )}
-        </div>
-
-        {/* Agent-Specific Configurations */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-foreground">Agent-Specific Overrides</h3>
-          <p className="text-sm text-muted-foreground -mt-2">
-            Leave as default to use global configuration, or customize per agent.
-          </p>
-          
-          <div className="grid gap-6">
-            {AGENTS.slice(1).map(agent => {
-              const config = configurations.find(c => c.agentName === agent.key) || {
-                agentName: agent.key,
-                provider: 'openai',
-                model: 'gpt-4o-mini',
-                preset: 'balanced'
-              };
+        {!isLoading && (
+          <>
+            {/* Configuration Mode Toggle */}
+            <div className="mb-6 p-4 rounded-lg border border-primary/30 bg-card/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Configuration Mode</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Choose how to configure LLM models for your agents
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Label htmlFor="agent-specific-toggle" className="text-sm text-foreground">
+                    {useAgentSpecific ? 'Agent-Specific' : 'Global'}
+                  </Label>
+                  <Switch
+                    id="agent-specific-toggle"
+                    checked={useAgentSpecific}
+                    onCheckedChange={setUseAgentSpecific}
+                  />
+                </div>
+              </div>
               
-              return renderAgentConfiguration(agent, config);
-            })}
-          </div>
-        </div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                {useAgentSpecific 
+                  ? "Configure different models for each agent (Epic Strategist, Feature Decomposer, etc.)"
+                  : "Use one configuration for all agents"
+                }
+              </div>
+            </div>
+
+            {/* Global Configuration Mode */}
+            {!useAgentSpecific && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Global LLM Configuration</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This configuration will be used by all agents (Epic Strategist, Feature Decomposer, User Story Decomposer, Developer Agent, and QA Lead Agent).
+                </p>
+                {renderAgentConfiguration(
+                  { key: 'global', name: 'Global Configuration', description: 'Used by all agents' }, 
+                  configurations.find(c => c.agentName === 'global') || {
+                    agentName: 'global',
+                    provider: 'openai',
+                    model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
+                    preset: 'balanced'
+                  }
+                )}
+              </div>
+            )}
+
+            {/* Agent-Specific Configuration Mode */}
+            {useAgentSpecific && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Agent-Specific Configurations</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure different models for each agent based on their specific tasks.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={applyGlobalToAll}
+                    variant="outline"
+                    size="sm"
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <FiRefreshCw className="w-4 h-4 mr-2" />
+                    Apply Global to All
+                  </Button>
+                </div>
+                
+                <div className="grid gap-6">
+                  {AGENTS.map(agent => {
+                    const config = configurations.find(c => c.agentName === agent.key) || {
+                      agentName: agent.key,
+                      provider: 'openai',
+                      model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
+                      preset: 'balanced'
+                    };
+                    
+                    return renderAgentConfiguration(agent, config);
+                  })}
+                </div>
+              </div>
+            )}
 
         {/* Action Buttons */}
         <div className="flex space-x-4 pt-6 mt-6 border-t border-primary/20">
@@ -375,11 +504,14 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         {/* Help Text */}
         <div className="mt-6 p-4 rounded-lg border border-blue-500/30 bg-blue-500/10">
           <div className="text-sm text-blue-300 space-y-2">
+            <p><strong>🔄 Global Mode:</strong> One configuration applied to all agents - simple and consistent.</p>
+            <p><strong>🎯 Agent-Specific Mode:</strong> Different models per agent - Epic Strategist could use GPT-4, Developer Agent could use CodeLlama, etc.</p>
             <p><strong>🚀 Custom Models:</strong> Enter future model names like "gpt-5", "claude-4", "llama4" for forward compatibility.</p>
-            <p><strong>🎯 Agent-Specific:</strong> Each agent can use a different model optimized for its task.</p>
-            <p><strong>🔑 API Keys:</strong> Only provider selection affects which API key is used (OpenAI, Grok, or Ollama URL).</p>
+            <p><strong>🔑 API Keys:</strong> Provider selection determines which API key is used (OpenAI, Grok, or Ollama URL).</p>
           </div>
         </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

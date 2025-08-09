@@ -159,6 +159,52 @@ config = get_agent_config("epic_strategist", user_id="123")
 
 **Status**: Core workflow bug resolved - system now generates complete backlogs (epics → features → user stories → tasks)
 
+## 🚀 MAJOR BREAKTHROUGH: Frontend-First LLM Configuration & GPT-5 Support (August 9, 2025)
+
+**BREAKING CHANGES**: Complete LLM configuration overhaul with agent-specific model support and GPT-5 compatibility.
+
+### 🎯 **Frontend-First LLM Configuration System**:
+- **Single Source of Truth**: Frontend settings screen now drives ALL LLM configuration decisions
+- **Agent-Specific Models**: Each agent (Epic Strategist, Feature Decomposer, etc.) can use different models for cost optimization
+- **Database Persistence**: All configurations saved to `llm_configurations` table with `agent_name` column
+- **Real-Time Loading**: Settings page loads actual saved configurations instead of hardcoded defaults
+- **Global vs Agent-Specific**: Toggle between unified configuration or per-agent customization
+- **Cost Optimization Ready**: Support for strategies like premium GPT-5 for epics, cheaper GPT-4o-mini for high-volume tasks
+
+### 🔧 **GPT-5 Model Support & API Compatibility**:
+- **GPT-5 API Parameters**: Fixed `max_completion_tokens` (not `max_tokens`) and removed temperature parameter restrictions
+- **Model Detection**: Automatic API parameter selection based on model name (GPT-5 vs GPT-4/3.5)
+- **Custom Model Names**: Support for future models (gpt-5, gpt-5-mini, gpt-5-nano) through user input
+- **Backward Compatibility**: All existing GPT-4, GPT-3.5, and Ollama models continue to work
+
+### 💾 **Database Schema & API Enhancements**:
+- **New Schema**: `agent_name` column added to `llm_configurations` for per-agent storage
+- **API Endpoints**: `/api/llm-configurations/{user_id}` for CRUD operations on agent configs
+- **Data Transformation**: Proper camelCase (frontend) ↔ snake_case (backend) conversion
+- **Configuration Hierarchy**: Database → Runtime → Environment → Fallbacks
+
+### 🎨 **Settings Screen Redesign**:
+- **Reorganized Sections**: LLM Configuration, Domain Management, Work Item Limits, Visual Effects
+- **AgentLLMConfiguration Component**: Complete React component with provider/model/preset selection
+- **Toggle Design**: Clean switch between Global and Agent-Specific modes
+- **Apply Global to All**: One-click button to copy global settings to all agents
+- **Provider Labels**: Cleaned up outdated "(GPT-4, GPT-3.5)" references
+
+### ✅ **Production Validation**:
+- **End-to-End Success**: Completed 1hr 49min workflow generating 206 work items (3 epics, 9 features, 27 stories, 167 tasks)
+- **Cost-Effective Configuration**: Tested premium GPT-5-mini for strategic epics, cheaper models for volume work
+- **Azure DevOps Integration**: Successfully uploaded all 206 work items with updated access token
+- **Zero Data Loss**: Work items survived server restarts and token updates via JSON backup
+- **Parallel Processing**: 2 workers enabled for optimal performance
+
+### 🔄 **Migration Notes**:
+- **Removed .env Model Dependencies**: No more `XX_MODEL` environment variables
+- **Updated Default Model**: System default changed from `gpt-4o-mini` to `gpt-5-mini`
+- **Agent Configuration**: Each agent now queries database for specific model settings
+- **Unified LLM Config**: `utils.unified_llm_config.get_agent_config()` is single source of truth
+
+**Status**: Production Ready - Complete frontend-first LLM configuration system with GPT-5 support and cost-optimization capabilities.
+
 ## Recent Major Updates (August 2025)
 
 ### 🔄 Two-Phase Workflow Implementation (August 5, 2025)

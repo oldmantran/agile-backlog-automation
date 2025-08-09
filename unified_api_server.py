@@ -2148,11 +2148,11 @@ async def get_agent_llm_configurations(user_id: str):
         conn = sqlite3.connect('backlog_jobs.db')
         cursor = conn.cursor()
         
-        # Get all configurations for this user
+        # Get all active configurations for this user
         cursor.execute('''
             SELECT agent_name, provider, model, preset, is_active
             FROM llm_configurations 
-            WHERE user_id = ?
+            WHERE user_id = ? AND is_active = 1
             ORDER BY agent_name, updated_at DESC
         ''', (user_id,))
         
@@ -2169,9 +2169,10 @@ async def get_agent_llm_configurations(user_id: str):
                 "is_active": bool(row[4])
             })
         
+        logger.info(f"Returning {len(configurations)} LLM configurations for user {user_id}: {configurations}")
         return {
             "success": True,
-            "data": configurations
+            "data": configurations  # Keep consistent with actual response format
         }
         
     except Exception as e:

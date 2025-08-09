@@ -356,15 +356,25 @@ class Agent:
     
     def _prepare_request_payload(self, system_prompt: str, user_input: str) -> dict:
         """Prepare the request payload for the LLM API."""
-        return {
+        payload = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_input}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 4000  # Reduced from 8000 to fit within smaller model context limits
+            ]
         }
+        
+        # GPT-5 models have different API requirements
+        if self.model and 'gpt-5' in self.model.lower():
+            # GPT-5 models use 'max_completion_tokens' instead of 'max_tokens'
+            payload["max_completion_tokens"] = 4000
+            # GPT-5 models only support default temperature (1.0), don't set custom temperature
+        else:
+            # All other models (GPT-4, GPT-3.5, Grok, etc.)
+            payload["temperature"] = 0.7
+            payload["max_tokens"] = 4000
+        
+        return payload
     
     def _make_api_request(self, payload: dict) -> requests.Response:
         """Make API request with retry logic and comprehensive error handling."""
