@@ -396,21 +396,9 @@ const ConfigureEnvironmentScreen: React.FC = () => {
                       <h3 className="text-lg font-semibold text-foreground mb-2">Email Notifications</h3>
                       <p className="text-sm text-muted-foreground mb-4">
                         Enter your email address to receive notifications about job completion and system status.
-                        SMTP server configuration is handled automatically by the system.
                       </p>
                     </div>
                     {renderEnvVarsByCategory('notification')}
-                    
-                    <div className="mt-4 p-3 rounded-lg border border-blue-500/30 bg-blue-500/10">
-                      <div className="flex items-start space-x-2 text-blue-300 text-sm">
-                        <FiInfo className="w-4 h-4 mt-0.5" />
-                        <div>
-                          <p className="font-medium mb-1">System Configuration Note:</p>
-                          <p>Email sending (SMTP server, port, authentication) is configured by system administrators in the .env file. 
-                          You only need to provide your email address to receive notifications.</p>
-                        </div>
-                      </div>
-                    </div>
                   </TabsContent>
                 </Tabs>
               </CardContent>
