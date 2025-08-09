@@ -161,6 +161,30 @@ config = get_agent_config("epic_strategist", user_id="123")
 
 ## 🚀 MAJOR BREAKTHROUGHS: Complete System Overhaul (August 9, 2025)
 
+### 🔄 **Hybrid Progress Tracking System** (NEW):
+**FEATURE**: SSE primary with automatic database polling fallback
+
+- **SSE Real-Time Updates**: Low-latency progress streaming for active job monitoring
+- **Automatic Fallback**: Switches to polling when SSE connection fails/errors
+- **Database Persistence**: Progress snapshots saved every 2-3 seconds (throttled)
+- **ETags & Conditional Requests**: Minimize bandwidth with If-None-Match headers
+- **Exponential Backoff**: Failed polling attempts back off to 30s max with jitter
+- **Multi-Job Infrastructure**: Ready for concurrent job tracking (currently single-job)
+- **Zero Data Loss**: Progress persists across server restarts via database
+- **Smart State Management**: In-memory first, database fallback for performance
+
+### 🎯 **LLM Configuration Mode Persistence** (NEW):
+**BREAKING**: Configuration mode now database-persisted, not localStorage
+
+- **Database Schema**: Added `configuration_mode` column to `llm_configurations` table
+- **API Enhancement**: GET/POST endpoints now handle mode persistence
+- **Frontend Integration**: Mode preference loads from database on component mount
+- **Backend Respect**: `UnifiedLLMConfigManager` honors user's mode preference
+- **Mode Filtering**: Global mode ignores agent-specific configs, agent-specific mode uses individual configs
+- **Cross-Device Sync**: Mode preference syncs across all browsers/devices
+- **Graceful Migration**: Existing configurations continue working with database update
+- **Type Safety**: Updated TypeScript interfaces throughout the stack
+
 ### 🔐 **Enterprise JWT Authentication System**:
 **BREAKING**: All routes now protected with secure authentication
 
