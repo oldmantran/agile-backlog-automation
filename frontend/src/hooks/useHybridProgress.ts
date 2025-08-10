@@ -91,7 +91,7 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
           headers['If-None-Match'] = lastEtagRef.current;
         }
 
-        const response = await fetch(`http://localhost:8000/api/jobs/${jobId}/progress`, {
+        const response = await fetch(`/api/jobs/${jobId}/progress`, {
           headers
         });
 
@@ -181,7 +181,7 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
     try {
       console.log(`🔗 Attempting SSE connection for job: ${jobId}`);
       
-      const eventSource = new EventSource(`http://localhost:8000/api/progress/stream/${jobId}`, {
+      const eventSource = new EventSource(`/api/progress/stream/${jobId}`, {
         withCredentials: false
       });
       eventSourceRef.current = eventSource;

@@ -81,6 +81,23 @@ const SimpleProjectWizard: React.FC = () => {
       if (backlogResponse.jobId) {
         console.log('🎯 Found jobId:', backlogResponse.jobId);
         setJobId(backlogResponse.jobId);
+        
+        // Add job to localStorage for progress tracking
+        const activeJob = {
+          jobId: backlogResponse.jobId,
+          projectName: projectData.name,
+          startTime: new Date().toISOString(),
+          status: 'running',
+          progress: 0,
+          currentAction: 'Initializing backlog generation...'
+        };
+        
+        // Get existing active jobs or initialize empty array
+        const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+        existingJobs.push(activeJob);
+        localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+        console.log('📊 Added job to localStorage for progress tracking');
+        
         setIsSuccess(true);
         console.log('✅ Job submitted successfully');
       } else {

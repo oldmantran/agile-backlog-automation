@@ -425,7 +425,22 @@ class Agent:
         
         max_retries = 3  # Reduced from 5 to prevent long hangs
         base_delay = 1   # Reduced from 2 to faster recovery
-        timeout = 30     # Reduced from 60 to prevent long hangs
+        
+        # Agent-specific timeouts for different workloads
+        agent_timeouts = {
+            'epic_strategist': 180,      # 3 minutes for large prompts/outputs
+            'feature_decomposer_agent': 120,  # 2 minutes
+            'user_story_decomposer': 90,      # 1.5 minutes
+            'developer_agent': 60,            # 1 minute
+            'qa_lead_agent': 90,              # 1.5 minutes
+            'test_plan_agent': 60,            # 1 minute
+            'test_suite_agent': 60,           # 1 minute
+            'test_case_agent': 60             # 1 minute
+        }
+        
+        # Use agent-specific timeout or default
+        timeout = agent_timeouts.get(self.name, 60)  # Default 60s for unknown agents
+        logger.info(f"Using timeout {timeout}s for agent {self.name}")
         
         for attempt in range(max_retries):
             try:
