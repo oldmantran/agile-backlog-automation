@@ -17,10 +17,6 @@ interface LLMConfigEntry {
   customModel?: string;
   preset: string;
   configuration_mode?: string;  // Added to support database persistence
-  parallelProcessing?: {
-    enabled: boolean;
-    maxWorkers: number | 'unlimited';
-  };
 }
 
 interface AgentLLMConfigurationProps {
@@ -498,75 +494,6 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             </Select>
           </div>
 
-          {/* Parallel Processing Configuration */}
-          <div>
-            <Label className="text-foreground font-medium mb-2 block">
-              Parallel Processing
-            </Label>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id={`parallel-${agent.key}`}
-                    checked={config.parallelProcessing?.enabled || false}
-                    onCheckedChange={(enabled) => updateConfiguration(agent.key, { 
-                      parallelProcessing: {
-                        enabled,
-                        maxWorkers: enabled ? (config.parallelProcessing?.maxWorkers || 2) : 2
-                      }
-                    })}
-                  />
-                  <Label htmlFor={`parallel-${agent.key}`} className="text-sm text-foreground">
-                    Enable Parallel Processing
-                  </Label>
-                </div>
-                <Badge 
-                  variant={config.parallelProcessing?.enabled ? "default" : "secondary"}
-                  className={config.parallelProcessing?.enabled ? "text-green-400 border-green-400" : ""}
-                >
-                  {config.parallelProcessing?.enabled ? "ON" : "OFF"}
-                </Badge>
-              </div>
-              
-              {config.parallelProcessing?.enabled && (
-                <div className="space-y-2">
-                  <Label className="text-sm text-foreground">
-                    Maximum Workers
-                  </Label>
-                  <div className="flex items-center space-x-2">
-                    <Select 
-                      value={config.parallelProcessing.maxWorkers === 'unlimited' ? 'unlimited' : config.parallelProcessing.maxWorkers.toString()}
-                      onValueChange={(value) => updateConfiguration(agent.key, {
-                        parallelProcessing: {
-                          enabled: true,
-                          maxWorkers: value === 'unlimited' ? 'unlimited' : parseInt(value)
-                        }
-                      })}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 Worker</SelectItem>
-                        <SelectItem value="2">2 Workers</SelectItem>
-                        <SelectItem value="3">3 Workers</SelectItem>
-                        <SelectItem value="4">4 Workers</SelectItem>
-                        <SelectItem value="6">6 Workers</SelectItem>
-                        <SelectItem value="8">8 Workers</SelectItem>
-                        <SelectItem value="unlimited">Unlimited</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {config.parallelProcessing.maxWorkers === 'unlimited' 
-                      ? "No limit on concurrent requests (use with caution - may hit rate limits)"
-                      : `Process up to ${config.parallelProcessing.maxWorkers} requests concurrently`
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Configuration Preview */}
           <div className="p-3 rounded-lg border border-primary/20 bg-card/10">
@@ -574,7 +501,6 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
               <div><strong>Provider:</strong> {config.provider}</div>
               <div><strong>Model:</strong> {isCustomModel ? (config.customModel || 'Not specified') : config.model}</div>
               <div><strong>Preset:</strong> {config.preset}</div>
-              <div><strong>Parallel Processing:</strong> {config.parallelProcessing?.enabled ? `${config.parallelProcessing.maxWorkers} workers` : 'Disabled'}</div>
             </div>
           </div>
         </CardContent>
@@ -748,7 +674,6 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             <p><strong>🔄 Global Mode:</strong> One configuration applied to all agents - simple and consistent.</p>
             <p><strong>🎯 Agent-Specific Mode:</strong> Different models per agent - Epic Strategist could use GPT-4, Developer Agent could use CodeLlama, etc.</p>
             <p><strong>🚀 Custom Models:</strong> Enter future model names like "gpt-5", "claude-4", "llama4" for forward compatibility.</p>
-            <p><strong>⚡ Parallel Processing:</strong> Enable concurrent request processing for faster generation. Use cautiously to avoid rate limits.</p>
             <p><strong>🔑 API Keys:</strong> Provider selection determines which API key is used (OpenAI, Grok, or Ollama URL).</p>
           </div>
         </div>
