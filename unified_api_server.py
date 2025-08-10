@@ -2003,23 +2003,45 @@ async def get_llm_configurations(user_id: str):
         conn.execute("PRAGMA journal_mode=WAL")  # Use Write-Ahead Logging for better concurrency
         cursor = conn.cursor()
         
-        # First, try to get the user's configuration mode preference
+        # First, try to get the user's configuration mode preference from user_settings
         configuration_mode = 'global'  # Default
-        try:
-            cursor.execute('''
-                SELECT configuration_mode 
-                FROM llm_configurations 
-                WHERE user_id = ? AND is_active = 1
-                ORDER BY updated_at DESC
-                LIMIT 1
-            ''', (user_id,))
-            
-            mode_row = cursor.fetchone()
-            configuration_mode = mode_row[0] if mode_row and mode_row[0] else 'global'
-            logger.info(f"GET /api/llm-configurations/{user_id} - Found configuration_mode: {configuration_mode} from row: {mode_row}")
-        except sqlite3.OperationalError:
-            # Column doesn't exist in older schema
-            configuration_mode = 'global'
+        
+        # Check user_settings first
+        cursor.execute('''
+            SELECT setting_value 
+            FROM user_settings 
+            WHERE user_id = ? AND setting_type = 'llm_config' AND setting_key = 'configuration_mode'
+            AND (scope = 'user_default' OR scope = 'session')
+            ORDER BY CASE 
+                WHEN scope = 'user_default' THEN 1 
+                WHEN scope = 'session' THEN 2 
+                ELSE 3 
+            END, updated_at DESC
+            LIMIT 1
+        ''', (user_id,))
+        
+        settings_row = cursor.fetchone()
+        if settings_row:
+            configuration_mode = settings_row[0]
+            logger.info(f"GET /api/llm-configurations/{user_id} - Found configuration_mode from user_settings: {configuration_mode}")
+        else:
+            # Fallback to checking llm_configurations
+            try:
+                cursor.execute('''
+                    SELECT configuration_mode 
+                    FROM llm_configurations 
+                    WHERE user_id = ? AND is_active = 1
+                    ORDER BY updated_at DESC
+                    LIMIT 1
+                ''', (user_id,))
+                
+                mode_row = cursor.fetchone()
+                if mode_row and mode_row[0]:
+                    configuration_mode = mode_row[0]
+                    logger.info(f"GET /api/llm-configurations/{user_id} - Found configuration_mode from llm_configurations: {configuration_mode}")
+            except sqlite3.OperationalError:
+                # Column doesn't exist in older schema
+                pass
         
         # Get all active configurations for the user
         # Try with new columns first, fall back to old schema if needed
@@ -2028,7 +2050,7 @@ async def get_llm_configurations(user_id: str):
                 SELECT agent_name, provider, model, preset, is_active, configuration_mode
                 FROM llm_configurations 
                 WHERE user_id = ? AND is_active = 1
-                ORDER BY agent_name, updated_at DESC
+                ORDER BY agent_name
             ''', (user_id,))
             
             configs = []
@@ -2126,6 +2148,17 @@ async def save_llm_configurations(user_id: str, configurations: List[AgentLLMCon
                     CURRENT_TIMESTAMP)
             ''', (user_id, config_name, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode,
                   user_id, config_name))
+        
+        # Also save the configuration mode to user_settings
+        cursor.execute('''
+            INSERT OR REPLACE INTO user_settings 
+            (user_id, setting_type, setting_key, setting_value, scope, is_user_default, created_at, updated_at)
+            VALUES (?, 'llm_config', 'configuration_mode', ?, 'user_default', 1, 
+                COALESCE((SELECT created_at FROM user_settings 
+                          WHERE user_id = ? AND setting_type = 'llm_config' AND setting_key = 'configuration_mode' 
+                          AND scope = 'user_default'), CURRENT_TIMESTAMP),
+                CURRENT_TIMESTAMP)
+        ''', (user_id, configuration_mode, user_id))
         
         conn.commit()
         

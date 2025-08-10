@@ -157,6 +157,10 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       setSaveStatus({ success: true, message: 'Configuration mode saved successfully!' });
       setTimeout(() => setSaveStatus(null), 3000);
       
+      // Refresh configurations to ensure UI stays in sync with backend
+      console.log('Refreshing configurations after mode save...');
+      await loadConfigurations();
+      
     } catch (error: any) {
       console.error('Failed to save configuration mode:', error);
       // Extract error message from response if available

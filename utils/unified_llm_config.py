@@ -144,17 +144,37 @@ class UnifiedLLMConfigManager:
             conn = sqlite3.connect('backlog_jobs.db')
             cursor = conn.cursor()
             
-            # First, check if user has agent-specific mode enabled
+            # First, check user's configuration mode preference from user_settings
             cursor.execute('''
-                SELECT configuration_mode
-                FROM llm_configurations 
-                WHERE user_id = ? AND is_active = 1
-                ORDER BY updated_at DESC
+                SELECT setting_value 
+                FROM user_settings 
+                WHERE user_id = ? AND setting_type = 'llm_config' AND setting_key = 'configuration_mode'
+                AND (scope = 'user_default' OR scope = 'session')
+                ORDER BY CASE 
+                    WHEN scope = 'user_default' THEN 1 
+                    WHEN scope = 'session' THEN 2 
+                    ELSE 3 
+                END, updated_at DESC
                 LIMIT 1
             ''', (user_id,))
             
-            mode_row = cursor.fetchone()
-            config_mode = mode_row[0] if mode_row else None
+            settings_row = cursor.fetchone()
+            config_mode = settings_row[0] if settings_row else None
+            
+            # If not in user_settings, check llm_configurations
+            if not config_mode:
+                cursor.execute('''
+                    SELECT configuration_mode
+                    FROM llm_configurations 
+                    WHERE user_id = ? AND is_active = 1
+                    ORDER BY updated_at DESC
+                    LIMIT 1
+                ''', (user_id,))
+                
+                mode_row = cursor.fetchone()
+                config_mode = mode_row[0] if mode_row and mode_row[0] else 'global'
+            
+            logger.info(f"Runtime config resolution for {agent_name}: mode = {config_mode}")
             
             # Only return agent-specific config if mode is "agent-specific"
             if config_mode == "agent-specific":
