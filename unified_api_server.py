@@ -2050,7 +2050,7 @@ async def get_llm_configurations(user_id: str):
                 SELECT agent_name, provider, model, preset, is_active, configuration_mode
                 FROM llm_configurations 
                 WHERE user_id = ? AND is_active = 1
-                ORDER BY agent_name
+                ORDER BY updated_at DESC, agent_name
             ''', (user_id,))
             
             configs = []
@@ -2070,7 +2070,7 @@ async def get_llm_configurations(user_id: str):
                 SELECT name, provider, model, preset, is_active
                 FROM llm_configurations 
                 WHERE user_id = ? AND is_active = 1
-                ORDER BY name, updated_at DESC
+                ORDER BY updated_at DESC, name
             ''', (user_id,))
             
             configs = []
@@ -2502,142 +2502,40 @@ async def detect_domain(request: dict):
         # Return a fallback domain instead of failing
         return {"domain": "technology"}
 
-# Agent-Specific LLM Configuration Endpoints
+# DUPLICATE ENDPOINTS COMMENTED OUT - See line 1996 for the proper implementation
+# The following endpoints were duplicates with incorrect ordering (agent_name instead of updated_at)
+# and have been commented out to prevent conflicts.
 
-class AgentLLMConfigRequest(BaseModel):
-    agent_name: str
-    provider: str
-    model: str
-    custom_model: Optional[str] = None
-    preset: str = "balanced"
-    configuration_mode: Optional[str] = None  # "global" or "agent-specific"
+# class AgentLLMConfigRequest(BaseModel):
+#     agent_name: str
+#     provider: str
+#     model: str
+#     custom_model: Optional[str] = None
+#     preset: str = "balanced"
+#     configuration_mode: Optional[str] = None  # "global" or "agent-specific"
 
-class AgentLLMConfigResponse(BaseModel):
-    agent_name: str
-    provider: str
-    model: str
-    preset: str
-    is_active: bool
-    configuration_mode: Optional[str] = None
+# class AgentLLMConfigResponse(BaseModel):
+#     agent_name: str
+#     provider: str
+#     model: str
+#     preset: str
+#     is_active: bool
+#     configuration_mode: Optional[str] = None
 
-class LLMConfigurationResponse(BaseModel):
-    success: bool
-    data: List[AgentLLMConfigResponse]
-    configuration_mode: Optional[str] = None  # User's preferred mode
+# class LLMConfigurationResponse(BaseModel):
+#     success: bool
+#     data: List[AgentLLMConfigResponse]
+#     configuration_mode: Optional[str] = None  # User's preferred mode
 
-@app.get("/api/llm-configurations/{user_id}")
-async def get_agent_llm_configurations(user_id: str):
-    """Get all agent-specific LLM configurations for a user."""
-    try:
-        import sqlite3
-        conn = sqlite3.connect('backlog_jobs.db')
-        cursor = conn.cursor()
-        
-        # Get all active configurations for this user
-        cursor.execute('''
-            SELECT agent_name, provider, model, preset, is_active, configuration_mode
-            FROM llm_configurations 
-            WHERE user_id = ? AND is_active = 1
-            ORDER BY agent_name, updated_at DESC
-        ''', (user_id,))
-        
-        results = cursor.fetchall()
-        
-        # Get the user's preferred configuration mode (from most recent config)
-        user_configuration_mode = None
-        if results:
-            # Use the configuration_mode from the most recent config, or default to global
-            user_configuration_mode = results[0][5] or "global"
-        
-        conn.close()
-        
-        configurations = []
-        for row in results:
-            configurations.append({
-                "agent_name": row[0] or "global",
-                "provider": row[1],
-                "model": row[2],
-                "preset": row[3] or "balanced",
-                "is_active": bool(row[4]),
-                "configuration_mode": row[5]
-            })
-        
-        logger.info(f"Returning {len(configurations)} LLM configurations for user {user_id} with mode '{user_configuration_mode}': {configurations}")
-        return {
-            "success": True,
-            "data": configurations,
-            "configuration_mode": user_configuration_mode
-        }
-        
-    except Exception as e:
-        logger.error(f"Failed to get LLM configurations for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.get("/api/llm-configurations/{user_id}")
+# async def get_agent_llm_configurations(user_id: str):
+#     """Get all agent-specific LLM configurations for a user."""
+#     ... DUPLICATE - REMOVED ...
 
-@app.post("/api/llm-configurations/{user_id}")
-async def save_agent_llm_configurations(user_id: str, configurations: List[AgentLLMConfigRequest]):
-    """Save agent-specific LLM configurations for a user."""
-    try:
-        import sqlite3
-        conn = sqlite3.connect('backlog_jobs.db')
-        cursor = conn.cursor()
-        
-        # Deactivate all existing configurations for this user
-        cursor.execute('''
-            UPDATE llm_configurations 
-            SET is_active = 0, updated_at = CURRENT_TIMESTAMP
-            WHERE user_id = ?
-        ''', (user_id,))
-        
-        # Insert or update new configurations
-        for config in configurations:
-            # Use custom_model if provided, otherwise use model
-            final_model = config.custom_model if config.custom_model else config.model
-            
-            # Check if configuration exists
-            cursor.execute('''
-                SELECT id FROM llm_configurations 
-                WHERE user_id = ? AND agent_name = ? AND provider = ?
-            ''', (user_id, config.agent_name, config.provider))
-            
-            existing = cursor.fetchone()
-            
-            if existing:
-                # Update existing
-                cursor.execute('''
-                    UPDATE llm_configurations 
-                    SET model = ?, preset = ?, configuration_mode = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                ''', (final_model, config.preset, config.configuration_mode, existing[0]))
-            else:
-                # Insert new
-                cursor.execute('''
-                    INSERT INTO llm_configurations 
-                    (user_id, name, provider, model, agent_name, preset, configuration_mode, is_active, is_default) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)
-                ''', (
-                    user_id,
-                    f"{config.provider.title()} {final_model} ({config.agent_name})",
-                    config.provider,
-                    final_model,
-                    config.agent_name,
-                    config.preset,
-                    config.configuration_mode
-                ))
-        
-        conn.commit()
-        conn.close()
-        
-        logger.info(f"Saved {len(configurations)} LLM configurations for user {user_id}")
-        
-        return {
-            "success": True,
-            "message": f"Saved {len(configurations)} LLM configurations",
-            "data": {"user_id": user_id, "configurations_count": len(configurations)}
-        }
-        
-    except Exception as e:
-        logger.error(f"Failed to save LLM configurations for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/api/llm-configurations/{user_id}")
+# async def save_agent_llm_configurations(user_id: str, configurations: List[AgentLLMConfigRequest]):
+#     """Save agent-specific LLM configurations for a user."""
+#     ... DUPLICATE - REMOVED ...
 
 @app.delete("/api/llm-configurations/{user_id}")
 async def reset_agent_llm_configurations(user_id: str):
