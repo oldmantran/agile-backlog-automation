@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import signal
+import sqlite3
 import subprocess
 import sys
 import time
@@ -1997,7 +1998,9 @@ async def get_llm_configurations(user_id: str):
     """Get LLM configurations for a user."""
     try:
         import sqlite3
-        conn = sqlite3.connect('backlog_jobs.db')
+        # Set a timeout to handle database locks
+        conn = sqlite3.connect('backlog_jobs.db', timeout=10.0)
+        conn.execute("PRAGMA journal_mode=WAL")  # Use Write-Ahead Logging for better concurrency
         cursor = conn.cursor()
         
         # First, try to get the user's configuration mode preference
@@ -2087,7 +2090,9 @@ async def save_llm_configurations(user_id: str, configurations: List[AgentLLMCon
     """Save LLM configurations for a user."""
     try:
         import sqlite3
-        conn = sqlite3.connect('backlog_jobs.db')
+        # Set a timeout to handle database locks
+        conn = sqlite3.connect('backlog_jobs.db', timeout=10.0)
+        conn.execute("PRAGMA journal_mode=WAL")  # Use Write-Ahead Logging for better concurrency
         cursor = conn.cursor()
         
         # First, deactivate all existing configurations for this user
@@ -2108,11 +2113,15 @@ async def save_llm_configurations(user_id: str, configurations: List[AgentLLMCon
             # Generate a name for this configuration
             config_name = f"{config.agent_name}_{config.provider}_{user_id}"
             
+            # Use INSERT OR REPLACE to handle existing configurations
             cursor.execute('''
-                INSERT INTO llm_configurations 
+                INSERT OR REPLACE INTO llm_configurations 
                 (user_id, name, agent_name, provider, model, preset, is_active, configuration_mode, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ''', (user_id, config_name, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode))
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, 
+                    COALESCE((SELECT created_at FROM llm_configurations WHERE user_id = ? AND name = ?), CURRENT_TIMESTAMP),
+                    CURRENT_TIMESTAMP)
+            ''', (user_id, config_name, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode,
+                  user_id, config_name))
         
         conn.commit()
         conn.close()
@@ -2124,8 +2133,22 @@ async def save_llm_configurations(user_id: str, configurations: List[AgentLLMCon
             "message": f"Saved {len(configurations)} configurations",
             "configuration_mode": configuration_mode
         }
+    except sqlite3.IntegrityError as e:
+        logger.error(f"Database integrity error saving LLM configurations for {user_id}: {e}")
+        if "UNIQUE constraint failed" in str(e):
+            raise HTTPException(status_code=400, detail="Configuration already exists. Try updating instead.")
+        else:
+            raise HTTPException(status_code=400, detail=f"Database constraint error: {str(e)}")
+    except sqlite3.OperationalError as e:
+        logger.error(f"Database operational error saving LLM configurations for {user_id}: {e}")
+        if "database is locked" in str(e):
+            raise HTTPException(status_code=503, detail="Database is busy. Please try again.")
+        else:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         logger.error(f"Failed to save LLM configurations for {user_id}: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/ollama/models")
