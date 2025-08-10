@@ -20,7 +20,7 @@ interface LLMConfigEntry {
 }
 
 interface AgentLLMConfigurationProps {
-  userId: string;
+  userId?: string;
   onSave: (configs: LLMConfigEntry[]) => Promise<void>;
   onRefresh?: () => void;
 }
@@ -186,11 +186,22 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
   }, [userId]);
 
   const loadConfigurations = async () => {
+    // Don't load if no userId is provided
+    if (!userId) {
+      console.log('No userId provided, skipping configuration load');
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       
       // Try to load existing configurations from backend
-      const response = await fetch(`/api/llm-configurations/${userId}`);
+      const response = await fetch('/api/llm-configurations', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         console.log('Loaded configurations from backend:', data);
@@ -474,6 +485,21 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       </Card>
     );
   };
+
+  // Show authentication required message if no userId
+  if (!userId) {
+    return (
+      <Card className="border border-primary/30 bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-6">
+          <Alert>
+            <AlertDescription className="text-foreground">
+              Please log in to configure LLM settings.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border border-primary/30 bg-card/50 backdrop-blur-sm">

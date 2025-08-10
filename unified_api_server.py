@@ -26,7 +26,7 @@ from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Query, Depends
 from fastapi.responses import StreamingResponse
 import asyncio
 import json as json_module
@@ -49,8 +49,8 @@ try:
     from db import db
     from utils.settings_manager import SettingsManager
     from utils.user_id_resolver import user_id_resolver
-    from auth.auth_routes import router as auth_router
-    from auth.user_auth import auth_manager, IS_PRODUCTION
+    from auth.auth_routes import router as auth_router, get_current_user
+    from auth.user_auth import auth_manager, IS_PRODUCTION, User
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Current directory: {current_dir}")
@@ -610,18 +610,19 @@ async def save_config(config: ConfigData):
         raise HTTPException(status_code=500, detail="Failed to save configuration")
 
 @app.post("/api/projects")
-async def create_project(project_data: CreateProjectRequest, background_tasks: BackgroundTasks):
+async def create_project(project_data: CreateProjectRequest, background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)):
     """Create a new project and return project ID."""
     try:
         project_id = f"proj_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
-        # Store project data
+        # Store project data with authenticated user
         project_info = {
             "id": project_id,
             "data": project_data.dict(),
             "status": "created",
             "createdAt": datetime.now().isoformat(),
-            "updatedAt": datetime.now().isoformat()
+            "updatedAt": datetime.now().isoformat(),
+            "user_id": str(current_user.id)  # Store the authenticated user's ID
         }
         
         # Save project to file for persistence
@@ -648,7 +649,7 @@ async def create_project(project_data: CreateProjectRequest, background_tasks: B
         raise HTTPException(status_code=500, detail=f"Failed to create project: {str(e)}")
 
 @app.post("/api/generate-backlog")
-async def generate_backlog_direct(project_data: CreateProjectRequest, background_tasks: BackgroundTasks):
+async def generate_backlog_direct(project_data: CreateProjectRequest, background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user)):
     """Generate a backlog directly from project data (single-step API)."""
     logger.info("🚀 Direct backlog generation requested")
     logger.info(f"🔍 Request received at: {datetime.now().isoformat()}")
@@ -660,13 +661,14 @@ async def generate_backlog_direct(project_data: CreateProjectRequest, background
         job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{project_id}"
         logger.info(f"🆔 Generated project ID: {project_id}, job ID: {job_id}")
         
-        # Store project info
+        # Store project info with authenticated user
         project_info = {
             "id": project_id,
             "data": project_data.dict(),
             "status": "created",
             "createdAt": datetime.now().isoformat(),
-            "updatedAt": datetime.now().isoformat()
+            "updatedAt": datetime.now().isoformat(),
+            "user_id": str(current_user.id)  # Store the authenticated user's ID
         }
         
         # Save project to file for persistence
@@ -1366,8 +1368,8 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
         
         logger.info(f"   Final azure_integration_enabled: {azure_integration_enabled}")
         
-        # Get current user ID for settings management
-        current_user_id = user_id_resolver.get_default_user_id()
+        # Get current user ID from project info (passed from authenticated endpoint)
+        current_user_id = project_info.get("user_id", "default_user")
         logger.info(f"🔧 Using user ID for settings: {current_user_id}")
         
         # Initialize supervisor with error handling for Azure DevOps
@@ -1826,9 +1828,11 @@ def open_browser():
         logger.error(f"Failed to open browser: {e}")
 
 # User Settings Endpoints
-@app.get("/api/settings/{user_id}")
-async def get_user_settings(user_id: str, session_id: str = None):
-    """Get all settings for a user/session."""
+@app.get("/api/settings")
+async def get_user_settings(session_id: str = None, current_user: User = Depends(get_current_user)):
+    """Get all settings for the authenticated user/session."""
+    user_id = str(current_user.id)
+    
     try:
         settings = settings_manager.get_all_settings(user_id, session_id)
         return {
@@ -1839,9 +1843,11 @@ async def get_user_settings(user_id: str, session_id: str = None):
         logger.error(f"Failed to get settings for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/settings/{user_id}")
-async def save_user_settings(user_id: str, request: SettingsRequest):
-    """Save user settings."""
+@app.post("/api/settings")
+async def save_user_settings(request: SettingsRequest, current_user: User = Depends(get_current_user)):
+    """Save settings for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         success = settings_manager.save_all_settings(
             user_id, request.settings, request.scope, request.session_id
@@ -1859,9 +1865,11 @@ async def save_user_settings(user_id: str, request: SettingsRequest):
         logger.error(f"Failed to save settings for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/settings/{user_id}/work-item-limits")
-async def get_work_item_limits(user_id: str, session_id: str = None):
-    """Get work item limits for a user/session."""
+@app.get("/api/settings/work-item-limits")
+async def get_work_item_limits(session_id: str = None, current_user: User = Depends(get_current_user)):
+    """Get work item limits for the authenticated user/session."""
+    user_id = str(current_user.id)
+    
     try:
         limits_with_flags = settings_manager.get_work_item_limits_with_flags(user_id, session_id)
         return {
@@ -1872,9 +1880,11 @@ async def get_work_item_limits(user_id: str, session_id: str = None):
         logger.error(f"Failed to get work item limits for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/settings/{user_id}/work-item-limits")
-async def save_work_item_limits(user_id: str, request: WorkItemLimitsRequest):
-    """Save work item limits."""
+@app.post("/api/settings/work-item-limits")
+async def save_work_item_limits(request: WorkItemLimitsRequest, current_user: User = Depends(get_current_user)):
+    """Save work item limits for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         limits = {
             'max_epics': request.max_epics,
@@ -1904,9 +1914,11 @@ async def save_work_item_limits(user_id: str, request: WorkItemLimitsRequest):
         logger.error(f"Failed to save work item limits for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/settings/{user_id}/work-item-limits")
-async def delete_work_item_limits(user_id: str, scope: str = Query('user_default')):
-    """Delete work item limits."""
+@app.delete("/api/settings/work-item-limits")
+async def delete_work_item_limits(scope: str = Query('user_default'), current_user: User = Depends(get_current_user)):
+    """Delete work item limits for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         success = db.delete_user_settings(user_id, 'work_item_limits', scope)
         
@@ -1922,9 +1934,11 @@ async def delete_work_item_limits(user_id: str, scope: str = Query('user_default
         logger.error(f"Failed to delete work item limits for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/settings/{user_id}/visual-settings")
-async def get_visual_settings(user_id: str, session_id: str = None):
-    """Get visual settings for a user/session."""
+@app.get("/api/settings/visual-settings")
+async def get_visual_settings(session_id: str = None, current_user: User = Depends(get_current_user)):
+    """Get visual settings for the authenticated user/session."""
+    user_id = str(current_user.id)
+    
     try:
         settings = settings_manager.get_visual_settings(user_id, session_id)
         return {
@@ -1937,9 +1951,11 @@ async def get_visual_settings(user_id: str, session_id: str = None):
         logger.error(f"Failed to get visual settings for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/settings/{user_id}/visual-settings")
-async def save_visual_settings(user_id: str, request: VisualSettingsRequest):
-    """Save visual settings."""
+@app.post("/api/settings/visual-settings")
+async def save_visual_settings(request: VisualSettingsRequest, current_user: User = Depends(get_current_user)):
+    """Save visual settings for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         settings = {
             'glow_intensity': request.glow_intensity
@@ -1961,9 +1977,11 @@ async def save_visual_settings(user_id: str, request: VisualSettingsRequest):
         logger.error(f"Failed to save visual settings for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/api/settings/{user_id}/session")
-async def delete_session_settings(user_id: str, request: SessionDeleteRequest):
-    """Delete session-specific settings."""
+@app.delete("/api/settings/session")
+async def delete_session_settings(request: SessionDeleteRequest, current_user: User = Depends(get_current_user)):
+    """Delete session-specific settings for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         success = settings_manager.delete_session_settings(request.session_id)
         
@@ -1979,9 +1997,11 @@ async def delete_session_settings(user_id: str, request: SessionDeleteRequest):
         logger.error(f"Failed to delete session settings for {request.session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/settings/{user_id}/history")
-async def get_setting_history(user_id: str, setting_type: str = None):
-    """Get setting change history for audit trail."""
+@app.get("/api/settings/history")
+async def get_setting_history(setting_type: str = None, current_user: User = Depends(get_current_user)):
+    """Get setting change history for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         history = settings_manager.get_setting_history(user_id, setting_type)
         return {
@@ -1993,9 +2013,11 @@ async def get_setting_history(user_id: str, setting_type: str = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 # LLM Configuration Endpoints
-@app.get("/api/llm-configurations/{user_id}")
-async def get_llm_configurations(user_id: str):
-    """Get LLM configurations for a user."""
+@app.get("/api/llm-configurations")
+async def get_llm_configurations(current_user: User = Depends(get_current_user)):
+    """Get LLM configurations for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         import sqlite3
         # Set a timeout to handle database locks
@@ -2112,9 +2134,11 @@ class AgentLLMConfigRequest(BaseModel):
     preset: str = "balanced"
     configuration_mode: Optional[str] = None
 
-@app.post("/api/llm-configurations/{user_id}")
-async def save_llm_configurations(user_id: str, configurations: List[AgentLLMConfigRequest]):
-    """Save LLM configurations for a user."""
+@app.post("/api/llm-configurations")
+async def save_llm_configurations(configurations: List[AgentLLMConfigRequest], current_user: User = Depends(get_current_user)):
+    """Save LLM configurations for the authenticated user."""
+    user_id = str(current_user.id)
+    
     try:
         import sqlite3
         # Set a timeout to handle database locks
@@ -2242,19 +2266,15 @@ async def get_ollama_models():
         return {"models": [], "error": str(e)}
 
 @app.get("/api/user/current")
-async def get_current_user():
-    """Get current user information."""
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user information from JWT token."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        user_email = user_id_resolver.get_user_email()
-        display_name = user_id_resolver.get_user_display_name()
-        
         return {
             "success": True,
             "data": {
-                "user_id": user_id,
-                "email": user_email,
-                "display_name": display_name
+                "user_id": str(current_user.id),
+                "email": current_user.email,
+                "display_name": current_user.full_name or current_user.username
             }
         }
     except Exception as e:
@@ -2538,9 +2558,11 @@ async def detect_domain(request: dict):
 #     """Save agent-specific LLM configurations for a user."""
 #     ... DUPLICATE - REMOVED ...
 
-@app.delete("/api/llm-configurations/{user_id}")
-async def reset_agent_llm_configurations(user_id: str):
-    """Reset all LLM configurations for a user to defaults."""
+@app.delete("/api/llm-configurations")
+async def reset_agent_llm_configurations(current_user: User = Depends(get_current_user)):
+    """Reset all LLM configurations for the authenticated user to defaults."""
+    user_id = str(current_user.id)
+    
     try:
         import sqlite3
         conn = sqlite3.connect('backlog_jobs.db')

@@ -76,24 +76,25 @@ const TronSettingsScreen: React.FC = () => {
         let userResponse = null;
         try {
           userResponse = await userApi.getCurrentUser();
-          console.log('User response:', userResponse);
+          console.log('User API response:', userResponse);
+          console.log('User ID from response:', userResponse?.user_id);
+          // The response should already be the data object due to apiClient interceptor
           setCurrentUser(userResponse);
           
-          if (!userResponse) {
-            console.warn('No user response received, continuing with default user');
+          if (!userResponse || !userResponse.user_id) {
+            console.warn('No valid user response received:', userResponse);
           }
         } catch (userError) {
           console.error('Failed to load current user:', userError);
           // Continue without user - some features may be limited
         }
         
-        // Load settings from backend (use default user if no user loaded)
-        const userId = userResponse?.user_id || 'default_user';
-        console.log('Loading settings for userId:', userId);
+        // Load settings from backend
+        console.log('Loading settings for authenticated user');
         
         const [workItemLimitsResponse, visualSettingsResponse] = await Promise.all([
-          settingsApi.getWorkItemLimits(userId, sessionId),
-          settingsApi.getVisualSettings(userId, sessionId)
+          settingsApi.getWorkItemLimits(sessionId),
+          settingsApi.getVisualSettings(sessionId)
         ]);
         
         if ((workItemLimitsResponse as any).success && (workItemLimitsResponse as any).data) {
@@ -210,8 +211,8 @@ const TronSettingsScreen: React.FC = () => {
       
       // Save both settings
       await Promise.all([
-        settingsApi.saveWorkItemLimits(currentUser.user_id, workItemLimitsRequest),
-        settingsApi.saveVisualSettings(currentUser.user_id, visualSettingsRequest)
+        settingsApi.saveWorkItemLimits(workItemLimitsRequest),
+        settingsApi.saveVisualSettings(visualSettingsRequest)
       ]);
       
       // Also save to localStorage as backup
@@ -252,9 +253,12 @@ const TronSettingsScreen: React.FC = () => {
       try {
         if (currentUser) {
           // Delete user default settings
-          await fetch(`/api/settings/${currentUser.user_id}/work-item-limits?scope=user_default`, {
+          await fetch('/api/settings/work-item-limits?scope=user_default', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
           });
           
           setHasCustomSettings(false);
@@ -333,8 +337,11 @@ const TronSettingsScreen: React.FC = () => {
   // LLM Configuration handlers
   const handleLLMConfigurationSave = async (configurations: any[]) => {
     try {
-      // Use currentUser.user_id if available, otherwise use default_user
-      const userId = currentUser?.user_id || 'default_user';
+      // Require authenticated user - no fallback
+      if (!currentUser?.user_id) {
+        throw new Error('User must be authenticated to save LLM configurations');
+      }
+      const userId = currentUser.user_id;
       console.log('Saving LLM configurations for userId:', userId);
       console.log('Frontend configurations:', configurations);
 
@@ -350,10 +357,11 @@ const TronSettingsScreen: React.FC = () => {
 
       console.log('Backend configurations:', backendConfigurations);
 
-      const response = await fetch(`/api/llm-configurations/${userId}`, {
+      const response = await fetch('/api/llm-configurations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         },
         body: JSON.stringify(backendConfigurations),
       });
@@ -428,7 +436,7 @@ const TronSettingsScreen: React.FC = () => {
             {/* 1. LLM Configuration Section - TOP PRIORITY */}
             <div className="mb-8">
               <AgentLLMConfiguration 
-                userId={currentUser?.user_id || "default_user"} 
+                userId={currentUser?.user_id || undefined} 
                 onSave={handleLLMConfigurationSave}
               />
             </div>

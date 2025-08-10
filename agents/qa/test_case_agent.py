@@ -20,8 +20,8 @@ class TestCaseAgent(Agent):
     - Link test cases to appropriate test suites
     """
     
-    def __init__(self, config):
-        super().__init__("test_case_agent", config)
+    def __init__(self, config, user_id: str = None):
+        super().__init__("test_case_agent", config, user_id)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Test case specific settings from configuration

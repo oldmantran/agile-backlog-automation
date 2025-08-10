@@ -9,7 +9,14 @@ export interface CurrentUser {
 export const userApi = {
   // Get current user information
   getCurrentUser: async (): Promise<CurrentUser> => {
-    const response = await apiClientMethods.get('/user/current') as any;
-    return response.data;
+    try {
+      console.log('Fetching current user from /api/user/current');
+      const response = await apiClientMethods.get('/user/current');
+      console.log('getCurrentUser response:', response);
+      return response as CurrentUser;
+    } catch (error) {
+      console.error('getCurrentUser error:', error);
+      throw error;
+    }
   }
 }; 

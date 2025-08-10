@@ -16,8 +16,8 @@ class FeatureDecomposerAgent(Agent):
     Focuses on business value, strategic planning, and high-level feature definition.
     """
     
-    def __init__(self, config: Config):
-        super().__init__("feature_decomposer_agent", config)
+    def __init__(self, config: Config, user_id: str = None):
+        super().__init__("feature_decomposer_agent", config, user_id)
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.feature_quality_assessor = FeatureQualityAssessor()

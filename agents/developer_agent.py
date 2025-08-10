@@ -14,8 +14,8 @@ class TimeoutError(Exception):
 from integrators.azure_devops_api import AzureDevOpsIntegrator
 
 class DeveloperAgent(Agent):
-    def __init__(self, config: Config):
-        super().__init__("developer_agent", config)
+    def __init__(self, config: Config, user_id: str = None):
+        super().__init__("developer_agent", config, user_id)
         
         # Initialize quality validator and task quality assessor
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)

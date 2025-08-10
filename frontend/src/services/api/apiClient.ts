@@ -33,23 +33,20 @@ export class NetworkError extends Error {
 
 // Response interceptor to standardize API responses
 const responseInterceptor = (response: AxiosResponse) => {
+  console.log('API Response:', response.config.url, response.data);
+  
   // Handle successful responses
   if (response.data && typeof response.data === 'object') {
     // Standardize response format
-    if (response.data.data !== undefined) {
-      // Unwrap the nested response structure
+    if (response.data.success && response.data.data !== undefined) {
+      // Unwrap the nested response structure for { success: true, data: {...} }
       return {
         ...response,
         data: response.data.data
       };
     } else {
-      // Wrap non-standard responses
-      return {
-        ...response,
-        data: response.data,
-        success: true,
-        message: 'Success'
-      };
+      // Keep the response as is
+      return response;
     }
   }
   return response;
@@ -155,6 +152,21 @@ const createApiClient = (): AxiosInstance => {
       'Content-Type': 'application/json',
     },
   });
+
+  // Add request interceptor to include auth token
+  client.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('access_token');
+      console.log('API Request:', config.url, 'Token exists:', !!token);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
 
   // Add response interceptor
   client.interceptors.response.use(responseInterceptor, errorInterceptor);

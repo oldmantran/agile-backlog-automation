@@ -343,11 +343,12 @@ class WorkflowSupervisor:
     def _initialize_agents(self) -> Dict[str, Any]:
         """Initialize all agents with configuration."""
         agents = {}
-        agents['epic_strategist'] = EpicStrategist(self.config)
-        agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config)
-        agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config)
-        agents['developer_agent'] = DeveloperAgent(self.config)
-        agents['qa_lead_agent'] = QALeadAgent(self.config)  # Replaces deprecated agent
+        # Pass user_id to agents so they can load user-specific LLM configurations
+        agents['epic_strategist'] = EpicStrategist(self.config, user_id=self.user_id)
+        agents['feature_decomposer_agent'] = FeatureDecomposerAgent(self.config, user_id=self.user_id)
+        agents['user_story_decomposer_agent'] = UserStoryDecomposerAgent(self.config, user_id=self.user_id)
+        agents['developer_agent'] = DeveloperAgent(self.config, user_id=self.user_id)
+        agents['qa_lead_agent'] = QALeadAgent(self.config, user_id=self.user_id)  # Replaces deprecated agent
         
         # Set Azure DevOps integrator for agents that need it
         if hasattr(self, 'azure_integrator') and self.azure_integrator is not None:

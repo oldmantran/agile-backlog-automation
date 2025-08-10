@@ -23,8 +23,8 @@ class QALeadAgent(Agent):
     - TestCaseAgent: Creates individual test cases
     """
     
-    def __init__(self, config):
-        super().__init__("qa_lead_agent", config)
+    def __init__(self, config, user_id: str = None):
+        super().__init__("qa_lead_agent", config, user_id)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Get QA Lead Agent specific configuration
@@ -32,9 +32,9 @@ class QALeadAgent(Agent):
         sub_agents_config = qa_config.get('sub_agents', {})
         
         # Initialize sub-agents with their specific configurations
-        self.test_plan_agent = TestPlanAgent(config)
-        self.test_suite_agent = TestSuiteAgent(config)
-        self.test_case_agent = TestCaseAgent(config)
+        self.test_plan_agent = TestPlanAgent(config, user_id)
+        self.test_suite_agent = TestSuiteAgent(config, user_id)
+        self.test_case_agent = TestCaseAgent(config, user_id)
         
         # Initialize completeness validator
         self.completeness_validator = QACompletenessValidator(config)

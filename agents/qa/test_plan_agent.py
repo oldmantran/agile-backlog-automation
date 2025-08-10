@@ -18,8 +18,8 @@ class TestPlanAgent(Agent):
     - Set area paths and iterations
     """
     
-    def __init__(self, config):
-        super().__init__("test_plan_agent", config)
+    def __init__(self, config, user_id: str = None):
+        super().__init__("test_plan_agent", config, user_id)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Get timeout from QA lead agent sub-agents config

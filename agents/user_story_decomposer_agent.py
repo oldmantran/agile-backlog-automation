@@ -18,8 +18,8 @@ class UserStoryDecomposerAgent(Agent):
     Focuses on user journeys, acceptance criteria, and implementation details.
     """
     
-    def __init__(self, config: Config):
-        super().__init__("user_story_decomposer", config)
+    def __init__(self, config: Config, user_id: str = None):
+        super().__init__("user_story_decomposer", config, user_id)
         # Initialize quality validator with current configuration
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.user_story_quality_assessor = UserStoryQualityAssessor()

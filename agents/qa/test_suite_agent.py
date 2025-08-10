@@ -19,8 +19,8 @@ class TestSuiteAgent(Agent):
     - Maintain suite hierarchy and relationships
     """
     
-    def __init__(self, config):
-        super().__init__("test_suite_agent", config)
+    def __init__(self, config, user_id: str = None):
+        super().__init__("test_suite_agent", config, user_id)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Initialize Azure DevOps integration

@@ -18,8 +18,8 @@ def timeout_handler(signum, frame):
     raise TimeoutError("Operation timed out")
 
 class EpicStrategist(Agent):
-    def __init__(self, config: Config):
-        super().__init__("epic_strategist", config)
+    def __init__(self, config: Config, user_id: str = None):
+        super().__init__("epic_strategist", config, user_id)
         self.content_enhancer = ContentEnhancer()
         self.quality_assessor = EpicQualityAssessor()
         self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating

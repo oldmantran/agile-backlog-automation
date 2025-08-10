@@ -54,54 +54,54 @@ export interface SessionDeleteRequest {
 
 export const settingsApi = {
   // Get all settings for a user/session
-  getSettings: async (userId: string, sessionId?: string) => {
+  getSettings: async (sessionId?: string) => {
     const params = sessionId ? { session_id: sessionId } : {};
-    const response = await apiClientMethods.get(`/settings/${userId}`, { params });
+    const response = await apiClientMethods.get('/settings', { params });
     return response;
   },
 
   // Save all settings
-  saveSettings: async (userId: string, request: SettingsRequest) => {
-    const response = await apiClientMethods.post(`/settings/${userId}`, request);
+  saveSettings: async (request: SettingsRequest) => {
+    const response = await apiClientMethods.post('/settings', request);
     return response;
   },
 
   // Get work item limits
-  getWorkItemLimits: async (userId: string, sessionId?: string) => {
+  getWorkItemLimits: async (sessionId?: string) => {
     const params = sessionId ? { session_id: sessionId } : {};
-    const response = await apiClientMethods.get(`/settings/${userId}/work-item-limits`, { params });
+    const response = await apiClientMethods.get('/settings/work-item-limits', { params });
     return response;
   },
 
   // Save work item limits
-  saveWorkItemLimits: async (userId: string, request: WorkItemLimitsRequest) => {
-    const response = await apiClientMethods.post(`/settings/${userId}/work-item-limits`, request);
+  saveWorkItemLimits: async (request: WorkItemLimitsRequest) => {
+    const response = await apiClientMethods.post('/settings/work-item-limits', request);
     return response;
   },
 
   // Get visual settings
-  getVisualSettings: async (userId: string, sessionId?: string) => {
+  getVisualSettings: async (sessionId?: string) => {
     const params = sessionId ? { session_id: sessionId } : {};
-    const response = await apiClientMethods.get(`/settings/${userId}/visual-settings`, { params });
+    const response = await apiClientMethods.get('/settings/visual-settings', { params });
     return response;
   },
 
   // Save visual settings
-  saveVisualSettings: async (userId: string, request: VisualSettingsRequest) => {
-    const response = await apiClientMethods.post(`/settings/${userId}/visual-settings`, request);
+  saveVisualSettings: async (request: VisualSettingsRequest) => {
+    const response = await apiClientMethods.post('/settings/visual-settings', request);
     return response;
   },
 
   // Delete session settings
-  deleteSessionSettings: async (userId: string, request: SessionDeleteRequest) => {
-    const response = await apiClientMethods.delete(`/settings/${userId}/session`, { data: request });
+  deleteSessionSettings: async (request: SessionDeleteRequest) => {
+    const response = await apiClientMethods.delete('/settings/session', { data: request });
     return response;
   },
 
   // Get setting history
-  getSettingHistory: async (userId: string, settingType?: string) => {
+  getSettingHistory: async (settingType?: string) => {
     const params = settingType ? { setting_type: settingType } : {};
-    const response = await apiClientMethods.get(`/settings/${userId}/history`, { params });
+    const response = await apiClientMethods.get('/settings/history', { params });
     return response;
   }
 }; 

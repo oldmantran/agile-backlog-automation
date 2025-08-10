@@ -146,9 +146,10 @@ class CircuitBreaker:
             self.state = 'OPEN'
 
 class Agent:
-    def __init__(self, name: str, config: Config):
+    def __init__(self, name: str, config: Config, user_id: Optional[str] = None):
         self.name = name
         self.config = config
+        self.user_id = user_id  # Store user_id for LLM config
         self.llm_provider = config.get_env("LLM_PROVIDER") or "openai"
         
         # Initialize LLM configuration
@@ -175,10 +176,14 @@ class Agent:
     def _setup_llm_config(self):
         """Setup LLM provider configuration using unified config system."""
         try:
-            # Get configuration using the unified system that respects agent-specific settings
-            from utils.user_id_resolver import user_id_resolver
-            user_id = user_id_resolver.get_default_user_id()
-            logger.info(f"Debug: Using user_id: {user_id} for agent: {self.name}")
+            # Use passed user_id if available, otherwise fall back to resolver
+            if self.user_id:
+                user_id = self.user_id
+                logger.info(f"Debug: Using passed user_id: {user_id} for agent: {self.name}")
+            else:
+                from utils.user_id_resolver import user_id_resolver
+                user_id = user_id_resolver.get_default_user_id()
+                logger.info(f"Debug: Using resolver user_id: {user_id} for agent: {self.name}")
             
             # Get agent-specific or global configuration based on user's mode preference
             llm_config = get_agent_config(self.name, user_id)

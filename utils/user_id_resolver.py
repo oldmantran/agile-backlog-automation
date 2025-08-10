@@ -16,7 +16,11 @@ class UserIdResolver:
         self._default_user_id = None
     
     def get_default_user_id(self) -> str:
-        """Get the default user ID from environment variables."""
+        """Get the default user ID from environment variables.
+        
+        This should only be used for background processes or legacy code.
+        For request handlers, use the authenticated user from JWT instead.
+        """
         if self._default_user_id is None:
             # Try to get from EMAIL_TO first
             email = self.config.get_env('EMAIL_TO')
