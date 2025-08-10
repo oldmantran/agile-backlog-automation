@@ -214,6 +214,23 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
           } else {
             // No configurations but we still loaded the mode preference
             console.log('No configurations found, but mode preference loaded:', databaseMode);
+            
+            // Initialize with default configurations but keep the mode preference
+            const defaultConfigs: LLMConfigEntry[] = AGENTS.map(agent => ({
+              agentName: agent.key,
+              provider: 'openai',
+              model: 'gpt-5-mini',
+              preset: 'balanced',
+              configuration_mode: databaseMode,
+              parallelProcessing: {
+                enabled: agent.key === 'developer_agent',
+                maxWorkers: 2
+              }
+            }));
+            
+            setConfigurations(defaultConfigs);
+            // Mode has already been set from database, don't override it
+            return;
           }
         }
       }
