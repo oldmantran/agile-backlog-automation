@@ -141,7 +141,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
           agentName: 'global',
           provider: 'openai',
           model: 'gpt-5-mini',
-          preset: 'balanced',
+          preset: 'high_quality',  // Always use high quality
           configuration_mode: currentMode
         }];
       }
@@ -215,7 +215,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
               provider: config.provider,
               model: config.model,
               customModel: undefined, // Backend doesn't return this separately
-              preset: config.preset || 'balanced',
+              preset: config.preset || 'high_quality',  // Always default to high quality
               configuration_mode: config.configuration_mode || data.configuration_mode || 'global'
             }));
             

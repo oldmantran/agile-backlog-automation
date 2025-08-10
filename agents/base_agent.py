@@ -10,7 +10,7 @@ from functools import wraps
 
 from config.config_loader import Config
 from utils.prompt_manager import prompt_manager
-from utils.llm_config_manager import get_llm_provider_config
+from utils.unified_llm_config import get_agent_config
 
 logger = logging.getLogger(__name__)
 
@@ -170,60 +170,45 @@ class Agent:
         agent_config = config.settings.get('agents', {}).get(name, {})
         self.timeout_seconds = agent_config.get('timeout_seconds', 120)  # Default 2 minutes
         
-        # Check for agent-specific model override
-        agent_model_override = agent_config.get('model')
-        if agent_model_override:
-            print(f"[MODEL] Agent {name} using model override: {agent_model_override}")
-            self.model = agent_model_override
-        
         logger.info(f"Initialized agent: {name} with provider: {self.llm_provider}, timeout: {self.timeout_seconds}s")
     
     def _setup_llm_config(self):
-        """Setup LLM provider configuration from database with environment fallback."""
+        """Setup LLM provider configuration using unified config system."""
         try:
-            # Try to get configuration from database first (force refresh for latest config)
-            from utils.llm_config_manager import LLMConfigManager
+            # Get configuration using the unified system that respects agent-specific settings
             from utils.user_id_resolver import user_id_resolver
-            config_manager = LLMConfigManager()
             user_id = user_id_resolver.get_default_user_id()
-            logger.info(f"Debug: Using user_id: {user_id}")
-            provider_config = config_manager.force_refresh_configuration(user_id)
-            logger.info(f"Debug: Loaded provider_config: {provider_config}")
-            self.llm_provider = provider_config['provider']
+            logger.info(f"Debug: Using user_id: {user_id} for agent: {self.name}")
+            
+            # Get agent-specific or global configuration based on user's mode preference
+            llm_config = get_agent_config(self.name, user_id)
+            logger.info(f"Debug: Loaded LLM config for {self.name}: {llm_config.provider}:{llm_config.model} (source: {llm_config.source})")
+            
+            self.llm_provider = llm_config.provider
+            self.model = llm_config.model
+            self.llm_preset = llm_config.preset
             
             if self.llm_provider == "openai":
-                # Use model from database if available, otherwise from environment
-                self.model = provider_config.get('model') or self.config.get_env("OPENAI_MODEL") or 'gpt-5-mini'
-                # Always get OpenAI API key from environment for security
-                self.api_key = self.config.get_env("OPENAI_API_KEY")
-                self.api_url = "https://api.openai.com/v1/chat/completions"
-                # Store preset for later use
-                self.llm_preset = provider_config.get('preset', 'high_quality')
+                # API key and URL come from the unified config
+                self.api_key = llm_config.api_key
+                self.api_url = llm_config.api_url
             elif self.llm_provider == "grok":
-                # Use model from database if available, otherwise from environment
-                self.model = provider_config.get('model') or self.config.get_env("GROK_MODEL") or 'grok-4-latest'
-                # Always get Grok API key from environment for security
-                self.api_key = self.config.get_env("GROK_API_KEY")
-                self.api_url = "https://api.x.ai/v1/chat/completions"
-                # Store preset for later use
-                self.llm_preset = provider_config.get('preset', 'high_quality')
+                # API key and URL come from the unified config
+                self.api_key = llm_config.api_key
+                self.api_url = llm_config.api_url
             elif self.llm_provider == "ollama":
-                self.model = provider_config.get('model') or self.config.get_env("OLLAMA_MODEL") or 'qwen2.5:14b-instruct-q4_K_M'
                 self.api_key = None  # No API key needed for local Ollama
-                self.api_url = provider_config.get('base_url', 'http://localhost:11434')
+                self.api_url = llm_config.base_url
                 # Import Ollama provider
                 try:
                     from utils.ollama_client import create_ollama_provider
-                    preset = provider_config.get('preset', 'high_quality')
                     self.ollama_provider = create_ollama_provider(
-                        preset=preset,
+                        preset=self.llm_preset,
                         custom_config={
                             'model': self.model,
                             'base_url': self.api_url
                         }
                     )
-                    # Store preset for later use
-                    self.llm_preset = preset
                 except ImportError:
                     raise AgentError("Ollama client not available. Install with: pip install ollama-python")
             else:
