@@ -2009,13 +2009,14 @@ async def get_llm_configurations(user_id: str):
             cursor.execute('''
                 SELECT configuration_mode 
                 FROM llm_configurations 
-                WHERE user_id = ? 
+                WHERE user_id = ? AND is_active = 1
                 ORDER BY updated_at DESC
                 LIMIT 1
             ''', (user_id,))
             
             mode_row = cursor.fetchone()
             configuration_mode = mode_row[0] if mode_row and mode_row[0] else 'global'
+            logger.info(f"GET /api/llm-configurations/{user_id} - Found configuration_mode: {configuration_mode} from row: {mode_row}")
         except sqlite3.OperationalError:
             # Column doesn't exist in older schema
             configuration_mode = 'global'
@@ -2068,11 +2069,14 @@ async def get_llm_configurations(user_id: str):
         
         conn.close()
         
-        return {
+        response = {
             "success": True,
             "data": configs,
             "configuration_mode": configuration_mode
         }
+        logger.info(f"GET /api/llm-configurations/{user_id} - Returning {len(configs)} configs with mode: {configuration_mode}")
+        
+        return response
     except Exception as e:
         logger.error(f"Failed to get LLM configurations for {user_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -2124,9 +2128,19 @@ async def save_llm_configurations(user_id: str, configurations: List[AgentLLMCon
                   user_id, config_name))
         
         conn.commit()
-        conn.close()
         
         logger.info(f"Saved {len(configurations)} LLM configurations for user {user_id} with mode: {configuration_mode}")
+        
+        # Verify what was saved
+        cursor.execute('''
+            SELECT agent_name, configuration_mode, is_active 
+            FROM llm_configurations 
+            WHERE user_id = ? AND is_active = 1
+        ''', (user_id,))
+        saved_configs = cursor.fetchall()
+        logger.info(f"Verification - Active configs after save: {saved_configs}")
+        
+        conn.close()
         
         return {
             "success": True,
