@@ -7,10 +7,6 @@ with the backend agents, workflow supervisor, and management tools.
 Combines the best features from api_server.py and tron_api_server.py.
 """
 
-# Suppress passlib bcrypt version warning
-import warnings
-warnings.filterwarnings("ignore", message=".*bcrypt version.*")
-
 import asyncio
 import json
 import logging
