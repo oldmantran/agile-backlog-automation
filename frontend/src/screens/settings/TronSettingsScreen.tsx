@@ -359,7 +359,15 @@ const TronSettingsScreen: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to extract error message from response
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, use the default error message
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();

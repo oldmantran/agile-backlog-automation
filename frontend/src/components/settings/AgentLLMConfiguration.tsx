@@ -157,9 +157,25 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       setSaveStatus({ success: true, message: 'Configuration mode saved successfully!' });
       setTimeout(() => setSaveStatus(null), 3000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save configuration mode:', error);
-      setSaveStatus({ success: false, message: 'Failed to save configuration mode' });
+      // Extract error message from response if available
+      let errorMessage = 'Failed to save configuration mode';
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      if (error?.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      console.error('Error details:', {
+        error,
+        message: errorMessage,
+        response: error?.response,
+        data: error?.response?.data
+      });
+      
+      setSaveStatus({ success: false, message: errorMessage });
       // Revert the UI change on error
       setUseAgentSpecific(!newMode);
     }
