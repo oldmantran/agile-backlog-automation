@@ -73,6 +73,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Major Updates (August 2025)
 
+### 🎯 Universal Quality Threshold System (August 10, 2025)
+
+**BREAKING CHANGE**: Implemented universal quality acceptance threshold of 75+
+
+#### **Quality Threshold Implementation**:
+- **Minimum Score**: All work items must achieve a quality score of 75 or higher
+- **Auto-Discard**: Work items scoring below 75 are automatically discarded
+- **Retry Logic**: Agents generate additional work items until quota is met
+- **Central Configuration**: New `config/quality_config.py` manages quality settings
+- **No Count Pollution**: Discarded items don't count toward work item limits
+
+#### **Epic Strategist Enhancement**:
+- **Batch Generation**: Generates work items in batches until required count achieved
+- **Maximum Attempts**: Up to 10 generation attempts to prevent infinite loops
+- **Quality Filtering**: Only items meeting threshold are included in final output
+- **Clear Logging**: Shows how many items passed/failed quality checks per batch
+
+#### **Authentication Fixes**:
+- **LLM Config Endpoints**: Fixed all `/api/llm/configurations` endpoints to use JWT auth
+- **Removed user_id_resolver**: Eliminated dependency causing "Please log in" errors
+- **Legacy Job Support**: Added checks for missing userId to support pre-auth jobs
+
+**Status**: Quality threshold system operational with retry logic and proper authentication.
+
 ### 🔧 JWT Authentication & User-Specific Agent Configuration (August 10, 2025)
 - **Agent User ID Support**: All agents now accept authenticated user ID from JWT tokens for loading user-specific LLM configurations
 - **WorkflowSupervisor Enhancement**: Passes authenticated user_id to all agents during initialization
@@ -155,9 +179,10 @@ config = get_agent_config("epic_strategist", user_id="123")
 - **Integration**: Seamlessly integrated into unified API server workflow execution
 
 #### **Quality Standards Maintained**:
-- **Epic Quality**: EXCELLENT (80+) rating required - prevents cascade of poor quality
-- **User Story Quality**: Temporarily accepting GOOD (70+) while improvement system is rebuilt
-- **Fail-Fast Behavior**: System correctly stops workflow when quality standards aren't met
+- **Universal Threshold**: Minimum quality score of 75 required for all work items
+- **Epic Quality**: Must achieve 75+ score (previously required EXCELLENT 80+)
+- **User Story Quality**: Must achieve 75+ score (increased from GOOD 70+)
+- **Retry Behavior**: System generates additional items until quality quota is met
 - **Notification Accuracy**: Proper error notifications when workflows fail quality assessment
 
 #### **Unicode & Windows Compatibility**:
@@ -288,10 +313,10 @@ config = get_agent_config("epic_strategist", user_id="123")
 
 **BREAKING CHANGE**: System now fails-fast with zero tolerance for subpar work items
 
-#### **Quality Assessment Fail-Fast**:
-- **EXCELLENT Required**: All work items must achieve EXCELLENT quality rating (80+ score)
-- **Epic Strategist**: Now raises ValueError when epics fail quality standards instead of accepting "GOOD" or "FAIR" ratings
-- **Workflow Termination**: Supervisor immediately stops workflow on quality assessment failures
+#### **Quality Assessment with Retry**:
+- **75+ Score Required**: All work items must achieve minimum quality score of 75
+- **Auto-Retry Logic**: Agents generate additional items when some fail quality checks
+- **No Workflow Termination**: System continues generating until quota is met or max attempts reached
 - **Domain-Specific Guidance**: Error messages identify whether issue is insufficient input or inadequate LLM training for domain
 
 #### **Generic Content Elimination**:
