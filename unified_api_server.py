@@ -87,16 +87,18 @@ def clear_all_jobs():
         active_jobs.clear()
         logger.info("🧹 Cleared all active jobs")
 
-def get_active_job():
-    """Get the single active job if any."""
+def get_active_job(job_id: str = None):
+    """Get a specific active job by ID, or all active jobs if no ID provided."""
     with active_jobs_lock:
-        if active_jobs:
-            job_id = list(active_jobs.keys())[0]
-            return job_id, active_jobs[job_id]
-        return None, None
+        if job_id:
+            # Return specific job
+            return active_jobs.get(job_id)
+        else:
+            # Return all active jobs
+            return dict(active_jobs)
 
 def set_active_job(job_id: str, job_data: Dict[str, Any]):
-    """Set a single active job with hybrid SSE + DB persistence."""
+    """Update or create an active job with hybrid SSE + DB persistence."""
     import hashlib
     
     # Generate etag for progress data
@@ -106,11 +108,9 @@ def set_active_job(job_id: str, job_data: Dict[str, Any]):
     job_data['updated_at'] = datetime.now().isoformat()
     
     with active_jobs_lock:
-        # Clear any existing jobs
-        active_jobs.clear()
-        # Set the new job
+        # Update or add the job (supports multiple concurrent jobs)
         active_jobs[job_id] = job_data
-        logger.info(f"📋 Set active job: {job_id} (progress: {job_data.get('progress', 0)}%)")
+        logger.info(f"📋 Updated active job: {job_id} (progress: {job_data.get('progress', 0)}%, total active: {len(active_jobs)})")
     
     # Broadcast SSE update (primary real-time method)
     progress_data = {
@@ -529,34 +529,6 @@ async def health_check():
     build_version = db.get_build_version()
     return {"status": "healthy", "timestamp": datetime.now().isoformat(), "version": "2.1.0", "build": build_version}
 
-@app.get("/api/progress/stream/{job_id}")
-async def stream_progress(job_id: str):
-    """Stream job progress updates via Server-Sent Events."""
-    logger.info(f"🔗 SSE connection requested for job: {job_id}")
-    
-    # Create a queue for this connection
-    queue = asyncio.Queue(maxsize=50)  # Limit queue size to prevent memory issues
-    
-    # Add queue to connections for this job
-    if job_id not in sse_connections:
-        sse_connections[job_id] = []
-    sse_connections[job_id].append(queue)
-    
-    logger.info(f"📡 Added SSE connection for job {job_id} (total connections: {len(sse_connections[job_id])})")
-    
-    # Return streaming response
-    return StreamingResponse(
-        sse_generator(job_id, queue),
-        media_type="text/plain",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Content-Type": "text/event-stream",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control"
-        }
-    )
-
 @app.get("/api/build-version")
 async def get_build_version():
     """Get current build version from database."""
@@ -683,6 +655,7 @@ async def generate_backlog_direct(project_data: CreateProjectRequest, background
         set_active_job(job_id, {
             "jobId": job_id,
             "projectId": project_id,
+            "userId": str(current_user.id),  # Store user ID for ownership validation
             "status": "queued",
             "progress": 0,
             "currentAgent": "Supervisor",
@@ -832,11 +805,15 @@ async def generate_backlog(project_id: str, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=500, detail=error_msg)
 
 @app.get("/api/backlog/status/{job_id}")
-async def get_generation_status(job_id: str):
+async def get_generation_status(job_id: str, current_user: User = Depends(get_current_user)):
     """Get the status of a backlog generation job."""
-    job_id, job_data = get_active_job()
-    if not job_id:
+    job_data = get_active_job(job_id)
+    if not job_data:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Validate job ownership
+    if job_data.get('userId') != str(current_user.id):
+        raise HTTPException(status_code=403, detail="You don't have access to this job")
     
     # Convert job_status to match GenerationStatus model
     generation_status = {
@@ -874,10 +851,22 @@ async def cleanup_jobs_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/jobs")
-async def get_all_jobs():
-    """Get all active and recent jobs."""
-    job_id, job_data = get_active_job()
-    if not job_id:
+async def get_all_jobs(current_user: User = Depends(get_current_user)):
+    """
+    DEPRECATED: Use /api/jobs/active instead.
+    Get all active jobs for the authenticated user.
+    """
+    # Redirect to the new endpoint logic
+    all_jobs = get_active_job()  # Returns all jobs when no job_id provided
+    
+    # Filter jobs to only show ones owned by current user
+    user_jobs = {
+        job_id: job_data 
+        for job_id, job_data in all_jobs.items() 
+        if job_data.get('userId') == str(current_user.id)
+    }
+    
+    if not user_jobs:
         return {"success": True, "data": []}
     
     return {
@@ -885,9 +874,10 @@ async def get_all_jobs():
         "data": [
             {
                 **job_data,
-                "startTime": job_data["startTime"].isoformat() if isinstance(job_data["startTime"], datetime) else job_data["startTime"],
-                "endTime": job_data["endTime"].isoformat() if job_data["endTime"] and isinstance(job_data["endTime"], datetime) else job_data["endTime"]
+                "startTime": job_data["startTime"].isoformat() if isinstance(job_data.get("startTime"), datetime) else job_data.get("startTime"),
+                "endTime": job_data["endTime"].isoformat() if job_data.get("endTime") and isinstance(job_data.get("endTime"), datetime) else job_data.get("endTime")
             }
+            for job_id, job_data in user_jobs.items()
         ]
     }
 
@@ -1716,8 +1706,13 @@ async def update_test_job(job_id: str, progress: int = 50):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/progress/stream/{job_id}")
-async def stream_progress(job_id: str, request: Request):
+async def stream_progress(job_id: str, request: Request, current_user: User = Depends(get_current_user)):
     """Stream progress updates for a specific job using Server-Sent Events."""
+    
+    # Validate job ownership
+    job_data = get_active_job(job_id)
+    if job_data and job_data.get('userId') != str(current_user.id):
+        raise HTTPException(status_code=403, detail="You don't have access to this job")
     
     async def event_generator():
         try:
@@ -1733,9 +1728,9 @@ async def stream_progress(job_id: str, request: Request):
                     break
                 
                 # Get current job status
-                current_job_id, job_data = get_active_job()
+                job_data = get_active_job(job_id)
                 
-                if not current_job_id or current_job_id != job_id:
+                if not job_data:
                     yield f"data: {json.dumps({'type': 'error', 'jobId': job_id, 'message': 'Job not found or not active'})}\n\n"
                     break
                 
@@ -2606,15 +2601,19 @@ async def get_build_version():
 
 # Progress endpoints for hybrid SSE + DB polling
 @app.get("/api/jobs/{job_id}/progress")
-async def get_job_progress(job_id: str, if_none_match: str = None):
+async def get_job_progress(job_id: str, if_none_match: str = None, current_user: User = Depends(get_current_user)):
     """
     Get job progress with in-memory first, DB fallback approach.
     Supports conditional requests via If-None-Match header.
     """
     try:
         # First check in-memory active jobs (fastest)
-        current_job_id, active_job_data = get_active_job()
-        if current_job_id == job_id and active_job_data:
+        active_job_data = get_active_job(job_id)
+        
+        # Validate job ownership
+        if active_job_data and active_job_data.get('userId') != str(current_user.id):
+            raise HTTPException(status_code=403, detail="You don't have access to this job")
+        if active_job_data:
             progress_data = {
                 "jobId": job_id,
                 "progress": active_job_data.get("progress", 0),
@@ -2654,6 +2653,36 @@ async def get_job_progress(job_id: str, if_none_match: str = None):
         raise HTTPException(status_code=500, detail=f"Failed to get job progress: {str(e)}")
 
 # Job History Endpoint
+@app.get("/api/jobs/active")
+async def get_active_jobs(current_user: User = Depends(get_current_user)):
+    """Get all currently active jobs for the authenticated user."""
+    try:
+        all_jobs = get_active_job()  # Returns all jobs when no job_id provided
+        
+        # Filter jobs to only show ones owned by current user
+        user_jobs = {
+            job_id: job_data 
+            for job_id, job_data in all_jobs.items() 
+            if job_data.get('userId') == str(current_user.id)
+        }
+        return {
+            "jobs": [
+                {
+                    "jobId": job_id,
+                    "projectName": job_data.get("projectName", "Unknown"),
+                    "startTime": job_data.get("startTime", datetime.now().isoformat()),
+                    "status": job_data.get("status", "running"),
+                    "progress": job_data.get("progress", 0),
+                    "currentAction": job_data.get("currentAction", "Working..."),
+                    "error": job_data.get("error")
+                }
+                for job_id, job_data in user_jobs.items()
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error getting active jobs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/jobs/history")
 async def get_job_history(limit: int = Query(6, description="Number of recent jobs to return")):
     """Get trimmed job history for efficient Project History display."""

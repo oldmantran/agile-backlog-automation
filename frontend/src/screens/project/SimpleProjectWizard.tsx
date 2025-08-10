@@ -85,7 +85,7 @@ const SimpleProjectWizard: React.FC = () => {
         // Add job to localStorage for progress tracking
         const activeJob = {
           jobId: backlogResponse.jobId,
-          projectName: projectData.name,
+          projectName: projectData.basics.name,
           startTime: new Date().toISOString(),
           status: 'running',
           progress: 0,

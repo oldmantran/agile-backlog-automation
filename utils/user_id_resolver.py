@@ -32,15 +32,15 @@ class UserIdResolver:
                 if email:
                     self._default_user_id = self._normalize_email(email)
                 else:
-                    # Final fallback to a default
-                    self._default_user_id = 'default_user'
+                    # Raise error instead of fallback
+                    raise ValueError("No user ID could be determined from environment variables (EMAIL_TO or EMAIL_FROM)")
         
         return self._default_user_id
     
     def _normalize_email(self, email: str) -> str:
         """Normalize email to a consistent user ID format."""
         if not email:
-            return 'default_user'
+            raise ValueError("Cannot normalize empty email address")
         
         # Remove any whitespace and convert to lowercase
         email = email.strip().lower()
@@ -62,7 +62,7 @@ class UserIdResolver:
             # Extract name from email (e.g., "kevin.tran@c4workx.com" -> "kevin.tran")
             name = email.split('@')[0]
             return name.replace('.', ' ').title()
-        return "Default User"
+        raise ValueError("No user email available to generate display name")
     
     def is_valid_user_id(self, user_id: str) -> bool:
         """Check if a user ID is valid."""

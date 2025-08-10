@@ -26,7 +26,6 @@ from agents.feature_decomposer_agent import FeatureDecomposerAgent
 from agents.user_story_decomposer_agent import UserStoryDecomposerAgent
 from agents.developer_agent import DeveloperAgent
 from agents.qa_lead_agent import QALeadAgent
-from agents.qa_lead_agent import QALeadAgent
 from agents.backlog_sweeper_agent import BacklogSweeperAgent
 from utils.project_context import ProjectContext
 from utils.logger import setup_logger
@@ -494,23 +493,6 @@ class WorkflowSupervisor:
             self.logger.error(f"❌ [{stage_name}] Error ensuring model is loaded: {e}")
             self.execution_metadata['errors'].append(f"Model loading error for {stage_name}: {str(e)}")
             return False
-    
-    def _get_parallel_config(self) -> Dict[str, Any]:
-        """Get parallel processing configuration from settings."""
-        workflow_config = self.config.settings.get('workflow', {})
-        parallel_config = workflow_config.get('parallel_processing', {})
-        
-        return {
-            'enabled': parallel_config.get('enabled', True),
-            'max_workers': parallel_config.get('max_workers', 4),
-            'rate_limit_per_second': parallel_config.get('rate_limit_per_second', 10),
-            'stages': {
-                'feature_decomposer_agent': parallel_config.get('feature_decomposition', True),
-                'user_story_decomposer_agent': parallel_config.get('user_story_decomposition', True),
-                'developer_agent': parallel_config.get('task_generation', True),
-                'qa_lead_agent': parallel_config.get('qa_generation', True)
-            }
-        }
     
     def configure_project_context(self, project_type: str = None, custom_context: Dict[str, Any] = None):
         """Configure project context for domain-aware prompt generation."""
