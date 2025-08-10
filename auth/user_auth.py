@@ -11,7 +11,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 import sqlite3
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, validator
 import re
@@ -29,8 +29,21 @@ JWT_AUDIENCE = "agile-backlog-users"
 # Environment detection
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "development") == "production"
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing helper class (replaces passlib)
+class PasswordHasher:
+    """Simple bcrypt password hasher to replace passlib."""
+    
+    @staticmethod
+    def hash(password: str) -> str:
+        """Hash a password using bcrypt."""
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    @staticmethod
+    def verify(plain_password: str, hashed_password: str) -> bool:
+        """Verify a password against a hash."""
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
+pwd_context = PasswordHasher()
 
 
 class UserCreate(BaseModel):
