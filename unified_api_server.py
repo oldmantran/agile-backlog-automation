@@ -2062,7 +2062,7 @@ async def get_llm_configurations(user_id: str):
                     'model': row[2],
                     'preset': row[3],
                     'is_active': row[4],
-                    'configuration_mode': row[5]
+                    'configuration_mode': configuration_mode  # Use the mode from user_settings, not the row
                 })
         except sqlite3.OperationalError:
             # Fallback for older schema without agent_name column
@@ -2097,6 +2097,7 @@ async def get_llm_configurations(user_id: str):
             "configuration_mode": configuration_mode
         }
         logger.info(f"GET /api/llm-configurations/{user_id} - Returning {len(configs)} configs with mode: {configuration_mode}")
+        logger.debug(f"Configuration mode source: {'user_settings' if settings_row else 'llm_configurations fallback'}")
         
         return response
     except Exception as e:
