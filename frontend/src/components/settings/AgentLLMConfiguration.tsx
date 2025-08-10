@@ -236,12 +236,8 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
               agentName: agent.key,
               provider: 'openai',
               model: 'gpt-5-mini',
-              preset: 'balanced',
-              configuration_mode: databaseMode,
-              parallelProcessing: {
-                enabled: agent.key === 'developer_agent',
-                maxWorkers: 2
-              }
+              preset: 'high_quality',  // Always use high quality
+              configuration_mode: databaseMode
             }));
             
             setConfigurations(defaultConfigs);
@@ -256,12 +252,8 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         agentName: agent.key,
         provider: 'openai',
         model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-        preset: 'balanced',
-        configuration_mode: 'global', // Add default mode
-        parallelProcessing: {
-          enabled: agent.key === 'developer_agent', // Only enable for developer agent by default
-          maxWorkers: 2
-        }
+        preset: 'high_quality',  // Always use high quality
+        configuration_mode: 'global' // Add default mode
       }));
       
       console.log('Using default configurations:', defaultConfigs);
@@ -277,11 +269,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
         agentName: 'global',
         provider: 'openai',
         model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-        preset: 'balanced',
-        parallelProcessing: {
-          enabled: false,
-          maxWorkers: 2
-        }
+        preset: 'high_quality'  // Always use high quality
       }];
       setConfigurations(fallbackConfigs);
     } finally {
@@ -473,26 +461,6 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             )}
           </div>
 
-          {/* Preset Selection */}
-          <div>
-            <Label className="text-foreground font-medium mb-2 block">
-              Generation Preset
-            </Label>
-            <Select 
-              value={config.preset} 
-              onValueChange={(value) => updateConfiguration(agent.key, { preset: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fast">Fast (Quick responses)</SelectItem>
-                <SelectItem value="balanced">Balanced (Good quality/speed)</SelectItem>
-                <SelectItem value="high_quality">High Quality (Best output)</SelectItem>
-                <SelectItem value="code_focused">Code Focused (Technical tasks)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
 
           {/* Configuration Preview */}
@@ -500,7 +468,6 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
             <div className="text-xs text-muted-foreground space-y-1">
               <div><strong>Provider:</strong> {config.provider}</div>
               <div><strong>Model:</strong> {isCustomModel ? (config.customModel || 'Not specified') : config.model}</div>
-              <div><strong>Preset:</strong> {config.preset}</div>
             </div>
           </div>
         </CardContent>
@@ -597,11 +564,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                     agentName: 'global',
                     provider: 'openai',
                     model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-                    preset: 'balanced',
-                    parallelProcessing: {
-                      enabled: false,
-                      maxWorkers: 2
-                    }
+                    preset: 'high_quality'  // Always use high quality
                   }
                 )}
               </div>
@@ -634,11 +597,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
                       agentName: agent.key,
                       provider: 'openai',
                       model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
-                      preset: 'balanced',
-                      parallelProcessing: {
-                        enabled: agent.key === 'developer_agent', // Only enable for developer agent by default
-                        maxWorkers: 2
-                      }
+                      preset: 'high_quality'  // Always use high quality
                     };
                     
                     return renderAgentConfiguration(agent, config);

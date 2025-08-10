@@ -344,7 +344,7 @@ const TronSettingsScreen: React.FC = () => {
         provider: config.provider,
         model: config.model,
         custom_model: config.customModel, // camelCase -> snake_case
-        preset: config.preset || 'balanced',
+        preset: 'high_quality',  // Always use high quality
         configuration_mode: config.configuration_mode  // Include configuration mode
       }));
 
