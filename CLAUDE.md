@@ -73,6 +73,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Recent Major Updates (August 2025)
 
+### 🔧 JWT Authentication & User-Specific Agent Configuration (August 10, 2025)
+- **Agent User ID Support**: All agents now accept authenticated user ID from JWT tokens for loading user-specific LLM configurations
+- **WorkflowSupervisor Enhancement**: Passes authenticated user_id to all agents during initialization
+- **Base Agent Update**: Uses passed user_id instead of hardcoded resolver, falling back only for background processes
+- **Complete Agent Updates**: Updated constructors for EpicStrategist, FeatureDecomposerAgent, UserStoryDecomposerAgent, DeveloperAgent, QALeadAgent, and all QA sub-agents
+- **API Endpoints**: All endpoints now use JWT authentication (Depends(get_current_user)) instead of path-based user_id
+- **Frontend Updates**: Removed hardcoded user_id fallbacks, requires authenticated user for all operations
+
 ## 🚨 CRITICAL DEVELOPMENT GUIDELINES (August 7, 2025)
 
 ### Unicode Encoding Prevention (MANDATORY)

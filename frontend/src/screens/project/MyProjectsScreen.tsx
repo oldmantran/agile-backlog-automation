@@ -808,7 +808,7 @@ const MyProjectsScreen: React.FC = () => {
           const updatedJob = {
             ...job,
             status: progressUpdate.status || job.status,
-            progress: progressUpdate.progress || job.progress || 0,
+            progress: progressUpdate.progress !== undefined ? progressUpdate.progress : (job.progress || 0),
             currentAction: progressUpdate.currentAction || job.currentAction || 'Working...',
             error: progressUpdate.type === 'error' ? progressUpdate.message : job.error
           };
@@ -1129,11 +1129,13 @@ const MyProjectsScreen: React.FC = () => {
                               <span className="text-muted-foreground">Progress</span>
                               <span className="text-foreground font-mono">{job.progress || 0}%</span>
                             </div>
-                            { (job.progress === 0 && (job.status === 'queued' || job.status === 'running')) ? (
-                              <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                            { (job.progress === undefined || job.progress === null || (job.progress === 0 && (job.status === 'queued' || job.status === 'running'))) ? (
+                              <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-primary/50 animate-pulse" style={{ width: '100%' }} />
+                              </div>
                             ) : (
                               <Progress 
-                                value={job.progress || 0} 
+                                value={Math.max(0, Math.min(100, job.progress || 0))} 
                                 className="h-2"
                               />
                             ) }
