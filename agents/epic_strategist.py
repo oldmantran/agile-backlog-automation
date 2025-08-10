@@ -68,22 +68,43 @@ class EpicStrategist(Agent):
         self.logger.info(f"[DIRECT GENERATION] Using {self.llm_provider} provider without model fallback")
         
         start_time = time.time()
+        approved_epics = []
+        total_attempts = 0
+        max_total_attempts = 10  # Prevent infinite loops
         
-        try:
-            # Generate epics directly with current configuration
-            epics = self._generate_epics_with_model(user_input, prompt_context, epic_limit)
-            duration = time.time() - start_time
+        # Keep generating until we have enough quality epics or hit max attempts
+        while (epic_limit is None or len(approved_epics) < epic_limit) and total_attempts < max_total_attempts:
+            total_attempts += 1
             
-            # Assess quality using simple quality assessment (no fallback)
-            approved_epics = self._assess_and_improve_quality(epics, product_vision, context)
-            
-            self.logger.info(f"[DIRECT SUCCESS] Generated {len(approved_epics)} epics in {duration:.1f}s")
-            return approved_epics
-            
-        except Exception as e:
-            duration = time.time() - start_time
-            self.logger.error(f"[DIRECT FAILURE] Epic generation failed after {duration:.1f}s: {e}")
-            raise
+            try:
+                # Calculate how many more epics we need
+                needed = epic_limit - len(approved_epics) if epic_limit else 3
+                
+                # Generate batch of epics
+                self.logger.info(f"[ATTEMPT {total_attempts}] Generating {needed} more epics...")
+                epics = self._generate_epics_with_model(user_input, prompt_context, needed)
+                
+                # Assess quality - this will only return epics that meet quality threshold
+                quality_epics = self._assess_and_improve_quality(epics, product_vision, context)
+                
+                # Add approved epics to our collection
+                approved_epics.extend(quality_epics)
+                
+                self.logger.info(f"[BATCH RESULT] {len(quality_epics)}/{len(epics)} epics met quality threshold")
+                
+                # If we have enough, we're done
+                if epic_limit and len(approved_epics) >= epic_limit:
+                    approved_epics = approved_epics[:epic_limit]  # Trim to exact limit
+                    break
+                    
+            except Exception as e:
+                self.logger.error(f"[GENERATION ERROR] Attempt {total_attempts} failed: {e}")
+                if total_attempts >= max_total_attempts:
+                    raise
+        
+        duration = time.time() - start_time
+        self.logger.info(f"[DIRECT SUCCESS] Generated {len(approved_epics)} quality epics in {duration:.1f}s after {total_attempts} attempts")
+        return approved_epics
     
     def _generate_epics_with_ollama_fallback(self, user_input: str, product_vision: str, context: dict, prompt_context: dict, epic_limit: int = None) -> list[dict]:
         """Generate epics using Ollama with intelligent model fallback."""
@@ -415,11 +436,13 @@ class EpicStrategist(Agent):
                 log_output = self.quality_assessor.format_assessment_log(current_epic, assessment, attempt)
                 print(log_output)
                 
-                # For OpenAI, require EXCELLENT; for Ollama, accept GOOD+
-                acceptable_ratings = ["EXCELLENT"] if self.llm_provider != "ollama" else ["EXCELLENT", "GOOD"]
+                # Use universal quality configuration
+                from config.quality_config import get_acceptable_ratings, is_quality_acceptable
+                acceptable_ratings = get_acceptable_ratings()
                 
-                if assessment.rating in acceptable_ratings:
-                    print(f"[SUCCESS] Epic approved with {assessment.rating} rating on attempt {attempt}")
+                # Check if quality score meets threshold
+                if is_quality_acceptable(assessment.score):
+                    print(f"[SUCCESS] Epic approved with {assessment.rating} rating ({assessment.score}/100) on attempt {attempt}")
                     # Complete tracking with success
                     quality_tracker.complete_tracking(
                         metrics_id, assessment.rating, assessment.score, attempt
@@ -428,26 +451,20 @@ class EpicStrategist(Agent):
                     break
                 
                 if attempt == self.max_quality_retries:
-                    required_rating = "EXCELLENT" if self.llm_provider != "ollama" else "GOOD or better"
-                    print(f"[ERROR] Epic failed to reach {required_rating} rating after {self.max_quality_retries} attempts")
+                    from config.quality_config import MINIMUM_QUALITY_SCORE
+                    print(f"[ERROR] Epic failed to reach minimum quality score of {MINIMUM_QUALITY_SCORE} after {self.max_quality_retries} attempts")
                     print(f"   Final rating: {assessment.rating} ({assessment.score}/100)")
-                    print("   STOPPING WORKFLOW - Subpar work items are not acceptable")
+                    print("   DISCARDING - Work item does not meet quality threshold")
                     
                     # Complete tracking with failure
-                    failure_reason = f"Failed to achieve {required_rating} rating after {self.max_quality_retries} attempts"
+                    failure_reason = f"Failed to achieve minimum quality score of {MINIMUM_QUALITY_SCORE} after {self.max_quality_retries} attempts"
                     quality_tracker.complete_tracking(
                         metrics_id, assessment.rating, assessment.score, None, 
                         failed=True, failure_reason=failure_reason
                     )
                     
-                    # Raise exception to stop the entire workflow
-                    raise ValueError(
-                        f"Epic quality assessment failed: '{current_epic.get('title', 'Unknown Epic')}' "
-                        f"achieved {assessment.rating} ({assessment.score}/100) instead of {required_rating}. "
-                        f"This indicates either insufficient input quality or inadequate LLM training "
-                        f"for the {context.get('domain', 'unknown')} domain. "
-                        f"Please review the product vision or consider using a more capable model."
-                    )
+                    # Don't add this epic to approved list - it will be discarded
+                    print(f"[INFO] Epic '{current_epic.get('title', 'Unknown')}' discarded due to low quality")
                 
                 # Generate improvement prompt
                 improvement_prompt = self._create_improvement_prompt(
@@ -475,10 +492,10 @@ class EpicStrategist(Agent):
         
         # CRITICAL: If no epics reach required rating, stop the workflow
         if len(approved_epics) == 0:
+            from config.quality_config import MINIMUM_QUALITY_SCORE
             domain = context.get('domain', 'unknown') if context else 'unknown'
-            required_rating = "EXCELLENT" if self.llm_provider != "ollama" else "GOOD or better"
             raise ValueError(
-                f"WORKFLOW STOPPED: No epics achieved {required_rating} quality rating. "
+                f"WORKFLOW STOPPED: No epics achieved the minimum quality score of {MINIMUM_QUALITY_SCORE}. "
                 f"This indicates either insufficient input quality or inadequate LLM training "
                 f"for the {domain} domain. "
                 f"Please review the product vision or consider using a more capable model."

@@ -811,8 +811,8 @@ async def get_generation_status(job_id: str, current_user: User = Depends(get_cu
     if not job_data:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    # Validate job ownership
-    if job_data.get('userId') != str(current_user.id):
+    # Validate job ownership (skip if userId not present for backward compatibility)
+    if 'userId' in job_data and job_data.get('userId') != str(current_user.id):
         raise HTTPException(status_code=403, detail="You don't have access to this job")
     
     # Convert job_status to match GenerationStatus model
@@ -1711,7 +1711,7 @@ async def stream_progress(job_id: str, request: Request, current_user: User = De
     
     # Validate job ownership
     job_data = get_active_job(job_id)
-    if job_data and job_data.get('userId') != str(current_user.id):
+    if job_data and 'userId' in job_data and job_data.get('userId') != str(current_user.id):
         raise HTTPException(status_code=403, detail="You don't have access to this job")
     
     async def event_generator():
@@ -2288,12 +2288,10 @@ class LLMConfigurationRequest(BaseModel):
     is_active: bool = False
 
 @app.get("/api/llm/configurations")
-async def get_llm_configurations():
+async def get_llm_configurations(current_user: User = Depends(get_current_user)):
     """Get all LLM configurations for the current user."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        if not user_id:
-            raise HTTPException(status_code=404, detail="User not found")
+        user_id = str(current_user.id)
         
         configurations = db.get_llm_configurations(user_id)
         return {"configurations": configurations}
@@ -2302,12 +2300,10 @@ async def get_llm_configurations():
         raise HTTPException(status_code=500, detail="Failed to get LLM configurations")
 
 @app.get("/api/llm/configurations/active")
-async def get_active_llm_configuration():
+async def get_active_llm_configuration(current_user: User = Depends(get_current_user)):
     """Get the currently active LLM configuration for the current user."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        if not user_id:
-            raise HTTPException(status_code=404, detail="User not found")
+        user_id = str(current_user.id)
         
         configuration = db.get_active_llm_configuration(user_id)
         if not configuration:
@@ -2329,12 +2325,10 @@ async def get_active_llm_configuration():
         raise HTTPException(status_code=500, detail="Failed to get active LLM configuration")
 
 @app.post("/api/llm/configurations")
-async def save_llm_configuration(config: LLMConfigurationRequest):
+async def save_llm_configuration(config: LLMConfigurationRequest, current_user: User = Depends(get_current_user)):
     """Save or update an LLM configuration."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        if not user_id:
-            raise HTTPException(status_code=404, detail="User not found")
+        user_id = str(current_user.id)
         
         success = db.save_llm_configuration(
             user_id=user_id,
@@ -2357,12 +2351,10 @@ async def save_llm_configuration(config: LLMConfigurationRequest):
         raise HTTPException(status_code=500, detail="Failed to save LLM configuration")
 
 @app.post("/api/llm/configurations/{name}/activate")
-async def activate_llm_configuration(name: str):
+async def activate_llm_configuration(name: str, current_user: User = Depends(get_current_user)):
     """Set an LLM configuration as active."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        if not user_id:
-            raise HTTPException(status_code=404, detail="User not found")
+        user_id = str(current_user.id)
         
         success = db.set_active_llm_configuration(user_id, name)
         if success:
@@ -2374,12 +2366,10 @@ async def activate_llm_configuration(name: str):
         raise HTTPException(status_code=500, detail="Failed to activate LLM configuration")
 
 @app.delete("/api/llm/configurations/{name}")
-async def delete_llm_configuration(name: str):
+async def delete_llm_configuration(name: str, current_user: User = Depends(get_current_user)):
     """Delete an LLM configuration."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        if not user_id:
-            raise HTTPException(status_code=404, detail="User not found")
+        user_id = str(current_user.id)
         
         success = db.delete_llm_configuration(user_id, name)
         if success:
@@ -2391,12 +2381,10 @@ async def delete_llm_configuration(name: str):
         raise HTTPException(status_code=500, detail="Failed to delete LLM configuration")
 
 @app.post("/api/llm/configurations/initialize")
-async def initialize_default_llm_configurations():
+async def initialize_default_llm_configurations(current_user: User = Depends(get_current_user)):
     """Initialize default LLM configurations for the current user."""
     try:
-        user_id = user_id_resolver.get_default_user_id()
-        if not user_id:
-            raise HTTPException(status_code=404, detail="User not found")
+        user_id = str(current_user.id)
         
         success = db.create_default_llm_configurations(user_id)
         if success:
@@ -2611,7 +2599,7 @@ async def get_job_progress(job_id: str, if_none_match: str = None, current_user:
         active_job_data = get_active_job(job_id)
         
         # Validate job ownership
-        if active_job_data and active_job_data.get('userId') != str(current_user.id):
+        if active_job_data and 'userId' in active_job_data and active_job_data.get('userId') != str(current_user.id):
             raise HTTPException(status_code=403, detail="You don't have access to this job")
         if active_job_data:
             progress_data = {
