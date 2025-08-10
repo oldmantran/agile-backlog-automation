@@ -243,6 +243,30 @@ config = get_agent_config("epic_strategist", user_id="123")
 
 ## Recent Major Updates (August 2025)
 
+### 🔧 Configuration Mode Persistence Fix (August 10, 2025)
+
+**FIXED**: Agent-Specific configuration mode now persists correctly between sessions.
+
+#### **Configuration Mode Persistence Implementation**:
+- **Primary Storage**: Configuration mode stored in `user_settings` table as the definitive source of truth
+- **Query Fix**: Mode lookup now uses `ORDER BY updated_at DESC` instead of alphabetical ordering
+- **Runtime Resolution**: `unified_llm_config.py` checks user_settings first before llm_configurations
+- **UI Sync**: Added `loadConfigurations()` refresh after mode save to keep frontend in sync
+- **Toggle Authority**: Configuration mode toggle is now the single source of truth, not database content auto-detection
+
+#### **Database Schema Updates**:
+- **user_settings Table**: Stores `configuration_mode` with proper scope (user_default/session)
+- **Precedence Order**: user_default > session > llm_configurations table fallback
+- **Mode Values**: 'global' or 'agent-specific' stored explicitly
+
+#### **Fixed Issues**:
+- Mode no longer reverts to Global after saving Agent-Specific preference
+- Eliminated flawed auto-detection based on presence of configurations
+- Frontend properly refreshes after mode changes to reflect backend state
+- User preference persists across sessions and server restarts
+
+**Status**: Configuration mode persistence fully operational with proper database storage and UI synchronization.
+
 ### 🔄 Two-Phase Workflow Implementation (August 5, 2025)
 - **Phase Separation**: Split workflow into Phase 1 (work items only ~15-30 min) and Phase 2 (test artifacts ~45-90 min total)
 - **includeTestArtifacts Flag**: Backend supervisor now accepts flag to conditionally skip QA stages when disabled
