@@ -31,10 +31,11 @@ class QALeadAgent(Agent):
         qa_config = config.get_setting('agents', 'qa_lead_agent') or {}
         sub_agents_config = qa_config.get('sub_agents', {})
         
-        # Initialize sub-agents with their specific configurations
-        self.test_plan_agent = TestPlanAgent(config, user_id)
-        self.test_suite_agent = TestSuiteAgent(config, user_id)
-        self.test_case_agent = TestCaseAgent(config, user_id)
+        # Initialize sub-agents with QA Lead Agent's name so they inherit its LLM config
+        # This ensures when user configures LLM for QA Lead, it applies to all sub-agents
+        self.test_plan_agent = TestPlanAgent(config, user_id, parent_agent_name="qa_lead_agent")
+        self.test_suite_agent = TestSuiteAgent(config, user_id, parent_agent_name="qa_lead_agent")
+        self.test_case_agent = TestCaseAgent(config, user_id, parent_agent_name="qa_lead_agent")
         
         # Initialize completeness validator
         self.completeness_validator = QACompletenessValidator(config)

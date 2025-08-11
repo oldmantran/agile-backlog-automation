@@ -19,8 +19,10 @@ class TestSuiteAgent(Agent):
     - Maintain suite hierarchy and relationships
     """
     
-    def __init__(self, config, user_id: str = None):
-        super().__init__("test_suite_agent", config, user_id)
+    def __init__(self, config, user_id: str = None, parent_agent_name: str = None):
+        # Use parent agent name for LLM config if provided, otherwise use own name
+        agent_name = parent_agent_name or "test_suite_agent"
+        super().__init__(agent_name, config, user_id)
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Initialize Azure DevOps integration

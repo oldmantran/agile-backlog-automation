@@ -620,4 +620,37 @@ Full integration with Azure DevOps Test Management API:
 - `frontend/src/components/settings/AgentLLMConfiguration.tsx`: Fixed mode loading and immediate save on toggle
 
 **Configuration mode now correctly persists between sessions as requested by the user.**
-5. **User Experience**: Intuitive two-phase workflow with clear progress feedback
+
+### 🔧 Critical Workflow Fixes (August 11, 2025)
+
+**FIXED**: Multiple critical issues preventing successful workflow completion.
+
+#### **Template Variable Resolution**:
+- **Issue**: Feature decomposer and user story decomposer using dot notation (e.g., `${epic.title}`) which Python Template class doesn't support
+- **Fix**: Changed all template variables to underscore notation (e.g., `${epic_title}`)
+- **Files Updated**: 
+  - `prompts/feature_decomposer_agent.txt`
+  - `prompts/user_story_decomposer.txt`
+  - `agents/feature_decomposer_agent.py`
+  - `agents/user_story_decomposer_agent.py`
+
+#### **Azure NameError Fix**:
+- **Issue**: `NameError: name 'context' is not defined` in supervisor
+- **Fix**: Extract org from `self.organization_url` and use `self.project` directly
+- **Impact**: Prevents workflow crash when building Azure DevOps context
+
+#### **JSON Parsing Hardening**:
+- **Added Guards**: Check for None before json.loads() to prevent TypeError
+- **Task Improvement**: Wrapped JSON parsing in try/except blocks
+- **Initial Parse**: Added JSON guard in generate_tasks method
+
+#### **User Story Type Safety**:
+- **Issue**: 'str' object has no attribute 'get' errors
+- **Fix**: Added comprehensive type normalization for user_story parameter
+- **Behavior**: Handles string, JSON string, and other types gracefully
+
+#### **Performance Optimization**:
+- **Quality Retries**: Reduced from 3 to 1 attempt to speed up runs
+- **Log Noise**: Downgraded "No backlog job found" messages to debug level
+
+**Status**: Workflow now completes successfully with proper error handling and type safety.
