@@ -933,6 +933,65 @@ async def check_vision_quality(
         logger.error(f"Error checking vision quality: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to check vision quality: {str(e)}")
 
+@app.post("/api/vision/enhance")
+async def enhance_vision(
+    request: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+):
+    """Enhance a vision statement using AI based on quality assessment feedback."""
+    try:
+        vision_statement = request.get("visionStatement", "")
+        domain = request.get("domain", "general")
+        project_name = request.get("projectName", None)
+        
+        # First assess the current vision
+        from utils.vision_quality_assessor import VisionQualityAssessor
+        vision_assessor = VisionQualityAssessor()
+        assessment = vision_assessor.assess_vision(vision_statement, domain)
+        
+        # If already acceptable, return as-is
+        if assessment.is_acceptable:
+            return {
+                "success": True,
+                "data": {
+                    "enhanced": False,
+                    "reason": "Vision already meets quality standards",
+                    "current_score": assessment.score,
+                    "current_rating": assessment.rating
+                }
+            }
+        
+        # For now, return the assessment with suggestions
+        # TODO: Implement actual AI enhancement when LLM client is integrated
+        return {
+            "success": True,
+            "data": {
+                "enhanced": False,
+                "reason": "AI enhancement not yet implemented - manual improvements required",
+                "current_score": assessment.score,
+                "current_rating": assessment.rating,
+                "improvement_suggestions": assessment.improvement_suggestions,
+                "missing_elements": assessment.missing_elements,
+                "manual_enhancement_guide": {
+                    "minimum_words": 300,
+                    "required_sections": [
+                        "Vision Statement",
+                        "Core Offering",
+                        "Key Features (at least 5)",
+                        "Target Audience",
+                        "Value Proposition",
+                        "Business Objectives with Metrics",
+                        "Technical Enablers"
+                    ],
+                    "domain_keywords": vision_assessor.domain_keywords.get(domain, [])
+                }
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error enhancing vision: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to enhance vision: {str(e)}")
+
 @app.get("/api/backlog/templates")
 async def get_templates(domain: Optional[str] = None):
     """Get available backlog templates."""

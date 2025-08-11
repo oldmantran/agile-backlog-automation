@@ -198,6 +198,9 @@ class VisionQualityAssessor:
             missing_elements, weaknesses, domain, word_count
         )
         
+        # Cap total score at 100
+        total_score = min(total_score, 100)
+        
         # Calculate final rating
         rating = self._get_rating(total_score)
         is_acceptable = total_score >= self.minimum_score

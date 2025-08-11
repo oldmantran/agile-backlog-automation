@@ -5,7 +5,7 @@ import time
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.content_enhancer import ContentEnhancer
-from utils.epic_quality_assessor import EpicQualityAssessor
+from utils.epic_quality_assessor_v2 import EpicQualityAssessor
 from utils.model_fallback_manager import ModelFallbackManager
 from utils.safe_logger import get_safe_logger
 
