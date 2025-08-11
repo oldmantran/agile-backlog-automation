@@ -1453,15 +1453,16 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
         # Progress callback with thread-safe updates
         def progress_callback(progress: int, action: str):
             try:
+                # Merge with existing job data to preserve metadata
+                current_job_data = get_active_job(job_id) or {}
                 set_active_job(job_id, {
-                    **get_active_job()[1], # Get current job data
+                    **current_job_data,
                     "progress": progress,
                     "currentAction": action,
                     "currentAgent": action.split()[0] if action else "Supervisor",
                     "status": "running"
                 })
                 logger.info(f"📊 Progress update for job {job_id}: {progress}% - {action}")
-                
             except Exception as e:
                 logger.error(f"Error in progress callback for job {job_id}: {str(e)}")
 
@@ -1585,8 +1586,10 @@ def run_test_artifact_generation(job_id: str, project_info: Dict[str, Any], back
         # Progress callback
         def progress_callback(progress: int, action: str):
             try:
+                # Merge with existing job data to preserve metadata
+                current_job_data = get_active_job(job_id) or {}
                 set_active_job(job_id, {
-                    **get_active_job()[1],  # Get current job data
+                    **current_job_data,
                     "progress": progress,
                     "currentAction": action,
                     "currentAgent": "QA Lead Agent",

@@ -433,6 +433,10 @@ class EnhancedParallelProcessor:
         if time.time() - controller['last_adjustment'] < 10:  # 10 second cooldown
             return
         
+        # Skip if metrics are stale (older than 60 seconds)
+        if metrics.timestamp and (datetime.now() - metrics.timestamp).total_seconds() > 60:
+            return
+        
         # Dynamic adjustment based on metrics
         should_reduce = False
         should_increase = False
@@ -445,7 +449,10 @@ class EnhancedParallelProcessor:
         # Check for high latency
         elif metrics.avg_latency_ms > 30000:  # 30 seconds
             should_reduce = True
-            self.logger.warning(f"High latency ({metrics.avg_latency_ms:.1f}ms) detected for stage '{stage_name}'")
+            # Only log once per adjustment period to prevent spam
+            if controller.get('last_warning_time', 0) < controller['last_adjustment']:
+                self.logger.warning(f"High latency ({metrics.avg_latency_ms:.1f}ms) detected for stage '{stage_name}'")
+                controller['last_warning_time'] = time.time()
         
         # Check if we can increase capacity (low error rate and reasonable latency)
         elif metrics.error_rate < 0.05 and metrics.avg_latency_ms < 5000:
@@ -487,6 +494,7 @@ class EnhancedParallelProcessor:
         
         monitor_thread = threading.Thread(target=monitor, name="backpressure-monitor", daemon=True)
         monitor_thread.start()
+        self.monitor_thread = monitor_thread
     
     def _reduce_capacity(self, stage_name: str):
         """Reduce capacity for a stage due to backpressure."""
@@ -615,9 +623,22 @@ class EnhancedParallelProcessor:
         self.logger.info("Shutting down enhanced parallel processor...")
         self._shutdown_event.set()
         
+        # Wait for monitor thread to finish
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+            self.monitor_thread.join(timeout=2)
+        
+        # Wait for batch processing threads
+        for stage_name, thread in self.batch_threads.items():
+            if thread.is_alive():
+                thread.join(timeout=1)
+        
         for stage_name, executor in self.executors.items():
             self.logger.info(f"Shutting down executor for stage '{stage_name}'")
             executor.shutdown(wait=True)
+        
+        # Clear metrics to prevent stale data warnings
+        self.metrics.clear()
+        self.latency_history.clear()
         
         self.logger.info("Enhanced parallel processor shutdown complete")
     

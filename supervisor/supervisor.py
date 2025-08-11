@@ -2725,6 +2725,10 @@ class WorkflowSupervisor:
                 self.logger.warning(f"Some items failed to upload. They remain staged for retry.")
                 self.logger.warning("Use the retry functionality to attempt failed uploads again.")
             
+            # Get successfully uploaded items from staging database BEFORE cleanup
+            from models.work_item_staging import WorkItemStatus
+            successful_items = staging.get_upload_queue(self.job_id, WorkItemStatus.SUCCESS)
+            
             # Clean up successful items but keep failed ones for retry
             if successful_uploads > 0:
                 staging.cleanup_successful_job(self.job_id, keep_failed=True)
@@ -2733,16 +2737,16 @@ class WorkflowSupervisor:
             # Return actual upload results instead of mock data to prevent discrepancies
             actual_results = []
             
-            # Extract successful work items from upload results
-            for item_result in upload_results.get('work_items_created', []):
-                if item_result.get('status') == 'success':
-                    actual_results.append({
-                        'id': item_result.get('id'),
-                        'type': item_result.get('type', 'Work Item'),
-                        'title': item_result.get('title', 'Uploaded Work Item'),
-                        'status': 'success',
-                        'url': item_result.get('url', '')
-                    })
+            # Convert to expected format for notifications
+            for item in successful_items:
+                work_item_data = item['generated_data']
+                actual_results.append({
+                    'id': item.get('ado_id'),
+                    'type': item.get('work_item_type', 'Work Item'),
+                    'title': work_item_data.get('title', 'Uploaded Work Item'),
+                    'status': 'success',
+                    'url': f"https://dev.azure.com/{context.get('organization', 'c4workx')}/{context.get('project', 'Backlog Automation')}/_workitems/edit/{item.get('ado_id')}" if item.get('ado_id') else ''
+                })
             
             # Store outbox results in workflow data for detailed reporting
             workflow_data['outbox_upload_results'] = upload_results
