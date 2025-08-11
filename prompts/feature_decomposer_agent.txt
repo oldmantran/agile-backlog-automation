@@ -48,9 +48,9 @@ FEATURE STRUCTURE:
 
 Now decompose this epic into ${max_features} features:
 
-Epic: ${epic.title}
-Description: ${epic.description}
-Priority: ${epic.priority}
+Epic: ${epic_title}
+Description: ${epic_description}
+Priority: ${epic_priority}
 
 Product Vision Context:
 ${product_vision}

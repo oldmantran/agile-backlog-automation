@@ -52,10 +52,14 @@ class UserStoryDecomposerAgent(Agent):
             'feature': feature  # Pass entire feature object for template access
         }
         
-        # Flatten feature object for template access (Template class doesn't support nested access)
+        # Flatten feature object for template access (Template class doesn't support dots in variable names)
         if feature:
             for key, value in feature.items():
-                prompt_context[f'feature.{key}'] = value
+                # Handle lists by converting to string
+                if isinstance(value, list):
+                    prompt_context[f'feature_{key}'] = ', '.join(str(item) for item in value)
+                else:
+                    prompt_context[f'feature_{key}'] = value
         
         user_input = f"""
 Feature: {feature.get('title', 'Unknown Feature')}

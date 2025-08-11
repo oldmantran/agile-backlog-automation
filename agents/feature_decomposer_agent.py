@@ -41,7 +41,11 @@ class FeatureDecomposerAgent(Agent):
             'platform': context.get('platform', 'web application') if context else 'web application',
             'integrations': context.get('integrations', 'standard APIs') if context else 'standard APIs',
             'product_vision': product_vision,  # CASCADE PRODUCT VISION
-            'max_features': feature_limit if feature_limit else "unlimited"
+            'max_features': feature_limit if feature_limit else "unlimited",
+            # Add flattened epic data for template (Template class doesn't support dots in variable names)
+            'epic_title': epic.get('title', 'Unknown Epic'),
+            'epic_description': epic.get('description', 'No description provided'),
+            'epic_priority': epic.get('priority', 'Medium')
         }
         
         user_input = f"""

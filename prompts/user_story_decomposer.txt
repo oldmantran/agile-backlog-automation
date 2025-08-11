@@ -48,12 +48,12 @@ USER STORY STRUCTURE:
 
 Now decompose this feature into ${max_user_stories} user stories:
 
-Feature: ${feature.title}
-Description: ${feature.description}
-Priority: ${feature.priority}
-UI/UX Requirements: ${feature.ui_ux_requirements}
-Technical Considerations: ${feature.technical_considerations}
-Business Value: ${feature.business_value}
+Feature: ${feature_title}
+Description: ${feature_description}
+Priority: ${feature_priority}
+UI/UX Requirements: ${feature_ui_ux_requirements}
+Technical Considerations: ${feature_technical_considerations}
+Business Value: ${feature_business_value}
 
 Epic Context: ${epic_context}
 Product Vision: ${product_vision}
