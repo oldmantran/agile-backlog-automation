@@ -2309,8 +2309,8 @@ async def save_llm_configurations(configurations: List[AgentLLMConfigRequest], c
             # Use INSERT OR REPLACE to handle existing configurations
             cursor.execute('''
                 INSERT OR REPLACE INTO llm_configurations 
-                (user_id, name, agent_name, provider, model, preset, is_active, configuration_mode, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?, 
+                (user_id, name, agent_name, provider, model, preset, is_active, configuration_mode, api_key, base_url, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, '', '', 
                     COALESCE((SELECT created_at FROM llm_configurations WHERE user_id = ? AND name = ?), CURRENT_TIMESTAMP),
                     CURRENT_TIMESTAMP)
             ''', (user_id, config_name, config.agent_name, config.provider, model_to_save, config.preset, configuration_mode,

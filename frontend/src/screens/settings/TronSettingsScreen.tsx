@@ -13,6 +13,7 @@ import DomainManagement from '../../components/domain/DomainManagement';
 import AgentLLMConfiguration from '../../components/settings/AgentLLMConfiguration';
 import { settingsApi, WorkItemLimitsRequest, VisualSettingsRequest } from '../../services/api/settingsApi';
 import { userApi, CurrentUser } from '../../services/api/userApi';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   FiSettings, 
   FiEye, 
@@ -28,6 +29,9 @@ import {
 } from 'react-icons/fi';
 
 const TronSettingsScreen: React.FC = () => {
+  // Get authenticated user from context
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  
   // Get initial values from localStorage or use defaults
   const getInitialGlowIntensity = () => {
     const saved = localStorage.getItem('tron-glow-intensity');
@@ -256,8 +260,7 @@ const TronSettingsScreen: React.FC = () => {
           await fetch('/api/settings/work-item-limits?scope=user_default', {
             method: 'DELETE',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+              'Content-Type': 'application/json'
             }
           });
           
@@ -338,42 +341,63 @@ const TronSettingsScreen: React.FC = () => {
   const handleLLMConfigurationSave = async (configurations: any[]) => {
     try {
       // Require authenticated user - no fallback
-      if (!currentUser?.user_id) {
+      if (!authUser?.id) {
         throw new Error('User must be authenticated to save LLM configurations');
       }
-      const userId = currentUser.user_id;
+      const userId = authUser.id.toString();
       console.log('Saving LLM configurations for userId:', userId);
       console.log('Frontend configurations:', configurations);
 
-      // Transform frontend format to backend format
-      const backendConfigurations = configurations.map(config => ({
-        agent_name: config.agentName,  // camelCase -> snake_case
-        provider: config.provider,
-        model: config.model,
-        custom_model: config.customModel, // camelCase -> snake_case
-        preset: 'high_quality',  // Always use high quality
-        configuration_mode: config.configuration_mode  // Include configuration mode
-      }));
+      // Transform frontend format to backend format with sanitization
+      const backendConfigurations = configurations
+        .filter(cfg => typeof cfg.agentName === 'string' && cfg.agentName.trim())
+        .map(config => ({
+          agent_name: (config.agentName || 'global').trim(),
+          provider: (config.provider || 'openai').trim(),
+          model: (config.customModel || config.model || 'gpt-5-mini').trim(),
+          custom_model: config.customModel, // optional
+          preset: 'high_quality',
+          configuration_mode: config.configuration_mode || 'global'
+        }));
 
       console.log('Backend configurations:', backendConfigurations);
 
       const response = await fetch('/api/llm-configurations', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(backendConfigurations),
       });
 
       if (!response.ok) {
-        // Try to extract error message from response
-        let errorMessage = `HTTP error! status: ${response.status}`;
+        // Try to extract error message from response in a robust way
+        let errorMessage: string = `HTTP error! status: ${response.status}`;
         try {
-          const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.message || errorMessage;
+          const contentType = response.headers.get('Content-Type') || '';
+          if (contentType.includes('application/json')) {
+            const errorData = await response.json();
+            const detail = (errorData && (errorData.detail ?? errorData.message ?? errorData.error)) as unknown;
+            if (typeof detail === 'string') {
+              errorMessage = detail;
+            } else if (detail && typeof detail === 'object') {
+              const nested = (detail as any).message ?? (detail as any).detail ?? (detail as any).error;
+              if (typeof nested === 'string') {
+                errorMessage = nested;
+              } else {
+                errorMessage = JSON.stringify(detail);
+              }
+            } else if (errorData && typeof errorData === 'object') {
+              errorMessage = JSON.stringify(errorData);
+            }
+          } else {
+            const text = await response.text();
+            if (text) {
+              errorMessage = text;
+            }
+          }
         } catch (e) {
-          // If JSON parsing fails, use the default error message
+          // Fallback to default errorMessage
         }
         throw new Error(errorMessage);
       }
@@ -436,7 +460,7 @@ const TronSettingsScreen: React.FC = () => {
             {/* 1. LLM Configuration Section - TOP PRIORITY */}
             <div className="mb-8">
               <AgentLLMConfiguration 
-                userId={currentUser?.user_id || undefined} 
+                userId={!authLoading && authUser?.id ? authUser.id.toString() : undefined} 
                 onSave={handleLLMConfigurationSave}
               />
             </div>

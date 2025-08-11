@@ -185,6 +185,22 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
     loadConfigurations();
   }, [userId]);
 
+  const resetToDefaults = () => {
+    // Reset to default configurations
+    const defaultConfigs: LLMConfigEntry[] = AGENTS.map(agent => ({
+      agentName: agent.key,
+      provider: 'openai',
+      model: 'gpt-5-mini',
+      preset: 'high_quality',
+      configuration_mode: useAgentSpecific ? 'agent-specific' : 'global'
+    }));
+    
+    setConfigurations(defaultConfigs);
+    setHasChanges(true);
+    setSaveStatus({ success: true, message: 'Reset to default configurations. Remember to save!' });
+    setTimeout(() => setSaveStatus(null), 3000);
+  };
+
   const loadConfigurations = async () => {
     // Don't load if no userId is provided
     if (!userId) {
@@ -197,16 +213,12 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       setIsLoading(true);
       
       // Try to load existing configurations from backend
-      const response = await fetch('/api/llm-configurations', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
+      const response = await fetch('/api/llm-configurations');
       if (response.ok) {
         const data = await response.json();
         console.log('Loaded configurations from backend:', data);
         
-        if (data.success) {
+          if (data.success) {
           // Always check for configuration mode from the API response
           const databaseMode = data.configuration_mode || 'global';
           const shouldUseAgentSpecific = databaseMode === 'agent-specific';
@@ -219,16 +231,26 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
           // Set the mode regardless of whether we have configurations
           setUseAgentSpecific(shouldUseAgentSpecific);
           
-          if (data.data && data.data.length > 0) {
+            if (data.data && data.data.length > 0) {
             // Transform backend format to frontend format - ONLY use saved configurations
-            const frontendConfigs: LLMConfigEntry[] = data.data.map((config: any) => ({
-              agentName: config.agent_name,  // snake_case -> camelCase
-              provider: config.provider,
-              model: config.model,
-              customModel: undefined, // Backend doesn't return this separately
-              preset: config.preset || 'high_quality',  // Always default to high quality
-              configuration_mode: config.configuration_mode || data.configuration_mode || 'global'
+            const rawConfigs: LLMConfigEntry[] = data.data.map((config: any) => ({
+              agentName: config?.agent_name || 'global',
+              provider: config?.provider || 'openai',
+              model: config?.model || 'gpt-5-mini',
+              customModel: undefined,
+              preset: config?.preset || 'high_quality',
+              configuration_mode: config?.configuration_mode || data.configuration_mode || databaseMode
             }));
+
+            // Sanitize and deduplicate by agentName (keep last occurrence)
+            const dedupedMap = new Map<string, LLMConfigEntry>();
+            for (const cfg of rawConfigs) {
+              const name = typeof cfg.agentName === 'string' && cfg.agentName.trim() ? cfg.agentName.trim() : 'global';
+              const provider = typeof cfg.provider === 'string' && cfg.provider.trim() ? cfg.provider.trim() : 'openai';
+              const model = typeof cfg.model === 'string' && cfg.model.trim() ? cfg.model.trim() : 'gpt-5-mini';
+              dedupedMap.set(name, { ...cfg, agentName: name, provider, model });
+            }
+            const frontendConfigs = Array.from(dedupedMap.values());
             
             console.log('Raw backend response:', data);
             console.log('Transformed frontend configs:', frontendConfigs);
@@ -259,7 +281,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       }
       
       // Fallback: Initialize with default configuration for all agents
-      const defaultConfigs: LLMConfigEntry[] = AGENTS.map(agent => ({
+       const defaultConfigs: LLMConfigEntry[] = AGENTS.map(agent => ({
         agentName: agent.key,
         provider: 'openai',
         model: 'gpt-5-mini', // Use gpt-5-mini as default instead of gpt-4o-mini
@@ -336,17 +358,42 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
       setIsLoading(true);
       setSaveStatus(null);
 
-      await onSave(configurations);
+      // Sanitize configurations before saving
+      const sanitized = configurations
+        .filter(cfg => typeof cfg.agentName === 'string' && cfg.agentName.trim())
+        .map(cfg => ({
+          ...cfg,
+          agentName: cfg.agentName.trim(),
+          provider: (cfg.provider || 'openai').trim(),
+          model: (cfg.model || 'gpt-5-mini').trim(),
+          preset: cfg.preset || 'high_quality'
+        }));
+
+      await onSave(sanitized);
       
       setSaveStatus({ success: true, message: 'LLM configurations saved successfully!' });
       setHasChanges(false);
 
       setTimeout(() => setSaveStatus(null), 3000);
-    } catch (error) {
-      setSaveStatus({ 
-        success: false, 
-        message: `Failed to save configurations: ${error instanceof Error ? error.message : 'Unknown error'}` 
-      });
+    } catch (error: any) {
+      console.error('Save configuration error:', error);
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.detail) {
+        errorMessage = typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+      } else if (error?.message) {
+        errorMessage = typeof error.message === 'string' ? error.message : JSON.stringify(error.message);
+      } else if (typeof error === 'object' && error) {
+        try {
+          errorMessage = JSON.stringify(error);
+        } catch {
+          errorMessage = String(error);
+        }
+      }
+      setSaveStatus({ success: false, message: `Failed to save configurations: ${errorMessage}` });
     } finally {
       setIsLoading(false);
     }
@@ -644,7 +691,7 @@ const AgentLLMConfiguration: React.FC<AgentLLMConfigurationProps> = ({
           </Button>
           
           <Button 
-            onClick={loadConfigurations}
+            onClick={resetToDefaults}
             variant="outline"
             disabled={isLoading}
           >

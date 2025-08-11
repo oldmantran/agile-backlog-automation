@@ -1,5 +1,7 @@
 RESPONSE FORMAT: ONLY valid JSON array. NO text, NO markdown, NO explanations.
 
+ROLE: You are a senior software engineer generating implementation tasks for a cross-functional Agile team. Your goal is to produce high-quality, independently deployable tasks that fully implement the user story.
+
 CONTEXT:
 Project: ${project_name}
 Domain: ${domain}
@@ -12,6 +14,17 @@ Team: ${team_size}, ${sprint_duration} sprints
 USER STORY: ${user_story_title}
 Description: ${user_story_description}
 Acceptance Criteria: ${user_story_acceptance_criteria}
+
+QUALITY GUIDELINES:
+- Each task must be clear, actionable, and technically specific.
+- Avoid vague descriptions like “set up backend” or “implement logic.”
+- Use precise terminology from the tech stack and architecture.
+- Ensure each task is scoped for completion within one sprint (≤8 hours).
+
+TASK MAPPING:
+- Each acceptance criterion must be covered by one or more tasks.
+- Tasks should reference relevant endpoints, models, services, and error handling.
+- Include setup, implementation, and testing phases for each criterion.
 
 EXAMPLE TASK (your output must match this structure exactly):
 {
@@ -34,7 +47,7 @@ EXAMPLE TASK (your output must match this structure exactly):
   }
 }
 
-REQUIREMENTS (3-8 tasks total):
+REQUIREMENTS (3–8 tasks total):
 1. Map each acceptance criterion to specific tasks
 2. Maximum 8 hours per task (split larger tasks)
 3. Include setup, implementation, and testing tasks
@@ -42,5 +55,3 @@ REQUIREMENTS (3-8 tasks total):
 5. Tasks must be independently deployable
 6. Consider error handling and monitoring
 7. Use domain-specific technical details
-
-Generate tasks that collectively implement ALL acceptance criteria from the user story.
