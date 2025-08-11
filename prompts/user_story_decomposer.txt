@@ -1,78 +1,59 @@
-You are a user story expert. Convert the given feature into 3-6 user stories for ${domain} projects.
+RESPONSE FORMAT: ONLY valid JSON array. NO text, NO markdown, NO explanations.
 
-RESPONSE FORMAT: ONLY valid JSON array. NO text, explanations, or markdown.
+CONTEXT VARIABLES:
+- project_name: ${project_name}
+- domain: ${domain}
+- methodology: ${methodology}
+- target_users: ${target_users}
+- platform: ${platform}
+- team_velocity: ${team_velocity}
+- max_user_stories: Generate ${max_user_stories} user stories
 
-CRITICAL REQUIREMENTS: 
-- Each user story MUST have EXACTLY 3-5 acceptance criteria (MINIMUM: 3, MAXIMUM: 5)
-- Stories with fewer than 3 criteria will be REJECTED
-- Each criterion must be unique and test different aspects
-- AVOID OVER-DECOMPOSITION: Don't split closely related functionality into separate stories
-- Each story should represent a complete, valuable piece of functionality for the user
-- Stories should be INDEPENDENT and deliverable separately
+EXAMPLE USER STORY (your output must match this structure exactly):
+[
+  {
+    "title": "One-Tap Ride Request",
+    "user_story": "As an Urban Commuter, I want to request a ride with one tap so that I can minimize booking time during rush hour",
+    "description": "As an Urban Commuter, I want to request a ride with one tap so that I can minimize booking time during rush hour. The mobile app displays a prominent 'Request Ride' button that uses current location and learns frequent destinations, dispatching nearest autonomous vehicle within 45 seconds.",
+    "acceptance_criteria": [
+      "Given I open the app, When I tap 'Request Ride', Then vehicle dispatch begins within 2 seconds",
+      "Given my location is detected, When no destination is set, Then app suggests my top 3 frequent destinations",
+      "Given vehicle is dispatched, When I view the screen, Then I see real-time ETA and vehicle ID"
+    ],
+    "story_points": 5,
+    "priority": "High",
+    "category": "ui_ux",
+    "user_type": "existing_user"
+  }
+]
 
-CONTEXT:
-- Project: ${project_name}
-- Domain: ${domain}
-- Platform: ${platform}
+QUALITY REQUIREMENTS (ALL must be met for 75+ score):
+✓ User story follows "As a [role], I want [goal] so that [benefit]" format
+✓ Role is specific (Urban Commuter, not "user")
+✓ Exactly 3-5 acceptance criteria per story
+✓ Each criterion uses Given/When/Then format
+✓ Story is independently deliverable
+✓ Description starts with full user story then adds detail
+✓ Story points reflect actual complexity (1-8 typical)
 
-PRODUCT VISION:
-${product_vision}
-
-PARENT EPIC CONTEXT:
-${epic_context}
-
-REQUIRED FIELDS per story:
-- title: A concise summary of the user story (max 60 chars) - e.g., "User Login Authentication" or "Dashboard Analytics View"
-- user_story: The complete user story format "As a [user], I want [goal] so that [benefit]"
-- description: Start with the full user story, then provide detailed functionality explanation, implementation requirements, and business context
-- acceptance_criteria: Array of exactly 3-5 testable conditions using "Given/When/Then" format (REQUIRED: minimum 3, maximum 5)
-  CRITICAL: These are acceptance criteria WITHIN ONE story, NOT separate user stories
-- story_points: Use Fibonacci (1,2,3,5,8,13): 1=simple change, 3=medium feature, 5=complex feature, 8=large feature
-- priority: "High", "Medium", or "Low"
-- category: "authentication", "data_management", "ui_ux", "integration", "security", "performance", or "administration"
-- user_type: "new_user", "existing_user", "admin", "power_user", or "casual_user"
-
-IMPORTANT: Each story MUST have 3-5 acceptance criteria. Generate EXACTLY that many.
-
-RESPOND WITH ONLY A JSON ARRAY OF USER STORIES. Use these fields for each story:
-- title: Concise summary (max 60 chars) - NOT the full user story  
+USER STORY STRUCTURE:
+- title: Brief summary (max 60 chars)
 - user_story: Complete "As a [role], I want [goal] so that [benefit]"
-- description: Start with full user story, then detailed functionality explanation
-- acceptance_criteria: Array of 3-5 "Given/When/Then" test scenarios
-- story_points: Fibonacci number (1,2,3,5,8,13)
-- priority: "High", "Medium", or "Low"
-- category: Choose appropriate category
-- user_type: Choose appropriate user type
+- description: Full user story + implementation details (2-3 sentences)
+- acceptance_criteria: Array of 3-5 Given/When/Then statements
+- story_points: 1,2,3,5,8,13 (3-5 typical for user stories)
+- priority: High|Medium|Low based on feature priority
+- category: authentication|data_management|ui_ux|integration|security|performance|administration
+- user_type: new_user|existing_user|admin|power_user|casual_user
 
-DO NOT RETURN TEMPLATE PLACEHOLDERS. Generate actual, specific content based on the feature being decomposed.
+Now decompose this feature into ${max_user_stories} user stories:
 
-### Domain-Specific User Story Guidelines for "${domain}":
-- User stories MUST reflect actual roles and personas from the domain
-- Acceptance criteria should test real business scenarios, not generic system behavior
-- Use industry-specific terminology in stories and criteria
-- Reference actual workflows, processes, and outcomes from the domain
-- Consider domain-specific regulations, standards, and best practices
+Feature: ${feature.title}
+Description: ${feature.description}
+Priority: ${feature.priority}
+UI/UX Requirements: ${feature.ui_ux_requirements}
+Technical Considerations: ${feature.technical_considerations}
+Business Value: ${feature.business_value}
 
-## CRITICAL: Acceptance Criteria Format
-
-CORRECT Example:
-{
-  "title": "Asset Health Alert Dashboard",
-  "user_story": "As a warehouse manager, I want to view asset health alerts so that I can schedule proactive maintenance",
-  "description": "As a warehouse manager, I want to view asset health alerts so that I can schedule proactive maintenance. This feature provides real-time visibility into dock asset health status through a centralized dashboard interface. Warehouse managers can view anomaly alerts, track asset conditions, and prioritize maintenance activities based on severity and impact.",
-  "acceptance_criteria": [
-    "Given a dock asset has a detected anomaly, When I access the dashboard, Then I see the alert with asset details",
-    "Given multiple alerts exist, When I view the alert list, Then they are sorted by priority and timestamp", 
-    "Given an alert is acknowledged, When I mark it as reviewed, Then it moves to the reviewed section"
-  ]
-}
-
-WRONG - DO NOT DO THIS:
-Do NOT create separate stories like:
-- "Given a dock asset has a detected anomaly"
-- "When I access the dashboard" 
-- "Then I see the alert with asset details"
-
-These are acceptance criteria components, NOT individual user stories!
-
-Note: The acceptance_criteria array MUST contain 3-5 complete Given/When/Then statements. No more, no less.
+Epic Context: ${epic_context}
+Product Vision: ${product_vision}

@@ -6,7 +6,7 @@ from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
 from utils.json_extractor import JSONExtractor
-from utils.user_story_quality_assessor import UserStoryQualityAssessor
+from utils.user_story_quality_assessor_v2 import UserStoryQualityAssessor
 
 class TimeoutError(Exception):
     """Custom timeout exception."""
@@ -47,8 +47,15 @@ class UserStoryDecomposerAgent(Agent):
             'platform': context.get('platform', 'web application') if context else 'web application',
             'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
             'product_vision': product_vision,  # CASCADE PRODUCT VISION
-            'epic_context': epic_context  # CASCADE EPIC CONTEXT
+            'epic_context': epic_context,  # CASCADE EPIC CONTEXT
+            'max_user_stories': max_user_stories,  # Required for template
+            'feature': feature  # Pass entire feature object for template access
         }
+        
+        # Flatten feature object for template access (Template class doesn't support nested access)
+        if feature:
+            for key, value in feature.items():
+                prompt_context[f'feature.{key}'] = value
         
         user_input = f"""
 Feature: {feature.get('title', 'Unknown Feature')}

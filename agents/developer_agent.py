@@ -49,8 +49,24 @@ class DeveloperAgent(Agent):
             'sprint_duration': context.get('sprint_duration', '2 weeks') if context else '2 weeks',
             'product_vision': product_vision,  # CASCADE PRODUCT VISION
             'epic_context': epic_context,  # CASCADE EPIC CONTEXT
-            'feature_context': feature_context  # CASCADE FEATURE CONTEXT
+            'feature_context': feature_context,  # CASCADE FEATURE CONTEXT
+            'user_story': user_story,  # Pass entire user story object
+            'max_tasks': max_tasks  # Pass max tasks if specified
         }
+        
+        # Flatten user story object for template access (Template class doesn't support dots in variable names)
+        if user_story:
+            for key, value in user_story.items():
+                # Handle lists by converting to string
+                if isinstance(value, list):
+                    if key == 'acceptance_criteria':
+                        # Format acceptance criteria as numbered list
+                        formatted_criteria = '\n'.join(f"{i+1}. {criterion}" for i, criterion in enumerate(value))
+                        prompt_context[f'user_story_{key}'] = formatted_criteria
+                    else:
+                        prompt_context[f'user_story_{key}'] = str(value)
+                else:
+                    prompt_context[f'user_story_{key}'] = value
         
         user_input = f"""
 User Story: {user_story.get('title', 'Unknown User Story')}
@@ -149,7 +165,7 @@ User Type: {user_story.get('user_type', 'user')}
                 
                 try:
                     # Re-generate the task with improvement guidance
-                    improved_response = self._generate_improved_task(improvement_prompt, context)
+                    improved_response = self._generate_improved_task(improvement_prompt, context, user_story)
                     if improved_response:
                         current_task = improved_response
                     else:
@@ -192,8 +208,24 @@ Generate a maximum of {replacements_needed} tasks only.
                     'sprint_duration': context.get('sprint_duration', '2 weeks') if context else '2 weeks',
                     'product_vision': context.get('product_vision', '') if context else '',
                     'epic_context': context.get('epic_context', '') if context else '',
-                    'feature_context': context.get('feature_context', '') if context else ''
+                    'feature_context': context.get('feature_context', '') if context else '',
+                    'user_story': user_story,  # Pass entire user story object
+                    'max_tasks': replacements_needed
                 }
+                
+                # Flatten user story object for template access
+                if user_story:
+                    for key, value in user_story.items():
+                        # Handle lists by converting to string
+                        if isinstance(value, list):
+                            if key == 'acceptance_criteria':
+                                # Format acceptance criteria as numbered list
+                                formatted_criteria = '\n'.join(f"{i+1}. {criterion}" for i, criterion in enumerate(value))
+                                prompt_context[f'user_story_{key}'] = formatted_criteria
+                            else:
+                                prompt_context[f'user_story_{key}'] = str(value)
+                        else:
+                            prompt_context[f'user_story_{key}'] = value
                 
                 # Generate replacement tasks
                 replacement_response = self.run_with_template(user_input, prompt_context, "developer_agent")
@@ -288,11 +320,57 @@ Return only a single improved task in this JSON format:
 }}"""
         return improvement_text.strip()
     
-    def _generate_improved_task(self, improvement_prompt: str, context: dict) -> dict:
+    def _generate_improved_task(self, improvement_prompt: str, context: dict, user_story: dict = None) -> dict:
         """Generate an improved version of the task."""
         try:
-            # Use the existing run method to generate improvement
-            response = self.run(improvement_prompt, context or {})
+            # Build proper context for template including user story
+            improvement_context = context.copy() if context else {}
+            if user_story:
+                improvement_context['user_story'] = user_story
+                # Flatten user story object for template access
+                for key, value in user_story.items():
+                    # Handle lists by converting to string
+                    if isinstance(value, list):
+                        if key == 'acceptance_criteria':
+                            # Format acceptance criteria as numbered list
+                            formatted_criteria = '\n'.join(f"{i+1}. {criterion}" for i, criterion in enumerate(value))
+                            improvement_context[f'user_story_{key}'] = formatted_criteria
+                        else:
+                            improvement_context[f'user_story_{key}'] = str(value)
+                    else:
+                        improvement_context[f'user_story_{key}'] = value
+            
+            # Call LLM directly with improvement prompt (not using template)
+            if self.llm_provider == "ollama":
+                response = self.ollama_provider.generate_response(
+                    system_prompt="You are a senior developer improving a technical task.",
+                    user_input=improvement_prompt,
+                    temperature=0.7,
+                    max_tokens=8000
+                )
+            else:
+                # Use direct API call for cloud providers
+                url = self.api_url
+                headers = {
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": self.model,
+                    "messages": [
+                        {"role": "system", "content": "You are a senior developer improving a technical task."},
+                        {"role": "user", "content": improvement_prompt}
+                    ]
+                }
+                
+                import requests
+                timeout = 60  # 1 minute for improvement
+                api_response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+                api_response.raise_for_status()
+                data = api_response.json()
+                
+                response = data["choices"][0]["message"]["content"].strip()
             
             if not response:
                 return None
@@ -311,6 +389,8 @@ Return only a single improved task in this JSON format:
                 
         except Exception as e:
             print(f"Error generating improved task: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def run_with_template(self, user_input: str, context: dict, template_name: str = None) -> str:
