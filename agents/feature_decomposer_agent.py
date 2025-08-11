@@ -4,7 +4,7 @@ import threading
 from agents.base_agent import Agent
 from config.config_loader import Config
 from utils.quality_validator import WorkItemQualityValidator
-from utils.feature_quality_assessor import FeatureQualityAssessor
+from utils.feature_quality_assessor_v2 import FeatureQualityAssessor
 
 class TimeoutError(Exception):
     """Custom timeout exception."""
