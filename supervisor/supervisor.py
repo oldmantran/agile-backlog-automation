@@ -2738,6 +2738,12 @@ class WorkflowSupervisor:
             actual_results = []
             
             # Convert to expected format for notifications
+            # Extract organization from URL safely
+            org = 'c4workx'  # default
+            if self.organization_url:
+                org = self.organization_url.replace('https://dev.azure.com/', '').strip('/')
+            project = self.project or 'Backlog Automation'
+            
             for item in successful_items:
                 work_item_data = item['generated_data']
                 actual_results.append({
@@ -2745,7 +2751,7 @@ class WorkflowSupervisor:
                     'type': item.get('work_item_type', 'Work Item'),
                     'title': work_item_data.get('title', 'Uploaded Work Item'),
                     'status': 'success',
-                    'url': f"https://dev.azure.com/{context.get('organization', 'c4workx')}/{context.get('project', 'Backlog Automation')}/_workitems/edit/{item.get('ado_id')}" if item.get('ado_id') else ''
+                    'url': f"https://dev.azure.com/{org}/{project}/_workitems/edit/{item.get('ado_id')}" if item.get('ado_id') else ''
                 })
             
             # Store outbox results in workflow data for detailed reporting

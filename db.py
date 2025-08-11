@@ -950,7 +950,7 @@ class Database:
                 
                 result = cursor.fetchone()
                 if not result:
-                    logger.warning(f"No backlog job found with job_id: {job_id}")
+                    logger.debug(f"No backlog job found with job_id: {job_id}")
                     return False
                 
                 db_id, old_progress, last_update, old_etag = result

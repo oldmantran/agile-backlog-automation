@@ -20,7 +20,7 @@ class DeveloperAgent(Agent):
         # Initialize quality validator and task quality assessor
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.task_quality_assessor = TaskQualityAssessor()
-        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
+        self.max_quality_retries = 1  # Reduced to speed up runs - can be configured later
         
         # Azure DevOps integration will be set by supervisor when needed
         self.azure_api = None
@@ -31,6 +31,33 @@ class DeveloperAgent(Agent):
 
     def generate_tasks(self, user_story: dict, context: dict = None, max_tasks: int = None) -> list[dict]:
         """Generate technical tasks from a user story with full context cascading."""
+        
+        # Normalize user_story if it's not a dict
+        if not isinstance(user_story, dict):
+            if isinstance(user_story, str):
+                # Try to parse as JSON first
+                try:
+                    user_story = json.loads(user_story)
+                except (json.JSONDecodeError, TypeError):
+                    # If not JSON, wrap as basic dict
+                    user_story = {
+                        'title': str(user_story),
+                        'description': str(user_story),
+                        'acceptance_criteria': [],
+                        'story_points': 3,
+                        'priority': 'Medium',
+                        'user_type': 'user'
+                    }
+            else:
+                # For any other type, convert to string and wrap
+                user_story = {
+                    'title': str(user_story),
+                    'description': str(user_story),
+                    'acceptance_criteria': [],
+                    'story_points': 3,
+                    'priority': 'Medium',
+                    'user_type': 'user'
+                }
         
         # Extract full context for cascading  
         product_vision = context.get('product_vision', '') if context else ''
@@ -89,7 +116,15 @@ User Type: {user_story.get('user_type', 'user')}
             
             # Extract and parse JSON
             cleaned_response = JSONExtractor.extract_json_from_response(response)
-            tasks = json.loads(cleaned_response)
+            if not cleaned_response:
+                print("No JSON found in task generation response")
+                return []
+            
+            try:
+                tasks = json.loads(cleaned_response)
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Failed to parse JSON from task generation response: {e}")
+                return []
             
             # Apply task limit if specified
             if max_tasks and len(tasks) > max_tasks:
@@ -377,7 +412,15 @@ Return only a single improved task in this JSON format:
             
             # Extract and parse JSON
             cleaned_response = JSONExtractor.extract_json_from_response(response)
-            improved_task = json.loads(cleaned_response)
+            if not cleaned_response:
+                print("No JSON found in improvement response")
+                return None
+            
+            try:
+                improved_task = json.loads(cleaned_response)
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Failed to parse JSON from improvement response: {e}")
+                return None
             
             # Validate that we got a single task object
             if isinstance(improved_task, dict):
