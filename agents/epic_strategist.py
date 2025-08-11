@@ -71,9 +71,16 @@ class EpicStrategist(Agent):
         approved_epics = []
         total_attempts = 0
         max_total_attempts = 10  # Prevent infinite loops
+        max_duration = 600  # 10 minute timeout
         
-        # Keep generating until we have enough quality epics or hit max attempts
+        # Keep generating until we have enough quality epics or hit max attempts/timeout
         while (epic_limit is None or len(approved_epics) < epic_limit) and total_attempts < max_total_attempts:
+            # Check timeout
+            elapsed = time.time() - start_time
+            if elapsed > max_duration:
+                self.logger.warning(f"[TIMEOUT] Epic generation exceeded {max_duration}s time limit")
+                break
+                
             total_attempts += 1
             
             try:
@@ -101,6 +108,18 @@ class EpicStrategist(Agent):
                 self.logger.error(f"[GENERATION ERROR] Attempt {total_attempts} failed: {e}")
                 if total_attempts >= max_total_attempts:
                     raise
+        
+        # Check if we got ANY epics at all
+        if len(approved_epics) == 0:
+            domain = context.get('domain', 'unknown')
+            from config.quality_config import MINIMUM_QUALITY_SCORE
+            error_msg = (
+                f"Failed to generate any epics meeting quality threshold of {MINIMUM_QUALITY_SCORE} "
+                f"after {total_attempts} attempts over {time.time() - start_time:.1f}s. "
+                f"This may indicate insufficient input quality or model limitations for the {domain} domain."
+            )
+            self.logger.error(f"[EPIC FAILURE] {error_msg}")
+            raise ValueError(error_msg)
         
         duration = time.time() - start_time
         self.logger.info(f"[DIRECT SUCCESS] Generated {len(approved_epics)} quality epics in {duration:.1f}s after {total_attempts} attempts")

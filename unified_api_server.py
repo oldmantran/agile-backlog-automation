@@ -900,6 +900,39 @@ async def add_job(job_data: dict):
         logger.error(f"Error adding job: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to add job: {str(e)}")
 
+@app.post("/api/vision/quality-check")
+async def check_vision_quality(
+    request: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+):
+    """Check the quality of a vision statement without starting workflow."""
+    try:
+        vision_statement = request.get("visionStatement", "")
+        domain = request.get("domain", "general")
+        
+        from utils.vision_quality_assessor import VisionQualityAssessor
+        vision_assessor = VisionQualityAssessor()
+        
+        assessment = vision_assessor.assess_vision(vision_statement, domain)
+        
+        return {
+            "success": True,
+            "data": {
+                "score": assessment.score,
+                "rating": assessment.rating,
+                "is_acceptable": assessment.is_acceptable,
+                "minimum_score": 75,
+                "strengths": assessment.strengths,
+                "weaknesses": assessment.weaknesses,
+                "missing_elements": assessment.missing_elements,
+                "improvement_suggestions": assessment.improvement_suggestions,
+                "report": vision_assessor.format_assessment_report(assessment)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error checking vision quality: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to check vision quality: {str(e)}")
+
 @app.get("/api/backlog/templates")
 async def get_templates(domain: Optional[str] = None):
     """Get available backlog templates."""
@@ -1497,6 +1530,58 @@ def run_backlog_generation_sync(job_id: str, project_info: Dict[str, Any]):
         # Create product vision - use the full comprehensive vision statement
         vision_data = project_data.get("vision", {})
         full_vision = vision_data.get('visionStatement', 'No vision statement provided')
+        
+        # Check vision quality before proceeding
+        from utils.vision_quality_assessor import VisionQualityAssessor
+        vision_assessor = VisionQualityAssessor()
+        
+        logger.info(f"🔍 Checking vision statement quality for job {job_id}")
+        vision_assessment = vision_assessor.assess_vision(full_vision, project_domain)
+        
+        if not vision_assessment.is_acceptable:
+            error_msg = f"Vision statement quality check failed (Score: {vision_assessment.score}/100, Minimum: 75)"
+            logger.error(f"❌ {error_msg}")
+            
+            # Format detailed feedback
+            assessment_report = vision_assessor.format_assessment_report(vision_assessment)
+            detailed_error = f"{error_msg}\n\n{assessment_report}"
+            
+            set_active_job(job_id, {
+                "status": "failed", 
+                "error": detailed_error,
+                "visionQualityScore": vision_assessment.score,
+                "visionQualityRating": vision_assessment.rating,
+                "endTime": datetime.now()
+            })
+            
+            # Send notification about vision quality failure
+            try:
+                notifier = Notifier(config=Config())
+                notifier.send_notification(
+                    "Vision Quality Check Failed",
+                    detailed_error,
+                    notification_type="error",
+                    context={
+                        "job_id": job_id,
+                        "project_name": project_name,
+                        "domain": project_domain,
+                        "vision_score": vision_assessment.score,
+                        "vision_rating": vision_assessment.rating
+                    }
+                )
+            except Exception as notify_error:
+                logger.error(f"Failed to send vision quality notification: {notify_error}")
+            
+            return {"error": detailed_error, "visionAssessment": {
+                "score": vision_assessment.score,
+                "rating": vision_assessment.rating,
+                "strengths": vision_assessment.strengths,
+                "weaknesses": vision_assessment.weaknesses,
+                "missing_elements": vision_assessment.missing_elements,
+                "improvement_suggestions": vision_assessment.improvement_suggestions
+            }}
+        
+        logger.info(f"✅ Vision statement quality check passed (Score: {vision_assessment.score}/100, Rating: {vision_assessment.rating})")
         
         product_vision = f"""
 Project: {project_name}

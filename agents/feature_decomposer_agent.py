@@ -604,6 +604,10 @@ Dependencies: {epic.get('dependencies', [])}
     
     def _assess_and_improve_feature_quality(self, features: list, epic: dict, context: dict, product_vision: str) -> list:
         """Assess feature quality and retry generation if not GOOD or better."""
+        import time
+        start_time = time.time()
+        max_duration = 480  # 8 minutes max for quality assessment
+        
         domain = context.get('domain', 'general') if context else 'general'
         approved_features = []
         feature_limit = len(features)  # Track original target count
@@ -614,6 +618,12 @@ Dependencies: {epic.get('dependencies', [])}
         print(f"Domain: {domain}")
         
         for i, feature in enumerate(features):
+            # Check timeout
+            elapsed = time.time() - start_time
+            if elapsed > max_duration:
+                print(f"\n[TIMEOUT] Feature quality assessment exceeded {max_duration}s time limit")
+                break
+                
             print(f"\n{'='*60}")
             print(f"ASSESSING FEATURE {i+1}/{len(features)}")
             print(f"{'='*60}")
