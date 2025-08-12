@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
+import Header from '../../components/navigation/Header';
+import Sidebar from '../../components/navigation/Sidebar';
 import SimplifiedProjectForm from '../../components/forms/SimplifiedProjectForm';
 import { Project } from '../../types/project';
 import { projectApi } from '../../services/api/projectApi';
@@ -17,6 +19,7 @@ const SimpleProjectWizard: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [initialFormData, setInitialFormData] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Handle prefilled data from optimize vision screen
   useEffect(() => {
@@ -158,16 +161,21 @@ const SimpleProjectWizard: React.FC = () => {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-8">
-      <div className="space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">
-            Agile Backlog Automation
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Transform your product vision into a comprehensive backlog with AI-powered automation
-          </p>
-        </div>
+    <div className="min-h-screen">
+      <Header onMenuClick={() => setSidebarOpen(true)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      <div className="ml-0 lg:ml-[250px] pt-[70px] transition-all duration-300 ease-in-out">
+        <div className="container max-w-4xl mx-auto py-8">
+          <div className="space-y-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-4">
+                Agile Backlog Automation
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Transform your product vision into a comprehensive backlog with AI-powered automation
+              </p>
+            </div>
 
         {!error && !isSuccess && (
           <>
@@ -271,6 +279,8 @@ const SimpleProjectWizard: React.FC = () => {
             </CardContent>
           </Card>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );

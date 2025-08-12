@@ -20,10 +20,13 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import Header from '../../components/navigation/Header';
+import Sidebar from '../../components/navigation/Sidebar';
 
 const BacklogSweeperScreen: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [config, setConfig] = useState({
     agentMode: 'automatic' as 'manual' | 'automatic',
     targetItems: 10,
@@ -49,10 +52,14 @@ const BacklogSweeperScreen: React.FC = () => {
   };
 
   return (
-    // Convert Chakra UI Box p={6} to Tailwind p-6
-    <div className="p-6">
-      {/* Convert Chakra UI VStack spacing={6} align="stretch" to Tailwind space-y-6 w-full */}
-      <div className="space-y-6 w-full">
+    <div className="min-h-screen">
+      <Header onMenuClick={() => setSidebarOpen(true)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      
+      <div className="ml-0 lg:ml-[250px] pt-[70px] transition-all duration-300 ease-in-out">
+        <div className="p-6">
+          {/* Convert Chakra UI VStack spacing={6} align="stretch" to Tailwind space-y-6 w-full */}
+          <div className="space-y-6 w-full">
         {/* Header - Convert HStack to flex items-center */}
         <div className="flex items-center">
           <Button
@@ -249,6 +256,8 @@ const BacklogSweeperScreen: React.FC = () => {
             </CardContent>
           </Card>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );
