@@ -2823,20 +2823,36 @@ async def optimize_vision(request: dict, current_user: User = Depends(get_curren
         # Optimize the vision
         result = optimizer.optimize_vision(original_vision, domains)
         
-        # Save to database
-        vision_id = db.save_optimized_vision(
-            user_id=str(current_user.id),
-            original_vision=original_vision,
-            optimized_vision=result["optimized_vision"],
-            domains=json.dumps(domains),
-            quality_score=result["optimized_score"],
-            quality_rating=result["optimized_rating"],
-            optimization_feedback=json.dumps(result.get("optimization_feedback", {}))
-        )
+        # Extract assessment data
+        original_assessment = result.get("original_assessment", {})
+        optimized_assessment = result.get("optimized_assessment", {})
+        optimization_feedback = result.get("optimization_feedback", {})
         
-        result["vision_id"] = vision_id
+        # Save to database only if the optimized version meets quality threshold
+        vision_id = None
+        if optimized_assessment and getattr(optimized_assessment, 'score', 0) >= 75:
+            vision_id = db.save_optimized_vision(
+                user_id=str(current_user.id),
+                original_vision=original_vision,
+                optimized_vision=result["optimized_vision"],
+                domains=json.dumps(domains),
+                quality_score=getattr(optimized_assessment, 'score', 0),
+                quality_rating=getattr(optimized_assessment, 'rating', 'UNKNOWN'),
+                optimization_feedback=json.dumps(optimization_feedback)
+            )
         
-        return result
+        # Return the result regardless of whether it was saved
+        return {
+            "vision_id": vision_id,
+            "optimized_vision": result["optimized_vision"],
+            "original_score": getattr(original_assessment, 'score', 0),
+            "optimized_score": getattr(optimized_assessment, 'score', 0),
+            "score_improvement": optimization_feedback.get('score_improvement', 0),
+            "rating_change": optimization_feedback.get('rating_change', 'N/A'),
+            "improvements_made": optimization_feedback.get('improvements_made', []),
+            "remaining_issues": optimization_feedback.get('remaining_issues', []),
+            "is_acceptable": getattr(optimized_assessment, 'score', 0) >= 75
+        }
         
     except Exception as e:
         logger.error(f"Failed to optimize vision: {e}")
@@ -3199,6 +3215,110 @@ async def retry_failed_uploads(request: RetryFailedUploadsRequest):
     except Exception as e:
         logger.error(f"Failed to retry uploads for job {job_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retry uploads: {str(e)}")
+
+# Vision Optimization Endpoints
+class VisionOptimizationRequest(BaseModel):
+    original_vision: str
+    domains: List[Dict[str, str]]  # [{"domain": "healthcare", "priority": "primary"}]
+
+class VisionQualityCheckRequest(BaseModel):
+    visionStatement: str
+    domain: str = "general"
+
+@app.post("/api/vision/optimize")
+async def optimize_vision(request: VisionOptimizationRequest, current_user: User = Depends(get_current_user)):
+    """Optimize a product vision statement using selected domains."""
+    try:
+        from agents.vision_optimizer_agent import VisionOptimizerAgent
+        from config.config_loader import Config
+        
+        logger.info(f"Vision optimization requested by user {current_user.id}")
+        logger.info(f"Original vision length: {len(request.original_vision)} chars")
+        logger.info(f"Domains: {request.domains}")
+        
+        config = Config()
+        optimizer = VisionOptimizerAgent(config, str(current_user.id))
+        
+        # Run optimization
+        result = optimizer.optimize_vision(request.original_vision, request.domains)
+        
+        # Prepare response
+        response_data = {
+            "optimized_vision": result["optimized_vision"],
+            "original_score": result["original_assessment"].score,
+            "optimized_score": result["optimized_assessment"].score,
+            "score_improvement": result["optimized_assessment"].score - result["original_assessment"].score,
+            "rating_change": f"{result['original_assessment'].rating} → {result['optimized_assessment'].rating}",
+            "improvements_made": result["optimization_feedback"].get("improvements_made", []),
+            "remaining_issues": result["optimization_feedback"].get("remaining_issues", []),
+            "is_acceptable": result["optimized_assessment"].score >= 75
+        }
+        
+        # Save to database if acceptable
+        if response_data["is_acceptable"]:
+            vision_id = db.save_optimized_vision(
+                user_id=str(current_user.id),
+                original_vision=request.original_vision,
+                optimized_vision=result["optimized_vision"],
+                domains=request.domains,
+                quality_score=result["optimized_assessment"].score,
+                quality_rating=result["optimized_assessment"].rating
+            )
+            response_data["vision_id"] = vision_id
+            logger.info(f"Saved optimized vision with ID: {vision_id}")
+        else:
+            logger.info(f"Optimized vision scored {result['optimized_assessment'].score}, not saving to database")
+        
+        return {
+            "success": True,
+            "data": response_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Vision optimization failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Vision optimization failed: {str(e)}")
+
+@app.post("/api/vision/quality-check")
+async def check_vision_quality(request: VisionQualityCheckRequest, current_user: User = Depends(get_current_user)):
+    """Check the quality of a vision statement."""
+    try:
+        from utils.vision_quality_assessor import VisionQualityAssessor
+        
+        assessor = VisionQualityAssessor()
+        assessment = assessor.assess_vision(request.visionStatement, request.domain)
+        
+        return {
+            "success": True,
+            "data": {
+                "score": assessment.score,
+                "rating": assessment.rating,
+                "is_acceptable": assessment.is_acceptable,
+                "strengths": assessment.strengths,
+                "weaknesses": assessment.weaknesses,
+                "missing_elements": assessment.missing_elements,
+                "improvement_suggestions": assessment.improvement_suggestions
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Vision quality check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Vision quality check failed: {str(e)}")
+
+@app.get("/api/vision/optimized")
+async def get_optimized_visions(
+    limit: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Get saved optimized visions for the current user."""
+    try:
+        visions = db.get_optimized_visions(str(current_user.id), limit)
+        return visions
+        
+    except Exception as e:
+        logger.error(f"Failed to get optimized visions: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get optimized visions: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(

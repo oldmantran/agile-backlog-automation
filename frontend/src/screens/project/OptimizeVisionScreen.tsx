@@ -7,10 +7,18 @@ import { Label } from '../../components/ui/label';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
-import { Sparkles, AlertCircle, ChevronRight, Check, Loader2 } from 'lucide-react';
+import { Sparkles, AlertCircle, ChevronRight, Check, Loader2, History, Calendar, Award, RefreshCw } from 'lucide-react';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
 import apiClient from '../../services/api/apiClient';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../../components/ui/dialog';
 
 interface Domain {
   id: number;
@@ -29,6 +37,16 @@ interface VisionOptimizationResult {
   improvements_made: string[];
   remaining_issues: string[];
   is_acceptable: boolean;
+}
+
+interface SavedVision {
+  id: number;
+  original_vision: string;
+  optimized_vision: string;
+  domains: Array<{ domain: string; priority: string }>;
+  quality_score: number;
+  quality_rating: string;
+  created_at: string;
 }
 
 const OptimizeVisionScreen: React.FC = () => {
@@ -52,6 +70,9 @@ const OptimizeVisionScreen: React.FC = () => {
   const [availableDomains, setAvailableDomains] = useState<Domain[]>([]);
   const [isCheckingQuality, setIsCheckingQuality] = useState(false);
   const [visionQuality, setVisionQuality] = useState<any>(null);
+  const [savedVisions, setSavedVisions] = useState<SavedVision[]>([]);
+  const [isLoadingVisions, setIsLoadingVisions] = useState(false);
+  const [visionDialogOpen, setVisionDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchDomains();
@@ -71,6 +92,38 @@ const OptimizeVisionScreen: React.FC = () => {
       });
       setTimeout(() => setNotification(null), 3000);
     }
+  };
+
+  const fetchSavedVisions = async () => {
+    setIsLoadingVisions(true);
+    try {
+      const response = await apiClient.get('/vision/optimized?limit=20');
+      setSavedVisions(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch saved visions:', error);
+      setNotification({
+        message: 'Unable to load saved visions. Please try again.',
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setIsLoadingVisions(false);
+    }
+  };
+
+  const handleLoadVision = (vision: SavedVision) => {
+    setVisionStatement(vision.optimized_vision);
+    // Parse and set domains
+    const parsedDomains = typeof vision.domains === 'string' 
+      ? JSON.parse(vision.domains) 
+      : vision.domains;
+    setSelectedDomains(parsedDomains || []);
+    setVisionDialogOpen(false);
+    setNotification({
+      message: 'Saved vision loaded successfully',
+      type: 'success'
+    });
+    setTimeout(() => setNotification(null), 3000);
   };
 
   const checkVisionQuality = async () => {
@@ -239,8 +292,81 @@ const OptimizeVisionScreen: React.FC = () => {
               <div className="space-y-6">
                 {/* Vision Input */}
                 <Card className="tron-card">
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Original Vision Statement</CardTitle>
+                    <Dialog open={visionDialogOpen} onOpenChange={setVisionDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchSavedVisions()}
+                        >
+                          <History className="mr-2 h-4 w-4" />
+                          Load Saved Vision
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden">
+                        <DialogHeader>
+                          <DialogTitle>Your Saved Visions</DialogTitle>
+                          <DialogDescription>
+                            Select a previously optimized vision to load it into the editor
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="overflow-y-auto max-h-[calc(80vh-120px)] pr-4">
+                          {isLoadingVisions ? (
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                          ) : savedVisions.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <History className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                              <p>No saved visions found</p>
+                              <p className="text-sm mt-2">Optimized visions will appear here after you save them</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {savedVisions.map((vision) => (
+                                <Card
+                                  key={vision.id}
+                                  className="p-4 hover:border-primary cursor-pointer transition-colors"
+                                  onClick={() => handleLoadVision(vision)}
+                                >
+                                  <div className="space-y-2">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Badge variant={vision.quality_score >= 80 ? "default" : "secondary"}>
+                                            <Award className="mr-1 h-3 w-3" />
+                                            {vision.quality_score}/100
+                                          </Badge>
+                                          <Badge variant="outline">{vision.quality_rating}</Badge>
+                                          <span className="text-xs text-muted-foreground">
+                                            <Calendar className="inline mr-1 h-3 w-3" />
+                                            {new Date(vision.created_at).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                        <p className="text-sm line-clamp-3 mb-2">
+                                          {vision.optimized_vision}
+                                        </p>
+                                        {vision.domains && (
+                                          <div className="flex gap-2 flex-wrap">
+                                            {(typeof vision.domains === 'string' ? JSON.parse(vision.domains) : vision.domains).map((d: any, idx: number) => (
+                                              <Badge key={idx} variant="outline" className="text-xs">
+                                                {d.domain}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Textarea
@@ -323,6 +449,7 @@ const OptimizeVisionScreen: React.FC = () => {
                           <div
                             key={domain.id}
                             onClick={() => handleDomainSelect(domain.domain_key)}
+                            title={`${domain.display_name}: ${domain.description}`}
                             className={`
                               relative p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:scale-105
                               ${isSelected 
@@ -451,15 +578,58 @@ const OptimizeVisionScreen: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* Quality Alert for scores below 75 */}
+                      {!optimizationResult.is_acceptable && (
+                        <Alert className="border-orange-500">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            <div className="space-y-1">
+                              <p className="font-medium">Score: {optimizationResult.optimized_score}/100 - Below recommended threshold</p>
+                              <p className="text-sm">The optimized vision scored below 75. You can:</p>
+                              <ul className="text-sm ml-4 mt-1 space-y-0.5">
+                                <li>• Retry optimization (AI will try a different approach)</li>
+                                <li>• Edit the text and retry with your changes</li>
+                                <li>• Use it anyway if you're satisfied with the content</li>
+                              </ul>
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                       {/* Action Buttons */}
                       <div className="flex gap-3">
-                        <Button
-                          className="flex-1"
-                          onClick={handleApproveAndCreate}
-                          disabled={!optimizationResult.is_acceptable}
-                        >
-                          Approve & Create New Backlog
-                        </Button>
+                        {optimizationResult.is_acceptable ? (
+                          <Button
+                            className="flex-1"
+                            onClick={handleApproveAndCreate}
+                          >
+                            Approve & Create New Backlog
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              className="flex-1"
+                              onClick={() => {
+                                // Keep the optimized vision in the input and retry
+                                setVisionStatement(optimizationResult.optimized_vision);
+                                setOptimizationResult(null);
+                                // Automatically trigger re-optimization after a short delay
+                                setTimeout(() => {
+                                  handleOptimize();
+                                }, 100);
+                              }}
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Retry Optimization
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={handleApproveAndCreate}
+                            >
+                              Use Anyway
+                            </Button>
+                          </>
+                        )}
                         <Button
                           variant="outline"
                           onClick={() => {
@@ -467,7 +637,7 @@ const OptimizeVisionScreen: React.FC = () => {
                             setOptimizationResult(null);
                           }}
                         >
-                          Use as New Input
+                          Edit & Retry
                         </Button>
                       </div>
                     </CardContent>

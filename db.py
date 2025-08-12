@@ -1440,14 +1440,24 @@ def get_all_domains() -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Failed to get all domains: {e}")
         return []
-    
-    # Optimized Visions Methods
-    def save_optimized_vision(self, user_id: str, original_vision: str, optimized_vision: str,
-                            domains: List[Dict[str, Any]], quality_score: int, quality_rating: str,
-                            optimization_feedback: Dict[str, Any] = None) -> int:
-        """Save an optimized vision and return its ID."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
+
+# Database instance for module-level functions
+_db_instance = None
+
+def _get_db_instance():
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = Database()
+    return _db_instance
+
+# Optimized Visions Methods
+def save_optimized_vision(user_id: str, original_vision: str, optimized_vision: str,
+                          domains: List[Dict[str, Any]], quality_score: int, quality_rating: str,
+                          optimization_feedback: Dict[str, Any] = None) -> int:
+    """Save an optimized vision and return its ID."""
+    try:
+        db = _get_db_instance()
+        with sqlite3.connect(db.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO optimized_visions (
@@ -1464,85 +1474,89 @@ def get_all_domains() -> List[Dict[str, Any]]:
                 conn.commit()
                 logger.info(f"Optimized vision saved with ID: {vision_id}")
                 return vision_id
-        except Exception as e:
-            logger.error(f"Failed to save optimized vision: {e}")
-            raise
+    except Exception as e:
+        logger.error(f"Failed to save optimized vision: {e}")
+        raise
     
-    def get_optimized_visions(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get optimized visions for a user."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute('''
+def get_optimized_visions(user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """Get optimized visions for a user."""
+    try:
+        db = _get_db_instance()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
                     SELECT * FROM optimized_visions
                     WHERE user_id = ?
                     ORDER BY created_at DESC
                     LIMIT ?
-                ''', (user_id, limit))
-                
-                visions = []
-                for row in cursor.fetchall():
-                    vision = dict(row)
-                    # Parse JSON fields
-                    vision['domains'] = json.loads(vision['domains']) if vision['domains'] else []
-                    vision['optimization_feedback'] = json.loads(vision['optimization_feedback']) if vision['optimization_feedback'] else {}
-                    visions.append(vision)
-                
-                return visions
-        except Exception as e:
-            logger.error(f"Failed to get optimized visions: {e}")
-            return []
+            ''', (user_id, limit))
+            
+            visions = []
+            for row in cursor.fetchall():
+                vision = dict(row)
+                # Parse JSON fields
+                vision['domains'] = json.loads(vision['domains']) if vision['domains'] else []
+                vision['optimization_feedback'] = json.loads(vision['optimization_feedback']) if vision['optimization_feedback'] else {}
+                visions.append(vision)
+            
+            return visions
+    except Exception as e:
+        logger.error(f"Failed to get optimized visions: {e}")
+        return []
     
-    def get_optimized_vision_by_id(self, vision_id: int) -> Optional[Dict[str, Any]]:
-        """Get a specific optimized vision by ID."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM optimized_visions WHERE id = ?', (vision_id,))
-                row = cursor.fetchone()
-                
-                if row:
-                    vision = dict(row)
-                    vision['domains'] = json.loads(vision['domains']) if vision['domains'] else []
-                    vision['optimization_feedback'] = json.loads(vision['optimization_feedback']) if vision['optimization_feedback'] else {}
-                    return vision
-                return None
-        except Exception as e:
-            logger.error(f"Failed to get optimized vision {vision_id}: {e}")
+def get_optimized_vision_by_id(vision_id: int) -> Optional[Dict[str, Any]]:
+    """Get a specific optimized vision by ID."""
+    try:
+        db = _get_db_instance()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM optimized_visions WHERE id = ?', (vision_id,))
+            row = cursor.fetchone()
+            
+            if row:
+                vision = dict(row)
+                vision['domains'] = json.loads(vision['domains']) if vision['domains'] else []
+                vision['optimization_feedback'] = json.loads(vision['optimization_feedback']) if vision['optimization_feedback'] else {}
+                return vision
             return None
+    except Exception as e:
+        logger.error(f"Failed to get optimized vision {vision_id}: {e}")
+        return None
     
-    def link_backlog_to_optimized_vision(self, backlog_job_id: int, optimized_vision_id: int) -> bool:
-        """Link a backlog job to the optimized vision it was created from."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO backlog_vision_mapping (backlog_job_id, optimized_vision_id)
-                    VALUES (?, ?)
-                ''', (backlog_job_id, optimized_vision_id))
-                conn.commit()
-                logger.info(f"Linked backlog job {backlog_job_id} to optimized vision {optimized_vision_id}")
-                return True
-        except Exception as e:
-            logger.error(f"Failed to link backlog to optimized vision: {e}")
-            return False
+def link_backlog_to_optimized_vision(backlog_job_id: int, optimized_vision_id: int) -> bool:
+    """Link a backlog job to the optimized vision it was created from."""
+    try:
+        db = _get_db_instance()
+        with sqlite3.connect(db.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO backlog_vision_mapping (backlog_job_id, optimized_vision_id)
+                VALUES (?, ?)
+            ''', (backlog_job_id, optimized_vision_id))
+            conn.commit()
+            logger.info(f"Linked backlog job {backlog_job_id} to optimized vision {optimized_vision_id}")
+            return True
+    except Exception as e:
+        logger.error(f"Failed to link backlog to optimized vision: {e}")
+        return False
     
-    def get_backlogs_from_optimized_vision(self, optimized_vision_id: int) -> List[Dict[str, Any]]:
-        """Get all backlog jobs created from a specific optimized vision."""
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT bj.* FROM backlog_jobs bj
-                    JOIN backlog_vision_mapping bvm ON bj.id = bvm.backlog_job_id
-                    WHERE bvm.optimized_vision_id = ?
-                    ORDER BY bj.created_at DESC
-                ''', (optimized_vision_id,))
-                
-                return [dict(row) for row in cursor.fetchall()]
-        except Exception as e:
-            logger.error(f"Failed to get backlogs from optimized vision: {e}")
-            return []
+def get_backlogs_from_optimized_vision(optimized_vision_id: int) -> List[Dict[str, Any]]:
+    """Get all backlog jobs created from a specific optimized vision."""
+    try:
+        db = _get_db_instance()
+        with sqlite3.connect(db.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT bj.* FROM backlog_jobs bj
+                JOIN backlog_vision_mapping bvm ON bj.id = bvm.backlog_job_id
+                WHERE bvm.optimized_vision_id = ?
+                ORDER BY bj.created_at DESC
+            ''', (optimized_vision_id,))
+            
+            return [dict(row) for row in cursor.fetchall()]
+    except Exception as e:
+        logger.error(f"Failed to get backlogs from optimized vision: {e}")
+        return []
