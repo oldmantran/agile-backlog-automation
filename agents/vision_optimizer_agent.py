@@ -24,8 +24,8 @@ class VisionOptimizerAgent(Agent):
         
         Args:
             original_vision: The original vision statement to optimize
-            domains: List of domain dictionaries with 'domain' and 'weight' keys
-                    e.g., [{'domain': 'healthcare', 'weight': 70}, {'domain': 'retail', 'weight': 30}]
+            domains: List of domain dictionaries with 'domain' and 'priority' keys
+                    e.g., [{'domain': 'healthcare', 'priority': 'primary'}, {'domain': 'retail', 'priority': 'secondary'}]
                     
         Returns:
             Dictionary containing:
@@ -42,14 +42,14 @@ class VisionOptimizerAgent(Agent):
         self.logger.info(f"Original vision assessment: {original_assessment.rating} ({original_assessment.score}/100)")
         
         # Build context for optimization
-        domain_context = self._build_domain_context(domains)
+        domain_strategy = self._build_domain_strategy(domains)
+        domain_instructions = self._build_domain_instructions(domains)
         
         # Create optimization prompt
         prompt_context = {
             'original_vision': original_vision,
-            'domain_context': domain_context,
-            'primary_domain': domains[0]['domain'] if domains else 'general',
-            'domain_weights': json.dumps(domains),
+            'domain_strategy': domain_strategy,
+            'domain_instructions': domain_instructions,
             'original_score': original_assessment.score,
             'original_rating': original_assessment.rating,
             'strengths': ', '.join(original_assessment.strengths[:3]) if original_assessment.strengths else 'None identified',
@@ -64,8 +64,7 @@ OPTIMIZE THIS VISION STATEMENT
 Original Vision (Score: {original_assessment.score}/100):
 {original_vision}
 
-Domain Focus:
-{domain_context}
+{prompt_context['domain_strategy']}
 
 Quality Issues to Address:
 {chr(10).join('- ' + w for w in original_assessment.weaknesses)}
@@ -75,7 +74,7 @@ Missing Elements:
 
 REQUIREMENTS:
 1. Maintain the core business concept and objectives
-2. Integrate domain-specific terminology and requirements
+2. Follow the domain integration approach specified above
 3. Add missing elements identified above
 4. Ensure 500+ words for comprehensive coverage
 5. Structure with clear sections (Vision, Features, Value Proposition, etc.)
@@ -203,3 +202,108 @@ Generate an optimized vision that will enable high-quality epic generation.
             feedback['new_strengths'] = new_strengths
         
         return feedback
+    
+    def _build_domain_strategy(self, domains: List[Dict[str, Any]]) -> str:
+        """Build a human-readable domain strategy description."""
+        if not domains:
+            return "General business application"
+        
+        if len(domains) == 1:
+            return f"Focused entirely on {domains[0]['domain']} industry requirements and best practices"
+        elif len(domains) == 2:
+            return f"Primary focus on {domains[0]['domain']} with significant {domains[1]['domain']} integration"
+        else:
+            return f"Core {domains[0]['domain']} solution incorporating {domains[1]['domain']} requirements and {domains[2]['domain']} considerations"
+    
+    def _build_domain_instructions(self, domains: List[Dict[str, Any]]) -> str:
+        """Build specific instructions for domain integration."""
+        if not domains:
+            return "Focus on general business best practices and universal software principles"
+        
+        instructions = []
+        
+        # Domain-specific patterns and vocabulary
+        domain_patterns = {
+            "healthcare": {
+                "terms": ["HIPAA compliance", "patient outcomes", "clinical workflows", "EHR integration", "medical records"],
+                "focus": "patient safety, regulatory compliance, and clinical efficiency"
+            },
+            "finance": {
+                "terms": ["regulatory compliance", "audit trails", "transaction security", "risk management", "KYC/AML"],
+                "focus": "security, compliance, and financial accuracy"
+            },
+            "retail": {
+                "terms": ["inventory management", "customer experience", "omnichannel", "POS integration", "supply chain"],
+                "focus": "customer satisfaction, inventory optimization, and sales growth"
+            },
+            "technology": {
+                "terms": ["scalability", "API integration", "cloud architecture", "DevOps", "microservices"],
+                "focus": "technical excellence, scalability, and maintainability"
+            },
+            "education": {
+                "terms": ["learning outcomes", "student engagement", "curriculum management", "assessment tools", "LMS integration"],
+                "focus": "educational effectiveness and student success"
+            },
+            "manufacturing": {
+                "terms": ["production efficiency", "quality control", "supply chain", "IoT sensors", "predictive maintenance"],
+                "focus": "operational efficiency and quality assurance"
+            }
+        }
+        
+        for i, domain_info in enumerate(domains):
+            domain = domain_info['domain'].lower()
+            priority = domain_info.get('priority', 'primary')
+            
+            if domain in domain_patterns:
+                pattern = domain_patterns[domain]
+                if priority == 'primary':
+                    instructions.append(f"PRIMARY DOMAIN ({domain.upper()}):")
+                    instructions.append(f"- Use extensive {domain} terminology: {', '.join(pattern['terms'])}")
+                    instructions.append(f"- Focus heavily on {pattern['focus']}")
+                    instructions.append(f"- Include {domain}-specific features and requirements throughout")
+                    instructions.append(f"- Reference industry standards and best practices")
+                elif priority == 'secondary':
+                    instructions.append(f"SECONDARY DOMAIN ({domain.upper()}):")
+                    instructions.append(f"- Integrate {domain} considerations where they naturally fit")
+                    instructions.append(f"- Include key {domain} requirements: {', '.join(pattern['terms'][:3])}")
+                    instructions.append(f"- Ensure compatibility with {domain} standards")
+                else:  # tertiary
+                    instructions.append(f"TERTIARY DOMAIN ({domain.upper()}):")
+                    instructions.append(f"- Add {domain} aspects only where they provide clear value")
+                    instructions.append(f"- Mention {', '.join(pattern['terms'][:2])} if relevant")
+            else:
+                # Generic domain handling
+                if priority == 'primary':
+                    instructions.append(f"PRIMARY DOMAIN ({domain.upper()}):")
+                    instructions.append(f"- Make this the core focus of the vision")
+                    instructions.append(f"- Use {domain}-specific terminology throughout")
+                elif priority == 'secondary':
+                    instructions.append(f"SECONDARY DOMAIN ({domain.upper()}):")
+                    instructions.append(f"- Include significant {domain} integration points")
+                else:
+                    instructions.append(f"TERTIARY DOMAIN ({domain.upper()}):")
+                    instructions.append(f"- Add minor {domain} considerations where appropriate")
+            
+            instructions.append("")  # Add spacing between domains
+        
+        # Add domain intersection guidance
+        if len(domains) >= 2:
+            instructions.append("DOMAIN INTERSECTIONS:")
+            primary = domains[0]['domain'].lower()
+            secondary = domains[1]['domain'].lower()
+            
+            # Known beneficial intersections
+            intersections = {
+                ("healthcare", "finance"): "Focus on medical billing, insurance claims processing, and healthcare payment systems",
+                ("healthcare", "technology"): "Emphasize telemedicine, health informatics, and clinical decision support systems",
+                ("finance", "technology"): "Highlight fintech innovations, digital banking, and automated trading systems",
+                ("retail", "technology"): "Focus on e-commerce platforms, inventory automation, and customer analytics",
+                ("education", "technology"): "Emphasize e-learning platforms, educational analytics, and virtual classrooms",
+                ("manufacturing", "technology"): "Focus on Industry 4.0, IoT integration, and smart factory concepts"
+            }
+            
+            key = tuple(sorted([primary, secondary]))
+            if key in intersections:
+                instructions.append(f"- {intersections[key]}")
+        
+        return "\n".join(instructions)

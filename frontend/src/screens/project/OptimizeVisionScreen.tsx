@@ -46,7 +46,7 @@ const OptimizeVisionScreen: React.FC = () => {
     // Auto-hide after 5 seconds
     setTimeout(() => setNotification(null), 5000);
   };
-  const [selectedDomains, setSelectedDomains] = useState<Array<{ domain: string; weight: number }>>([]);
+  const [selectedDomains, setSelectedDomains] = useState<Array<{ domain: string; priority: string }>>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizationResult, setOptimizationResult] = useState<VisionOptimizationResult | null>(null);
   const [availableDomains, setAvailableDomains] = useState<Domain[]>([]);
@@ -114,9 +114,8 @@ const OptimizeVisionScreen: React.FC = () => {
     } else {
       // Add domain
       if (selectedDomains.length < 3) {
-        const newDomains = [...selectedDomains, { domain: domainKey, weight: 0 }];
-        // Auto-calculate weights
-        setSelectedDomains(calculateWeights(newDomains));
+        const newDomains = [...selectedDomains, { domain: domainKey, priority: getDomainPriority(selectedDomains.length) }];
+        setSelectedDomains(newDomains);
       } else {
         setNotification({
           message: 'You can select up to 3 domains.',
@@ -127,29 +126,24 @@ const OptimizeVisionScreen: React.FC = () => {
     }
   };
 
-  const calculateWeights = (domains: Array<{ domain: string; weight: number }>) => {
-    const count = domains.length;
-    if (count === 1) {
-      return [{ ...domains[0], weight: 100 }];
-    } else if (count === 2) {
-      return [
-        { ...domains[0], weight: 80 },
-        { ...domains[1], weight: 20 }
-      ];
-    } else if (count === 3) {
-      return [
-        { ...domains[0], weight: 70 },
-        { ...domains[1], weight: 20 },
-        { ...domains[2], weight: 10 }
-      ];
-    }
-    return domains;
+  const getDomainPriority = (index: number): string => {
+    if (index === 0) return 'primary';
+    if (index === 1) return 'secondary';
+    if (index === 2) return 'tertiary';
+    return 'primary';
   };
 
   const getDomainRank = (index: number) => {
-    if (index === 0) return 'Primary';
-    if (index === 1) return 'Secondary';
-    if (index === 2) return 'Tertiary';
+    if (index === 0) return 'Primary Focus';
+    if (index === 1) return 'Supporting Elements';
+    if (index === 2) return 'Minor Considerations';
+    return '';
+  };
+
+  const getDomainDescription = (index: number) => {
+    if (index === 0) return 'Main industry focus and requirements';
+    if (index === 1) return 'Important integrations and compliance';
+    if (index === 2) return 'Additional aspects where relevant';
     return '';
   };
 
@@ -368,14 +362,24 @@ const OptimizeVisionScreen: React.FC = () => {
                     </div>
 
                     {selectedDomains.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <Label>Domain Weighting</Label>
+                      <div className="mt-4 space-y-3">
+                        <Label className="text-base font-semibold">Domain Integration Strategy</Label>
                         {selectedDomains.map((domain, index) => (
-                          <div key={domain.domain} className="flex items-center justify-between">
-                            <span className="text-sm">
-                              {getDomainRank(index)}: {availableDomains.find(d => d.domain_key === domain.domain)?.display_name}
-                            </span>
-                            <Badge>{domain.weight}%</Badge>
+                          <div key={domain.domain} className="p-3 rounded-lg bg-muted/50 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">
+                                {availableDomains.find(d => d.domain_key === domain.domain)?.display_name}
+                              </span>
+                              <Badge 
+                                variant={index === 0 ? "default" : "secondary"}
+                                className="text-xs"
+                              >
+                                {getDomainRank(index)}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {getDomainDescription(index)}
+                            </p>
                           </div>
                         ))}
                       </div>
