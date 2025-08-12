@@ -13,7 +13,8 @@ import {
   Plus,
   TestTube,
   RefreshCw,
-  Settings
+  Database,
+  UserCog
 } from 'lucide-react';
 import { NavLink as RouterLink, useLocation } from 'react-router-dom';
 import { Button } from '../ui/button';
@@ -103,11 +104,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <Separator />
           </div>
           
-          <NavItem icon={Settings} to="/configure">
-            Configure Environment
+          <NavItem icon={Database} to="/configure">
+            System Configuration
           </NavItem>
-          <NavItem icon={FiSettings} to="/settings">
-            Settings
+          <NavItem icon={UserCog} to="/settings">
+            User Preferences
           </NavItem>
           <NavItem icon={FiHelpCircle} to="/help">
             Help & Support

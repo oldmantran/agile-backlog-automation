@@ -13,7 +13,9 @@ import {
   RefreshCw, 
   Grid3X3,
   Sparkles,
-  TestTube
+  TestTube,
+  Database,
+  UserCog
 } from 'lucide-react';
 import {
   FiInfo,
@@ -77,14 +79,24 @@ const TronWelcomeScreen: React.FC = () => {
       tronColor: 'green'
     },
     {
-      title: 'Configure Environment',
-      description: 'Set up Azure DevOps credentials and AI providers',
-      icon: Settings,
+      title: 'System Configuration',
+      description: 'Set up Azure DevOps credentials and AI provider API keys',
+      icon: Database,
       route: '/configure',
       color: 'primary',
       glowColor: 'primary',
       isNew: false,
-      tronColor: 'gray'
+      tronColor: 'orange'
+    },
+    {
+      title: 'User Preferences',
+      description: 'Customize work item limits, agent models, and visual settings',
+      icon: UserCog,
+      route: '/settings',
+      color: 'primary',
+      glowColor: 'primary',
+      isNew: false,
+      tronColor: 'indigo'
     },
   ];
 
@@ -98,6 +110,7 @@ const TronWelcomeScreen: React.FC = () => {
       case 'purple': return 'hover:border-purple-400 hover:shadow-purple-500/20';
       case 'gray': return 'hover:border-gray-400 hover:shadow-gray-500/20';
       case 'cyan': return 'hover:border-cyan-400 hover:shadow-cyan-500/20';
+      case 'indigo': return 'hover:border-indigo-400 hover:shadow-indigo-500/20';
       default: return 'hover:border-primary hover:shadow-primary/20';
     }
   };
