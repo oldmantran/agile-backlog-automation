@@ -170,7 +170,7 @@ const TronWelcomeScreen: React.FC = () => {
               </div>
               
               <h1 className="text-6xl font-bold text-foreground mb-4 tracking-wider glow-cyan">
-                <span className="text-primary glow-cyan">Automation</span>
+                <span className="text-primary glow-cyan">C4i</span>
                 <span className="text-accent mx-2 glow-cyan">•</span>
                 <span className="text-primary glow-cyan">Command</span>
                 <span className="text-accent mx-2 glow-cyan">•</span>

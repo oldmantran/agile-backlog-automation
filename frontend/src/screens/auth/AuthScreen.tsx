@@ -67,9 +67,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
           </div>
           
           <h1 className="text-4xl font-bold text-foreground mb-2 tracking-wider glow-cyan">
-            <span className="text-primary glow-cyan">AGILE</span>
+            <span className="text-primary glow-cyan">C4i</span>
             <span className="text-accent mx-2 glow-cyan">•</span>
-            <span className="text-primary glow-cyan">SYSTEM</span>
+            <span className="text-primary glow-cyan">COMMAND</span>
+            <span className="text-accent mx-2 glow-cyan">•</span>
+            <span className="text-primary glow-cyan">CENTER</span>
           </h1>
           
           <div className="text-lg font-light text-muted-foreground tracking-widest glow-cyan">

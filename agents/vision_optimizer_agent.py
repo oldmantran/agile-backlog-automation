@@ -247,6 +247,106 @@ Generate an optimized vision that will enable high-quality epic generation.
             "manufacturing": {
                 "terms": ["production efficiency", "quality control", "supply chain", "IoT sensors", "predictive maintenance"],
                 "focus": "operational efficiency and quality assurance"
+            },
+            "aerospace_defense": {
+                "terms": ["FAA compliance", "defense contracts", "mission-critical systems", "aviation safety", "radar systems"],
+                "focus": "safety standards, regulatory compliance, and mission reliability"
+            },
+            "agriculture": {
+                "terms": ["crop yield optimization", "precision farming", "soil analytics", "irrigation management", "farm equipment"],
+                "focus": "sustainable farming practices and agricultural productivity"
+            },
+            "automotive": {
+                "terms": ["vehicle diagnostics", "autonomous driving", "EV charging", "fleet management", "telematics"],
+                "focus": "vehicle safety, innovation, and connected car technologies"
+            },
+            "construction": {
+                "terms": ["project management", "building codes", "safety compliance", "BIM integration", "site monitoring"],
+                "focus": "project efficiency, safety standards, and quality construction"
+            },
+            "consumer_goods": {
+                "terms": ["product lifecycle", "brand management", "supply chain optimization", "consumer insights", "quality assurance"],
+                "focus": "product quality, brand value, and consumer satisfaction"
+            },
+            "ecommerce": {
+                "terms": ["shopping cart", "payment gateway", "conversion optimization", "customer analytics", "fulfillment logistics"],
+                "focus": "user experience, conversion rates, and order fulfillment"
+            },
+            "energy": {
+                "terms": ["grid management", "renewable integration", "energy efficiency", "smart meters", "load balancing"],
+                "focus": "sustainability, reliability, and energy optimization"
+            },
+            "entertainment_media": {
+                "terms": ["content management", "streaming platforms", "audience engagement", "digital rights", "production workflow"],
+                "focus": "content delivery, audience experience, and creative production"
+            },
+            "environmental_services": {
+                "terms": ["waste management", "environmental compliance", "sustainability metrics", "carbon footprint", "recycling systems"],
+                "focus": "environmental protection and sustainable operations"
+            },
+            "food_beverage": {
+                "terms": ["food safety", "HACCP compliance", "inventory tracking", "recipe management", "nutritional analysis"],
+                "focus": "food safety, quality control, and operational efficiency"
+            },
+            "government_public_sector": {
+                "terms": ["citizen services", "regulatory compliance", "transparency requirements", "public records", "e-governance"],
+                "focus": "public service delivery and governmental efficiency"
+            },
+            "hospitality_tourism": {
+                "terms": ["booking systems", "guest experience", "revenue management", "property management", "loyalty programs"],
+                "focus": "guest satisfaction and operational excellence"
+            },
+            "insurance": {
+                "terms": ["claims processing", "risk assessment", "underwriting", "policy management", "actuarial analysis"],
+                "focus": "risk management and customer service efficiency"
+            },
+            "logistics": {
+                "terms": ["route optimization", "warehouse management", "last-mile delivery", "tracking systems", "freight management"],
+                "focus": "delivery efficiency and supply chain visibility"
+            },
+            "mining_natural_resources": {
+                "terms": ["resource extraction", "safety protocols", "environmental impact", "equipment monitoring", "mineral processing"],
+                "focus": "operational safety and resource optimization"
+            },
+            "nonprofit_social_impact": {
+                "terms": ["donor management", "impact measurement", "volunteer coordination", "grant tracking", "community outreach"],
+                "focus": "social impact and organizational sustainability"
+            },
+            "oil_gas": {
+                "terms": ["drilling operations", "pipeline monitoring", "refinery processes", "HSE compliance", "exploration data"],
+                "focus": "operational safety and production efficiency"
+            },
+            "pharmaceuticals_biotech": {
+                "terms": ["FDA compliance", "clinical trials", "drug discovery", "GMP standards", "pharmacovigilance"],
+                "focus": "regulatory compliance and research excellence"
+            },
+            "professional_services": {
+                "terms": ["client management", "project billing", "resource allocation", "expertise tracking", "service delivery"],
+                "focus": "client satisfaction and professional excellence"
+            },
+            "real_estate": {
+                "terms": ["property listings", "transaction management", "market analysis", "tenant relations", "portfolio management"],
+                "focus": "property value optimization and client service"
+            },
+            "security_safety": {
+                "terms": ["threat detection", "incident response", "access control", "surveillance systems", "compliance monitoring"],
+                "focus": "security effectiveness and risk mitigation"
+            },
+            "sports_fitness": {
+                "terms": ["performance tracking", "member engagement", "facility management", "training programs", "health metrics"],
+                "focus": "athletic performance and member satisfaction"
+            },
+            "telecommunications": {
+                "terms": ["network infrastructure", "service quality", "bandwidth management", "customer provisioning", "5G deployment"],
+                "focus": "network reliability and service quality"
+            },
+            "transportation": {
+                "terms": ["fleet tracking", "route planning", "vehicle maintenance", "passenger experience", "traffic optimization"],
+                "focus": "transportation efficiency and service reliability"
+            },
+            "workforce_management": {
+                "terms": ["employee scheduling", "time tracking", "performance management", "talent acquisition", "HR compliance"],
+                "focus": "workforce productivity and employee engagement"
             }
         }
         
@@ -294,12 +394,46 @@ Generate an optimized vision that will enable high-quality epic generation.
             
             # Known beneficial intersections
             intersections = {
+                # Healthcare combinations
                 ("healthcare", "finance"): "Focus on medical billing, insurance claims processing, and healthcare payment systems",
                 ("healthcare", "technology"): "Emphasize telemedicine, health informatics, and clinical decision support systems",
+                ("healthcare", "insurance"): "Integrate health insurance verification, claims management, and coverage analytics",
+                ("healthcare", "pharmaceuticals_biotech"): "Focus on clinical drug trials, prescription management, and patient medication tracking",
+                
+                # Finance combinations
                 ("finance", "technology"): "Highlight fintech innovations, digital banking, and automated trading systems",
+                ("finance", "insurance"): "Emphasize risk assessment, portfolio management, and automated underwriting",
+                ("finance", "real_estate"): "Focus on mortgage processing, property investment analytics, and transaction management",
+                
+                # Retail combinations
                 ("retail", "technology"): "Focus on e-commerce platforms, inventory automation, and customer analytics",
+                ("retail", "ecommerce"): "Integrate online and offline channels, unified inventory, and omnichannel experiences",
+                ("retail", "logistics"): "Emphasize supply chain optimization, last-mile delivery, and inventory distribution",
+                
+                # Education combinations
                 ("education", "technology"): "Emphasize e-learning platforms, educational analytics, and virtual classrooms",
-                ("manufacturing", "technology"): "Focus on Industry 4.0, IoT integration, and smart factory concepts"
+                ("education", "entertainment_media"): "Focus on educational content creation, interactive learning, and gamification",
+                
+                # Manufacturing combinations
+                ("manufacturing", "technology"): "Focus on Industry 4.0, IoT integration, and smart factory concepts",
+                ("manufacturing", "logistics"): "Emphasize supply chain integration, JIT delivery, and warehouse automation",
+                ("manufacturing", "automotive"): "Focus on automotive parts production, quality systems, and OEM integration",
+                
+                # Energy combinations
+                ("energy", "technology"): "Highlight smart grid systems, renewable energy management, and predictive analytics",
+                ("energy", "oil_gas"): "Focus on integrated energy solutions, upstream/downstream optimization, and resource management",
+                
+                # Transportation combinations
+                ("transportation", "logistics"): "Emphasize fleet optimization, route planning, and cargo tracking systems",
+                ("transportation", "technology"): "Focus on autonomous vehicles, traffic management, and real-time tracking",
+                
+                # Government combinations
+                ("government_public_sector", "technology"): "Focus on digital government services, citizen portals, and e-governance platforms",
+                ("government_public_sector", "security_safety"): "Emphasize public safety systems, emergency response, and threat monitoring",
+                
+                # Agriculture combinations
+                ("agriculture", "technology"): "Focus on precision farming, IoT sensors, and crop yield optimization",
+                ("agriculture", "environmental_services"): "Emphasize sustainable farming, environmental monitoring, and resource conservation"
             }
             
             key = tuple(sorted([primary, secondary]))
