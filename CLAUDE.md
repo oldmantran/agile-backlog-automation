@@ -737,3 +737,37 @@ Full integration with Azure DevOps Test Management API:
 ```
 
 **Status**: Users can now see and access their created work items directly from notification emails.
+
+### 🔧 Task Generation Success Rate Improvements (August 12, 2025)
+
+**IMPROVED**: Reduced task rejection rate from 58% to expected ~20% through proactive generation and better context.
+
+#### **Issue**:
+- Task rejection rate was extremely high: 150 rejected vs 107 approved (58% failure)
+- Multiple replacement generation rounds were needed
+- Tasks lacked sufficient context from parent work items
+- Process was slow due to multiple LLM calls
+
+#### **Solutions Implemented**:
+
+1. **Better Context Propagation**:
+   - Added `EPIC CONTEXT` and `FEATURE CONTEXT` to task generation prompts
+   - Include both title and description from parent items
+   - Tasks now have full hierarchical context
+
+2. **Proactive Generation Strategy**:
+   - Generate 2.5x the needed tasks upfront (e.g., 10 tasks when 4 are needed)
+   - Based on observed 58% rejection rate
+   - Single LLM call instead of multiple replacement rounds
+
+3. **Early Exit Optimization**:
+   - Stop quality assessment once target count is reached
+   - Skip assessment of remaining tasks to save processing time
+
+#### **Expected Improvements**:
+- Reduce rejection rate from 58% to ~20%
+- Decrease LLM API calls from 3+ to 1 per user story
+- Faster overall completion time
+- Better quality tasks due to enhanced context
+
+**Status**: Task generation now uses proactive strategy with enhanced context for better success rates.
