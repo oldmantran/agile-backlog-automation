@@ -13,9 +13,9 @@ import Sidebar from '../../components/navigation/Sidebar';
 import apiClient from '../../services/api/apiClient';
 
 interface Domain {
-  id: string;
-  key: string;
-  name: string;
+  id: number;
+  domain_key: string;
+  display_name: string;
   description: string;
 }
 
@@ -60,21 +60,26 @@ const OptimizeVisionScreen: React.FC = () => {
   const fetchDomains = async () => {
     try {
       const response = await apiClient.get('/api/domains');
-      if (response.data.success) {
-        setAvailableDomains(response.data.data);
-      }
+      // Handle both response formats
+      const domains = response.data.success ? response.data.data : response.data;
+      setAvailableDomains(domains || []);
     } catch (error) {
       console.error('Failed to fetch domains:', error);
+      setNotification({
+        message: 'Unable to load domain list. Please refresh the page.',
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
   const checkVisionQuality = async () => {
     if (!visionStatement.trim()) {
-      toast({
-        title: 'Vision Required',
-        description: 'Please enter a vision statement to check its quality.',
-        variant: 'destructive',
+      setNotification({
+        message: 'Please enter a vision statement to check its quality.',
+        type: 'error'
       });
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
@@ -90,11 +95,11 @@ const OptimizeVisionScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Quality check failed:', error);
-      toast({
-        title: 'Quality Check Failed',
-        description: 'Unable to assess vision quality. Please try again.',
-        variant: 'destructive',
+      setNotification({
+        message: 'Unable to assess vision quality. Please try again.',
+        type: 'error'
       });
+      setTimeout(() => setNotification(null), 3000);
     } finally {
       setIsCheckingQuality(false);
     }
@@ -113,11 +118,11 @@ const OptimizeVisionScreen: React.FC = () => {
         // Auto-calculate weights
         setSelectedDomains(calculateWeights(newDomains));
       } else {
-        toast({
-          title: 'Maximum Domains Selected',
-          description: 'You can select up to 3 domains.',
-          variant: 'destructive',
+        setNotification({
+          message: 'You can select up to 3 domains.',
+          type: 'error'
         });
+        setTimeout(() => setNotification(null), 3000);
       }
     }
   };
@@ -150,44 +155,47 @@ const OptimizeVisionScreen: React.FC = () => {
 
   const handleOptimize = async () => {
     if (!visionStatement.trim()) {
-      toast({
-        title: 'Vision Required',
-        description: 'Please enter a vision statement to optimize.',
-        variant: 'destructive',
+      setNotification({
+        message: 'Please enter a vision statement to optimize.',
+        type: 'error'
       });
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
     if (selectedDomains.length === 0) {
-      toast({
-        title: 'Domain Required',
-        description: 'Please select at least one domain.',
-        variant: 'destructive',
+      setNotification({
+        message: 'Please select at least one domain.',
+        type: 'error'
       });
+      setTimeout(() => setNotification(null), 3000);
       return;
     }
 
     setIsOptimizing(true);
     try {
       const response = await apiClient.post('/api/vision/optimize', {
-        visionStatement,
+        original_vision: visionStatement,
         domains: selectedDomains
       });
 
-      if (response.data.success) {
-        setOptimizationResult(response.data.data);
-        toast({
-          title: 'Optimization Complete',
-          description: `Vision quality improved from ${response.data.data.original_score} to ${response.data.data.optimized_score}`,
+      // Handle both response formats
+      const result = response.data.success ? response.data.data : response.data;
+      if (result) {
+        setOptimizationResult(result);
+        setNotification({
+          message: `Vision quality improved from ${result.original_score} to ${result.optimized_score}`,
+          type: 'success'
         });
+        setTimeout(() => setNotification(null), 5000);
       }
     } catch (error: any) {
       console.error('Optimization failed:', error);
-      toast({
-        title: 'Optimization Failed',
-        description: error.response?.data?.detail || 'Unable to optimize vision. Please try again.',
-        variant: 'destructive',
+      setNotification({
+        message: error.response?.data?.detail || 'Unable to optimize vision. Please try again.',
+        type: 'error'
       });
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsOptimizing(false);
     }
@@ -301,33 +309,62 @@ const OptimizeVisionScreen: React.FC = () => {
                     <CardTitle>Select Domains (Up to 3)</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <AlertCircle className="w-4 h-4" />
+                          <span>Select up to 3 domains. Click to add/remove. First selected becomes primary.</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {selectedDomains.length}/3 selected
+                        </div>
+                      </div>
+                      
+                      <div className="relative" style={{ maxHeight: '320px' }}>
+                        <div className="overflow-y-auto overflow-x-hidden pr-2" style={{ maxHeight: '320px', scrollbarWidth: 'thin' }}>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {availableDomains.map((domain) => {
-                        const isSelected = selectedDomains.some(d => d.domain === domain.key);
-                        const domainIndex = selectedDomains.findIndex(d => d.domain === domain.key);
+                        const isSelected = selectedDomains.some(d => d.domain === domain.domain_key);
+                        const domainIndex = selectedDomains.findIndex(d => d.domain === domain.domain_key);
+                        const isPrimary = domainIndex === 0;
+                        
                         return (
                           <div
                             key={domain.id}
-                            onClick={() => handleDomainSelect(domain.key)}
+                            onClick={() => handleDomainSelect(domain.domain_key)}
                             className={`
-                              p-3 rounded-lg border cursor-pointer transition-all
+                              relative p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:scale-105
                               ${isSelected 
-                                ? 'border-primary bg-primary/10' 
-                                : 'border-border hover:border-primary/50'
+                                ? isPrimary 
+                                  ? 'border-primary bg-primary/20 shadow-lg' 
+                                  : 'border-secondary bg-secondary/20 shadow-md'
+                                : 'border-border bg-background hover:border-muted-foreground'
                               }
+                              ${selectedDomains.length >= 3 && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}
                             `}
                           >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">{domain.name}</span>
-                              {isSelected && (
-                                <Badge variant="secondary" className="ml-2">
+                            <div className="text-sm font-medium text-foreground truncate">
+                              {domain.display_name}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {domain.description}
+                            </div>
+                            {isSelected && (
+                              <div className="absolute top-2 right-2">
+                                <Badge 
+                                  variant={isPrimary ? "default" : "secondary"} 
+                                  className="text-xs"
+                                >
                                   {getDomainRank(domainIndex)}
                                 </Badge>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
+                    </div>
+                        </div>
+                      </div>
                     </div>
 
                     {selectedDomains.length > 0 && (
@@ -336,7 +373,7 @@ const OptimizeVisionScreen: React.FC = () => {
                         {selectedDomains.map((domain, index) => (
                           <div key={domain.domain} className="flex items-center justify-between">
                             <span className="text-sm">
-                              {getDomainRank(index)}: {availableDomains.find(d => d.key === domain.domain)?.name}
+                              {getDomainRank(index)}: {availableDomains.find(d => d.domain_key === domain.domain)?.display_name}
                             </span>
                             <Badge>{domain.weight}%</Badge>
                           </div>

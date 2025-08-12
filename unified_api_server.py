@@ -2777,6 +2777,102 @@ async def detect_domain(request: dict):
         # Return a fallback domain instead of failing
         return {"domain": "technology"}
 
+# Vision Optimization Endpoints
+@app.post("/api/vision/quality-check")
+async def check_vision_quality(request: dict, current_user: User = Depends(get_current_user)):
+    """Check the quality of a vision statement."""
+    try:
+        vision_statement = request.get("visionStatement", "")
+        domain = request.get("domain", "general")
+        
+        if not vision_statement:
+            raise HTTPException(status_code=400, detail="Vision statement is required")
+        
+        # Import vision quality assessor
+        from utils.vision_quality_assessor import VisionQualityAssessor
+        assessor = VisionQualityAssessor()
+        
+        # Assess the vision quality
+        quality_result = assessor.assess_vision(vision_statement, domain)
+        
+        return {
+            "success": True,
+            "data": quality_result
+        }
+    except Exception as e:
+        logger.error(f"Failed to check vision quality: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/vision/optimize")
+async def optimize_vision(request: dict, current_user: User = Depends(get_current_user)):
+    """Optimize a vision statement using AI with domain weighting."""
+    try:
+        original_vision = request.get("original_vision", "")
+        domains = request.get("domains", [])
+        
+        if not original_vision:
+            raise HTTPException(status_code=400, detail="Original vision is required")
+        
+        if not domains:
+            raise HTTPException(status_code=400, detail="At least one domain is required")
+        
+        # Import vision optimizer agent
+        from agents.vision_optimizer_agent import VisionOptimizerAgent
+        optimizer = VisionOptimizerAgent(user_id=str(current_user.id))
+        
+        # Optimize the vision
+        result = optimizer.optimize_vision(original_vision, domains)
+        
+        # Save to database
+        vision_id = db.save_optimized_vision(
+            user_id=str(current_user.id),
+            original_vision=original_vision,
+            optimized_vision=result["optimized_vision"],
+            domains=json.dumps(domains),
+            quality_score=result["optimized_score"],
+            quality_rating=result["optimized_rating"],
+            optimization_feedback=json.dumps(result.get("optimization_feedback", {}))
+        )
+        
+        result["vision_id"] = vision_id
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to optimize vision: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/vision/optimized")
+async def get_optimized_visions(current_user: User = Depends(get_current_user)):
+    """Get all optimized visions for the authenticated user."""
+    try:
+        visions = db.get_optimized_visions(str(current_user.id))
+        return {
+            "success": True,
+            "data": visions
+        }
+    except Exception as e:
+        logger.error(f"Failed to get optimized visions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/vision/optimized/{vision_id}")
+async def get_optimized_vision(vision_id: int, current_user: User = Depends(get_current_user)):
+    """Get a specific optimized vision by ID."""
+    try:
+        vision = db.get_optimized_vision_by_id(vision_id, str(current_user.id))
+        if not vision:
+            raise HTTPException(status_code=404, detail="Optimized vision not found")
+        
+        return {
+            "success": True,
+            "data": vision
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get optimized vision {vision_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # DUPLICATE ENDPOINTS COMMENTED OUT - See line 1996 for the proper implementation
 # The following endpoints were duplicates with incorrect ordering (agent_name instead of updated_at)
 # and have been commented out to prevent conflicts.
