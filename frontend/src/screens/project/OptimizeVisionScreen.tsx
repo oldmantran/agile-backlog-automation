@@ -85,14 +85,12 @@ const OptimizeVisionScreen: React.FC = () => {
 
     setIsCheckingQuality(true);
     try {
-      const response = await apiClient.post('/api/vision/quality-check', {
+      const response = await apiClient.post('/vision/quality-check', {
         visionStatement,
         domain: selectedDomains[0]?.domain || 'general'
       });
-
-      if (response.data.success) {
-        setVisionQuality(response.data.data);
-      }
+      // Interceptor unwraps { success: true, data } to data directly
+      setVisionQuality(response.data);
     } catch (error) {
       console.error('Quality check failed:', error);
       setNotification({
@@ -168,13 +166,12 @@ const OptimizeVisionScreen: React.FC = () => {
 
     setIsOptimizing(true);
     try {
-      const response = await apiClient.post('/api/vision/optimize', {
+      const response = await apiClient.post('/vision/optimize', {
         original_vision: visionStatement,
         domains: selectedDomains
       });
-
-      // Handle both response formats
-      const result = response.data.success ? response.data.data : response.data;
+      // Interceptor unwraps { success: true, data } to data directly
+      const result = response.data;
       if (result) {
         setOptimizationResult(result);
         setNotification({

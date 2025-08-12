@@ -22,6 +22,8 @@ import TronCleanupTestCasesScreen from './screens/TronCleanupTestCasesScreen';
 import TronSettingsScreen from './screens/settings/TronSettingsScreen';
 import ConfigureEnvironmentScreen from './screens/settings/ConfigureEnvironmentScreen';
 import SearchDocumentationScreen from './screens/search/SearchDocumentationScreen';
+import AddTestManagementScreen from './screens/test_management/AddTestManagementScreen';
+import HelpScreen from './screens/help/HelpScreen';
 import TestCasesCleanupScreen from './screens/cleanup/TestCasesCleanupScreen';
 import WorkItemsCleanupScreen from './screens/cleanup/WorkItemsCleanupScreen';
 import TestCasesCleanupScreen_NEW from './screens/cleanup/TestCasesCleanupScreen_NEW';
@@ -76,6 +78,13 @@ function App() {
           } />
           
           {/* Protected Vision Optimization */}
+          {/* Protected Add Test Management */}
+          <Route path="/add-test-management" element={
+            <RequireAuth fallback={<AuthScreen />}>
+              <AddTestManagementScreen />
+            </RequireAuth>
+          } />
+
           <Route path="/optimize-vision" element={
             <RequireAuth fallback={<AuthScreen />}>
               <OptimizeVisionScreen />
@@ -169,6 +178,12 @@ function App() {
           } />
           
           {/* Protected Search */}
+          {/* Protected Help */}
+          <Route path="/help" element={
+            <RequireAuth fallback={<AuthScreen />}>
+              <HelpScreen />
+            </RequireAuth>
+          } />
           <Route path="/search" element={
             <RequireAuth fallback={<AuthScreen />}>
               <SearchDocumentationScreen />

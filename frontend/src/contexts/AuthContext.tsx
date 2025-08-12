@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// API base URL - should match the apiClient configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 // API interfaces
 interface LoginCredentials {
   username: string;
@@ -94,7 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       
       // Try to get current user info (this will work if we have a valid refresh token cookie)
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         method: 'GET',
         credentials: 'include', // Include cookies
         headers: {
@@ -131,7 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         credentials: 'include', // Include cookies for refresh token
         headers: {
@@ -168,7 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         credentials: 'include', // Include cookies for refresh token
         headers: {
@@ -203,7 +206,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       // Call logout endpoint to invalidate refresh token
-      await fetch('/api/auth/logout', {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -223,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshToken = async (): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         credentials: 'include', // Include refresh token cookie
         headers: {

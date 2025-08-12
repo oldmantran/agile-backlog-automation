@@ -94,7 +94,8 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   useEffect(() => {
     const loadDomains = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/domains');
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE_URL}/api/domains`);
         if (response.ok) {
           const domains = await response.json();
           console.log('Loaded domains:', domains);
@@ -479,6 +480,7 @@ Example: Create a comprehensive ride-sharing platform that connects drivers and 
                                 }
                               }
                             }}
+                            title={`${domain.display_name}: ${domain.description}`}
                             className={`
                               relative p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:scale-105
                               ${isSelected 
