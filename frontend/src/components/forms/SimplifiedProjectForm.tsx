@@ -94,7 +94,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   useEffect(() => {
     const loadDomains = async () => {
       try {
-        const response = await fetch('/api/domains');
+        const response = await fetch('http://localhost:8000/api/domains');
         if (response.ok) {
           const domains = await response.json();
           console.log('Loaded domains:', domains);

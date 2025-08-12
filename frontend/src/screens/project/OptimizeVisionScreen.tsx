@@ -59,7 +59,7 @@ const OptimizeVisionScreen: React.FC = () => {
 
   const fetchDomains = async () => {
     try {
-      const response = await apiClient.get('/api/domains');
+      const response = await apiClient.get('/domains');
       // Handle both response formats
       const domains = response.data.success ? response.data.data : response.data;
       setAvailableDomains(domains || []);
