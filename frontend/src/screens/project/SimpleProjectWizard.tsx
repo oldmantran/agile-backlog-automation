@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
@@ -11,10 +11,26 @@ import { FiX, FiCheckCircle, FiServer } from 'react-icons/fi';
 
 const SimpleProjectWizard: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [initialFormData, setInitialFormData] = useState<any>(null);
+
+  // Handle prefilled data from optimize vision screen
+  useEffect(() => {
+    if (location.state?.prefillData) {
+      const { visionStatement, selectedDomains, optimizedVisionId } = location.state.prefillData;
+      setInitialFormData({
+        visionStatement,
+        selectedDomains,
+        optimizedVisionId,
+        // Remove auto-detection when coming from optimize vision
+        useAiDetection: false,
+      });
+    }
+  }, [location.state]);
 
   const waitForBackend = async (maxAttempts = 10): Promise<boolean> => {
     console.log('🔄 Starting backend connectivity check...');
@@ -46,6 +62,13 @@ const SimpleProjectWizard: React.FC = () => {
 
   const handleSubmit = async (projectData: Project) => {
     console.log('🚀 Starting project submission with data:', projectData);
+    
+    // Create extended project data with optimized vision ID if available
+    const submissionData: any = { ...projectData };
+    if (initialFormData?.optimizedVisionId) {
+      submissionData.optimizedVisionId = initialFormData.optimizedVisionId;
+    }
+    
     setIsSubmitting(true);
     setError(null);
     
@@ -59,7 +82,7 @@ const SimpleProjectWizard: React.FC = () => {
     }
     
     try {
-      const { projectId } = await projectApi.createProject(projectData);
+      const { projectId } = await projectApi.createProject(submissionData);
       console.log('✅ Project creation response:', { projectId });
       
       let backlogResponse: any;
@@ -163,6 +186,7 @@ const SimpleProjectWizard: React.FC = () => {
             <SimplifiedProjectForm 
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
+              initialData={initialFormData}
             />
           </>
         )}

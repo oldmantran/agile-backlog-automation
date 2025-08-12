@@ -10,6 +10,7 @@ import AuthScreen from './screens/auth/AuthScreen';
 import WelcomeScreen from './screens/onboarding/WelcomeScreen';
 import MyProjectsScreen from './screens/project/MyProjectsScreen';
 import SimpleProjectWizard from './screens/project/SimpleProjectWizard';
+import OptimizeVisionScreen from './screens/project/OptimizeVisionScreen';
 import BacklogSweeperScreen from './screens/sweeper/BacklogSweeperScreen';
 import BacklogSweeperScreen_new from './screens/sweeper/BacklogSweeperScreen_new';
 import TronWelcomeScreen from './screens/TronWelcomeScreen';
@@ -71,6 +72,13 @@ function App() {
           <Route path="/project/new" element={
             <RequireAuth fallback={<AuthScreen />}>
               <SimpleProjectWizard />
+            </RequireAuth>
+          } />
+          
+          {/* Protected Vision Optimization */}
+          <Route path="/optimize-vision" element={
+            <RequireAuth fallback={<AuthScreen />}>
+              <OptimizeVisionScreen />
             </RequireAuth>
           } />
           

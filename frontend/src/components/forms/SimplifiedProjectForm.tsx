@@ -43,7 +43,7 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
       areaPath: initialData.areaPath || '',
       iterationPath: initialData.iterationPath || '',
       selectedDomains: initialData.selectedDomains || [],
-      useAiDetection: initialData.useAiDetection === true, // Default to false (manual selection)
+      useAiDetection: false, // Always false - AI detection removed
       includeTestArtifacts: initialData.includeTestArtifacts === true, // Default to false
     }
   });
@@ -58,6 +58,37 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   const useAiDetection = watch('useAiDetection');
   const selectedDomains = watch('selectedDomains');
   const includeTestArtifacts = watch('includeTestArtifacts');
+
+  // Handle initial data from optimized vision
+  useEffect(() => {
+    if (initialData?.selectedDomains && Array.isArray(initialData.selectedDomains)) {
+      // Convert domain strings to the format expected by the form
+      const domainSelections = initialData.selectedDomains.map((domainKey: string, index: number) => {
+        const domain = availableDomains.find(d => d.domain_key === domainKey);
+        if (!domain) return null;
+        
+        // Calculate weights based on position
+        let weight = 100;
+        if (initialData.selectedDomains.length === 2) {
+          weight = index === 0 ? 80 : 20;
+        } else if (initialData.selectedDomains.length === 3) {
+          weight = index === 0 ? 70 : (index === 1 ? 20 : 10);
+        }
+        
+        return {
+          domain_id: domain.id,
+          domain_key: domain.domain_key,
+          display_name: domain.display_name,
+          is_primary: index === 0,
+          weight
+        };
+      }).filter(Boolean);
+      
+      if (domainSelections.length > 0) {
+        setValue('selectedDomains', domainSelections);
+      }
+    }
+  }, [initialData, availableDomains, setValue]);
 
   // Load available domains on component mount
   useEffect(() => {

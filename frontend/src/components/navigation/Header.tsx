@@ -29,10 +29,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <RouterLink to="/" className="flex items-center space-x-2">
               {/* Logo */}
               <div className="bg-primary text-primary-foreground font-bold text-lg p-1 rounded-md w-9 h-9 flex items-center justify-center border-glow glow-cyan">
-                BA
+                C4i
               </div>
               <span className="font-bold text-lg hidden md:flex text-primary">
-                Backlog Automation
+                Powered by C4Workx.Ai
               </span>
             </RouterLink>
           </div>

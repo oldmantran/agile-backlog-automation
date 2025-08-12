@@ -992,6 +992,130 @@ async def enhance_vision(
         logger.error(f"Error enhancing vision: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to enhance vision: {str(e)}")
 
+@app.post("/api/vision/optimize")
+async def optimize_vision(
+    request: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+):
+    """Optimize a vision statement using AI with domain weighting."""
+    try:
+        original_vision = request.get("visionStatement", "")
+        domains = request.get("domains", [])  # List of {domain: str, weight: int}
+        
+        if not original_vision:
+            raise HTTPException(status_code=400, detail="Vision statement is required")
+        
+        if not domains or len(domains) == 0:
+            raise HTTPException(status_code=400, detail="At least one domain must be selected")
+        
+        # Validate domain weights
+        total_weight = sum(d.get('weight', 0) for d in domains)
+        if total_weight != 100:
+            raise HTTPException(status_code=400, detail=f"Domain weights must sum to 100, got {total_weight}")
+        
+        # Initialize vision optimizer agent
+        from agents.vision_optimizer_agent import VisionOptimizerAgent
+        from config.config_loader import Config
+        
+        config = Config()
+        optimizer = VisionOptimizerAgent(config, user_id=current_user.id)
+        
+        # Optimize the vision
+        result = optimizer.optimize_vision(original_vision, domains)
+        
+        # Save to database if optimization was successful
+        if result['success'] and result['optimized_assessment'].is_acceptable:
+            from db import Database
+            db = Database()
+            
+            vision_id = db.save_optimized_vision(
+                user_id=current_user.id,
+                original_vision=original_vision,
+                optimized_vision=result['optimized_vision'],
+                domains=domains,
+                quality_score=result['optimized_assessment'].score,
+                quality_rating=result['optimized_assessment'].rating,
+                optimization_feedback=result['optimization_feedback']
+            )
+            
+            result['vision_id'] = vision_id
+        
+        return {
+            "success": True,
+            "data": {
+                "vision_id": result.get('vision_id'),
+                "optimized_vision": result['optimized_vision'],
+                "original_score": result['original_assessment'].score,
+                "optimized_score": result['optimized_assessment'].score,
+                "score_improvement": result['optimization_feedback']['score_improvement'],
+                "rating_change": result['optimization_feedback']['rating_change'],
+                "improvements_made": result['optimization_feedback']['improvements_made'],
+                "remaining_issues": result['optimization_feedback']['remaining_issues'],
+                "is_acceptable": result['optimized_assessment'].is_acceptable
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error optimizing vision: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to optimize vision: {str(e)}")
+
+@app.get("/api/vision/optimized")
+async def get_optimized_visions(
+    limit: int = 10,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's optimized visions."""
+    try:
+        from db import Database
+        db = Database()
+        
+        visions = db.get_optimized_visions(current_user.id, limit)
+        
+        return {
+            "success": True,
+            "data": visions
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting optimized visions: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get optimized visions: {str(e)}")
+
+@app.get("/api/vision/optimized/{vision_id}")
+async def get_optimized_vision(
+    vision_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific optimized vision."""
+    try:
+        from db import Database
+        db = Database()
+        
+        vision = db.get_optimized_vision_by_id(vision_id)
+        
+        if not vision:
+            raise HTTPException(status_code=404, detail="Optimized vision not found")
+        
+        # Verify ownership
+        if vision['user_id'] != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get associated backlogs
+        backlogs = db.get_backlogs_from_optimized_vision(vision_id)
+        vision['backlogs'] = backlogs
+        
+        return {
+            "success": True,
+            "data": vision
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting optimized vision: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get optimized vision: {str(e)}")
+
 @app.get("/api/backlog/templates")
 async def get_templates(domain: Optional[str] = None):
     """Get available backlog templates."""

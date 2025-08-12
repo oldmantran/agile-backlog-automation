@@ -11,7 +11,8 @@ import {
   Settings, 
   Plus, 
   RefreshCw, 
-  Grid3X3
+  Grid3X3,
+  Sparkles
 } from 'lucide-react';
 import {
   FiInfo,
@@ -34,13 +35,23 @@ const TronWelcomeScreen: React.FC = () => {
   // Combined menu items from both original Tron screen and dashboard
   const quickActions = [
     {
+      title: 'Optimize New Vision',
+      description: 'Enhance vision statement for EXCELLENT quality work items',
+      icon: Sparkles,
+      route: '/optimize-vision',
+      color: 'primary',
+      glowColor: 'primary',
+      isNew: true,
+      tronColor: 'purple'
+    },
+    {
       title: 'Create New Backlog',
       description: 'Generate backlog from vision statement using AI',
       icon: Plus,
       route: '/simple-project-wizard',
       color: 'primary',
       glowColor: 'primary',
-      isNew: true,
+      isNew: false,
       tronColor: 'blue'
     },
     {
@@ -133,9 +144,11 @@ const TronWelcomeScreen: React.FC = () => {
               </div>
               
               <h1 className="text-6xl font-bold text-foreground mb-4 tracking-wider glow-cyan">
-                <span className="text-primary glow-cyan">AGILE</span>
+                <span className="text-primary glow-cyan">Automation</span>
                 <span className="text-accent mx-2 glow-cyan">•</span>
-                <span className="text-primary glow-cyan">DASHBOARD</span>
+                <span className="text-primary glow-cyan">Command</span>
+                <span className="text-accent mx-2 glow-cyan">•</span>
+                <span className="text-primary glow-cyan">Center</span>
               </h1>
               
               <div className="text-2xl font-light text-muted-foreground tracking-widest mb-2 glow-cyan">
@@ -214,8 +227,8 @@ const TronWelcomeScreen: React.FC = () => {
 
 
             {/* Footer */}
-            <div className="text-center mt-12 text-xs font-mono text-muted-foreground">
-              <div className="mb-2">TRON AUTOMATION INTERFACE v2.0</div>
+              <div className="text-center mt-12 text-xs font-mono text-muted-foreground">
+                <div className="mb-2">2099 Digitization Interface v1.0</div>
               <div className="flex items-center justify-center space-x-4">
                 <span>SECURE CONNECTION</span>
                 <span>•</span>

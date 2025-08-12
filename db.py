@@ -205,6 +205,45 @@ class Database:
                     # Column already exists
                     pass
                 
+                # Create optimized visions table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS optimized_visions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id TEXT NOT NULL,
+                        original_vision TEXT NOT NULL,
+                        optimized_vision TEXT NOT NULL,
+                        domains TEXT NOT NULL,  -- JSON array of domains with weights
+                        quality_score INTEGER NOT NULL,
+                        quality_rating TEXT NOT NULL,
+                        optimization_feedback TEXT,  -- JSON object with improvement details
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                # Create table to track which backlogs came from optimized visions
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS backlog_vision_mapping (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        backlog_job_id INTEGER NOT NULL,
+                        optimized_vision_id INTEGER NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (backlog_job_id) REFERENCES backlog_jobs(id),
+                        FOREIGN KEY (optimized_vision_id) REFERENCES optimized_visions(id)
+                    )
+                ''')
+                
+                # Create indexes for optimized visions
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_optimized_visions_user 
+                    ON optimized_visions(user_id, created_at DESC)
+                ''')
+                
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_backlog_vision_mapping 
+                    ON backlog_vision_mapping(backlog_job_id, optimized_vision_id)
+                ''')
+                
                 conn.commit()
                 logger.info("Database initialized successfully")
                 
@@ -1401,3 +1440,109 @@ def get_all_domains() -> List[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"Failed to get all domains: {e}")
         return []
+    
+    # Optimized Visions Methods
+    def save_optimized_vision(self, user_id: str, original_vision: str, optimized_vision: str,
+                            domains: List[Dict[str, Any]], quality_score: int, quality_rating: str,
+                            optimization_feedback: Dict[str, Any] = None) -> int:
+        """Save an optimized vision and return its ID."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO optimized_visions (
+                        user_id, original_vision, optimized_vision, domains,
+                        quality_score, quality_rating, optimization_feedback
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    user_id, original_vision, optimized_vision, json.dumps(domains),
+                    quality_score, quality_rating, 
+                    json.dumps(optimization_feedback) if optimization_feedback else None
+                ))
+                vision_id = cursor.lastrowid
+                conn.commit()
+                logger.info(f"Optimized vision saved with ID: {vision_id}")
+                return vision_id
+        except Exception as e:
+            logger.error(f"Failed to save optimized vision: {e}")
+            raise
+    
+    def get_optimized_visions(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get optimized visions for a user."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM optimized_visions
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                ''', (user_id, limit))
+                
+                visions = []
+                for row in cursor.fetchall():
+                    vision = dict(row)
+                    # Parse JSON fields
+                    vision['domains'] = json.loads(vision['domains']) if vision['domains'] else []
+                    vision['optimization_feedback'] = json.loads(vision['optimization_feedback']) if vision['optimization_feedback'] else {}
+                    visions.append(vision)
+                
+                return visions
+        except Exception as e:
+            logger.error(f"Failed to get optimized visions: {e}")
+            return []
+    
+    def get_optimized_vision_by_id(self, vision_id: int) -> Optional[Dict[str, Any]]:
+        """Get a specific optimized vision by ID."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM optimized_visions WHERE id = ?', (vision_id,))
+                row = cursor.fetchone()
+                
+                if row:
+                    vision = dict(row)
+                    vision['domains'] = json.loads(vision['domains']) if vision['domains'] else []
+                    vision['optimization_feedback'] = json.loads(vision['optimization_feedback']) if vision['optimization_feedback'] else {}
+                    return vision
+                return None
+        except Exception as e:
+            logger.error(f"Failed to get optimized vision {vision_id}: {e}")
+            return None
+    
+    def link_backlog_to_optimized_vision(self, backlog_job_id: int, optimized_vision_id: int) -> bool:
+        """Link a backlog job to the optimized vision it was created from."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO backlog_vision_mapping (backlog_job_id, optimized_vision_id)
+                    VALUES (?, ?)
+                ''', (backlog_job_id, optimized_vision_id))
+                conn.commit()
+                logger.info(f"Linked backlog job {backlog_job_id} to optimized vision {optimized_vision_id}")
+                return True
+        except Exception as e:
+            logger.error(f"Failed to link backlog to optimized vision: {e}")
+            return False
+    
+    def get_backlogs_from_optimized_vision(self, optimized_vision_id: int) -> List[Dict[str, Any]]:
+        """Get all backlog jobs created from a specific optimized vision."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT bj.* FROM backlog_jobs bj
+                    JOIN backlog_vision_mapping bvm ON bj.id = bvm.backlog_job_id
+                    WHERE bvm.optimized_vision_id = ?
+                    ORDER BY bj.created_at DESC
+                ''', (optimized_vision_id,))
+                
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Failed to get backlogs from optimized vision: {e}")
+            return []
