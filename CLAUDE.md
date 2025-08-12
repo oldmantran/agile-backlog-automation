@@ -654,3 +654,26 @@ Full integration with Azure DevOps Test Management API:
 - **Log Noise**: Downgraded "No backlog job found" messages to debug level
 
 **Status**: Workflow now completes successfully with proper error handling and type safety.
+
+### 🔧 QA Lead Agent LLM Configuration Fix (August 11, 2025)
+
+**FIXED**: QA sub-agents now properly inherit LLM configuration from QA Lead Agent.
+
+#### **Issue**: 
+- QA Lead Agent configuration in settings screen wasn't being used by sub-agents
+- Test Plan, Test Suite, and Test Case agents were using their own configurations
+- QA Lead Agent itself doesn't make LLM calls, only coordinates sub-agents
+
+#### **Solution**:
+- Modified QA Lead Agent to pass its agent name to all sub-agents during initialization
+- Updated all QA sub-agents to accept `parent_agent_name` parameter
+- Sub-agents now use parent agent name for LLM config lookup instead of their own names
+- Result: Configuring "QA Lead Agent" in settings now applies to entire QA workflow
+
+#### **Files Updated**:
+- `agents/qa_lead_agent.py`: Pass "qa_lead_agent" name to sub-agents
+- `agents/qa/test_plan_agent.py`: Accept and use parent_agent_name
+- `agents/qa/test_suite_agent.py`: Accept and use parent_agent_name  
+- `agents/qa/test_case_agent.py`: Accept and use parent_agent_name
+
+**Status**: QA workflow now correctly uses single LLM configuration for all test generation.

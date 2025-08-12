@@ -22,7 +22,7 @@ class EpicStrategist(Agent):
         super().__init__("epic_strategist", config, user_id)
         self.content_enhancer = ContentEnhancer()
         self.quality_assessor = EpicQualityAssessor()
-        self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
+        self.max_quality_retries = 1  # Reduced from 3 - retries produce worse quality
         self.model_fallback = ModelFallbackManager()
         self.logger = get_safe_logger(__name__)
         
@@ -85,11 +85,13 @@ class EpicStrategist(Agent):
             
             try:
                 # Calculate how many more epics we need
+                # Generate 50% more than needed to account for quality filtering
                 needed = epic_limit - len(approved_epics) if epic_limit else 3
+                batch_size = max(needed, int(needed * 1.5))
                 
                 # Generate batch of epics
-                self.logger.info(f"[ATTEMPT {total_attempts}] Generating {needed} more epics...")
-                epics = self._generate_epics_with_model(user_input, prompt_context, needed)
+                self.logger.info(f"[ATTEMPT {total_attempts}] Generating {batch_size} epics (need {needed} more)...")
+                epics = self._generate_epics_with_model(user_input, prompt_context, batch_size)
                 
                 # Assess quality - this will only return epics that meet quality threshold
                 quality_epics = self._assess_and_improve_quality(epics, product_vision, context)
@@ -313,12 +315,15 @@ class EpicStrategist(Agent):
                     log_output = self.quality_assessor.format_assessment_log(epic, assessment, attempt)
                     print(log_output)
                     
-                    if assessment.rating in ["EXCELLENT", "GOOD"]:
+                    # Use quality config to determine if acceptable
+                    from config.quality_config import is_quality_acceptable, MINIMUM_QUALITY_SCORE
+                    
+                    if is_quality_acceptable(assessment.score):
                         quality_tracker.complete_tracking(
                             metrics_id, assessment.rating, assessment.score, attempt
                         )
                         approved_epics.append(epic)
-                        self.logger.info(f"[QUALITY SUCCESS] Epic '{epic_title}' achieved {assessment.rating} rating")
+                        self.logger.info(f"[QUALITY SUCCESS] Epic '{epic_title}' achieved {assessment.rating} rating ({assessment.score}/100 >= {MINIMUM_QUALITY_SCORE})")
                         break
                     
                     # Try to improve the epic if not excellent and we have attempts left
@@ -379,9 +384,12 @@ class EpicStrategist(Agent):
                     # Quick quality check (1 attempt only for replacements)
                     assessment = self.quality_assessor.assess_epic(replacement_epic, domain, product_vision)
                     
-                    if assessment.rating in ["EXCELLENT", "GOOD"]:
+                    # Use quality config to determine if acceptable
+                    from config.quality_config import is_quality_acceptable, MINIMUM_QUALITY_SCORE
+                    
+                    if is_quality_acceptable(assessment.score):
                         approved_epics.append(replacement_epic)
-                        self.logger.info(f"[REPLACEMENT SUCCESS] Added replacement epic '{epic_title}' with {assessment.rating} rating")
+                        self.logger.info(f"[REPLACEMENT SUCCESS] Added replacement epic '{epic_title}' with {assessment.rating} rating ({assessment.score}/100 >= {MINIMUM_QUALITY_SCORE})")
                         
                         # Stop when we reach target count
                         if len(approved_epics) >= epic_limit:
@@ -526,11 +534,23 @@ class EpicStrategist(Agent):
         """Create a prompt to improve the epic based on quality assessment."""
         title = epic.get('title', '')
         description = epic.get('description', '')
+        domain = context.get('domain', 'general')
+        
+        # Build focused improvement instructions based on weaknesses
+        improvement_focus = []
+        if "vision alignment" in str(assessment.weaknesses).lower():
+            improvement_focus.append("- Strengthen direct connection to the product vision's core objectives")
+        if "domain" in str(assessment.weaknesses).lower():
+            improvement_focus.append(f"- Add more {domain}-specific terminology and requirements")
+        if "technical" in str(assessment.weaknesses).lower():
+            improvement_focus.append("- Include specific technical components and architecture details")
+        if "scope" in str(assessment.weaknesses).lower():
+            improvement_focus.append("- Ensure scope is large enough for 3-6 months of development work")
         
         improvement_text = f"""
-EPIC IMPROVEMENT REQUEST
+IMPROVE THIS EPIC TO MEET QUALITY STANDARDS
 
-Current Epic:
+Current Epic (Score: {assessment.score}/100 - {assessment.rating}):
 Title: {title}
 Description: {description}
 
@@ -543,15 +563,20 @@ Improvement Suggestions:
 Product Vision Context:
 {product_vision}
 
-INSTRUCTIONS:
-Rewrite this epic to address the quality issues above. Focus on:
-1. Including domain-specific terminology from the product vision
-2. Adding technical implementation clarity
-3. Clarifying business value and user impact
-4. Providing actionable details for feature decomposition
-5. Maintaining strong alignment with the product vision
+KEY IMPROVEMENT AREAS:
+{chr(10).join(improvement_focus) if improvement_focus else "- Address the specific issues identified above"}
 
-Return only a single improved epic in this JSON format:
+CRITICAL: This is a revision, not a new epic. Maintain the core concept while improving quality.
+
+INSTRUCTIONS:
+Enhance the EXISTING epic to address quality issues. DO NOT create a completely new epic.
+1. Keep the same core functionality and purpose
+2. Add missing domain-specific details from the product vision
+3. Expand technical clarity without changing the fundamental scope
+4. Strengthen business value proposition
+5. Ensure description provides clear direction for feature decomposition
+
+Return the IMPROVED version of the SAME epic in this JSON format:
 {{
   "title": "Improved epic title (max 60 characters)",
   "description": "Detailed description that addresses all quality issues and provides clear context for feature decomposition.",
