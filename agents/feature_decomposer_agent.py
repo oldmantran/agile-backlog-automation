@@ -56,7 +56,7 @@ Business Value: {epic.get('business_value', 'Not specified')}
 Success Criteria: {epic.get('success_criteria', [])}
 Dependencies: {epic.get('dependencies', [])}
 
-{f'IMPORTANT: Generate a maximum of {feature_limit} features only.' if feature_limit else ''}
+{f'IMPORTANT: Generate a maximum of {int(feature_limit * 2.0) if feature_limit else 6} features only.' if feature_limit else 'Generate between 3-6 features.'}
 """
         
         # Remove redundant print - supervisor already logs this
@@ -149,11 +149,11 @@ Dependencies: {epic.get('dependencies', [])}
                     if len(features) > feature_limit:
                         print(f"[FeatureDecomposerAgent] Limited output from {len(features)} to {len(limited_features)} features (configuration limit)")
                     
-                    # Assess quality of limited features with full context
+                    # Assess quality of features with target count
                     quality_approved_features = self._assess_and_improve_feature_quality(
-                        limited_features, epic, context, product_vision
+                        features, epic, context, product_vision, target_count=feature_limit
                     )
-                    return quality_approved_features
+                    return quality_approved_features[:feature_limit] if feature_limit else quality_approved_features
                 else:
                     # Assess quality of all features with full context
                     quality_approved_features = self._assess_and_improve_feature_quality(
@@ -606,7 +606,7 @@ Dependencies: {epic.get('dependencies', [])}
         
         return result[0]
     
-    def _assess_and_improve_feature_quality(self, features: list, epic: dict, context: dict, product_vision: str) -> list:
+    def _assess_and_improve_feature_quality(self, features: list, epic: dict, context: dict, product_vision: str, target_count: int = None) -> list:
         """Assess feature quality and retry generation if not GOOD or better."""
         import time
         start_time = time.time()
@@ -650,6 +650,12 @@ Dependencies: {epic.get('dependencies', [])}
                 if assessment.rating in ["EXCELLENT", "GOOD"]:
                     print(f"+ Feature approved with {assessment.rating} rating on attempt {attempt}")
                     approved_features.append(current_feature)
+                    
+                    # Check if we have enough approved features
+                    if target_count and len(approved_features) >= target_count:
+                        print(f"\n[TARGET REACHED] Have {len(approved_features)} approved features (target: {target_count})")
+                        print(f"Skipping assessment of remaining {len(features) - i - 1} features")
+                        return approved_features[:target_count]
                     break
                 
                 if attempt == self.max_quality_retries:

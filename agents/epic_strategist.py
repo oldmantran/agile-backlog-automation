@@ -85,9 +85,9 @@ class EpicStrategist(Agent):
             
             try:
                 # Calculate how many more epics we need
-                # Generate 50% more than needed to account for quality filtering
+                # Generate 100% more than needed to account for quality filtering
                 needed = epic_limit - len(approved_epics) if epic_limit else 3
-                batch_size = max(needed, int(needed * 1.5))
+                batch_size = max(needed, int(needed * 2.0))
                 
                 # Generate batch of epics
                 self.logger.info(f"[ATTEMPT {total_attempts}] Generating {batch_size} epics (need {needed} more)...")

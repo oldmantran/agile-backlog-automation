@@ -48,7 +48,7 @@ class UserStoryDecomposerAgent(Agent):
             'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
             'product_vision': product_vision,  # CASCADE PRODUCT VISION
             'epic_context': epic_context,  # CASCADE EPIC CONTEXT
-            'max_user_stories': max_user_stories,  # Required for template
+            'max_user_stories': int(max_user_stories * 2.0) if max_user_stories else 6,  # Generate 2x for quality filtering
             'feature': feature  # Pass entire feature object for template access
         }
         
@@ -921,13 +921,11 @@ Edge Cases: {feature.get('edge_cases', [])}
         if not user_stories:
             return []
         
-        # Apply limit first if specified
-        if max_user_stories and len(user_stories) > max_user_stories:
-            user_stories = user_stories[:max_user_stories]
+        # Don't limit here - we'll stop when we have enough approved stories
         
         domain = context.get('domain', 'general') if context else 'general'
         approved_stories = []
-        story_limit = len(user_stories)  # Track original target count
+        story_limit = max_user_stories or len(user_stories)  # Track target count
         failed_story_count = 0  # Track failed stories for replacement
         
         print(f"\nStarting user story quality assessment for {len(user_stories)} stories (target: {story_limit})...")
@@ -983,6 +981,12 @@ Edge Cases: {feature.get('edge_cases', [])}
                 if assessment.rating in ["EXCELLENT", "GOOD"]:
                     print(f"SUCCESS: User story approved with {assessment.rating} rating on attempt {attempt}")
                     approved_stories.append(current_story)
+                    
+                    # Check if we have enough approved stories
+                    if max_user_stories and len(approved_stories) >= max_user_stories:
+                        print(f"\n[TARGET REACHED] Have {len(approved_stories)} approved stories (target: {max_user_stories})")
+                        print(f"Skipping assessment of remaining {len(user_stories) - i - 1} stories")
+                        return approved_stories[:max_user_stories]
                     break
                 
                 if attempt == self.max_quality_retries:
@@ -1106,6 +1110,12 @@ Edge Cases: {feature.get('edge_cases', [])}
                 print(f"[REPLACEMENT FAILED] Could not generate replacement user stories: {replacement_error}")
         
         print(f"\nSUCCESS: User story quality assessment complete: {len(approved_stories)} stories approved")
+        
+        # Limit to requested amount if specified
+        if max_user_stories and len(approved_stories) > max_user_stories:
+            approved_stories = approved_stories[:max_user_stories]
+            print(f"[FINAL OUTPUT] Limited approved stories from {len(approved_stories)} to {max_user_stories}")
+        
         return approved_stories
     
     def _create_user_story_improvement_prompt(self, story: dict, assessment, feature: dict, 
