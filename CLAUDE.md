@@ -677,3 +677,33 @@ Full integration with Azure DevOps Test Management API:
 - `agents/qa/test_case_agent.py`: Accept and use parent_agent_name
 
 **Status**: QA workflow now correctly uses single LLM configuration for all test generation.
+
+### 🔧 Epic Strategist Quality Retry Fix (August 11, 2025)
+
+**FIXED**: Epic strategist retry mechanism was producing progressively worse quality items.
+
+#### **Issue**:
+- Epic strategist struggled with initial epic generation
+- Quality retries (attempts 2 & 3) produced **lower quality** items than the original
+- Improvement prompts were generating completely new epics instead of enhancing existing ones
+- Context was being lost between retry attempts
+
+#### **Root Cause**:
+- Improvement prompt didn't maintain core epic concept
+- LLM was treating improvements as new generation requests
+- Multiple retries led to generic, low-quality outputs
+
+#### **Solution**:
+- **Reduced retries**: Changed `max_quality_retries` from 3 to 1
+- **Better batching**: Generate 50% more epics upfront to account for quality filtering
+- **Improved prompts**: Explicit instructions to enhance existing epic, not create new one
+- **Consistent thresholds**: Use quality config (75+ score) across all code paths
+- **Focus tracking**: Identify specific weakness areas for targeted improvements
+
+#### **Impact**:
+- Faster epic generation with better first-attempt quality
+- Reduced LLM calls and processing time
+- More consistent quality outcomes
+- Better preservation of domain-specific context
+
+**Status**: Epic generation now favors quality on first attempt over multiple degrading retries.

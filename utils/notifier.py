@@ -151,8 +151,8 @@ class Notifier:
             error_list = "\n".join([f"• {error}" for error in errors])
             warning += f"\n\n⚠️ *Warnings/Issues Encountered:*\n{error_list}"
         
-        # Generate upload summary from staging data
-        upload_summary = self._format_upload_summary(staging_summary)
+        # Generate upload summary with Azure DevOps details
+        upload_summary = self._format_upload_summary(staging_summary, azure_integration)
         
         # Calculate total items generated
         total_generated = (stats.get('epics_generated', 0) + stats.get('features_generated', 0) + 
@@ -428,33 +428,62 @@ Check the application logs for detailed issue descriptions and remediation steps
             print(f"Warning: Could not get staging summary: {e}")
             return {}
     
-    def _format_upload_summary(self, staging_summary: Dict[str, Any]) -> str:
-        """Format staging summary for email notification."""
-        if not staging_summary:
+    def _format_upload_summary(self, staging_summary: Dict[str, Any], azure_integration: Dict[str, Any] = None) -> str:
+        """Format upload summary with Azure DevOps details for email notification."""
+        if not staging_summary and not azure_integration:
             return "• Upload status: Not available"
         
-        by_status = staging_summary.get('by_status', {})
-        total_items = staging_summary.get('total_items', 0)
-        success_count = by_status.get('success', 0)
-        failed_count = by_status.get('failed', 0)
-        skipped_count = by_status.get('skipped', 0)
+        summary_lines = []
         
-        if total_items == 0:
-            return "• No items were staged for upload"
+        # Basic staging summary
+        if staging_summary:
+            by_status = staging_summary.get('by_status', {})
+            total_items = staging_summary.get('total_items', 0)
+            success_count = by_status.get('success', 0)
+            failed_count = by_status.get('failed', 0)
+            skipped_count = by_status.get('skipped', 0)
+            
+            if total_items > 0:
+                success_rate = (success_count / total_items) * 100
+                summary_lines.append(f"• Successfully Uploaded: {success_count}/{total_items} ({success_rate:.1f}%)")
+                
+                if failed_count > 0:
+                    summary_lines.append(f"• Failed Uploads: {failed_count}")
+                
+                if skipped_count > 0:
+                    summary_lines.append(f"• Skipped (due to parent failures): {skipped_count}")
         
-        success_rate = (success_count / total_items) * 100 if total_items > 0 else 0
+        # Add Azure DevOps work item details if available
+        if azure_integration and azure_integration.get('status') == 'success':
+            work_items = azure_integration.get('work_items_created', [])
+            if work_items:
+                summary_lines.append("")  # Add blank line
+                summary_lines.append("**Azure DevOps Work Items Created:**")
+                
+                # Group by type
+                items_by_type = {}
+                for item in work_items[:20]:  # Show first 20 items
+                    item_type = item.get('type', 'Unknown')
+                    if item_type not in items_by_type:
+                        items_by_type[item_type] = []
+                    items_by_type[item_type].append(item)
+                
+                # Display grouped items
+                for item_type in ['Epic', 'Feature', 'User Story', 'Task', 'Test Case']:
+                    if item_type in items_by_type:
+                        summary_lines.append(f"\n**{item_type}s:**")
+                        for item in items_by_type[item_type][:5]:  # Show first 5 of each type
+                            title = item.get('title', 'Untitled')
+                            url = item.get('url', '#')
+                            summary_lines.append(f"• [{title}]({url})")
+                        
+                        if len(items_by_type[item_type]) > 5:
+                            summary_lines.append(f"• ... and {len(items_by_type[item_type]) - 5} more {item_type}s")
+                
+                if len(work_items) > 20:
+                    summary_lines.append(f"\n*Showing first 20 of {len(work_items)} total work items*")
         
-        summary_lines = [
-            f"• Successfully Uploaded: {success_count}/{total_items} ({success_rate:.1f}%)"
-        ]
-        
-        if failed_count > 0:
-            summary_lines.append(f"• Failed Uploads: {failed_count}")
-        
-        if skipped_count > 0:
-            summary_lines.append(f"• Skipped (due to parent failures): {skipped_count}")
-        
-        return "\n".join(summary_lines)
+        return "\n".join(summary_lines) if summary_lines else "• No items were uploaded"
     
     def _get_retry_instructions(self, staging_summary: Dict[str, Any]) -> str:
         """Generate retry instructions if there are failures."""
