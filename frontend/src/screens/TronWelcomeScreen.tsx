@@ -12,7 +12,8 @@ import {
   Plus, 
   RefreshCw, 
   Grid3X3,
-  Sparkles
+  Sparkles,
+  TestTube
 } from 'lucide-react';
 import {
   FiInfo,
@@ -55,6 +56,27 @@ const TronWelcomeScreen: React.FC = () => {
       tronColor: 'blue'
     },
     {
+      title: 'Add Test Management',
+      description: 'Generate comprehensive test artifacts for existing backlogs',
+      icon: TestTube,
+      route: '/add-test-management',
+      color: 'primary',
+      glowColor: 'primary',
+      isNew: false,
+      tronColor: 'cyan',
+      inDevelopment: true
+    },
+    {
+      title: 'Scan Existing Backlog',
+      description: 'Validate and enhance existing backlog items',
+      icon: RefreshCw,
+      route: '/sweeper',
+      color: 'accent',
+      glowColor: 'accent',
+      isNew: false,
+      tronColor: 'green'
+    },
+    {
       title: 'Configure Environment',
       description: 'Set up Azure DevOps credentials and AI providers',
       icon: Settings,
@@ -63,16 +85,6 @@ const TronWelcomeScreen: React.FC = () => {
       glowColor: 'primary',
       isNew: false,
       tronColor: 'gray'
-    },
-    {
-      title: 'Backlog Sweeper',
-      description: 'Validate and enhance existing backlog items',
-      icon: RefreshCw,
-      route: '/sweeper',
-      color: 'accent',
-      glowColor: 'accent',
-      isNew: false,
-      tronColor: 'green'
     },
   ];
 
@@ -85,6 +97,7 @@ const TronWelcomeScreen: React.FC = () => {
       case 'green': return 'hover:border-green-400 hover:shadow-green-500/20';
       case 'purple': return 'hover:border-purple-400 hover:shadow-purple-500/20';
       case 'gray': return 'hover:border-gray-400 hover:shadow-gray-500/20';
+      case 'cyan': return 'hover:border-cyan-400 hover:shadow-cyan-500/20';
       default: return 'hover:border-primary hover:shadow-primary/20';
     }
   };
@@ -192,6 +205,11 @@ const TronWelcomeScreen: React.FC = () => {
                             {action.isNew && (
                               <Badge variant="default" className="bg-green-500/20 text-green-400 border-green-400/50 glow-cyan">
                                 NEW
+                              </Badge>
+                            )}
+                            {action.inDevelopment && (
+                              <Badge variant="default" className="bg-yellow-500/20 text-yellow-400 border-yellow-400/50 glow-cyan">
+                                IN DEVELOPMENT
                               </Badge>
                             )}
                             <div className="w-2 h-2 bg-primary rounded-full animate-pulse glow-cyan"></div>

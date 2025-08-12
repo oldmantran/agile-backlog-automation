@@ -8,6 +8,13 @@ import {
   FiLogOut,
   FiUser,
 } from 'react-icons/fi';
+import { 
+  Sparkles,
+  Plus,
+  TestTube,
+  RefreshCw,
+  Settings
+} from 'lucide-react';
 import { NavLink as RouterLink, useLocation } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -71,6 +78,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <NavItem icon={FiHome} to="/dashboard">
             Dashboard
           </NavItem>
+          
+          <div className="pt-4 pb-2">
+            <Separator />
+          </div>
+          
+          <NavItem icon={Sparkles} to="/optimize-vision">
+            Optimize New Vision
+          </NavItem>
+          <NavItem icon={Plus} to="/simple-project-wizard">
+            Create New Backlog
+          </NavItem>
+          <NavItem icon={TestTube} to="/add-test-management">
+            Add Test Management
+          </NavItem>
+          <NavItem icon={RefreshCw} to="/sweeper">
+            Scan Existing Backlog
+          </NavItem>
           <NavItem icon={FiList} to="/my-projects">
             My Projects
           </NavItem>
@@ -79,6 +103,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <Separator />
           </div>
           
+          <NavItem icon={Settings} to="/configure">
+            Configure Environment
+          </NavItem>
           <NavItem icon={FiSettings} to="/settings">
             Settings
           </NavItem>
