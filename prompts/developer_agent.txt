@@ -11,6 +11,9 @@ Database: ${database_type}
 Cloud: ${cloud_platform}
 Team: ${team_size}, ${sprint_duration} sprints
 
+EPIC CONTEXT: ${epic_context}
+FEATURE CONTEXT: ${feature_context}
+
 USER STORY: ${user_story_title}
 Description: ${user_story_description}
 Acceptance Criteria: ${user_story_acceptance_criteria}

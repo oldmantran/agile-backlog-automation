@@ -1336,8 +1336,8 @@ class WorkflowSupervisor:
             self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
             # Add epic and feature context for task generation
             task_context = context.copy()
-            task_context['epic_context'] = epic.get('description', '')
-            task_context['feature_context'] = feature.get('description', '')
+            task_context['epic_context'] = f"{epic.get('title', 'Untitled Epic')}: {epic.get('description', '')}"
+            task_context['feature_context'] = f"{feature.get('title', 'Untitled Feature')}: {feature.get('description', '')}"
             tasks = agent.generate_tasks(user_story, task_context)
             return user_story, tasks
         

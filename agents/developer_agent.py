@@ -108,7 +108,24 @@ User Type: {user_story.get('user_type', 'user')}
         
         # Use template-based approach
         try:
-            response = self.run_with_template(user_input, prompt_context, "developer_agent")
+            # Generate more tasks upfront to account for rejection rate
+            # Based on ~58% rejection rate, generate 2.5x the needed amount
+            generation_multiplier = 2.5
+            tasks_to_generate = int((max_tasks or 4) * generation_multiplier)
+            
+            # Update prompt context with inflated task count
+            prompt_context_inflated = prompt_context.copy()
+            prompt_context_inflated['max_tasks'] = tasks_to_generate
+            
+            # Update user input to request more tasks
+            user_input_inflated = user_input.replace(
+                f'Generate a maximum of {max_tasks} tasks only.',
+                f'Generate a maximum of {tasks_to_generate} tasks only.'
+            ) if max_tasks else user_input + f'\nGenerate a maximum of {tasks_to_generate} tasks only.'
+            
+            print(f"[PROACTIVE GENERATION] Generating {tasks_to_generate} tasks upfront (target: {max_tasks or 'unlimited'})")
+            
+            response = self.run_with_template(user_input_inflated, prompt_context_inflated, "developer_agent")
             
             if not response or not response.strip():
                 print("Empty response from LLM")
@@ -126,15 +143,18 @@ User Type: {user_story.get('user_type', 'user')}
                 print(f"Failed to parse JSON from task generation response: {e}")
                 return []
             
-            # Apply task limit if specified
-            if max_tasks and len(tasks) > max_tasks:
-                tasks = tasks[:max_tasks]
-                print(f"[DeveloperAgent] Limited output from {len(tasks)} to {max_tasks} tasks")
+            print(f"[PROACTIVE GENERATION] Generated {len(tasks)} tasks for quality assessment")
             
             # Apply quality assessment with full context
             quality_approved_tasks = self._assess_and_improve_task_quality(
-                tasks, user_story, context, product_vision
+                tasks, user_story, context, product_vision, target_count=max_tasks
             )
+            
+            # Limit to requested amount after quality filtering
+            if max_tasks and len(quality_approved_tasks) > max_tasks:
+                quality_approved_tasks = quality_approved_tasks[:max_tasks]
+                print(f"[FINAL OUTPUT] Limited approved tasks from {len(quality_approved_tasks)} to {max_tasks}")
+            
             return quality_approved_tasks
             
         except Exception as e:
@@ -142,19 +162,24 @@ User Type: {user_story.get('user_type', 'user')}
             return []
     
     def _assess_and_improve_task_quality(self, tasks: list, user_story: dict, context: dict, 
-                                       product_vision: str) -> list:
+                                       product_vision: str, target_count: int = None) -> list:
         """Assess task quality and retry generation if not GOOD or better."""
         if not tasks:
             return []
         
         domain = context.get('domain', 'general') if context else 'general'
         approved_tasks = []
-        task_limit = len(tasks)  # Track original target count
+        task_limit = target_count or len(tasks)  # Use target count if specified
         failed_task_count = 0  # Track failed tasks for replacement
         
         print(f"\nStarting task quality assessment for {len(tasks)} tasks (target: {task_limit})...")
         print(f"User Story Context: {user_story.get('title', 'Unknown Story')}")
         print(f"Domain: {domain}")
+        
+        # Early exit if we already have enough approved tasks
+        if target_count and len(approved_tasks) >= target_count:
+            print(f"[EARLY EXIT] Already have {len(approved_tasks)} approved tasks (target: {target_count})")
+            return approved_tasks[:target_count]
         
         for i, task in enumerate(tasks):
             print(f"\n{'='*60}")
@@ -179,6 +204,12 @@ User Type: {user_story.get('user_type', 'user')}
                 if assessment.rating in ["EXCELLENT", "GOOD"]:
                     print(f"+ Task approved with {assessment.rating} rating on attempt {attempt}")
                     approved_tasks.append(current_task)
+                    
+                    # Check if we have enough approved tasks
+                    if target_count and len(approved_tasks) >= target_count:
+                        print(f"\n[TARGET REACHED] Have {len(approved_tasks)} approved tasks (target: {target_count})")
+                        print(f"Skipping assessment of remaining {len(tasks) - i - 1} tasks")
+                        return approved_tasks[:target_count]
                     break
                 
                 if attempt == self.max_quality_retries:
@@ -213,8 +244,8 @@ User Type: {user_story.get('user_type', 'user')}
                 
                 attempt += 1
         
-        # Generate replacement tasks if we have failures and haven't reached target count
-        if failed_task_count > 0 and len(approved_tasks) < task_limit:
+        # Generate replacement tasks only if we didn't reach target with proactive generation
+        if len(approved_tasks) < task_limit:
             replacements_needed = min(failed_task_count, task_limit - len(approved_tasks))
             print(f"\n[REPLACEMENT] Generating {replacements_needed} replacement tasks to reach target of {task_limit}")
             

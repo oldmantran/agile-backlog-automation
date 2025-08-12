@@ -707,3 +707,33 @@ Full integration with Azure DevOps Test Management API:
 - Better preservation of domain-specific context
 
 **Status**: Epic generation now favors quality on first attempt over multiple degrading retries.
+
+### 🔧 Email Notification Azure DevOps URLs Fix (August 11, 2025)
+
+**FIXED**: Email notifications now include Azure DevOps work item URLs and details.
+
+#### **Issue**:
+- Completion emails showed generation summary but no Azure DevOps upload results
+- Users couldn't see which work items were created or access them directly
+- Azure integration data was available in logs but not passed to email formatter
+
+#### **Solution**:
+- Updated `notifier.py` to pass `azure_integration` data to `_format_upload_summary()`
+- Enhanced email formatter to include work item details grouped by type
+- Shows first 5 items of each type (Epic, Feature, User Story, Task) with clickable links
+- Includes count of additional items if more than 5 per type
+
+#### **Email Now Includes**:
+```
+**Azure DevOps Work Items Created:**
+
+**Epics:**
+• [Epic Title 1](https://dev.azure.com/org/project/_workitems/edit/123)
+• [Epic Title 2](https://dev.azure.com/org/project/_workitems/edit/124)
+
+**Features:**
+• [Feature Title 1](https://dev.azure.com/org/project/_workitems/edit/125)
+• ... and 4 more Features
+```
+
+**Status**: Users can now see and access their created work items directly from notification emails.
