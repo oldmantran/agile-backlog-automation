@@ -771,3 +771,45 @@ Full integration with Azure DevOps Test Management API:
 - Better quality tasks due to enhanced context
 
 **Status**: Task generation now uses proactive strategy with enhanced context for better success rates.
+
+### 🚀 Proactive Generation Strategy for All Agents (August 12, 2025)
+
+**IMPLEMENTED**: All agents now use proactive generation to minimize LLM calls and maximize quality.
+
+#### **Motivation**:
+- Multiple LLM calls per work item type were expensive and slow
+- Replacement generation created inconsistent quality
+- Context was lost between generation attempts
+
+#### **Implementation**:
+
+1. **Epic Strategist**:
+   - Increased multiplier from 1.5x to 2.0x
+   - Generates 6 epics when 3 are needed
+
+2. **Feature Decomposer**:
+   - New 2.0x multiplier
+   - Generates 6 features when 3 are needed
+   - Early exit when target reached
+
+3. **User Story Decomposer**:
+   - New 2.0x multiplier
+   - Generates 6 stories when 3 are needed
+   - Early exit optimization
+
+4. **Developer Agent**:
+   - Maintains 2.5x multiplier (highest rejection rate)
+   - Generates 10 tasks when 4 are needed
+
+#### **Centralized Configuration**:
+- Created `config/generation_config.py` for easy tuning
+- Multipliers based on observed rejection rates
+- Consistent approach across all agents
+
+#### **Expected Benefits**:
+- **50-70% fewer LLM API calls** (1 call instead of 3-4)
+- **Better quality distribution** from larger sample size
+- **Faster processing** with early exit optimization
+- **Cost savings** from reduced API usage
+
+**Status**: All agents now use efficient proactive generation with quality-first selection.
