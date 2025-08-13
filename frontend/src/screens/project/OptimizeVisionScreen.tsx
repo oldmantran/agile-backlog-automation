@@ -219,12 +219,15 @@ const OptimizeVisionScreen: React.FC = () => {
 
     setIsOptimizing(true);
     try {
-      const response = await apiClient.post('/vision/optimize', {
+      const requestData = {
         original_vision: visionStatement,
         domains: selectedDomains
-      });
+      };
+      console.log('Sending optimization request:', requestData);
+      const response = await apiClient.post('/vision/optimize', requestData);
       // Interceptor unwraps { success: true, data } to data directly
       const result = response.data;
+      console.log('Optimization response:', result);
       if (result) {
         setOptimizationResult(result);
         setNotification({
@@ -235,8 +238,11 @@ const OptimizeVisionScreen: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Optimization failed:', error);
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'Unable to optimize vision. Please try again.';
       setNotification({
-        message: error.response?.data?.detail || 'Unable to optimize vision. Please try again.',
+        message: errorMessage,
         type: 'error'
       });
       setTimeout(() => setNotification(null), 5000);

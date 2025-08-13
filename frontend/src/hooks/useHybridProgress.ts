@@ -103,6 +103,14 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
           return;
         }
 
+        // Explicitly handle job not found to avoid orphaned progress states
+        if (response.status === 404) {
+          setError('HTTP 404: Not Found');
+          // Stop polling immediately; consumer can clear stale jobs
+          cleanup();
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }

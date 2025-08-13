@@ -980,6 +980,25 @@ const MyProjectsScreen: React.FC = () => {
     }
   }, [progressUpdate]);
 
+  // Auto-clear orphaned active job if backend reports 404 (job not found)
+  useEffect(() => {
+    try {
+      if (progressError && progressError.includes('404') && activeJobs.length > 0) {
+        const orphanJobId = activeJobs[0].jobId;
+        console.warn('Detected orphaned active job due to 404. Removing job:', orphanJobId);
+        setActiveJobs(prev => {
+          const updated = prev.filter(j => j.jobId !== orphanJobId);
+          localStorage.setItem('activeJobs', JSON.stringify(updated));
+          return updated;
+        });
+        // Ensure any active connection is closed
+        disconnectProgress();
+      }
+    } catch (error) {
+      logError('orphanJobCleanup', error);
+    }
+  }, [progressError, activeJobs, disconnectProgress]);
+
   return (
     <div className="min-h-screen">
       {/* Header and Sidebar */}
@@ -1035,7 +1054,7 @@ const MyProjectsScreen: React.FC = () => {
             <DebugPanel />
 
             {/* Progress Connection Status */}
-            {progressError && (
+            {progressError && activeJobs.length > 0 && (
               <Alert className="mb-6 border-orange-500 bg-orange-50 dark:bg-orange-950">
                 <FiXCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                 <AlertDescription className="text-orange-700 dark:text-orange-300">

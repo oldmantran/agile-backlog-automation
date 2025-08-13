@@ -38,13 +38,13 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
 }) => {
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
-      visionStatement: initialData.visionStatement || '',
-      adoProject: initialData.adoProject || '',
-      areaPath: initialData.areaPath || '',
-      iterationPath: initialData.iterationPath || '',
-      selectedDomains: initialData.selectedDomains || [],
+      visionStatement: initialData?.visionStatement || '',
+      adoProject: initialData?.adoProject || '',
+      areaPath: initialData?.areaPath || '',
+      iterationPath: initialData?.iterationPath || '',
+      selectedDomains: initialData?.selectedDomains || [],
       useAiDetection: false, // Always false - AI detection removed
-      includeTestArtifacts: initialData.includeTestArtifacts === true, // Default to false
+      includeTestArtifacts: initialData?.includeTestArtifacts === true, // Default to false
     }
   });
 
