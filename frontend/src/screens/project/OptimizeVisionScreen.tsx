@@ -27,6 +27,15 @@ interface Domain {
   description: string;
 }
 
+interface VisionAssessment {
+  score: number;
+  rating: string;
+  strengths: string[];
+  weaknesses: string[];
+  missing_elements: string[];
+  improvement_suggestions?: string[];
+}
+
 interface VisionOptimizationResult {
   vision_id?: number;
   optimized_vision: string;
@@ -37,6 +46,8 @@ interface VisionOptimizationResult {
   improvements_made: string[];
   remaining_issues: string[];
   is_acceptable: boolean;
+  original_assessment?: VisionAssessment;
+  optimized_assessment?: VisionAssessment;
 }
 
 interface SavedVision {
@@ -561,20 +572,65 @@ const OptimizeVisionScreen: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Improvements Made */}
-                      {optimizationResult.improvements_made.length > 0 && (
-                        <div>
-                          <h4 className="font-medium mb-2">Improvements Made</h4>
-                          <ul className="space-y-1">
-                            {optimizationResult.improvements_made.map((improvement, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm">
-                                <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                                <span>{improvement}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {/* Educational Summary Report */}
+                      <div className="border rounded-lg p-4 space-y-4 bg-background/50">
+                        <h4 className="font-semibold text-lg flex items-center gap-2">
+                          <FiInfo className="h-5 w-5 text-primary" />
+                          Vision Analysis Report
+                        </h4>
+                        
+                        {/* What was good about the original */}
+                        {optimizationResult.original_assessment?.strengths && optimizationResult.original_assessment.strengths.length > 0 && (
+                          <div>
+                            <h5 className="font-medium text-green-600 dark:text-green-400 mb-2">✓ What Was Good About Your Vision</h5>
+                            <ul className="space-y-1">
+                              {optimizationResult.original_assessment.strengths.map((strength: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground pl-4">• {strength}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* What was missing or weak */}
+                        {((optimizationResult.original_assessment?.weaknesses && optimizationResult.original_assessment.weaknesses.length > 0) ||
+                          (optimizationResult.original_assessment?.missing_elements && optimizationResult.original_assessment.missing_elements.length > 0)) && (
+                          <div>
+                            <h5 className="font-medium text-orange-600 dark:text-orange-400 mb-2">⚠ Areas for Improvement</h5>
+                            <ul className="space-y-1">
+                              {optimizationResult.original_assessment?.weaknesses?.map((weakness: string, idx: number) => (
+                                <li key={`w-${idx}`} className="text-sm text-muted-foreground pl-4">• {weakness}</li>
+                              ))}
+                              {optimizationResult.original_assessment?.missing_elements?.map((element: string, idx: number) => (
+                                <li key={`m-${idx}`} className="text-sm text-muted-foreground pl-4">• Missing: {element}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Key improvements made */}
+                        {optimizationResult.improvements_made.length > 0 && (
+                          <div>
+                            <h5 className="font-medium text-blue-600 dark:text-blue-400 mb-2">🔧 Key Enhancements Applied</h5>
+                            <ul className="space-y-1">
+                              {optimizationResult.improvements_made.map((improvement: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground pl-4">• {improvement}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Learning tips */}
+                        {optimizationResult.original_assessment?.improvement_suggestions && optimizationResult.original_assessment.improvement_suggestions.length > 0 && (
+                          <div className="mt-3 p-3 rounded-md bg-primary/5 border border-primary/10">
+                            <h5 className="font-medium text-primary mb-2">💡 Tips for Future Vision Statements</h5>
+                            <ul className="space-y-1">
+                              {optimizationResult.original_assessment.improvement_suggestions.map((tip: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground">• {tip}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Optimized Vision */}
                       <div>

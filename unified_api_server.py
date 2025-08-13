@@ -3251,7 +3251,23 @@ async def optimize_vision(request: VisionOptimizationRequest, current_user: User
             "rating_change": f"{result['original_assessment'].rating} → {result['optimized_assessment'].rating}",
             "improvements_made": result["optimization_feedback"].get("improvements_made", []),
             "remaining_issues": result["optimization_feedback"].get("remaining_issues", []),
-            "is_acceptable": result["optimized_assessment"].score >= 75
+            "is_acceptable": result["optimized_assessment"].score >= 75,
+            # Add detailed assessment information for educational report
+            "original_assessment": {
+                "score": result["original_assessment"].score,
+                "rating": result["original_assessment"].rating,
+                "strengths": result["original_assessment"].strengths,
+                "weaknesses": result["original_assessment"].weaknesses,
+                "missing_elements": result["original_assessment"].missing_elements,
+                "improvement_suggestions": result["original_assessment"].improvement_suggestions
+            },
+            "optimized_assessment": {
+                "score": result["optimized_assessment"].score,
+                "rating": result["optimized_assessment"].rating,
+                "strengths": result["optimized_assessment"].strengths,
+                "weaknesses": result["optimized_assessment"].weaknesses,
+                "missing_elements": result["optimized_assessment"].missing_elements
+            }
         }
         
         # Save to database if acceptable
