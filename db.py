@@ -244,6 +244,28 @@ class Database:
                     ON backlog_vision_mapping(backlog_job_id, optimized_vision_id)
                 ''')
                 
+                # Create vision optimization jobs table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS vision_optimization_jobs (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        status TEXT NOT NULL CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+                        original_vision TEXT NOT NULL,
+                        domains TEXT NOT NULL,  -- JSON array
+                        optimized_vision_id INTEGER,  -- FK to optimized_visions when complete
+                        error_message TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        started_at TIMESTAMP,
+                        completed_at TIMESTAMP,
+                        FOREIGN KEY (optimized_vision_id) REFERENCES optimized_visions(id)
+                    )
+                ''')
+                
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_vision_jobs_user_status 
+                    ON vision_optimization_jobs(user_id, status, created_at DESC)
+                ''')
+                
                 conn.commit()
                 logger.info("Database initialized successfully")
                 
@@ -1076,6 +1098,252 @@ class Database:
             return None
         except Exception as e:
             logger.error(f"Failed to get job progress for {job_id}: {e}")
+            return None
+    
+    def save_optimized_vision(self, user_id: str, original_vision: str, optimized_vision: str,
+                            domains: list, quality_score: int, quality_rating: str,
+                            optimization_feedback: dict = None) -> int:
+        """
+        Save an optimized vision to the database.
+        
+        Args:
+            user_id: User ID
+            original_vision: Original vision statement
+            optimized_vision: Optimized vision statement
+            domains: List of domains with priorities
+            quality_score: Quality score (0-100)
+            quality_rating: Quality rating (e.g., EXCELLENT, GOOD)
+            optimization_feedback: Optional feedback dictionary
+            
+        Returns:
+            ID of the saved vision
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    INSERT INTO optimized_visions 
+                    (user_id, original_vision, optimized_vision, domains, 
+                     quality_score, quality_rating, optimization_feedback)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    user_id,
+                    original_vision,
+                    optimized_vision,
+                    json.dumps(domains),
+                    quality_score,
+                    quality_rating,
+                    json.dumps(optimization_feedback) if optimization_feedback else None
+                ))
+                
+                vision_id = cursor.lastrowid
+                conn.commit()
+                
+                logger.info(f"Saved optimized vision {vision_id} for user {user_id}")
+                return vision_id
+                
+        except Exception as e:
+            logger.error(f"Failed to save optimized vision: {e}")
+            raise
+    
+    def get_optimized_visions(self, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Get optimized visions for a user.
+        
+        Args:
+            user_id: User ID
+            limit: Maximum number of visions to return
+            
+        Returns:
+            List of vision dictionaries
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT * FROM optimized_visions 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT ?
+                """, (user_id, limit))
+                
+                visions = []
+                for row in cursor.fetchall():
+                    vision = dict(row)
+                    # Parse JSON fields
+                    if vision.get('domains'):
+                        vision['domains'] = json.loads(vision['domains'])
+                    if vision.get('optimization_feedback'):
+                        vision['optimization_feedback'] = json.loads(vision['optimization_feedback'])
+                    visions.append(vision)
+                
+                return visions
+                
+        except Exception as e:
+            logger.error(f"Failed to get optimized visions: {e}")
+            return []
+    
+    def create_vision_optimization_job(self, user_id: str, original_vision: str, domains: list) -> str:
+        """
+        Create a new vision optimization job.
+        
+        Args:
+            user_id: User ID
+            original_vision: Original vision text
+            domains: List of domains
+            
+        Returns:
+            Job ID
+        """
+        try:
+            job_id = f"vision_opt_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id}"
+            
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    INSERT INTO vision_optimization_jobs 
+                    (id, user_id, status, original_vision, domains)
+                    VALUES (?, ?, 'pending', ?, ?)
+                """, (job_id, user_id, original_vision, json.dumps(domains)))
+                
+                conn.commit()
+                logger.info(f"Created vision optimization job {job_id}")
+                return job_id
+                
+        except Exception as e:
+            logger.error(f"Failed to create vision optimization job: {e}")
+            raise
+    
+    def update_vision_job_status(self, job_id: str, status: str, optimized_vision_id: int = None, 
+                                error_message: str = None) -> bool:
+        """
+        Update vision optimization job status.
+        
+        Args:
+            job_id: Job ID
+            status: New status (processing, completed, failed)
+            optimized_vision_id: ID of saved optimized vision (for completed jobs)
+            error_message: Error message (for failed jobs)
+            
+        Returns:
+            Success boolean
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                if status == 'processing':
+                    cursor.execute("""
+                        UPDATE vision_optimization_jobs 
+                        SET status = ?, started_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (status, job_id))
+                elif status == 'completed':
+                    cursor.execute("""
+                        UPDATE vision_optimization_jobs 
+                        SET status = ?, completed_at = CURRENT_TIMESTAMP, 
+                            optimized_vision_id = ?
+                        WHERE id = ?
+                    """, (status, optimized_vision_id, job_id))
+                elif status == 'failed':
+                    cursor.execute("""
+                        UPDATE vision_optimization_jobs 
+                        SET status = ?, completed_at = CURRENT_TIMESTAMP, 
+                            error_message = ?
+                        WHERE id = ?
+                    """, (status, error_message, job_id))
+                else:
+                    cursor.execute("""
+                        UPDATE vision_optimization_jobs 
+                        SET status = ?
+                        WHERE id = ?
+                    """, (status, job_id))
+                
+                conn.commit()
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to update vision job {job_id}: {e}")
+            return False
+    
+    def get_vision_job_status(self, job_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get vision optimization job status.
+        
+        Args:
+            job_id: Job ID
+            user_id: User ID (for verification)
+            
+        Returns:
+            Job status dictionary or None
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT j.*, v.optimized_vision, v.quality_score, v.quality_rating
+                    FROM vision_optimization_jobs j
+                    LEFT JOIN optimized_visions v ON j.optimized_vision_id = v.id
+                    WHERE j.id = ? AND j.user_id = ?
+                """, (job_id, user_id))
+                
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                
+                job = dict(row)
+                # Parse domains JSON
+                if job.get('domains'):
+                    job['domains'] = json.loads(job['domains'])
+                    
+                return job
+                
+        except Exception as e:
+            logger.error(f"Failed to get vision job {job_id}: {e}")
+            return None
+    
+    def get_optimized_vision_by_id(self, vision_id: int, user_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a specific optimized vision by ID.
+        
+        Args:
+            vision_id: Vision ID
+            user_id: User ID (for ownership verification)
+            
+        Returns:
+            Vision dictionary or None if not found
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT * FROM optimized_visions 
+                    WHERE id = ? AND user_id = ?
+                """, (vision_id, user_id))
+                
+                row = cursor.fetchone()
+                if not row:
+                    return None
+                
+                vision = dict(row)
+                # Parse JSON fields
+                if vision.get('domains'):
+                    vision['domains'] = json.loads(vision['domains'])
+                if vision.get('optimization_feedback'):
+                    vision['optimization_feedback'] = json.loads(vision['optimization_feedback'])
+                
+                return vision
+                
+        except Exception as e:
+            logger.error(f"Failed to get optimized vision {vision_id}: {e}")
             return None
 
 # Global database instance

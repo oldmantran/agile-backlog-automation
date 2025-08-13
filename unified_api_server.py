@@ -992,74 +992,9 @@ async def enhance_vision(
         logger.error(f"Error enhancing vision: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to enhance vision: {str(e)}")
 
-@app.post("/api/vision/optimize")
-async def optimize_vision(
-    request: Dict[str, Any],
-    current_user: User = Depends(get_current_user)
-):
-    """Optimize a vision statement using AI with domain weighting."""
-    try:
-        original_vision = request.get("visionStatement", "")
-        domains = request.get("domains", [])  # List of {domain: str, weight: int}
-        
-        if not original_vision:
-            raise HTTPException(status_code=400, detail="Vision statement is required")
-        
-        if not domains or len(domains) == 0:
-            raise HTTPException(status_code=400, detail="At least one domain must be selected")
-        
-        # Validate domain weights
-        total_weight = sum(d.get('weight', 0) for d in domains)
-        if total_weight != 100:
-            raise HTTPException(status_code=400, detail=f"Domain weights must sum to 100, got {total_weight}")
-        
-        # Initialize vision optimizer agent
-        from agents.vision_optimizer_agent import VisionOptimizerAgent
-        from config.config_loader import Config
-        
-        config = Config()
-        optimizer = VisionOptimizerAgent(config, user_id=current_user.id)
-        
-        # Optimize the vision
-        result = optimizer.optimize_vision(original_vision, domains)
-        
-        # Save to database if optimization was successful
-        if result['success'] and result['optimized_assessment'].is_acceptable:
-            from db import Database
-            db = Database()
-            
-            vision_id = db.save_optimized_vision(
-                user_id=current_user.id,
-                original_vision=original_vision,
-                optimized_vision=result['optimized_vision'],
-                domains=domains,
-                quality_score=result['optimized_assessment'].score,
-                quality_rating=result['optimized_assessment'].rating,
-                optimization_feedback=result['optimization_feedback']
-            )
-            
-            result['vision_id'] = vision_id
-        
-        return {
-            "success": True,
-            "data": {
-                "vision_id": result.get('vision_id'),
-                "optimized_vision": result['optimized_vision'],
-                "original_score": result['original_assessment'].score,
-                "optimized_score": result['optimized_assessment'].score,
-                "score_improvement": result['optimization_feedback']['score_improvement'],
-                "rating_change": result['optimization_feedback']['rating_change'],
-                "improvements_made": result['optimization_feedback']['improvements_made'],
-                "remaining_issues": result['optimization_feedback']['remaining_issues'],
-                "is_acceptable": result['optimized_assessment'].is_acceptable
-            }
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error optimizing vision: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to optimize vision: {str(e)}")
+# REMOVED - Duplicate optimize_vision endpoint that was looking for wrong field name
+# The actual endpoint is defined later in the file
+# Removed old duplicate endpoint - actual implementation is at line ~3172
 
 @app.get("/api/vision/optimized")
 async def get_optimized_visions(
@@ -2803,60 +2738,7 @@ async def check_vision_quality(request: dict, current_user: User = Depends(get_c
         logger.error(f"Failed to check vision quality: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/vision/optimize")
-async def optimize_vision(request: dict, current_user: User = Depends(get_current_user)):
-    """Optimize a vision statement using AI with domain weighting."""
-    try:
-        original_vision = request.get("original_vision", "")
-        domains = request.get("domains", [])
-        
-        if not original_vision:
-            raise HTTPException(status_code=400, detail="Original vision is required")
-        
-        if not domains:
-            raise HTTPException(status_code=400, detail="At least one domain is required")
-        
-        # Import vision optimizer agent
-        from agents.vision_optimizer_agent import VisionOptimizerAgent
-        optimizer = VisionOptimizerAgent(user_id=str(current_user.id))
-        
-        # Optimize the vision
-        result = optimizer.optimize_vision(original_vision, domains)
-        
-        # Extract assessment data
-        original_assessment = result.get("original_assessment", {})
-        optimized_assessment = result.get("optimized_assessment", {})
-        optimization_feedback = result.get("optimization_feedback", {})
-        
-        # Save to database only if the optimized version meets quality threshold
-        vision_id = None
-        if optimized_assessment and getattr(optimized_assessment, 'score', 0) >= 75:
-            vision_id = db.save_optimized_vision(
-                user_id=str(current_user.id),
-                original_vision=original_vision,
-                optimized_vision=result["optimized_vision"],
-                domains=json.dumps(domains),
-                quality_score=getattr(optimized_assessment, 'score', 0),
-                quality_rating=getattr(optimized_assessment, 'rating', 'UNKNOWN'),
-                optimization_feedback=json.dumps(optimization_feedback)
-            )
-        
-        # Return the result regardless of whether it was saved
-        return {
-            "vision_id": vision_id,
-            "optimized_vision": result["optimized_vision"],
-            "original_score": getattr(original_assessment, 'score', 0),
-            "optimized_score": getattr(optimized_assessment, 'score', 0),
-            "score_improvement": optimization_feedback.get('score_improvement', 0),
-            "rating_change": optimization_feedback.get('rating_change', 'N/A'),
-            "improvements_made": optimization_feedback.get('improvements_made', []),
-            "remaining_issues": optimization_feedback.get('remaining_issues', []),
-            "is_acceptable": getattr(optimized_assessment, 'score', 0) >= 75
-        }
-        
-    except Exception as e:
-        logger.error(f"Failed to optimize vision: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+# Removed duplicate vision optimization endpoints - see line 3247 for the actual implementation
 
 @app.get("/api/vision/optimized")
 async def get_optimized_visions(current_user: User = Depends(get_current_user)):
@@ -3225,15 +3107,136 @@ class VisionQualityCheckRequest(BaseModel):
     visionStatement: str
     domain: str = "general"
 
+def run_vision_optimization_background(job_id: str, user_id: str, original_vision: str, domains: list):
+    """
+    Run vision optimization in background.
+    This runs in a thread pool, not async.
+    """
+    try:
+        logger.info(f"Starting background optimization for job {job_id}")
+        
+        # Update status to processing
+        db.update_vision_job_status(job_id, "processing")
+        
+        # Import and run optimization
+        from agents.vision_optimizer_agent import VisionOptimizerAgent
+        from config.config_loader import Config
+        
+        config = Config()
+        optimizer = VisionOptimizerAgent(config, user_id)
+        
+        # Run optimization
+        result = optimizer.optimize_vision(original_vision, domains)
+        
+        # Save optimized vision
+        vision_id = db.save_optimized_vision(
+            user_id=user_id,
+            original_vision=original_vision,
+            optimized_vision=result["optimized_vision"],
+            domains=domains,
+            quality_score=result["optimized_assessment"].score,
+            quality_rating=result["optimized_assessment"].rating,
+            optimization_feedback=result["optimization_feedback"]
+        )
+        
+        # Update job status to completed
+        db.update_vision_job_status(job_id, "completed", optimized_vision_id=vision_id)
+        
+        logger.info(f"Completed optimization job {job_id} with vision ID {vision_id}")
+        
+    except Exception as e:
+        logger.error(f"Background optimization failed for job {job_id}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        
+        # Update job status to failed
+        db.update_vision_job_status(job_id, "failed", error_message=str(e))
+
+@app.post("/api/vision/optimize/async")
+async def optimize_vision_async(request: VisionOptimizationRequest, background_tasks: BackgroundTasks, 
+                               current_user: User = Depends(get_current_user)):
+    """Start async vision optimization and return job ID immediately."""
+    try:
+        # Create job in database
+        job_id = db.create_vision_optimization_job(
+            user_id=str(current_user.id),
+            original_vision=request.original_vision,
+            domains=request.domains
+        )
+        
+        # Add optimization to background tasks
+        background_tasks.add_task(
+            run_vision_optimization_background,
+            job_id=job_id,
+            user_id=str(current_user.id),
+            original_vision=request.original_vision,
+            domains=request.domains
+        )
+        
+        logger.info(f"Started async vision optimization job {job_id}")
+        
+        return {
+            "success": True,
+            "data": {
+                "job_id": job_id,
+                "status": "pending",
+                "message": "Vision optimization started. Check status for updates."
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to start async vision optimization: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/vision/optimize/status/{job_id}")
+async def get_vision_optimization_status(job_id: str, current_user: User = Depends(get_current_user)):
+    """Check status of vision optimization job."""
+    try:
+        job_status = db.get_vision_job_status(job_id, str(current_user.id))
+        
+        if not job_status:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Format response based on status
+        response = {
+            "job_id": job_id,
+            "status": job_status["status"],
+            "created_at": job_status["created_at"],
+            "started_at": job_status.get("started_at"),
+            "completed_at": job_status.get("completed_at")
+        }
+        
+        if job_status["status"] == "completed":
+            response.update({
+                "optimized_vision": job_status["optimized_vision"],
+                "quality_score": job_status["quality_score"],
+                "quality_rating": job_status["quality_rating"],
+                "optimized_vision_id": job_status["optimized_vision_id"]
+            })
+        elif job_status["status"] == "failed":
+            response["error_message"] = job_status.get("error_message", "Optimization failed")
+        
+        return {
+            "success": True,
+            "data": response
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get job status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Keep the old synchronous endpoint for backward compatibility but with deprecation notice
 @app.post("/api/vision/optimize")
 async def optimize_vision(request: VisionOptimizationRequest, current_user: User = Depends(get_current_user)):
     """Optimize a product vision statement using selected domains."""
     try:
-        logger.info(f"Raw request data: {request}")
-        logger.info(f"Request dict: {request.dict()}")
-        
-        if not request.original_vision:
-            raise HTTPException(status_code=400, detail="Vision statement is required")
+        # Log the request for debugging
+        import sys
+        print(f"[VISION OPTIMIZE] Raw request data: {request}", file=sys.stderr)
+        print(f"[VISION OPTIMIZE] Request dict: {request.dict()}", file=sys.stderr)
+        print(f"[VISION OPTIMIZE] Vision length: {len(request.original_vision) if request.original_vision else 0}", file=sys.stderr)
             
         from agents.vision_optimizer_agent import VisionOptimizerAgent
         from config.config_loader import Config
@@ -3291,10 +3294,15 @@ async def optimize_vision(request: VisionOptimizationRequest, current_user: User
         else:
             logger.info(f"Optimized vision scored {result['optimized_assessment'].score}, not saving to database")
         
-        return {
+        response = {
             "success": True,
             "data": response_data
         }
+        
+        logger.info(f"Returning optimization response with {len(str(response))} chars")
+        logger.info(f"Response keys: {list(response_data.keys())}")
+        
+        return response
         
     except Exception as e:
         logger.error(f"Vision optimization failed: {e}")
