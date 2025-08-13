@@ -475,6 +475,20 @@ Return only a single improved task in this JSON format:
             # Import prompt manager
             from utils.prompt_manager import prompt_manager
             
+            # Check if we should use domain-enhanced template
+            domain = context.get('domain', '').lower() if context else ''
+            if domain and domain != 'dynamic':
+                # Try domain-enhanced template first
+                domain_template = "developer_agent_domain_enhanced"
+                try:
+                    # Check if domain-enhanced template exists
+                    validation = prompt_manager.validate_template(domain_template)
+                    if validation.get('valid', False):
+                        template_to_use = domain_template
+                        print(f"[DOMAIN TEMPLATE] Using domain-enhanced template for {domain} domain")
+                except:
+                    pass  # Fall back to default template
+            
             # Try to use the specific template
             prompt = prompt_manager.get_prompt(template_to_use, context)
             

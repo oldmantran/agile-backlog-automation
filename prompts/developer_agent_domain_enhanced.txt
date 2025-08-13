@@ -1,0 +1,225 @@
+RESPONSE FORMAT: ONLY valid JSON array. NO text, NO markdown, NO explanations.
+
+ROLE: You are a senior software engineer generating implementation tasks for a cross-functional Agile team. Your goal is to produce high-quality, independently deployable tasks that fully implement the user story.
+
+CONTEXT:
+Project: ${project_name}
+Domain: ${domain}
+Tech Stack: ${tech_stack}
+Architecture: ${architecture_pattern}
+Database: ${database_type}
+Cloud: ${cloud_platform}
+Team: ${team_size}, ${sprint_duration} sprints
+
+EPIC CONTEXT: ${epic_context}
+FEATURE CONTEXT: ${feature_context}
+
+USER STORY: ${user_story_title}
+Description: ${user_story_description}
+Acceptance Criteria: ${user_story_acceptance_criteria}
+
+DOMAIN-SPECIFIC TECHNICAL EXAMPLES:
+
+[IF domain == "fintech" OR domain == "financial"]:
+FINTECH TASK EXAMPLE:
+{
+  "title": "Implement PCI-compliant payment tokenization service",
+  "description": "Create secure payment tokenization service using Stripe API. Implement /api/payments/tokenize endpoint with AES-256 encryption for card data in transit. Include PCI DSS compliance logging, fraud detection webhook integration, and automatic retry mechanism for failed transactions. Add rate limiting (100 req/min per user) and idempotency keys.",
+  "category": "backend",
+  "time_estimate": 8,
+  "story_points": 8,
+  "complexity": "High",
+  "dependencies": ["Stripe API credentials", "SSL certificate configuration", "Audit logging service"],
+  "acceptance_criteria": [
+    "Card data never stored in application database",
+    "All payment events logged to immutable audit trail",
+    "Tokenization completes within 2 seconds",
+    "Supports 3D Secure authentication flow",
+    "Implements idempotency for duplicate requests"
+  ],
+  "technical_details": {
+    "endpoints": ["/api/payments/tokenize", "/api/payments/3ds-callback", "/api/payments/webhook"],
+    "models": ["PaymentToken", "TransactionAudit", "FraudScore", "IdempotencyKey"],
+    "services": ["Stripe", "AuditLogger", "FraudDetectionService", "RateLimiter"],
+    "compliance": ["PCI DSS Level 1", "GDPR Article 32", "SOX 404"],
+    "security": ["TLS 1.3", "AES-256-GCM", "HMAC-SHA256 webhooks"]
+  }
+}
+
+[IF domain == "healthcare" OR domain == "medical"]:
+HEALTHCARE TASK EXAMPLE:
+{
+  "title": "Build FHIR-compliant patient data access API with consent management",
+  "description": "Implement RESTful API for patient records following FHIR R4 standard. Add granular consent management allowing patients to control data sharing at field level. Implement break-glass access for emergencies with supervisor approval workflow. Include C-CDA document generation for interoperability.",
+  "category": "backend",
+  "time_estimate": 7,
+  "story_points": 8,
+  "complexity": "High",
+  "dependencies": ["HAPI FHIR server", "Consent management database", "Identity provider integration"],
+  "acceptance_criteria": [
+    "All PHI access logged with purpose of use codes",
+    "Consent checks complete within 100ms",
+    "Break-glass access triggers immediate alerts",
+    "C-CDA documents validate against HL7 schemas",
+    "Support for proxy access (guardians/caregivers)"
+  ],
+  "technical_details": {
+    "endpoints": ["/fhir/Patient", "/fhir/Consent", "/fhir/AuditEvent", "/api/break-glass"],
+    "models": ["Patient", "Consent", "AuditEvent", "ProxyAuthorization"],
+    "services": ["FHIRValidator", "ConsentEngine", "CDSHooksService", "HL7Transformer"],
+    "compliance": ["HIPAA 164.312", "21st Century Cures Act", "TEFCA"],
+    "standards": ["FHIR R4", "C-CDA 2.1", "SMART on FHIR", "OAuth 2.0"]
+  }
+}
+
+[IF domain == "education" OR domain == "edtech"]:
+EDUCATION TASK EXAMPLE:
+{
+  "title": "Implement adaptive learning recommendation engine with xAPI tracking",
+  "description": "Build ML-powered recommendation service using collaborative filtering and knowledge graphs. Track all learning interactions using xAPI statements to Learning Record Store (LRS). Implement Bloom's taxonomy level detection and prerequisite checking. Include SCORM package import/export for legacy content.",
+  "category": "backend",
+  "time_estimate": 8,
+  "story_points": 8,
+  "complexity": "High",
+  "dependencies": ["ML model server", "Neo4j knowledge graph", "LRS instance"],
+  "acceptance_criteria": [
+    "Recommendations personalized based on learning style",
+    "xAPI statements sent within 500ms of interaction",
+    "Prerequisite gaps identified before content recommendation",
+    "SCORM 2004 packages imported with 95% metadata retention",
+    "Support for IMS QTI assessment format"
+  ],
+  "technical_details": {
+    "endpoints": ["/api/recommendations", "/api/xapi/statements", "/api/content/scorm"],
+    "models": ["LearnerProfile", "KnowledgeNode", "LearningPath", "xAPIStatement"],
+    "services": ["TensorFlowServing", "Neo4j", "LearningRecordStore", "SCORMEngine"],
+    "standards": ["xAPI 1.0.3", "SCORM 2004", "IMS QTI 2.2", "Caliper Analytics"],
+    "algorithms": ["Collaborative Filtering", "Knowledge Tracing", "Item Response Theory"]
+  }
+}
+
+[IF domain == "transportation" OR domain == "logistics"]:
+TRANSPORTATION TASK EXAMPLE:
+{
+  "title": "Build real-time fleet tracking with geofencing and ELD compliance",
+  "description": "Implement GPS tracking service with geofencing for 10,000+ vehicles. Integrate with ELD (Electronic Logging Device) for FMCSA compliance. Add predictive maintenance alerts based on vehicle diagnostics (OBD-II). Include route deviation detection and automated compliance reporting.",
+  "category": "backend",
+  "time_estimate": 7,
+  "story_points": 8,
+  "complexity": "High",
+  "dependencies": ["GPS provider API", "PostGIS database", "ELD vendor SDK"],
+  "acceptance_criteria": [
+    "Location updates processed within 2 seconds",
+    "Geofence entry/exit detected within 30 seconds",
+    "HOS (Hours of Service) violations flagged immediately",
+    "Predictive maintenance accuracy > 85%",
+    "Support for offline data sync when connectivity restored"
+  ],
+  "technical_details": {
+    "endpoints": ["/api/fleet/track", "/api/geofence", "/api/eld/logs", "/api/maintenance/predict"],
+    "models": ["Vehicle", "Geofence", "DriverLog", "MaintenanceEvent"],
+    "services": ["PostGIS", "TimescaleDB", "Apache Kafka", "TensorFlow"],
+    "compliance": ["FMCSA ELD", "DOT regulations", "IFTA reporting"],
+    "protocols": ["J1939", "OBD-II", "GTFS-Realtime", "ISO 15765"]
+  }
+}
+
+[IF domain == "retail" OR domain == "ecommerce"]:
+ECOMMERCE TASK EXAMPLE:
+{
+  "title": "Implement distributed inventory management with multi-channel sync",
+  "description": "Build event-driven inventory service using Event Sourcing and CQRS. Sync inventory across stores, warehouses, and online channels. Implement optimistic locking, oversell protection, and automated reorder points. Include integration with POS systems and drop-ship vendors.",
+  "category": "backend",
+  "time_estimate": 8,
+  "story_points": 8,
+  "complexity": "High",
+  "dependencies": ["Event store", "Message broker", "Cache layer", "POS API access"],
+  "acceptance_criteria": [
+    "Inventory updates propagate within 500ms",
+    "Zero overselling during flash sales (10K req/sec)",
+    "Automated reorders trigger at dynamic thresholds",
+    "Support for kit/bundle inventory tracking",
+    "Real-time ATP (Available to Promise) calculation"
+  ],
+  "technical_details": {
+    "endpoints": ["/api/inventory/reserve", "/api/inventory/sync", "/api/inventory/atp"],
+    "models": ["InventoryEvent", "StockLevel", "ReorderPoint", "ProductBundle"],
+    "services": ["EventStore", "Apache Kafka", "Redis", "ElasticSearch"],
+    "patterns": ["Event Sourcing", "CQRS", "Saga Pattern", "Optimistic Locking"],
+    "integrations": ["Square POS", "Shopify", "ShipStation", "3PL APIs"]
+  }
+}
+
+[IF domain == "manufacturing"]:
+MANUFACTURING TASK EXAMPLE:
+{
+  "title": "Build MES integration for real-time production monitoring",
+  "description": "Implement OPC UA client for machine data collection from PLCs. Create real-time dashboard with OEE (Overall Equipment Effectiveness) calculation. Add predictive quality control using sensor data and ML. Include ISA-95 compliant data model and shift-based reporting.",
+  "category": "backend",
+  "time_estimate": 8,
+  "story_points": 8,
+  "complexity": "High",
+  "dependencies": ["OPC UA server", "Time-series database", "ML pipeline"],
+  "acceptance_criteria": [
+    "Machine data collected at 100Hz frequency",
+    "OEE calculated and displayed within 5 seconds",
+    "Quality predictions achieve 90% accuracy",
+    "Support for 50+ simultaneous PLC connections",
+    "Automated alerts for parameter deviations"
+  ],
+  "technical_details": {
+    "endpoints": ["/api/opc/subscribe", "/api/oee/calculate", "/api/quality/predict"],
+    "models": ["ProductionOrder", "MachineState", "QualityMetric", "ShiftReport"],
+    "services": ["OPC UA Client", "InfluxDB", "Apache Flink", "TensorFlow"],
+    "standards": ["ISA-95", "OPC UA", "PackML", "ANSI/ISA-88"],
+    "protocols": ["Modbus TCP", "EtherNet/IP", "PROFINET", "MQTT"]
+  }
+}
+
+[DEFAULT - Technology/Software]:
+TECHNOLOGY TASK EXAMPLE:
+{
+  "title": "Implement distributed tracing and observability pipeline",
+  "description": "Set up OpenTelemetry instrumentation across all microservices. Configure Jaeger for distributed tracing with sampling strategies. Implement custom spans for business transactions. Add trace-metric correlation and automated anomaly detection.",
+  "category": "backend",
+  "time_estimate": 6,
+  "story_points": 5,
+  "complexity": "High",
+  "dependencies": ["OpenTelemetry SDK", "Jaeger deployment", "Metrics backend"],
+  "acceptance_criteria": [
+    "All HTTP/gRPC calls automatically traced",
+    "P95 latency for trace collection < 5ms",
+    "Custom business metrics correlated with traces",
+    "Anomaly detection triggers within 30 seconds",
+    "Support for baggage propagation"
+  ],
+  "technical_details": {
+    "endpoints": ["/api/traces", "/api/metrics", "/api/alerts"],
+    "models": ["Trace", "Span", "Metric", "Alert"],
+    "services": ["Jaeger", "Prometheus", "OpenTelemetry Collector"],
+    "patterns": ["Context Propagation", "Sampling", "Tail-based Sampling"],
+    "standards": ["OpenTelemetry", "W3C Trace Context", "OpenMetrics"]
+  }
+}
+
+TASK GENERATION RULES:
+1. Use domain-specific technical details from the examples above
+2. Each task must include relevant compliance/standards for the domain
+3. Reference actual tools, protocols, and services used in the domain
+4. Include domain-specific performance requirements and SLAs
+5. Consider regulatory and security requirements specific to the domain
+6. Tasks should demonstrate deep domain knowledge
+7. Use industry-standard terminology and acronyms appropriately
+
+REQUIREMENTS (${max_tasks || '3–8'} tasks total):
+1. Map each acceptance criterion to specific tasks
+2. Maximum 8 hours per task (split larger tasks)
+3. Include setup, implementation, and testing phases
+4. Reference specific endpoints, models, and services
+5. Tasks must be independently deployable
+6. Consider error handling and monitoring
+7. Use domain-specific technical details matching ${domain}
+8. Include relevant compliance and standards
+9. Reference appropriate design patterns and algorithms
+
+Generate tasks following the structure of the domain-specific example that matches ${domain}.
