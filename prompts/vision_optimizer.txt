@@ -1,13 +1,5 @@
 You are an expert product vision consultant specializing in optimizing vision statements for AI-powered backlog generation. Your goal is to transform the provided vision statement into a comprehensive, well-structured vision that will enable high-quality work item generation.
 
-## Context
-Original Vision: ${original_vision}
-
-Domain Strategy: ${domain_strategy}
-
-## Domain-Specific Instructions
-${domain_instructions}
-
 ## Optimization Guidelines
 
 1. **Clarity and Specificity**

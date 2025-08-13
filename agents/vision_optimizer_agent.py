@@ -52,9 +52,9 @@ class VisionOptimizerAgent(Agent):
             'domain_instructions': domain_instructions,
             'original_score': original_assessment.score,
             'original_rating': original_assessment.rating,
-            'strengths': ', '.join(original_assessment.strengths[:3]) if original_assessment.strengths else 'None identified',
-            'weaknesses': ', '.join(original_assessment.weaknesses[:3]) if original_assessment.weaknesses else 'None identified',
-            'missing_elements': ', '.join(original_assessment.missing_elements[:3]) if original_assessment.missing_elements else 'All elements present',
+            'strengths': '\n'.join(f"- {s}" for s in original_assessment.strengths) if original_assessment.strengths else '- None identified',
+            'weaknesses': '\n'.join(f"- {w}" for w in original_assessment.weaknesses) if original_assessment.weaknesses else '- None identified',
+            'missing_elements': '\n'.join(f"- {m}" for m in original_assessment.missing_elements) if original_assessment.missing_elements else '- All elements present',
             'improvement_suggestions': '\n'.join(f"- {s}" for s in original_assessment.improvement_suggestions[:5])
         }
         
@@ -86,7 +86,7 @@ Generate an optimized vision that will enable high-quality epic generation.
 """
         
         try:
-            # Generate optimized vision
+            # Generate optimized vision using the prompt template
             response = self.run(user_input, prompt_context)
             
             if not response:

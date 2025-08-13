@@ -7,7 +7,7 @@ import { Label } from '../../components/ui/label';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
-import { Sparkles, AlertCircle, ChevronRight, Check, Loader2, History, Calendar, Award, RefreshCw } from 'lucide-react';
+import { Sparkles, AlertCircle, ChevronRight, Check, Loader2, History, Calendar, Award, RefreshCw, Info as FiInfo } from 'lucide-react';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
 import apiClient from '../../services/api/apiClient';

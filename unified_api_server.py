@@ -3229,6 +3229,12 @@ class VisionQualityCheckRequest(BaseModel):
 async def optimize_vision(request: VisionOptimizationRequest, current_user: User = Depends(get_current_user)):
     """Optimize a product vision statement using selected domains."""
     try:
+        logger.info(f"Raw request data: {request}")
+        logger.info(f"Request dict: {request.dict()}")
+        
+        if not request.original_vision:
+            raise HTTPException(status_code=400, detail="Vision statement is required")
+            
         from agents.vision_optimizer_agent import VisionOptimizerAgent
         from config.config_loader import Config
         
