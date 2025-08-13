@@ -1330,6 +1330,7 @@ class WorkflowSupervisor:
         user_stories = [(epic, feature, user_story) for epic in self.workflow_data['epics'] for feature in epic.get('features', []) for user_story in feature.get('user_stories', [])]
         total_stories = len(user_stories)
         processed_stories = 0
+        stories_with_approved_tasks = 0  # Track stories that have approved tasks
         
         def process_story(args):
             epic, feature, user_story = args
@@ -1339,7 +1340,9 @@ class WorkflowSupervisor:
             task_context['epic_context'] = f"{epic.get('title', 'Untitled Epic')}: {epic.get('description', '')}"
             task_context['feature_context'] = f"{feature.get('title', 'Untitled Feature')}: {feature.get('description', '')}"
             tasks = agent.generate_tasks(user_story, task_context)
-            return user_story, tasks
+            # Check if any tasks were approved (not empty list)
+            has_approved_tasks = tasks and len(tasks) > 0
+            return user_story, tasks, has_approved_tasks
         
         if self.parallel_config['enabled'] and self.parallel_config['stages']['developer_agent'] and total_stories > 1:
             with ThreadPoolExecutor(max_workers=self.parallel_config['max_workers']) as executor:
@@ -1347,12 +1350,15 @@ class WorkflowSupervisor:
                 future_to_story = {executor.submit(process_story, args): i for i, args in enumerate(user_stories)}
                 for future in as_completed(future_to_story):
                     story_index = future_to_story[future]
-                    user_story, tasks = future.result()
+                    user_story, tasks, has_approved_tasks = future.result()
                     user_stories[story_index][2]['tasks'] = tasks
                     processed_stories += 1
+                    if has_approved_tasks:
+                        stories_with_approved_tasks += 1
                     if update_progress_callback and total_stories > 0:
-                        sub_progress = processed_stories / total_stories
-                        update_progress_callback(stage_index, f"Generating tasks ({processed_stories}/{total_stories})", sub_progress)
+                        # Option B: Progress based on stories with approved tasks
+                        sub_progress = stories_with_approved_tasks / total_stories
+                        update_progress_callback(stage_index, f"Generating tasks ({stories_with_approved_tasks}/{total_stories} stories with approved tasks)", sub_progress)
         else:
             for epic, feature, user_story in user_stories:
                 self.logger.info(f"Generating tasks for user story: {user_story.get('title', 'Untitled')}")
@@ -1363,9 +1369,13 @@ class WorkflowSupervisor:
                 tasks = agent.generate_tasks(user_story, task_context)
                 user_story['tasks'] = tasks
                 processed_stories += 1
+                # Check if any tasks were approved (not empty list)
+                if tasks and len(tasks) > 0:
+                    stories_with_approved_tasks += 1
                 if update_progress_callback and total_stories > 0:
-                    sub_progress = processed_stories / total_stories
-                    update_progress_callback(stage_index, f"Generating tasks ({processed_stories}/{total_stories})", sub_progress)
+                    # Option B: Progress based on stories with approved tasks
+                    sub_progress = stories_with_approved_tasks / total_stories
+                    update_progress_callback(stage_index, f"Generating tasks ({stories_with_approved_tasks}/{total_stories} stories with approved tasks)", sub_progress)
     
     def _execute_qa_generation(self, update_progress_callback=None, stage_index=5):
         """Execute QA generation using hierarchical QA Lead Agent with granular progress tracking (parallelized if enabled)."""

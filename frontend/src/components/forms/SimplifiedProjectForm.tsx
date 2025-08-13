@@ -59,6 +59,13 @@ const SimplifiedProjectForm: React.FC<SimplifiedProjectFormProps> = ({
   const selectedDomains = watch('selectedDomains');
   const includeTestArtifacts = watch('includeTestArtifacts');
 
+  // Handle initial data updates
+  useEffect(() => {
+    if (initialData?.visionStatement) {
+      setValue('visionStatement', initialData.visionStatement);
+    }
+  }, [initialData?.visionStatement, setValue]);
+
   // Handle initial data from optimized vision
   useEffect(() => {
     if (initialData?.selectedDomains && Array.isArray(initialData.selectedDomains)) {

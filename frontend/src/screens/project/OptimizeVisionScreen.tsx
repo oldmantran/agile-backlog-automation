@@ -209,8 +209,93 @@ const OptimizeVisionScreen: React.FC = () => {
     return '';
   };
 
+  const [optimizationJobId, setOptimizationJobId] = useState<string | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [optimizationStatus, setOptimizationStatus] = useState<string>('');
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+
+  const checkOptimizationStatus = async (jobId: string) => {
+    try {
+      const response = await apiClient.get(`/vision/optimize/status/${jobId}`);
+      const result = response.data;
+      
+      // Update status message
+      if (result.status === 'processing') {
+        setOptimizationStatus('Processing your vision statement...');
+      } else if (result.status === 'pending') {
+        setOptimizationStatus('Optimization queued, starting soon...');
+      }
+      
+      if (result.status === 'completed') {
+        // Stop polling
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          setPollingInterval(null);
+        }
+        setIsPolling(false);
+        setOptimizationJobId(null);
+        setOptimizationStatus('');
+        setIsOptimizing(false);
+        
+        // Transform to match expected format
+        const optimizationResult = {
+          vision_id: result.optimized_vision_id,
+          optimized_vision: result.optimized_vision,
+          original_score: result.original_assessment?.score || 0,
+          optimized_score: result.quality_score,
+          score_improvement: result.quality_score - (result.original_assessment?.score || 0),
+          rating_change: `${result.original_assessment?.rating || 'N/A'} → ${result.quality_rating}`,
+          improvements_made: result.optimization_feedback?.improvements_made || [],
+          remaining_issues: result.optimization_feedback?.remaining_issues || [],
+          is_acceptable: result.quality_score >= 75,
+          original_assessment: result.original_assessment,
+          optimized_assessment: result.optimization_feedback
+        };
+        
+        setOptimizationResult(optimizationResult);
+        setNotification({
+          message: `Vision quality improved! Score: ${result.quality_score}`,
+          type: 'success'
+        });
+        setTimeout(() => setNotification(null), 5000);
+        
+      } else if (result.status === 'failed') {
+        // Stop polling on failure
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          setPollingInterval(null);
+        }
+        setIsPolling(false);
+        setOptimizationJobId(null);
+        setOptimizationStatus('');
+        setIsOptimizing(false);
+        
+        setNotification({
+          message: result.error_message || 'Optimization failed',
+          type: 'error'
+        });
+        setTimeout(() => setNotification(null), 8000);
+      }
+      // If status is 'pending' or 'processing', continue polling
+      
+    } catch (error: any) {
+      console.error('Failed to check optimization status:', error);
+      // Don't stop polling on transient errors
+    }
+  };
+
   const handleOptimize = async () => {
-    if (!visionStatement.trim()) {
+    const trimmedVision = visionStatement.trim();
+    if (!trimmedVision) {
       setNotification({
         message: 'Please enter a vision statement to optimize.',
         type: 'error'
@@ -229,36 +314,69 @@ const OptimizeVisionScreen: React.FC = () => {
     }
 
     setIsOptimizing(true);
+    setOptimizationResult(null); // Clear any previous results
+    setOptimizationStatus('Starting optimization...');
+    
     try {
       const requestData = {
-        original_vision: visionStatement,
+        original_vision: trimmedVision,
         domains: selectedDomains
       };
-      console.log('Sending optimization request:', requestData);
-      const response = await apiClient.post('/vision/optimize', requestData);
-      // Interceptor unwraps { success: true, data } to data directly
+      console.log('Starting async optimization:', requestData);
+      
+      // Use async endpoint
+      const response = await apiClient.post('/vision/optimize/async', requestData);
       const result = response.data;
-      console.log('Optimization response:', result);
-      if (result) {
-        setOptimizationResult(result);
+      
+      if (result.job_id) {
+        setOptimizationJobId(result.job_id);
+        setIsPolling(true);
+        
         setNotification({
-          message: `Vision quality improved from ${result.original_score} to ${result.optimized_score}`,
+          message: 'Vision optimization started. This may take up to 30 seconds...',
           type: 'success'
         });
         setTimeout(() => setNotification(null), 5000);
+        
+        // Start polling for status
+        const interval = setInterval(() => {
+          checkOptimizationStatus(result.job_id);
+        }, 2000); // Check every 2 seconds
+        
+        setPollingInterval(interval);
+        
+        // Also check immediately
+        checkOptimizationStatus(result.job_id);
       }
     } catch (error: any) {
       console.error('Optimization failed:', error);
+      console.error('Error type:', error.name);
       console.error('Error response:', error.response);
-      console.error('Error data:', error.response?.data);
-      const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'Unable to optimize vision. Please try again.';
+      console.error('Error request:', error.request);
+      console.error('Error config:', error.config);
+      
+      let errorMessage = 'Unable to optimize vision. Please try again.';
+      
+      if (error.name === 'NetworkError') {
+        errorMessage = 'Network timeout: The optimization is taking longer than expected. The vision may still be processing and will appear in your history when complete. Please check your saved visions in a moment.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       setNotification({
         message: errorMessage,
         type: 'error'
       });
-      setTimeout(() => setNotification(null), 5000);
+      setTimeout(() => setNotification(null), 8000);
     } finally {
-      setIsOptimizing(false);
+      if (!isPolling) {
+        setIsOptimizing(false);
+        setOptimizationStatus('');
+      }
     }
   };
 
@@ -533,12 +651,12 @@ const OptimizeVisionScreen: React.FC = () => {
                   className="w-full"
                   size="lg"
                   onClick={handleOptimize}
-                  disabled={isOptimizing || !visionStatement.trim() || selectedDomains.length === 0}
+                  disabled={isOptimizing || isPolling || !visionStatement.trim() || selectedDomains.length === 0}
                 >
-                  {isOptimizing ? (
+                  {(isOptimizing || isPolling) ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Optimizing Vision...
+                      {optimizationStatus || 'Optimizing Vision...'}
                     </>
                   ) : (
                     <>
@@ -551,7 +669,23 @@ const OptimizeVisionScreen: React.FC = () => {
 
               {/* Results Section */}
               <div>
-                {optimizationResult ? (
+                {isPolling && !optimizationResult ? (
+                  <Card className="tron-card">
+                    <CardHeader>
+                      <CardTitle>Optimization In Progress</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+                        <p className="text-lg font-medium">{optimizationStatus}</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          This typically takes 20-30 seconds
+                        </p>
+                      </div>
+                      <Progress value={100} className="h-2 animate-pulse" />
+                    </CardContent>
+                  </Card>
+                ) : optimizationResult ? (
                   <Card className="tron-card">
                     <CardHeader>
                       <CardTitle>Optimization Results</CardTitle>
