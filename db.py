@@ -266,6 +266,22 @@ class Database:
                     ON vision_optimization_jobs(user_id, status, created_at DESC)
                 ''')
                 
+                # Add original_assessment column if it doesn't exist
+                cursor.execute('''
+                    PRAGMA table_info(vision_optimization_jobs)
+                ''')
+                columns = [col[1] for col in cursor.fetchall()]
+                if 'original_assessment' not in columns:
+                    cursor.execute('''
+                        ALTER TABLE vision_optimization_jobs 
+                        ADD COLUMN original_assessment TEXT
+                    ''')
+                if 'optimization_feedback' not in columns:
+                    cursor.execute('''
+                        ALTER TABLE vision_optimization_jobs 
+                        ADD COLUMN optimization_feedback TEXT
+                    ''')
+                
                 conn.commit()
                 logger.info("Database initialized successfully")
                 
@@ -1102,7 +1118,7 @@ class Database:
     
     def save_optimized_vision(self, user_id: str, original_vision: str, optimized_vision: str,
                             domains: list, quality_score: int, quality_rating: str,
-                            optimization_feedback: dict = None) -> int:
+                            optimization_feedback: dict = None, original_assessment: dict = None) -> int:
         """
         Save an optimized vision to the database.
         
@@ -1219,7 +1235,7 @@ class Database:
             raise
     
     def update_vision_job_status(self, job_id: str, status: str, optimized_vision_id: int = None, 
-                                error_message: str = None) -> bool:
+                                error_message: str = None, original_assessment: dict = None) -> bool:
         """
         Update vision optimization job status.
         
@@ -1243,12 +1259,14 @@ class Database:
                         WHERE id = ?
                     """, (status, job_id))
                 elif status == 'completed':
+                    # Store original assessment as JSON
+                    original_assessment_json = json.dumps(original_assessment) if original_assessment else None
                     cursor.execute("""
                         UPDATE vision_optimization_jobs 
                         SET status = ?, completed_at = CURRENT_TIMESTAMP, 
-                            optimized_vision_id = ?
+                            optimized_vision_id = ?, original_assessment = ?
                         WHERE id = ?
-                    """, (status, optimized_vision_id, job_id))
+                    """, (status, optimized_vision_id, original_assessment_json, job_id))
                 elif status == 'failed':
                     cursor.execute("""
                         UPDATE vision_optimization_jobs 
@@ -1287,7 +1305,8 @@ class Database:
                 cursor = conn.cursor()
                 
                 cursor.execute("""
-                    SELECT j.*, v.optimized_vision, v.quality_score, v.quality_rating
+                    SELECT j.*, v.optimized_vision, v.quality_score, v.quality_rating,
+                           v.optimization_feedback as vision_optimization_feedback
                     FROM vision_optimization_jobs j
                     LEFT JOIN optimized_visions v ON j.optimized_vision_id = v.id
                     WHERE j.id = ? AND j.user_id = ?
@@ -1298,9 +1317,15 @@ class Database:
                     return None
                 
                 job = dict(row)
-                # Parse domains JSON
+                # Parse JSON fields
                 if job.get('domains'):
                     job['domains'] = json.loads(job['domains'])
+                if job.get('original_assessment'):
+                    job['original_assessment'] = json.loads(job['original_assessment'])
+                if job.get('optimization_feedback'):
+                    job['optimization_feedback'] = json.loads(job['optimization_feedback'])
+                if job.get('vision_optimization_feedback'):
+                    job['optimization_feedback'] = json.loads(job['vision_optimization_feedback'])
                     
                 return job
                 

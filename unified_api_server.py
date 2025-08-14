@@ -3136,11 +3136,27 @@ def run_vision_optimization_background(job_id: str, user_id: str, original_visio
             domains=domains,
             quality_score=result["optimized_assessment"].score,
             quality_rating=result["optimized_assessment"].rating,
-            optimization_feedback=result["optimization_feedback"]
+            optimization_feedback=result["optimization_feedback"],
+            original_assessment=result["original_assessment"]  # Add original assessment
         )
         
-        # Update job status to completed
-        db.update_vision_job_status(job_id, "completed", optimized_vision_id=vision_id)
+        # Convert assessment object to dict for JSON storage
+        original_assessment_dict = {
+            "score": result["original_assessment"].score,
+            "rating": result["original_assessment"].rating,
+            "strengths": result["original_assessment"].strengths,
+            "weaknesses": result["original_assessment"].weaknesses,
+            "missing_elements": result["original_assessment"].missing_elements,
+            "improvement_suggestions": result["original_assessment"].improvement_suggestions
+        }
+        
+        # Update job status to completed with original assessment data
+        db.update_vision_job_status(
+            job_id, 
+            "completed", 
+            optimized_vision_id=vision_id,
+            original_assessment=original_assessment_dict
+        )
         
         logger.info(f"Completed optimization job {job_id} with vision ID {vision_id}")
         
@@ -3211,7 +3227,9 @@ async def get_vision_optimization_status(job_id: str, current_user: User = Depen
                 "optimized_vision": job_status["optimized_vision"],
                 "quality_score": job_status["quality_score"],
                 "quality_rating": job_status["quality_rating"],
-                "optimized_vision_id": job_status["optimized_vision_id"]
+                "optimized_vision_id": job_status["optimized_vision_id"],
+                "original_assessment": job_status.get("original_assessment"),  # Include original assessment
+                "optimization_feedback": job_status.get("optimization_feedback")  # Include optimization feedback
             })
         elif job_status["status"] == "failed":
             response["error_message"] = job_status.get("error_message", "Optimization failed")
