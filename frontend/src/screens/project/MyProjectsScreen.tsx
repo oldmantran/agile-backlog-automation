@@ -800,6 +800,7 @@ const MyProjectsScreen: React.FC = () => {
       }
 
       const jobs: JobInfo[] = JSON.parse(stored);
+      let hasChanges = false;
       const updatedJobs: JobInfo[] = [];
 
       for (const job of jobs) {
@@ -813,9 +814,17 @@ const MyProjectsScreen: React.FC = () => {
             error: progressUpdate.type === 'error' ? progressUpdate.message : job.error
           };
           
-          // Only log progress changes
-          if (progressUpdate.progress !== job.progress) {
-            console.log(`📊 Job ${job.jobId} progress: ${job.progress}% → ${progressUpdate.progress}% (via ${connectionType})`);
+          // Check if there are actual changes
+          if (updatedJob.status !== job.status || 
+              updatedJob.progress !== job.progress || 
+              updatedJob.currentAction !== job.currentAction ||
+              updatedJob.error !== job.error) {
+            hasChanges = true;
+            
+            // Only log progress changes
+            if (progressUpdate.progress !== job.progress) {
+              console.log(`📊 Job ${job.jobId} progress: ${job.progress}% → ${progressUpdate.progress}% (via ${connectionType})`);
+            }
           }
 
           if (updatedJob.status === 'running' || updatedJob.status === 'queued') {
@@ -832,8 +841,11 @@ const MyProjectsScreen: React.FC = () => {
         }
       }
 
-      setActiveJobs(prev => updatedJobs);
-      localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+      // Only update state if there are actual changes
+      if (hasChanges) {
+        setActiveJobs(updatedJobs);
+        localStorage.setItem('activeJobs', JSON.stringify(updatedJobs));
+      }
     } catch (error) {
       logError('updateJobsFromProgress', error, 'Progress update error');
     }

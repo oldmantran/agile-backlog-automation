@@ -46,7 +46,7 @@ export const useHybridProgress = (): UseHybridProgressReturn => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentJobIdRef = useRef<string | null>(null);
   const lastEtagRef = useRef<string | null>(null);
-  const pollingBackoffRef = useRef<number>(3000); // Start with 3 seconds
+  const pollingBackoffRef = useRef<number>(5000); // Start with 5 seconds to reduce flicker
   const maxBackoffRef = useRef<number>(30000); // Max 30 seconds
   const failedAttemptsRef = useRef<number>(0);
   
