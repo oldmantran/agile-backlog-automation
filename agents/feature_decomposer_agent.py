@@ -22,12 +22,79 @@ class FeatureDecomposerAgent(Agent):
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.feature_quality_assessor = FeatureQualityAssessor()
         self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
+    
+    def _determine_feature_count(self, epic: dict, base_max: int = None) -> int:
+        """
+        Determine the appropriate number of features based on epic complexity.
+        
+        Args:
+            epic: The epic dictionary
+            base_max: Base maximum features from settings (default used if None)
+            
+        Returns:
+            Recommended number of features for this epic
+        """
+        # Start with base max or default
+        base_count = base_max if base_max is not None else 3
+        
+        # Analyze epic complexity factors
+        complexity_score = 0
+        
+        # 1. Description length (longer = more complex)
+        description = epic.get('description', '')
+        if len(description) > 500:
+            complexity_score += 2
+        elif len(description) > 250:
+            complexity_score += 1
+            
+        # 2. Number of success criteria
+        success_criteria = epic.get('success_criteria', [])
+        if len(success_criteria) > 5:
+            complexity_score += 2
+        elif len(success_criteria) > 3:
+            complexity_score += 1
+            
+        # 3. Number of dependencies
+        dependencies = epic.get('dependencies', [])
+        if len(dependencies) > 3:
+            complexity_score += 1
+            
+        # 4. Priority (higher priority = potentially more features)
+        priority = epic.get('priority', 'Medium')
+        if priority == 'Critical' or priority == 'High':
+            complexity_score += 1
+            
+        # 5. Business value indicators
+        business_value = epic.get('business_value', '')
+        if any(keyword in business_value.lower() for keyword in ['revenue', 'critical', 'core', 'essential', 'foundation']):
+            complexity_score += 1
+            
+        # Determine feature count based on complexity
+        if complexity_score >= 5:
+            # Very complex epic - increase by 50-100%
+            return min(int(base_count * 2.0), 8)  # Cap at 8 features
+        elif complexity_score >= 3:
+            # Complex epic - increase by 33%
+            return min(int(base_count * 1.33), 6)  # Cap at 6 features
+        elif complexity_score >= 1:
+            # Standard complexity - use base count
+            return base_count
+        else:
+            # Simple epic - reduce by 33%
+            return max(int(base_count * 0.67), 2)  # Minimum 2 features
 
     def decompose_epic(self, epic: dict, context: dict = None, max_features: int = None) -> list[dict]:
         """Break down an epic into detailed features with business value and strategic considerations."""
         
+        # Determine dynamic feature count based on epic complexity
+        dynamic_feature_count = self._determine_feature_count(epic, max_features)
+        
         # Apply max_features constraint if specified (null = unlimited)
-        feature_limit = max_features if max_features is not None else None  # None = unlimited
+        feature_limit = dynamic_feature_count if max_features is not None else None  # None = unlimited
+        
+        print(f"[DYNAMIC FEATURES] Epic complexity analysis suggests {dynamic_feature_count} features for '{epic.get('title', 'Unknown Epic')}'")
+        if max_features and dynamic_feature_count != max_features:
+            print(f"[DYNAMIC FEATURES] Adjusted from base setting of {max_features} based on complexity")
         
         # Extract product vision for context cascading
         product_vision = context.get('product_vision', '') if context else ''
@@ -56,7 +123,7 @@ Business Value: {epic.get('business_value', 'Not specified')}
 Success Criteria: {epic.get('success_criteria', [])}
 Dependencies: {epic.get('dependencies', [])}
 
-{f'IMPORTANT: Generate a maximum of {int(feature_limit * 2.0) if feature_limit else 6} features only.' if feature_limit else 'Generate between 3-6 features.'}
+{f'IMPORTANT: Generate a maximum of {int(dynamic_feature_count * 2.0)} features only.' if dynamic_feature_count else 'Generate between 3-6 features.'}
 """
         
         # Remove redundant print - supervisor already logs this

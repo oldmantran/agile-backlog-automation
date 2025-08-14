@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Vision Optimization</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test Vision Optimization</h1>
+    <button onclick="testOptimization()">Test Optimization</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testOptimization() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // First login
+                const loginResponse = await axios.post('http://localhost:8000/api/auth/login', {
+                    username: 'testuser',
+                    password: 'Test123!'
+                });
+                
+                const token = loginResponse.data.data.tokens.access_token;
+                console.log('Got token:', token.substring(0, 30) + '...');
+                
+                // Test optimization with different timeout
+                const startTime = Date.now();
+                
+                const response = await axios.post('http://localhost:8000/api/vision/optimize', {
+                    original_vision: 'Test vision for a technology product',
+                    domains: [{domain: 'technology', priority: 'primary'}]
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 60000 // 60 seconds
+                });
+                
+                const endTime = Date.now();
+                const timeTaken = (endTime - startTime) / 1000;
+                
+                console.log('Response:', response);
+                resultDiv.innerHTML = `
+                    <h3>Success!</h3>
+                    <p>Time taken: ${timeTaken} seconds</p>
+                    <p>Response size: ${JSON.stringify(response.data).length} bytes</p>
+                    <p>Score improvement: ${response.data.data.score_improvement}</p>
+                `;
+                
+            } catch (error) {
+                console.error('Full error:', error);
+                console.error('Error response:', error.response);
+                console.error('Error request:', error.request);
+                console.error('Error message:', error.message);
+                
+                resultDiv.innerHTML = `
+                    <h3>Error!</h3>
+                    <p>Type: ${error.name}</p>
+                    <p>Message: ${error.message}</p>
+                    <p>Has response: ${!!error.response}</p>
+                    <p>Has request: ${!!error.request}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

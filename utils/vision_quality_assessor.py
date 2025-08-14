@@ -118,18 +118,24 @@ class VisionQualityAssessor:
         
         # 1. Assess length and detail (10 points)
         word_count = len(vision_text.split())
-        if word_count >= 500:
+        if 200 <= word_count <= 400:
             total_score += 10
-            strengths.append("Comprehensive and detailed vision")
-        elif word_count >= 300:
+            strengths.append("Optimal length - clear and focused")
+        elif 150 <= word_count < 200:
             total_score += 7
-            strengths.append("Good level of detail")
-        elif word_count >= 150:
+            strengths.append("Good length - concise")
+        elif 400 < word_count <= 500:
+            total_score += 5
+            weaknesses.append("Slightly too long - consider simplifying")
+        elif word_count > 500:
+            total_score += 2
+            weaknesses.append("Too long and complex - needs significant reduction")
+        elif 100 <= word_count < 150:
             total_score += 4
-            weaknesses.append("Could benefit from more detail")
+            weaknesses.append("A bit brief - could use more detail")
         else:
             total_score += 1
-            weaknesses.append("Vision is too brief - needs significant expansion")
+            weaknesses.append("Too brief - needs expansion to 200-400 words")
         
         # 2. Assess essential elements
         for element_key, element_info in self.essential_elements.items():

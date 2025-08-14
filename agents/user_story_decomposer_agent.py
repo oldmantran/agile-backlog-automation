@@ -24,11 +24,85 @@ class UserStoryDecomposerAgent(Agent):
         self.quality_validator = WorkItemQualityValidator(config.settings if hasattr(config, 'settings') else None)
         self.user_story_quality_assessor = UserStoryQualityAssessor()
         self.max_quality_retries = 3  # Maximum attempts to achieve GOOD or better rating
+    
+    def _determine_story_count(self, feature: dict, base_max: int = None) -> int:
+        """
+        Determine the appropriate number of user stories based on feature complexity.
+        
+        Args:
+            feature: The feature dictionary
+            base_max: Base maximum stories from settings (default used if None)
+            
+        Returns:
+            Recommended number of user stories for this feature
+        """
+        # Start with base max or default
+        base_count = base_max if base_max is not None else 3
+        
+        # Analyze feature complexity factors
+        complexity_score = 0
+        
+        # 1. Description length (longer = more complex)
+        description = feature.get('description', '')
+        if len(description) > 400:
+            complexity_score += 2
+        elif len(description) > 200:
+            complexity_score += 1
+            
+        # 2. Number of user personas/roles mentioned
+        description_lower = description.lower()
+        user_roles = ['admin', 'user', 'customer', 'manager', 'operator', 'viewer', 'guest', 'developer', 'analyst']
+        role_count = sum(1 for role in user_roles if role in description_lower)
+        if role_count > 3:
+            complexity_score += 2
+        elif role_count > 1:
+            complexity_score += 1
+            
+        # 3. Technical complexity indicators
+        tech_keywords = ['integration', 'api', 'database', 'security', 'authentication', 'workflow', 'process', 'algorithm']
+        tech_count = sum(1 for keyword in tech_keywords if keyword in description_lower)
+        if tech_count > 4:
+            complexity_score += 2
+        elif tech_count > 2:
+            complexity_score += 1
+            
+        # 4. UI/UX complexity
+        ui_keywords = ['dashboard', 'interface', 'screen', 'form', 'report', 'visualization', 'chart', 'table']
+        ui_count = sum(1 for keyword in ui_keywords if keyword in description_lower)
+        if ui_count > 3:
+            complexity_score += 1
+            
+        # 5. Business logic indicators
+        logic_keywords = ['calculate', 'validate', 'process', 'analyze', 'transform', 'generate', 'schedule']
+        logic_count = sum(1 for keyword in logic_keywords if keyword in description_lower)
+        if logic_count > 2:
+            complexity_score += 1
+            
+        # Determine story count based on complexity
+        if complexity_score >= 5:
+            # Very complex feature - increase by 60-100%
+            return min(int(base_count * 2.0), 10)  # Cap at 10 stories
+        elif complexity_score >= 3:
+            # Complex feature - increase by 33%
+            return min(int(base_count * 1.33), 7)  # Cap at 7 stories
+        elif complexity_score >= 1:
+            # Standard complexity - use base count
+            return base_count
+        else:
+            # Simple feature - reduce by 33%
+            return max(int(base_count * 0.67), 2)  # Minimum 2 stories
 
     def decompose_feature_to_user_stories(self, feature: dict, context: dict = None, max_user_stories: int = 5) -> list[dict]:
         """Decompose a feature into user stories."""
         # Remove redundant print - supervisor already logs this
         # print(f"📝 [UserStoryDecomposerAgent] Decomposing feature to user stories: {feature.get('title', 'Unknown')}")
+        
+        # Determine dynamic story count based on feature complexity
+        dynamic_story_count = self._determine_story_count(feature, max_user_stories)
+        
+        print(f"[DYNAMIC STORIES] Feature complexity analysis suggests {dynamic_story_count} stories for '{feature.get('title', 'Unknown Feature')}'")
+        if max_user_stories and dynamic_story_count != max_user_stories:
+            print(f"[DYNAMIC STORIES] Adjusted from base setting of {max_user_stories} based on complexity")
         
         # Get the feature description and title
         feature_description = feature.get('description', '')
@@ -48,7 +122,7 @@ class UserStoryDecomposerAgent(Agent):
             'team_velocity': context.get('team_velocity', '20-30 points per sprint') if context else '20-30 points per sprint',
             'product_vision': product_vision,  # CASCADE PRODUCT VISION
             'epic_context': epic_context,  # CASCADE EPIC CONTEXT
-            'max_user_stories': int(max_user_stories * 2.0) if max_user_stories else 6,  # Generate 2x for quality filtering
+            'max_user_stories': int(dynamic_story_count * 2.0),  # Generate 2x for quality filtering
             'feature': feature  # Pass entire feature object for template access
         }
         
