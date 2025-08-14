@@ -27,14 +27,15 @@ class EpicQualityAssessor:
             'finance': ['transaction', 'payment', 'investment', 'portfolio', 'trading', 'financial'],
             'retail': ['customer', 'inventory', 'product', 'shopping', 'purchase', 'order'],
             'logistics': ['warehouse', 'shipment', 'delivery', 'tracking', 'distribution', 'supply chain'],
-            'education': ['student', 'learning', 'course', 'curriculum', 'teacher', 'classroom']
+            'education': ['student', 'learning', 'course', 'curriculum', 'teacher', 'classroom'],
+            'agriculture': ['crop', 'yield', 'soil', 'irrigation', 'harvest', 'farm', 'livestock', 'agronomy', 'fertilizer', 'seed', 'agricultural', 'farming']
         }
         
         # Platform indicators
         self.platform_terms = ['mobile', 'ios', 'android', 'web', 'cloud', 'api', 'dashboard', 'real-time']
         
-        # User role patterns
-        self.user_patterns = r'\b(User|Customer|Student|Patient|Driver|Rider|Commuter|Manager|Admin|Teacher|Operator)\b'
+        # User role patterns - including domain-specific users
+        self.user_patterns = r'\b(User|Customer|Student|Patient|Driver|Rider|Commuter|Manager|Admin|Teacher|Operator|Farmer|Smallholder|Agri-Lender|Cooperative|Aggregator|NGO|MFI|Lender)\b'
         
     def assess_epic(self, epic: Dict[str, Any], domain: str, product_vision: str) -> QualityAssessment:
         """Assess epic quality based on streamlined criteria."""
@@ -89,12 +90,13 @@ class EpicQualityAssessor:
             specific_issues.append("Weak connection to product vision")
         
         # 3. User Specificity (15 points)
-        if re.search(self.user_patterns, description, re.I):
+        # Check both title AND description for user mentions
+        if re.search(self.user_patterns, title, re.I) or re.search(self.user_patterns, description, re.I):
             score += 15
             strengths.append("Identifies target users")
         else:
             specific_issues.append("No specific users mentioned")
-            weaknesses.append("Add WHO will use this (e.g., Urban Commuters)")
+            weaknesses.append("Add WHO will use this (e.g., Smallholder Farmers, Agri-Lenders)")
         
         # 4. Platform/Technology (15 points)
         platform_found = any(term in combined_text for term in self.platform_terms)
@@ -137,7 +139,7 @@ class EpicQualityAssessor:
         if score < 75:
             if not any(term in combined_text for term in domain_terms):
                 improvement_suggestions.append(f"Include {domain} terms like: {', '.join(domain_terms[:3])}")
-            if not re.search(self.user_patterns, description, re.I):
+            if not re.search(self.user_patterns, title, re.I) and not re.search(self.user_patterns, description, re.I):
                 improvement_suggestions.append("Specify target users from the vision")
             if not platform_found:
                 improvement_suggestions.append("Add platform details (mobile, web, cloud, etc.)")

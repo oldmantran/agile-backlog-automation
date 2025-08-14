@@ -9,10 +9,12 @@ CONTEXT VARIABLES:
 - timeline: ${timeline}
 - budget_constraints: ${budget_constraints}
 
-EXAMPLE EPIC (your output must match this structure exactly):
+EXAMPLE EPICS (your output MUST follow these patterns):
+
+For Transportation domain:
 [
   {
-    "title": "One-Tap Ride Request & Real-Time Dispatch",
+    "title": "Urban Commuter One-Tap Ride Request & Dispatch",
     "description": "Enable Urban Commuters and College Students to request autonomous vehicles with single tap, achieving <45s dispatch through cloud-based fleet optimization and real-time vehicle tracking on mobile platforms.",
     "priority": "High",
     "estimated_complexity": "L",
@@ -20,14 +22,57 @@ EXAMPLE EPIC (your output must match this structure exactly):
   }
 ]
 
-QUALITY REQUIREMENTS (ALL must be met for 75+ score):
-✓ Title ≤60 chars using EXACT terms from vision
-✓ References specific product name from vision
-✓ Names target users (e.g., Urban Commuter, not "users")
-✓ Includes platform (mobile, iOS, web, etc.) from vision
-✓ Ties to measurable outcome (e.g., <45s dispatch, 90% coverage)
-✓ Uses domain terms (e.g., autonomous vehicle, ride-hailing, fleet)
-✓ Valid JSON with all required fields
+For Agriculture domain:
+[
+  {
+    "title": "Smallholder Farmer Crop Yield Analytics Dashboard",
+    "description": "Provide Smallholder Farmers and Cooperatives with mobile-first yield forecasting using satellite imagery, soil moisture data, and irrigation analytics to optimize crop production and enable data-driven farm management decisions.",
+    "priority": "High",
+    "estimated_complexity": "L",
+    "category": "core_platform"
+  }
+]
+
+For Healthcare domain:
+[
+  {
+    "title": "Physician Clinical Decision Support System",
+    "description": "Empower Physicians and Nurses with AI-driven diagnosis recommendations, treatment protocols, and patient outcome predictions integrated with EHR systems to improve clinical accuracy and reduce medical errors by 30%.",
+    "priority": "High",
+    "estimated_complexity": "XL",
+    "category": "core_platform"
+  }
+]
+
+CRITICAL QUALITY REQUIREMENTS (ALL MANDATORY for 75+ score):
+
+1. **SPECIFIC USERS ARE MANDATORY** - MUST include in title or description:
+   - ❌ REJECTED: "users", "customers", "stakeholders", "people"
+   - ✅ REQUIRED: Exact user types from vision like:
+     * Agriculture: "Smallholder Farmers", "Agri-Lenders", "Rural Banks", "Cooperatives"
+     * Healthcare: "Physicians", "Nurses", "Patients", "Hospital Administrators"
+     * Finance: "Retail Investors", "Wealth Managers", "Bank Tellers", "Loan Officers"
+   
+2. **DOMAIN TERMINOLOGY IS MANDATORY** - MUST include domain-specific terms:
+   - Agriculture: crop, yield, soil, irrigation, harvest, farm, livestock, agronomy
+   - Healthcare: patient, diagnosis, clinical, treatment, EHR, HIPAA, medical
+   - Finance: transaction, portfolio, compliance, KYC/AML, ledger, underwriting
+   - Retail: inventory, point-of-sale, merchandising, supply chain, omnichannel
+   - Education: curriculum, assessment, enrollment, student outcomes, LMS
+   
+3. **ENFORCEMENT RULES**:
+   - Epic titles MUST contain at least ONE specific user type
+   - Epic descriptions MUST contain at least TWO domain-specific terms
+   - Generic terms = AUTOMATIC REJECTION (score below 75)
+   
+4. **OTHER REQUIREMENTS**:
+   ✓ Title ≤60 chars using EXACT terms from vision
+   ✓ References specific product name from vision
+   ✓ Includes platform (mobile, iOS, web, etc.) from vision
+   ✓ Ties to measurable outcome (e.g., <45s dispatch, 90% coverage)
+   ✓ Valid JSON with all required fields
+
+⚠️ QUALITY GATE: Epics without specific users AND domain terms will score 70 or below and be REJECTED.
 
 EPIC STRUCTURE:
 - title: Specific capability from vision (max 60 chars)
@@ -35,6 +80,15 @@ EPIC STRUCTURE:
 - priority: High|Medium|Low based on vision emphasis
 - estimated_complexity: XS|S|M|L|XL
 - category: core_platform|user_experience|data_management|integration|security|performance|administration
+
+FINAL INSTRUCTIONS:
+1. ANALYZE the vision to identify ALL specific user types mentioned
+2. USE those exact user types in your epic titles (e.g., "Smallholder Farmers", not "farmers")
+3. INCLUDE multiple ${domain}-specific terms in each description
+4. FOLLOW the example patterns above for the ${domain} domain
+5. ENSURE each epic passes ALL quality requirements or it will be rejected
+
+Remember: Generic epics without specific users and domain terms will score 70 and be REJECTED.
 
 Now generate ${max_epics} epics for "${project_name}" in the ${domain} domain based on this vision:
 

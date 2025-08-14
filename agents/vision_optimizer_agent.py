@@ -85,37 +85,95 @@ REQUIREMENTS:
 Generate an optimized vision that will enable high-quality epic generation.
 """
         
-        try:
-            # Generate optimized vision using the prompt template
-            response = self.run(user_input, prompt_context)
-            
-            if not response:
-                raise ValueError("Empty response from LLM")
-            
-            # Extract optimized vision from response
-            optimized_vision = self._extract_vision_from_response(response)
-            
-            # Assess optimized vision quality
-            optimized_assessment = self.vision_assessor.assess_vision(optimized_vision, primary_domain)
-            
-            self.logger.info(f"Optimized vision assessment: {optimized_assessment.rating} ({optimized_assessment.score}/100)")
-            
-            # Generate optimization feedback
-            optimization_feedback = self._generate_optimization_feedback(
-                original_assessment, optimized_assessment, domains
-            )
-            
-            return {
-                'optimized_vision': optimized_vision,
-                'original_assessment': original_assessment,
-                'optimized_assessment': optimized_assessment,
-                'optimization_feedback': optimization_feedback,
-                'success': optimized_assessment.score > original_assessment.score
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Vision optimization failed: {e}")
-            raise
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # Add word count constraint reminder to user input for retries
+                if retry_count > 0:
+                    self.logger.info(f"Retry {retry_count}: Enforcing word count constraint (200-400 words)")
+                    user_input_with_reminder = user_input + "\n\nCRITICAL: The previous attempt failed the word count requirement. You MUST produce a vision between 200-400 words. Count carefully."
+                else:
+                    user_input_with_reminder = user_input
+                
+                # Generate optimized vision using the prompt template
+                response = self.run(user_input_with_reminder, prompt_context)
+                
+                if not response:
+                    raise ValueError("Empty response from LLM")
+                
+                # Extract optimized vision from response
+                optimized_vision = self._extract_vision_from_response(response)
+                
+                # Check word count
+                word_count = len(optimized_vision.split())
+                
+                if word_count < 200:
+                    self.logger.warning(f"Attempt {retry_count + 1}: Vision too short ({word_count} words). Minimum is 200 words.")
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        continue
+                    else:
+                        self.logger.error("Failed to generate vision with adequate length after all retries")
+                        # Pad the vision with a note about brevity
+                        optimized_vision += "\n\n[Note: This vision may benefit from additional detail to fully capture the scope and ambition of the project.]"
+                
+                elif word_count > 400:
+                    self.logger.warning(f"Attempt {retry_count + 1}: Vision too long ({word_count} words). Maximum is 400 words.")
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        continue
+                    else:
+                        self.logger.warning("Failed to generate concise vision after all retries. Truncating...")
+                        # Truncate to approximately 400 words while keeping complete sentences
+                        sentences = optimized_vision.replace('!', '.').replace('?', '.').split('.')
+                        truncated = []
+                        current_count = 0
+                        
+                        for sentence in sentences:
+                            sentence = sentence.strip()
+                            if not sentence:
+                                continue
+                            sentence_words = len(sentence.split())
+                            if current_count + sentence_words <= 400:
+                                truncated.append(sentence)
+                                current_count += sentence_words
+                            else:
+                                break
+                        
+                        optimized_vision = '. '.join(truncated) + '.'
+                        self.logger.info(f"Truncated vision to {len(optimized_vision.split())} words")
+                        word_count = len(optimized_vision.split())
+                
+                else:
+                    # Word count is within range (200-400)
+                    self.logger.info(f"Vision generated successfully with {word_count} words (within 200-400 range)")
+                    break
+                
+            except Exception as e:
+                self.logger.error(f"Error during vision generation attempt {retry_count + 1}: {e}")
+                retry_count += 1
+                if retry_count >= max_retries:
+                    raise
+        
+        # Assess optimized vision quality
+        optimized_assessment = self.vision_assessor.assess_vision(optimized_vision, primary_domain)
+        
+        self.logger.info(f"Optimized vision assessment: {optimized_assessment.rating} ({optimized_assessment.score}/100)")
+        
+        # Generate optimization feedback
+        optimization_feedback = self._generate_optimization_feedback(
+            original_assessment, optimized_assessment, domains
+        )
+        
+        return {
+            'optimized_vision': optimized_vision,
+            'original_assessment': original_assessment,
+            'optimized_assessment': optimized_assessment,
+            'optimization_feedback': optimization_feedback,
+            'success': optimized_assessment.score > original_assessment.score
+        }
     
     def _build_domain_context(self, domains: List[Dict[str, Any]]) -> str:
         """Build domain context string for the prompt."""

@@ -27,7 +27,8 @@ class EpicQualityAssessor:
             'education': ['student', 'learning', 'education', 'teacher', 'classroom', 'curriculum', 'academic', 'school', 'instruction'],
             'logistics': ['warehouse', 'dock', 'asset', 'gate', 'door', 'motor', 'lift', 'surveillance', 'inspection', 'monitoring', 'maintenance'],
             'retail': ['customer', 'product', 'inventory', 'sales', 'purchase', 'catalog', 'order', 'payment', 'checkout'],
-            'manufacturing': ['production', 'assembly', 'quality', 'equipment', 'process', 'workflow', 'machinery', 'automation']
+            'manufacturing': ['production', 'assembly', 'quality', 'equipment', 'process', 'workflow', 'machinery', 'automation'],
+            'agriculture': ['crop', 'yield', 'soil', 'irrigation', 'harvest', 'farm', 'livestock', 'agronomy', 'fertilizer', 'seed', 'agricultural', 'farming']
         }
         
         # Generic terms that indicate lack of specificity
@@ -40,6 +41,10 @@ class EpicQualityAssessor:
         """Comprehensive epic quality assessment."""
         title = epic.get('title', '').strip()
         description = epic.get('description', '').strip()
+        
+        # Store for use in assessment methods
+        self.current_title = title
+        self.current_domain = domain
         
         if not title or not description:
             return QualityAssessment(
@@ -205,12 +210,38 @@ class EpicQualityAssessor:
             issues.append("Unclear business value or benefits")
         
         # Check for user impact (5 points)
-        user_terms = ['user', 'provider', 'manager', 'team', 'staff', 'customer', 'client']
-        if any(term in desc_lower for term in user_terms):
+        # First check title + description for specific user types
+        combined_text = f"{self.current_title.lower()} {desc_lower}" if hasattr(self, 'current_title') else desc_lower
+        
+        # Domain-specific user types
+        specific_user_types = {
+            'agriculture': ['farmer', 'smallholder', 'agri-lender', 'cooperative', 'aggregator', 'ngo', 'rural bank', 'mfi'],
+            'healthcare': ['physician', 'nurse', 'patient', 'doctor', 'clinician', 'administrator'],
+            'finance': ['investor', 'trader', 'advisor', 'analyst', 'banker', 'broker'],
+            'education': ['student', 'teacher', 'educator', 'learner', 'instructor', 'administrator'],
+            'retail': ['shopper', 'buyer', 'merchant', 'vendor', 'retailer', 'consumer']
+        }
+        
+        # Get domain-specific users for current domain
+        domain = getattr(self, 'current_domain', 'general') if hasattr(self, 'current_domain') else 'general'
+        domain_users = specific_user_types.get(domain, [])
+        
+        # Also check generic user terms
+        generic_user_terms = ['user', 'provider', 'manager', 'team', 'staff', 'customer', 'client']
+        all_user_terms = domain_users + generic_user_terms
+        
+        # Check if any specific user type is mentioned
+        found_specific = any(user in combined_text for user in domain_users)
+        found_generic = any(term in combined_text for term in generic_user_terms)
+        
+        if found_specific:
             score += 5
-            strengths.append("Identifies target users")
+            strengths.append("Identifies specific target users")
+        elif found_generic:
+            score += 3
+            strengths.append("Identifies target users (generic)")
         else:
-            issues.append("Target users not clearly identified")
+            issues.append("No specific users mentioned")
         
         return score, strengths, issues
     
@@ -334,7 +365,32 @@ class EpicQualityAssessor:
         
         if "Lacks domain-specific terminology" in issues:
             domain_terms = self.domain_indicators.get(domain.lower(), [])
-            suggestions.append(f"Include domain-specific terms like: {', '.join(domain_terms[:5])}")
+            if domain_terms:
+                suggestions.append(f"Include {domain} terms like: {', '.join(domain_terms[:5])}")
+            else:
+                suggestions.append(f"Include terminology specific to the {domain} domain")
+        
+        if "No specific users mentioned" in issues:
+            # Extract specific user types from the product vision
+            vision_lower = product_vision.lower()
+            user_examples = []
+            
+            # Common patterns for user types in visions
+            if 'farmer' in vision_lower:
+                user_examples.extend(['Smallholder Farmers', 'Commercial Farmers'])
+            if 'lender' in vision_lower:
+                user_examples.extend(['Agri-Lenders', 'Rural Banks'])
+            if 'cooperative' in vision_lower:
+                user_examples.append('Cooperatives')
+            if 'patient' in vision_lower:
+                user_examples.extend(['Patients', 'Healthcare Providers'])
+            if 'student' in vision_lower:
+                user_examples.extend(['Students', 'Teachers'])
+            
+            if user_examples:
+                suggestions.append(f"Specify target users from the vision (e.g., {', '.join(user_examples[:3])})")
+            else:
+                suggestions.append("Add WHO will use this (e.g., specific user roles from the vision)")
         
         if "Poor alignment with product vision key concepts" in issues:
             suggestions.append("Reference specific elements from the product vision statement")
