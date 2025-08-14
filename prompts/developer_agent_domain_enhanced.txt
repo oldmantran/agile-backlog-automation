@@ -783,7 +783,7 @@ TASK GENERATION RULES:
 6. Tasks should demonstrate deep domain knowledge
 7. Use industry-standard terminology and acronyms appropriately
 
-REQUIREMENTS (${max_tasks || '3–8'} tasks total):
+REQUIREMENTS (${max_tasks} tasks total):
 1. Map each acceptance criterion to specific tasks
 2. Maximum 8 hours per task (split larger tasks)
 3. Include setup, implementation, and testing phases

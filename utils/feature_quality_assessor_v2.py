@@ -20,8 +20,8 @@ class FeatureQualityAssessor:
     """Streamlined feature quality assessment focused on practical criteria."""
     
     def __init__(self):
-        # User role patterns
-        self.user_patterns = r'\b(User|Customer|Student|Patient|Driver|Rider|Commuter|Manager|Admin|Teacher|Operator|Tourist|Night Owl)\b'
+        # User role patterns (including agriculture domain users)
+        self.user_patterns = r'\b(User|Customer|Student|Patient|Driver|Rider|Commuter|Manager|Admin|Teacher|Operator|Tourist|Night Owl|Farmer|Smallholder|Agri-Lender|Cooperative|Aggregator|NGO|MFI|Lender|Financial Advisor)\b'
         
         # Platform indicators
         self.platform_terms = ['mobile', 'ios', 'android', 'web', 'cloud', 'api', 'dashboard', 'real-time']
@@ -84,7 +84,7 @@ class FeatureQualityAssessor:
             specific_issues.append("Weak connection to parent epic")
         
         # 3. User Specificity (15 points)
-        if re.search(self.user_patterns, description, re.I):
+        if re.search(self.user_patterns, description, re.I) or re.search(self.user_patterns, title, re.I):
             score += 15
             strengths.append("Identifies target users")
         else:
