@@ -7,7 +7,7 @@ import { Label } from '../../components/ui/label';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
-import { Sparkles, AlertCircle, ChevronRight, Check, Loader2, History, Calendar, Award, RefreshCw, Info as FiInfo } from 'lucide-react';
+import { Sparkles, AlertCircle, ChevronRight, Check, Loader2, History, Calendar, Award, RefreshCw, Info as FiInfo, Download } from 'lucide-react';
 import Header from '../../components/navigation/Header';
 import Sidebar from '../../components/navigation/Sidebar';
 import apiClient from '../../services/api/apiClient';
@@ -393,6 +393,109 @@ const OptimizeVisionScreen: React.FC = () => {
         }
       });
     }
+  };
+
+  const generateMarkdownReport = () => {
+    if (!optimizationResult) return '';
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    const domainNames = selectedDomains.map(d => {
+      const domain = availableDomains.find(ad => ad.domain_key === d.domain);
+      return domain ? domain.display_name : d.domain;
+    }).join(', ');
+
+    let markdown = `# Vision Optimization Report\n\n`;
+    markdown += `**Date:** ${timestamp}\n`;
+    markdown += `**Domains:** ${domainNames}\n\n`;
+
+    // Quality Improvement Summary
+    markdown += `## Quality Improvement Summary\n\n`;
+    markdown += `- **Original Score:** ${optimizationResult.original_score}/100 (${optimizationResult.rating_change.split(' → ')[0]})\n`;
+    markdown += `- **Optimized Score:** ${optimizationResult.optimized_score}/100 (${optimizationResult.rating_change.split(' → ')[1]})\n`;
+    markdown += `- **Improvement:** +${optimizationResult.score_improvement} points\n\n`;
+
+    // Original Vision Analysis
+    if (optimizationResult.original_assessment) {
+      markdown += `## Original Vision Analysis\n\n`;
+      
+      if (optimizationResult.original_assessment.strengths?.length > 0) {
+        markdown += `### ✓ What Was Good About Your Vision\n\n`;
+        optimizationResult.original_assessment.strengths.forEach(strength => {
+          markdown += `- ${strength}\n`;
+        });
+        markdown += `\n`;
+      }
+
+      if (optimizationResult.original_assessment.weaknesses?.length > 0 || 
+          optimizationResult.original_assessment.missing_elements?.length > 0) {
+        markdown += `### ⚠ Areas for Improvement\n\n`;
+        optimizationResult.original_assessment.weaknesses?.forEach(weakness => {
+          markdown += `- ${weakness}\n`;
+        });
+        optimizationResult.original_assessment.missing_elements?.forEach(element => {
+          markdown += `- Missing: ${element}\n`;
+        });
+        markdown += `\n`;
+      }
+    }
+
+    // Key Enhancements Applied
+    if (optimizationResult.improvements_made.length > 0) {
+      markdown += `## 🔧 Key Enhancements Applied\n\n`;
+      optimizationResult.improvements_made.forEach(improvement => {
+        markdown += `- ${improvement}\n`;
+      });
+      markdown += `\n`;
+    }
+
+    // Original Vision Statement
+    if (visionStatement) {
+      markdown += `## Original Vision Statement\n\n`;
+      markdown += `${visionStatement}\n\n`;
+    }
+
+    // Optimized Vision Statement
+    markdown += `## Optimized Vision Statement\n\n`;
+    markdown += `${optimizationResult.optimized_vision}\n\n`;
+
+    // Tips for Future Vision Statements
+    if (optimizationResult.original_assessment?.improvement_suggestions?.length > 0) {
+      markdown += `## 💡 Tips for Future Vision Statements\n\n`;
+      optimizationResult.original_assessment.improvement_suggestions.forEach(tip => {
+        markdown += `- ${tip}\n`;
+      });
+      markdown += `\n`;
+    }
+
+    // Remaining Issues
+    if (optimizationResult.remaining_issues.length > 0) {
+      markdown += `## Remaining Considerations\n\n`;
+      optimizationResult.remaining_issues.forEach(issue => {
+        markdown += `- ${issue}\n`;
+      });
+      markdown += `\n`;
+    }
+
+    return markdown;
+  };
+
+  const downloadMarkdownReport = () => {
+    const markdown = generateMarkdownReport();
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `vision-optimization-report-${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    setNotification({
+      message: 'Markdown report downloaded successfully',
+      type: 'success'
+    });
+    setTimeout(() => setNotification(null), 3000);
   };
 
   return (
@@ -834,6 +937,14 @@ const OptimizeVisionScreen: React.FC = () => {
                           }}
                         >
                           Edit & Retry
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={downloadMarkdownReport}
+                          title="Download a formatted markdown report of the optimization results"
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Download Report
                         </Button>
                       </div>
                     </CardContent>
