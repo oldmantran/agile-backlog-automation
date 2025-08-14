@@ -97,6 +97,58 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Status**: All agents now follow consistent pattern and produce significantly higher quality output.
 
+### 🔄 Progress Tracking Improvements (August 13, 2025)
+
+**FIXED**: Task generation progress now tracks stories with approved tasks instead of just processed stories
+
+#### **Progress Calculation Enhancement**:
+- **Option B Implementation**: Progress based on `(stories_with_approved_tasks / total_stories)`
+- **No More Jumps**: Progress stays stable when tasks are rejected and regenerated
+- **Smooth Progression**: Consistent 70-85% range (or 50-70% without test artifacts)
+- **Accurate Representation**: Shows actual completion at the story level
+
+#### **Technical Implementation**:
+- Modified `_execute_task_generation` in supervisor to track approved tasks
+- Both parallel and sequential processing modes supported
+- Progress messages show "X/Y stories with approved tasks"
+
+### 🌐 Domain-Specific Task Generation (August 13, 2025)
+
+**ENHANCED**: Developer agent now generates domain-specific technical tasks
+
+#### **Domain Examples Added**:
+- **Fintech**: PCI compliance, payment tokenization, fraud detection
+- **Healthcare**: HIPAA, FHIR standards, patient consent management
+- **Education**: Adaptive learning, xAPI tracking, SCORM support
+- **Transportation**: Route optimization, ELD compliance, real-time tracking
+- **Retail/E-commerce**: Inventory management, multi-channel sync, CQRS
+- **Manufacturing**: MES integration, OPC UA, predictive quality control
+
+#### **Technical Enhancements**:
+- Created `developer_agent_domain_enhanced.txt` prompt template
+- Auto-selects domain template when domain is specified
+- Includes industry standards, compliance requirements, and real protocols
+- Uses actual tools and services specific to each domain
+
+### 🚀 Async Vision Optimization (August 13, 2025)
+
+**NEW**: Vision optimization now runs asynchronously to prevent timeouts
+
+#### **Implementation Details**:
+- **Job Tracking**: Created `vision_optimization_jobs` table
+- **Async Endpoints**: `/api/vision/optimize/async` returns job ID immediately
+- **Status Polling**: Frontend polls `/api/vision/optimize/status/{job_id}`
+- **Progress UI**: Shows optimization in progress with estimated time
+
+#### **User Experience**:
+- No more frontend timeouts for long operations (20-30 seconds)
+- Clear progress indicators during optimization
+- Proper error handling and status updates
+
+#### **Frontend Fixes**:
+- Fixed optimized vision not pasting into project creation form
+- Added proper cleanup for polling intervals on unmount
+
 ### 🎯 Universal Quality Threshold System (August 10, 2025)
 
 **BREAKING CHANGE**: Implemented universal quality acceptance threshold of 75+
