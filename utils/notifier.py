@@ -106,7 +106,7 @@ class Notifier:
                     'azure_config': workflow_data.get('metadata', {}).get('azure_config', {}),
                     'staging_summary': staging_summary,
                     'created_at': stats.get('created_at'),
-                    'test_artifacts_included': workflow_data.get('metadata', {}).get('test_artifacts_included', True)
+                    'test_artifacts_included': workflow_data.get('metadata', {}).get('execution_config', {}).get('include_test_artifacts', True)
                 }
             )
             print(f"✅ Backlog job logged to database with ID: {backlog_job_id}")
@@ -134,7 +134,7 @@ class Notifier:
                             'job_id': workflow_data.get('metadata', {}).get('job_id', ''),
                             'azure_config': workflow_data.get('metadata', {}).get('azure_config', {}),
                             'staging_summary': staging_summary,
-                            'test_artifacts_included': workflow_data.get('metadata', {}).get('test_artifacts_included', True)
+                            'test_artifacts_included': workflow_data.get('metadata', {}).get('execution_config', {}).get('include_test_artifacts', True)
                         }
                     }
                     

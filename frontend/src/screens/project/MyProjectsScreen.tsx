@@ -530,7 +530,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                     });
                     
                     if (!response.ok) {
-                      showAlert('Error', 'Failed to download summary report');
+                      console.error('Failed to download summary report');
                       return;
                     }
                     
@@ -550,7 +550,6 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                     document.body.removeChild(a);
                   } catch (error) {
                     console.error('Error downloading summary report:', error);
-                    showAlert('Error', 'Failed to download summary report');
                   }
                 }}
                 className="text-xs"
@@ -1397,6 +1396,58 @@ const MyProjectsScreen: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                       <div className="flex items-center justify-center space-x-2">
+                                        {/* Add Testing button */}
+                                        {(() => {
+                                          try {
+                                            const rawSummary = typeof job.raw_summary === 'string' ? JSON.parse(job.raw_summary) : job.raw_summary;
+                                            const testArtifactsIncluded = rawSummary?.test_artifacts_included;
+                                            return !testArtifactsIncluded && job.status === 'completed';
+                                          } catch {
+                                            return false;
+                                          }
+                                        })() && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={async () => {
+                                              try {
+                                                // Extract project ID from job data
+                                                const rawSummary = typeof job.raw_summary === 'string' ? JSON.parse(job.raw_summary) : job.raw_summary;
+                                                const projectId = rawSummary?.project_id || rawSummary?.job_id?.split('_').pop() || '';
+                                                if (!projectId) {
+                                                  console.error('No project ID found for test generation');
+                                                  return;
+                                                }
+                                                
+                                                const response = await fetch(`/api/projects/${projectId}/generate-test-artifacts`, {
+                                                  method: 'POST',
+                                                  headers: { 'Content-Type': 'application/json' }
+                                                });
+                                                
+                                                if (!response.ok) {
+                                                  const error = await response.json();
+                                                  console.error('Failed to start test generation:', error.detail);
+                                                  return;
+                                                }
+                                                
+                                                const result = await response.json();
+                                                console.log('Test generation started:', result);
+                                                
+                                                // Navigate to the progress view
+                                                if (result.data?.jobId) {
+                                                  window.location.href = `/generation-progress?jobId=${result.data.jobId}`;
+                                                }
+                                              } catch (error) {
+                                                console.error('Error starting test generation:', error);
+                                              }
+                                            }}
+                                            className="text-blue-400 hover:text-blue-300"
+                                            title="Generate test artifacts"
+                                          >
+                                            <FiFileText className="w-4 h-4" />
+                                          </Button>
+                                        )}
+                                        {/* Download Report button */}
                                         {job.status === 'completed' && (
                                           <Button
                                             size="sm"
@@ -1408,7 +1459,7 @@ const MyProjectsScreen: React.FC = () => {
                                                 });
                                                 
                                                 if (!response.ok) {
-                                                  showAlert('Error', 'Failed to download summary report');
+                                                  console.error('Failed to download summary report');
                                                   return;
                                                 }
                                                 
@@ -1426,7 +1477,6 @@ const MyProjectsScreen: React.FC = () => {
                                                 document.body.removeChild(a);
                                               } catch (error) {
                                                 console.error('Error downloading summary report:', error);
-                                                showAlert('Error', 'Failed to download summary report');
                                               }
                                             }}
                                             className="text-primary hover:text-primary/80"
@@ -1435,6 +1485,7 @@ const MyProjectsScreen: React.FC = () => {
                                             <FiDownload className="w-4 h-4" />
                                           </Button>
                                         )}
+                                        {/* Delete button */}
                                         <Button
                                           size="sm"
                                           variant="ghost"
