@@ -459,7 +459,7 @@ const OptimizeVisionScreen: React.FC = () => {
     markdown += `${optimizationResult.optimized_vision}\n\n`;
 
     // Tips for Future Vision Statements
-    if (optimizationResult.original_assessment?.improvement_suggestions?.length > 0) {
+    if (optimizationResult.original_assessment?.improvement_suggestions && optimizationResult.original_assessment.improvement_suggestions.length > 0) {
       markdown += `## 💡 Tips for Future Vision Statements\n\n`;
       optimizationResult.original_assessment.improvement_suggestions.forEach(tip => {
         markdown += `- ${tip}\n`;

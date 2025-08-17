@@ -180,7 +180,10 @@ class TaskQualityAssessor:
             'healthcare': ['patient', 'medical', 'clinical', 'diagnosis', 'treatment', 'healthcare', 'hospital', 'record'],
             'finance': ['transaction', 'payment', 'account', 'financial', 'banking', 'investment', 'portfolio', 'compliance'],
             'retail': ['customer', 'product', 'order', 'shopping', 'purchase', 'inventory', 'catalog', 'checkout'],
-            'education': ['student', 'course', 'learning', 'grade', 'assignment', 'curriculum', 'academic', 'assessment']
+            'education': ['student', 'course', 'learning', 'grade', 'assignment', 'curriculum', 'academic', 'assessment'],
+            'agriculture': ['field', 'crop', 'soil', 'irrigation', 'harvest', 'yield', 'sensor', 'weather', 'farm', 
+                           'precision', 'variable rate', 'isobus', 'fertilizer', 'moisture', 'satellite', 'ndvi',
+                           'agronomy', 'planting', 'tractor', 'implement', 'grain', 'livestock', 'pasture']
         }
         
         relevant_keywords = domain_keywords.get(domain, ['user', 'system', 'data', 'interface'])

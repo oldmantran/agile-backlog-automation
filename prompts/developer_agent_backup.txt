@@ -18,16 +18,6 @@ USER STORY: ${user_story_title}
 Description: ${user_story_description}
 Acceptance Criteria: ${user_story_acceptance_criteria}
 
-CRITICAL QUALITY REQUIREMENTS:
-1. **Technical Specificity**: Each task MUST include specific technologies, frameworks, APIs, or protocols
-2. **Domain Context**: Tasks MUST reference domain-specific terms and align with the product vision
-3. **Actionable Descriptions**: Start with action verbs (implement, create, build, configure, integrate)
-4. **Detailed Descriptions**: Minimum 150 characters describing HOW to implement, not just WHAT
-5. **Accurate Estimates**: Realistic time estimates between 2-8 hours for most tasks
-6. **Clear Deliverables**: Specify exact components, endpoints, or artifacts to be created
-7. **Implementation Details**: Include specific technical approaches, patterns, or algorithms
-
-AGRICULTURE DOMAIN ENHANCED EXAMPLE:
 DOMAIN-SPECIFIC TECHNICAL EXAMPLES:
 
 [IF domain == "aerospace_defense"]:

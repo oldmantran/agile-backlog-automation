@@ -104,13 +104,21 @@ const SimpleProjectWizard: React.FC = () => {
         return;
       }
       
-      if (backlogResponse.jobId) {
-        console.log('🎯 Found jobId:', backlogResponse.jobId);
-        setJobId(backlogResponse.jobId);
+      console.log('🔍 Checking backlogResponse:', backlogResponse);
+      
+      // Check multiple possible locations for jobId
+      const jobId = backlogResponse.jobId || 
+                    backlogResponse.job_id || 
+                    backlogResponse.data?.jobId || 
+                    backlogResponse.data?.job_id;
+      
+      if (jobId) {
+        console.log('🎯 Found jobId:', jobId);
+        setJobId(jobId);
         
         // Add job to localStorage for progress tracking
         const activeJob = {
-          jobId: backlogResponse.jobId,
+          jobId: jobId,
           projectName: projectData.basics.name,
           startTime: new Date().toISOString(),
           status: 'running',
@@ -118,16 +126,57 @@ const SimpleProjectWizard: React.FC = () => {
           currentAction: 'Initializing backlog generation...'
         };
         
-        // Get existing active jobs or initialize empty array
-        const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
-        existingJobs.push(activeJob);
-        localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
-        console.log('📊 Added job to localStorage for progress tracking');
+        console.log('📝 Preparing to save activeJob:', activeJob);
+        
+        try {
+          // Get existing active jobs or initialize empty array
+          const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+          console.log('📚 Existing jobs before adding:', existingJobs);
+          
+          existingJobs.push(activeJob);
+          localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+          
+          // Verify it was saved with multiple attempts
+          let verificationAttempts = 0;
+          let savedSuccessfully = false;
+          
+          while (verificationAttempts < 3 && !savedSuccessfully) {
+            const savedJobs = localStorage.getItem('activeJobs');
+            console.log(`💾 Verification attempt ${verificationAttempts + 1}:`, savedJobs);
+            
+            if (savedJobs) {
+              const parsedSaved = JSON.parse(savedJobs);
+              savedSuccessfully = parsedSaved.some((job: any) => job.jobId === jobId);
+              
+              if (savedSuccessfully) {
+                console.log('✅ Job successfully saved to localStorage');
+                break;
+              }
+            }
+            
+            // If not saved, try again
+            if (!savedSuccessfully) {
+              console.log('⚠️ Job not found in localStorage, retrying...');
+              localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+              await new Promise(resolve => setTimeout(resolve, 50)); // Small delay
+            }
+            
+            verificationAttempts++;
+          }
+          
+          if (!savedSuccessfully) {
+            console.error('❌ Failed to verify job was saved to localStorage after 3 attempts');
+          }
+          
+          console.log('📊 localStorage operation complete');
+        } catch (storageError) {
+          console.error('❌ Failed to save to localStorage:', storageError);
+        }
         
         setIsSuccess(true);
         console.log('✅ Job submitted successfully');
       } else {
-        console.error('❌ No jobId in response');
+        console.error('❌ No jobId found in response:', backlogResponse);
         throw new Error('No job ID returned from backlog generation');
       }
     } catch (error: unknown) {
@@ -156,8 +205,9 @@ const SimpleProjectWizard: React.FC = () => {
   };
 
   const handleCreateAnother = () => {
-    setIsSuccess(false);
-    setJobId(null);
+    // Force a fresh load of My Projects by including a timestamp
+    // This ensures the component reloads active jobs even if it's already mounted
+    navigate('/my-projects', { state: { timestamp: Date.now(), fromWizard: true } });
   };
 
   return (
@@ -231,7 +281,7 @@ const SimpleProjectWizard: React.FC = () => {
                     onClick={handleCreateAnother}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Create Another Project
+                    View Backlog Progress
                   </Button>
                   <Button 
                     onClick={handleBackToHome}

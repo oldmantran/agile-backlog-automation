@@ -951,6 +951,35 @@ class WorkflowSupervisor:
                         else:
                             self.logger.info(f"[DEBUG] {len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
                             print(f"[DEBUG] {len(still_incomplete)} items remain incomplete after this retry round in stage {stage}.")
+                            
+                            # Handle stage-specific retries without re-running entire stage
+                            if stage == 'developer_agent':
+                                # Only retry the specific incomplete stories
+                                successful_retries = self._retry_incomplete_developer_tasks(still_incomplete)
+                                
+                                # If we successfully generated tasks for some stories, remove them from still_incomplete
+                                if successful_retries > 0:
+                                    # Re-validate to get updated incomplete list
+                                    self.logger.info("Re-validating after targeted retry...")
+                                    self._validate_tasks_and_estimates()
+                                    incomplete_items = self._sweeper_validate_and_get_incomplete(stage)
+                                    
+                                    if not incomplete_items:
+                                        completed = True
+                                        self.logger.info("All user stories now have tasks after targeted retry")
+                                    else:
+                                        # Update still_incomplete for next retry round
+                                        still_incomplete = []
+                                        for item in incomplete_items:
+                                            item_id = item.get('work_item_id')
+                                            if self.sweeper_retry_tracker[stage].get(item_id, 0) < max_retries:
+                                                still_incomplete.append(item)
+                                        
+                                        if not still_incomplete:
+                                            completed = True
+                                        else:
+                                            # Continue retry loop with reduced incomplete list
+                                            self.logger.info(f"{len(still_incomplete)} items still incomplete after targeted retry")
                     except Exception as e:
                         self.logger.error(f"{stage} failed with exception: {e}")
                         self.execution_metadata['errors'].append(f"{stage} failed: {e}")
@@ -1317,6 +1346,66 @@ class WorkflowSupervisor:
                 user_stories = agent.decompose_feature_to_user_stories(feature, context=story_context, max_user_stories=max_user_stories)
                 feature['user_stories'] = user_stories
     
+    def _retry_incomplete_developer_tasks(self, incomplete_items):
+        """
+        Retry task generation only for specific incomplete user stories.
+        This prevents re-processing all stories when some fail.
+        """
+        self.logger.info(f"Retrying task generation for {len(incomplete_items)} incomplete user stories")
+        
+        agent = self.agents['developer_agent']
+        context = self.project_context.get_context('developer_agent')
+        
+        # Track retry progress
+        retried_count = 0
+        successful_retries = 0
+        
+        for item in incomplete_items:
+            story_title = item.get('title', item.get('work_item_id', 'Unknown'))
+            self.logger.info(f"Retrying task generation for user story: {story_title}")
+            
+            # Find the user story in the workflow data
+            story_found = False
+            for epic in self.workflow_data['epics']:
+                for feature in epic.get('features', []):
+                    for user_story in feature.get('user_stories', []):
+                        if user_story.get('title') == story_title:
+                            story_found = True
+                            
+                            # Add epic and feature context for task generation
+                            task_context = context.copy()
+                            task_context['epic_context'] = f"{epic.get('title', 'Untitled Epic')}: {epic.get('description', '')}"
+                            task_context['feature_context'] = f"{feature.get('title', 'Untitled Feature')}: {feature.get('description', '')}"
+                            
+                            try:
+                                # Generate tasks for this specific story
+                                tasks = agent.generate_tasks(user_story, task_context)
+                                
+                                if tasks and len(tasks) > 0:
+                                    user_story['tasks'] = tasks
+                                    successful_retries += 1
+                                    self.logger.info(f"Successfully generated {len(tasks)} tasks for {story_title}")
+                                else:
+                                    self.logger.warning(f"No tasks generated for {story_title} on retry")
+                                    
+                            except Exception as e:
+                                self.logger.error(f"Failed to generate tasks for {story_title} on retry: {e}")
+                            
+                            retried_count += 1
+                            break
+                    
+                    if story_found:
+                        break
+                
+                if story_found:
+                    break
+            
+            if not story_found:
+                self.logger.warning(f"Could not find user story '{story_title}' in workflow data")
+        
+        self.logger.info(f"Retry complete: {successful_retries}/{retried_count} stories now have tasks")
+        return successful_retries
+
     def _execute_task_generation(self, update_progress_callback=None, stage_index=4):
         """Execute developer task generation stage (parallelized if enabled)."""
         self.logger.info("Generating developer tasks (parallel mode: %s)", self.parallel_config['stages']['developer_agent'])

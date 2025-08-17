@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
@@ -579,6 +579,7 @@ class ProgressBarErrorBoundary extends React.Component<
 
 const MyProjectsScreen: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeJobs, setActiveJobs] = useState<JobInfo[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -588,6 +589,7 @@ const MyProjectsScreen: React.FC = () => {
   const [debugMode, setDebugMode] = useState(false);
   const [retryingJobs, setRetryingJobs] = useState<Set<number>>(new Set());
   const hasMounted = useRef(false);
+  const lastNavigationTimestamp = useRef<number>(0);
   
   // Hybrid progress hook for real-time updates with polling fallback
   const { lastUpdate: progressUpdate, error: progressError, connectionType, connect: connectProgress, disconnect: disconnectProgress } = useHybridProgress();
@@ -614,9 +616,12 @@ const MyProjectsScreen: React.FC = () => {
     try {
       console.log('Loading active jobs from localStorage...');
       const stored = localStorage.getItem('activeJobs');
+      console.log('Raw localStorage activeJobs:', stored);
       if (stored) {
         const jobs = JSON.parse(stored);
-        console.log('Loaded active jobs:', jobs);
+        console.log('Parsed active jobs:', jobs);
+        console.log('Number of jobs:', jobs.length);
+        console.log('Job statuses:', jobs.map((j: JobInfo) => ({ jobId: j.jobId, status: j.status })));
         
         // Filter out old completed/failed jobs (older than 10 minutes)
         const now = Date.now();
@@ -941,30 +946,73 @@ const MyProjectsScreen: React.FC = () => {
     );
   };
 
+  // Detect navigation from wizard and force reload
   useEffect(() => {
-    // Prevent multiple initializations in React 18 Strict Mode
-    if (hasMounted.current) {
-      return;
+    if (location.state?.fromWizard && location.state?.timestamp) {
+      const navTimestamp = location.state.timestamp;
+      
+      // Only reload if this is a new navigation (prevents double loads)
+      if (navTimestamp !== lastNavigationTimestamp.current) {
+        console.log('🔄 Detected navigation from wizard - forcing reload of active jobs');
+        lastNavigationTimestamp.current = navTimestamp;
+        
+        // Small delay to ensure localStorage is updated
+        setTimeout(() => {
+          loadActiveJobs();
+        }, 100);
+      }
     }
-    hasMounted.current = true;
-    
-    console.log('MyProjectsScreen: Component mounting...');
+  }, [location.state, loadActiveJobs]);
+
+  useEffect(() => {
+    console.log('MyProjectsScreen: Component mounting/updating...');
     try {
+      // Always load active jobs to catch new submissions
       loadActiveJobs();
       
-      // Stagger API calls to prevent overwhelming the backend
-      setTimeout(() => {
-        loadProjects();
-      }, 500);
-      
-      setTimeout(() => {
-        loadBacklogJobs();
-      }, 1000);
+      // Only load projects/backlog jobs once
+      if (!hasMounted.current) {
+        hasMounted.current = true;
+        
+        // Stagger API calls to prevent overwhelming the backend
+        setTimeout(() => {
+          loadProjects();
+        }, 500);
+        
+        setTimeout(() => {
+          loadBacklogJobs();
+        }, 1000);
+      }
       
     } catch (error) {
       logError('MyProjectsScreen', error, 'Component mount error');
     }
   }, [loadActiveJobs, loadProjects, loadBacklogJobs]);
+  
+  // Also reload active jobs when component regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Window focused - reloading active jobs');
+      loadActiveJobs();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    // Also check when navigating to this page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page visible - reloading active jobs');
+        loadActiveJobs();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loadActiveJobs]);
 
   // Set up hybrid progress connections for active jobs
   useEffect(() => {
