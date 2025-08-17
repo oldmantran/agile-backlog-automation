@@ -282,6 +282,26 @@ class Database:
                         ADD COLUMN optimization_feedback TEXT
                     ''')
                 
+                # Create backlog reports table for persisting summary reports
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS backlog_reports (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        backlog_job_id INTEGER NOT NULL UNIQUE,
+                        report_data TEXT NOT NULL,  -- JSON containing the full report
+                        report_format TEXT DEFAULT 'json',
+                        report_version TEXT DEFAULT '1.0',
+                        generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (backlog_job_id) REFERENCES backlog_jobs(id) ON DELETE CASCADE
+                    )
+                ''')
+                
+                # Create index for fast lookups
+                cursor.execute('''
+                    CREATE INDEX IF NOT EXISTS idx_backlog_reports_job_id 
+                    ON backlog_reports(backlog_job_id)
+                ''')
+                
                 conn.commit()
                 logger.info("Database initialized successfully")
                 
@@ -990,6 +1010,90 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to delete backlog job {job_id}: {e}")
             return False
+    
+    def save_backlog_report(self, backlog_job_id: int, report_data: Dict[str, Any]) -> bool:
+        """
+        Save a backlog summary report to the database.
+        
+        Args:
+            backlog_job_id: ID of the backlog job
+            report_data: Report data dictionary to save
+            
+        Returns:
+            True if saved successfully, False otherwise
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Check if report already exists
+                cursor.execute(
+                    'SELECT id FROM backlog_reports WHERE backlog_job_id = ?',
+                    (backlog_job_id,)
+                )
+                existing = cursor.fetchone()
+                
+                report_json = json.dumps(report_data)
+                
+                if existing:
+                    # Update existing report
+                    cursor.execute('''
+                        UPDATE backlog_reports 
+                        SET report_data = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE backlog_job_id = ?
+                    ''', (report_json, backlog_job_id))
+                    logger.info(f"Updated existing report for backlog job {backlog_job_id}")
+                else:
+                    # Insert new report
+                    cursor.execute('''
+                        INSERT INTO backlog_reports (backlog_job_id, report_data)
+                        VALUES (?, ?)
+                    ''', (backlog_job_id, report_json))
+                    logger.info(f"Created new report for backlog job {backlog_job_id}")
+                
+                conn.commit()
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to save backlog report for job {backlog_job_id}: {e}")
+            return False
+    
+    def get_backlog_report(self, backlog_job_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve a backlog summary report from the database.
+        
+        Args:
+            backlog_job_id: ID of the backlog job
+            
+        Returns:
+            Report data dictionary if found, None otherwise
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT report_data, report_format, report_version, generated_at, updated_at
+                    FROM backlog_reports
+                    WHERE backlog_job_id = ?
+                ''', (backlog_job_id,))
+                
+                result = cursor.fetchone()
+                if result:
+                    report_data = json.loads(result[0])
+                    # Add metadata to the report
+                    report_data['_metadata'] = {
+                        'format': result[1],
+                        'version': result[2],
+                        'generated_at': result[3],
+                        'updated_at': result[4]
+                    }
+                    return report_data
+                
+                return None
+                
+        except Exception as e:
+            logger.error(f"Failed to retrieve backlog report for job {backlog_job_id}: {e}")
+            return None
     
     def update_job_progress(self, job_id: str, progress: int, current_action: str = None, 
                            current_agent: str = None, force_write: bool = False) -> bool:

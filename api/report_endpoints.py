@@ -35,6 +35,30 @@ async def get_backlog_summary_report(
         Summary report in requested format
     """
     try:
+        # First check if we have a persisted report
+        from db import db
+        persisted_report = db.get_backlog_report(job_id)
+        
+        if persisted_report:
+            logger.info(f"Found persisted report for job {job_id}")
+            
+            # Return in requested format
+            if format.lower() == 'markdown':
+                generator = BacklogSummaryReportGenerator()
+                markdown_content = generator.format_markdown_report(persisted_report)
+                return Response(
+                    content=markdown_content,
+                    media_type="text/markdown",
+                    headers={
+                        "Content-Disposition": f"inline; filename=backlog_summary_{job_id}.md"
+                    }
+                )
+            else:
+                return persisted_report
+        
+        # If no persisted report, generate dynamically (for backward compatibility)
+        logger.info(f"No persisted report found for job {job_id}, generating dynamically")
+        
         # Get job data from database using direct SQLite connection
         conn = sqlite3.connect('backlog_jobs.db')
         cursor = conn.cursor()
@@ -187,6 +211,28 @@ async def test_download_backlog_summary_report(
         Markdown file download
     """
     try:
+        # First check if we have a persisted report
+        from db import db
+        persisted_report = db.get_backlog_report(job_id)
+        
+        if persisted_report:
+            logger.info(f"Found persisted report for job {job_id} (test endpoint)")
+            
+            # Format as markdown
+            generator = BacklogSummaryReportGenerator()
+            markdown_content = generator.format_markdown_report(persisted_report)
+            
+            return Response(
+                content=markdown_content,
+                media_type="text/markdown",
+                headers={
+                    "Content-Disposition": f"attachment; filename=backlog_summary_{job_id}.md"
+                }
+            )
+        
+        # If no persisted report, generate dynamically
+        logger.info(f"No persisted report found for job {job_id}, generating dynamically (test endpoint)")
+        
         # Get job data from database - simplified without user check
         conn = sqlite3.connect('backlog_jobs.db')
         cursor = conn.cursor()
