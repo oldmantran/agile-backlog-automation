@@ -3,12 +3,11 @@ API endpoints for backlog generation summary reports.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy.orm import Session
 from typing import Optional
 import json
 from pathlib import Path
+import sqlite3
 
-from db import get_db
 from auth.auth_handler import get_current_user
 from models.auth import User
 from utils.report_generator import BacklogSummaryReportGenerator
@@ -23,8 +22,7 @@ router = APIRouter(prefix="/api/reports", tags=["reports"])
 async def get_backlog_summary_report(
     job_id: int,
     format: Optional[str] = "json",
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Generate a comprehensive summary report for a backlog generation job.
@@ -37,19 +35,22 @@ async def get_backlog_summary_report(
         Summary report in requested format
     """
     try:
-        # Get job data from database
-        from sqlalchemy import text
+        # Get job data from database using direct SQLite connection
+        conn = sqlite3.connect('backlog_jobs.db')
+        cursor = conn.cursor()
         
-        query = text("""
+        query = """
             SELECT id, project_name, created_at, status,
                    epics_generated, features_generated, user_stories_generated,
                    tasks_generated, test_cases_generated, execution_time_seconds,
                    raw_summary
             FROM backlog_jobs
-            WHERE id = :job_id AND user_id = :user_id AND is_deleted = 0
-        """)
+            WHERE id = ? AND user_id = ? AND is_deleted = 0
+        """
         
-        result = db.execute(query, {"job_id": job_id, "user_id": current_user.id}).fetchone()
+        cursor.execute(query, (job_id, current_user.id))
+        result = cursor.fetchone()
+        conn.close()
         
         if not result:
             raise HTTPException(status_code=404, detail="Backlog job not found")
@@ -137,8 +138,7 @@ async def get_backlog_summary_report(
 @router.get("/backlog/{job_id}/summary/download")
 async def download_backlog_summary_report(
     job_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Download the backlog summary report as a markdown file.
@@ -154,8 +154,7 @@ async def download_backlog_summary_report(
         markdown_content = await get_backlog_summary_report(
             job_id=job_id,
             format="markdown",
-            current_user=current_user,
-            db=db
+            current_user=current_user
         )
         
         return Response(
