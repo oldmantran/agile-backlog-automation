@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Comprehensive backlog generation summary reports with quality metrics
+- Download button on Project History cards for summary reports
+- Detailed rejection analysis and performance metrics in reports
+- Domain alignment scoring and LLM model configuration tracking
+- Report generation API endpoints (`/api/reports/backlog/{job_id}/summary`)
+
 ## [1.0.0] - 2024-08-16
 ### Added
 - Production-ready backlog generation system

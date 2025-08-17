@@ -6,7 +6,7 @@ import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 // Note: Using title attribute for tooltips instead of custom Tooltip component
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText, FiInfo } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText, FiInfo, FiDownload } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
@@ -515,6 +515,51 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
               >
                 <FiFileText className="w-3 h-3 mr-1" />
                 Add Testing
+              </Button>
+            )}
+            {/* Download Summary Report button */}
+            {job.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`/api/reports/backlog/${job.id}/summary/download`, {
+                      method: 'GET',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                      }
+                    });
+                    
+                    if (!response.ok) {
+                      showAlert('Error', 'Failed to download summary report');
+                      return;
+                    }
+                    
+                    // Get filename from response headers or use default
+                    const contentDisposition = response.headers.get('content-disposition');
+                    const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || `backlog_summary_${job.id}.md`;
+                    
+                    // Download the file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                  } catch (error) {
+                    console.error('Error downloading summary report:', error);
+                    showAlert('Error', 'Failed to download summary report');
+                  }
+                }}
+                className="text-xs"
+                title="Download comprehensive summary report"
+              >
+                <FiDownload className="w-3 h-3 mr-1" />
+                Summary Report
               </Button>
             )}
           </div>

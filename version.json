@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0-dev",
   "name": "Agile Backlog Automation",
-  "description": "Production-ready release with stable backlog generation",
-  "releaseDate": "2024-08-16"
+  "description": "Development version with backlog summary reports",
+  "releaseDate": "TBD"
 }

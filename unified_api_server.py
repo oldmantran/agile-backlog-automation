@@ -51,6 +51,7 @@ try:
     from utils.user_id_resolver import user_id_resolver
     from auth.auth_routes import router as auth_router, get_current_user
     from auth.user_auth import auth_manager, IS_PRODUCTION, User
+    from api.report_endpoints import router as report_router
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Current directory: {current_dir}")
@@ -330,6 +331,7 @@ app.add_middleware(
 
 # Include authentication routes
 app.include_router(auth_router)
+app.include_router(report_router)
 
 # Serve static files from frontend build (only if build directory exists)
 project_root = Path(__file__).parent
