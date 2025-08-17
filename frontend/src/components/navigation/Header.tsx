@@ -9,7 +9,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   return (
-    <header className="fixed top-0 w-full z-10 bg-background/95 backdrop-blur-sm shadow-sm border-b border-border">
+    <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-sm shadow-sm border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left side: Menu button and Logo */}

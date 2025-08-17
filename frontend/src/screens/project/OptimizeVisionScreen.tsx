@@ -896,56 +896,66 @@ const OptimizeVisionScreen: React.FC = () => {
                       )}
 
                       {/* Action Buttons */}
-                      <div className="flex gap-3">
-                        {optimizationResult.is_acceptable ? (
-                          <Button
-                            className="flex-1"
-                            onClick={handleApproveAndCreate}
-                          >
-                            Approve & Create New Backlog
-                          </Button>
-                        ) : (
-                          <>
+                      <div className="space-y-3">
+                        {/* Primary Actions Row */}
+                        <div className="flex gap-3">
+                          {optimizationResult.is_acceptable ? (
                             <Button
                               className="flex-1"
-                              onClick={() => {
-                                // Keep the optimized vision in the input and retry
-                                setVisionStatement(optimizationResult.optimized_vision);
-                                setOptimizationResult(null);
-                                // Automatically trigger re-optimization after a short delay
-                                setTimeout(() => {
-                                  handleOptimize();
-                                }, 100);
-                              }}
-                            >
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                              Retry Optimization
-                            </Button>
-                            <Button
-                              variant="secondary"
                               onClick={handleApproveAndCreate}
                             >
-                              Use Anyway
+                              Approve & Create New Backlog
                             </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setVisionStatement(optimizationResult.optimized_vision);
-                            setOptimizationResult(null);
-                          }}
-                        >
-                          Edit & Retry
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={downloadMarkdownReport}
-                          title="Download a formatted markdown report of the optimization results"
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Download Report
-                        </Button>
+                          ) : (
+                            <>
+                              <Button
+                                className="flex-1"
+                                onClick={() => {
+                                  // Keep the optimized vision in the input and retry
+                                  setVisionStatement(optimizationResult.optimized_vision);
+                                  setOptimizationResult(null);
+                                  // Automatically trigger re-optimization after a short delay
+                                  setTimeout(() => {
+                                    handleOptimize();
+                                  }, 100);
+                                }}
+                              >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Retry Optimization
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                className="flex-1"
+                                onClick={handleApproveAndCreate}
+                              >
+                                Use Anyway
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Secondary Actions Row */}
+                        <div className="flex gap-3">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              setVisionStatement(optimizationResult.optimized_vision);
+                              setOptimizationResult(null);
+                            }}
+                          >
+                            Edit & Retry
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={downloadMarkdownReport}
+                            title="Download a formatted markdown report of the optimization results"
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            Download Report
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
