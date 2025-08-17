@@ -17,11 +17,14 @@ This feature provides comprehensive analysis and downloadable reports for comple
    - `/api/reports/backlog/{job_id}/summary` - Get report data (JSON/Markdown)
    - `/api/reports/backlog/{job_id}/summary/download` - Download as file
    - `/api/reports/test/backlog/{job_id}/summary/download` - Test endpoint (no auth)
+   - Uses persisted reports from database (fast retrieval)
+   - Falls back to dynamic generation for backward compatibility
 
 3. **Database Integration**
-   - Uses existing `backlog_jobs` table
-   - Reads job metrics and raw_summary data
-   - Correlates with log files for detailed analysis
+   - **New `backlog_reports` table**: Stores generated reports as JSON
+   - Reports generated and saved automatically on job completion
+   - Persisted reports survive log file purging
+   - Migration script available for existing jobs
 
 ### Frontend Components
 
@@ -68,6 +71,16 @@ From the FieldFleet Basic analysis:
   - Missing acceptance criteria references (46 tasks)
   - Lacking technical implementation details (24 tasks)
   - Missing domain-specific terminology (19 tasks)
+
+### Database Persistence
+
+The system now persists reports in the database for optimal performance:
+
+1. **Automatic Generation**: Reports are generated and saved when jobs complete
+2. **Database Table**: `backlog_reports` stores reports with metadata
+3. **Fast Retrieval**: No log parsing needed for subsequent access
+4. **Data Durability**: Reports survive log file purging
+5. **Migration Tool**: `tools/migrate_existing_reports.py` for existing jobs
 
 ### Security Considerations
 
