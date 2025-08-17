@@ -6,7 +6,7 @@ import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 // Note: Using title attribute for tooltips instead of custom Tooltip component
-import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText, FiInfo } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiXCircle, FiClock, FiTrash2, FiAlertTriangle, FiFolder, FiRotateCcw, FiCalendar, FiBarChart, FiFileText, FiInfo, FiDownload, FiEye, FiArchive } from 'react-icons/fi';
 import { projectApi } from '../../services/api/projectApi';
 import { backlogApi } from '../../services/api/backlogApi';
 import Header from '../../components/navigation/Header';
@@ -515,6 +515,49 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
               >
                 <FiFileText className="w-3 h-3 mr-1" />
                 Add Testing
+              </Button>
+            )}
+            {/* Download Summary Report button */}
+            {job.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    // Using test endpoint temporarily to bypass auth issues
+                    const response = await fetch(`http://localhost:8000/api/reports/test/backlog/${job.id}/summary/download`, {
+                      method: 'GET'
+                    });
+                    
+                    if (!response.ok) {
+                      showAlert('Error', 'Failed to download summary report');
+                      return;
+                    }
+                    
+                    // Get filename from response headers or use default
+                    const contentDisposition = response.headers.get('content-disposition');
+                    const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || `backlog_summary_${job.id}.md`;
+                    
+                    // Download the file
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                  } catch (error) {
+                    console.error('Error downloading summary report:', error);
+                    showAlert('Error', 'Failed to download summary report');
+                  }
+                }}
+                className="text-xs"
+                title="Download comprehensive summary report"
+              >
+                <FiDownload className="w-3 h-3 mr-1" />
+                Summary Report
               </Button>
             )}
           </div>
@@ -1258,23 +1301,161 @@ const MyProjectsScreen: React.FC = () => {
             </div>
 
 
-            {/* Project History Section */}
+            {/* Project History Section - Hybrid View */}
             {backlogJobs.length > 0 && (
               <div>
-                <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
-                  PROJECT HISTORY
-                </h2>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {backlogJobs.map((job) => (
-                    <ProjectHistoryCard 
-                      key={job.id} 
-                      job={job} 
-                      onDelete={() => handleDeleteBacklogJob(job.id)}
-                      onRetry={() => handleRetryFailedUploads(job)}
-                      isRetrying={retryingJobs.has(job.id)}
-                    />
-                  ))}
-                </div>
+                {/* Recent Projects - Cards View */}
+                {backlogJobs.slice(0, 6).length > 0 && (
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan">
+                      RECENT PROJECTS
+                    </h2>
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {backlogJobs.slice(0, 6).map((job) => (
+                        <ProjectHistoryCard 
+                          key={job.id} 
+                          job={job} 
+                          onDelete={() => handleDeleteBacklogJob(job.id)}
+                          onRetry={() => handleRetryFailedUploads(job)}
+                          isRetrying={retryingJobs.has(job.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Project Archive - Condensed List View */}
+                {backlogJobs.length > 6 && (
+                  <div>
+                    <h2 className="text-2xl font-semibold text-foreground mb-6 tracking-wider glow-cyan flex items-center">
+                      <FiArchive className="w-6 h-6 mr-2" />
+                      PROJECT ARCHIVE
+                    </h2>
+                    <Card className="tron-card bg-card/50 backdrop-blur-sm border border-primary/30">
+                      <CardContent className="p-0">
+                        <div className="max-h-[400px] overflow-y-auto">
+                          <table className="w-full">
+                            <thead className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-primary/30">
+                              <tr className="text-sm font-medium text-muted-foreground">
+                                <th className="text-left p-4">Project Name</th>
+                                <th className="text-left p-4">Area Path</th>
+                                <th className="text-left p-4">Date</th>
+                                <th className="text-center p-4">Status</th>
+                                <th className="text-center p-4">Work Items</th>
+                                <th className="text-center p-4">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-primary/10">
+                              {backlogJobs.slice(6).map((job) => {
+                                const totalWorkItems = (job.epics_generated || 0) + 
+                                                     (job.features_generated || 0) + 
+                                                     (job.user_stories_generated || 0) + 
+                                                     (job.tasks_generated || 0) + 
+                                                     (job.test_cases_generated || 0);
+                                const areaPath = (() => {
+                                  try {
+                                    const rawSummary = typeof job.raw_summary === 'string' ? JSON.parse(job.raw_summary) : job.raw_summary;
+                                    return rawSummary?.area_path || rawSummary?.areaPath || 'Default';
+                                  } catch {
+                                    return 'Default';
+                                  }
+                                })();
+                                
+                                return (
+                                  <tr key={job.id} className="hover:bg-primary/5 transition-colors">
+                                    <td className="p-4">
+                                      <div className="font-medium text-foreground truncate max-w-[200px]" title={job.project_name}>
+                                        {job.project_name}
+                                      </div>
+                                    </td>
+                                    <td className="p-4">
+                                      <div className="text-sm text-muted-foreground truncate max-w-[150px]" title={areaPath}>
+                                        {areaPath}
+                                      </div>
+                                    </td>
+                                    <td className="p-4">
+                                      <div className="text-sm text-muted-foreground whitespace-nowrap">
+                                        {new Date(job.created_at).toLocaleDateString()}
+                                      </div>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                      <Badge 
+                                        variant={job.status === 'completed' ? 'default' : 'secondary'}
+                                        className={`text-xs ${
+                                          job.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                                          job.status === 'failed' ? 'bg-red-500/20 text-red-400' :
+                                          'bg-gray-500/20 text-gray-400'
+                                        }`}
+                                      >
+                                        {job.status}
+                                      </Badge>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                      <span className="text-sm font-mono text-foreground">
+                                        {totalWorkItems}
+                                      </span>
+                                    </td>
+                                    <td className="p-4">
+                                      <div className="flex items-center justify-center space-x-2">
+                                        {job.status === 'completed' && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={async () => {
+                                              try {
+                                                const response = await fetch(`http://localhost:8000/api/reports/test/backlog/${job.id}/summary/download`, {
+                                                  method: 'GET'
+                                                });
+                                                
+                                                if (!response.ok) {
+                                                  showAlert('Error', 'Failed to download summary report');
+                                                  return;
+                                                }
+                                                
+                                                const contentDisposition = response.headers.get('content-disposition');
+                                                const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || `backlog_summary_${job.id}.md`;
+                                                
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = filename;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                window.URL.revokeObjectURL(url);
+                                                document.body.removeChild(a);
+                                              } catch (error) {
+                                                console.error('Error downloading summary report:', error);
+                                                showAlert('Error', 'Failed to download summary report');
+                                              }
+                                            }}
+                                            className="text-primary hover:text-primary/80"
+                                            title="Download summary report"
+                                          >
+                                            <FiDownload className="w-4 h-4" />
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleDeleteBacklogJob(job.id)}
+                                          className="text-red-400 hover:text-red-300"
+                                          title="Delete project"
+                                        >
+                                          <FiTrash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </div>
             )}
 

@@ -78,12 +78,13 @@ class Notifier:
         staging_summary = self._get_staging_summary(workflow_data)
 
         # --- Persist job to database ---
+        backlog_job_id = None
         try:
             from db import add_backlog_job
             # Use the first email in the notification list as user ID
             user_emails = self.config.settings.get('notifications', {}).get('summary_report', {}).get('send_to', [])
             user_email = user_emails[0] if user_emails else 'unknown@unknown.com'
-            add_backlog_job(
+            backlog_job_id = add_backlog_job(
                 user_email=user_email,
                 project_name=workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project'),
                 epics_generated=stats.get('epics_generated', 0),
@@ -104,10 +105,55 @@ class Notifier:
                     'ado_summary': workflow_data.get('azure_integration', {}),
                     'azure_config': workflow_data.get('metadata', {}).get('azure_config', {}),
                     'staging_summary': staging_summary,
-                    'created_at': stats.get('created_at')
+                    'created_at': stats.get('created_at'),
+                    'test_artifacts_included': workflow_data.get('metadata', {}).get('test_artifacts_included', True)
                 }
             )
-            print("✅ Backlog job logged to database.")
+            print(f"✅ Backlog job logged to database with ID: {backlog_job_id}")
+            
+            # Generate and save summary report
+            if backlog_job_id:
+                try:
+                    from utils.report_generator import BacklogSummaryReportGenerator
+                    from db import db
+                    
+                    # Get job data from database (we just saved it)
+                    job_data = {
+                        'id': backlog_job_id,
+                        'project_name': workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project'),
+                        'created_at': stats.get('created_at'),
+                        'status': 'completed',
+                        'epics_generated': stats.get('epics_generated', 0),
+                        'features_generated': stats.get('features_generated', 0),
+                        'user_stories_generated': stats.get('user_stories_generated', 0),
+                        'tasks_generated': stats.get('tasks_generated', 0),
+                        'test_cases_generated': stats.get('test_cases_generated', 0),
+                        'execution_time_seconds': stats.get('execution_time_seconds'),
+                        'raw_summary': {
+                            'project_name': workflow_data.get('metadata', {}).get('project_context', {}).get('project_name', 'Unknown Project'),
+                            'job_id': workflow_data.get('metadata', {}).get('job_id', ''),
+                            'azure_config': workflow_data.get('metadata', {}).get('azure_config', {}),
+                            'staging_summary': staging_summary,
+                            'test_artifacts_included': workflow_data.get('metadata', {}).get('test_artifacts_included', True)
+                        }
+                    }
+                    
+                    # Get current log content
+                    log_content = self._get_current_log_content(workflow_data.get('metadata', {}).get('job_id', ''))
+                    
+                    # Generate report
+                    generator = BacklogSummaryReportGenerator()
+                    report_data = generator.generate_report(job_data, log_content)
+                    
+                    # Save report to database
+                    if db.save_backlog_report(backlog_job_id, report_data):
+                        print(f"✅ Summary report saved to database for job ID: {backlog_job_id}")
+                    else:
+                        print(f"⚠️ Failed to save summary report to database for job ID: {backlog_job_id}")
+                        
+                except Exception as report_exc:
+                    print(f"⚠️ Failed to generate/save summary report: {report_exc}")
+                    
         except Exception as db_exc:
             print(f"❌ Failed to log backlog job to database: {db_exc}")
         
@@ -413,6 +459,32 @@ Check the application logs for detailed issue descriptions and remediation steps
                 return str(text).encode('utf-8', errors='replace').decode('utf-8')
             except Exception:
                 return str(text).encode('ascii', errors='ignore').decode('ascii')
+    
+    def _get_current_log_content(self, job_id: str) -> str:
+        """Get current log file content for report generation."""
+        try:
+            from pathlib import Path
+            import glob
+            
+            # Try to find log file
+            log_patterns = [
+                f"logs/backend_*{job_id}*.log",
+                f"logs/supervisor_*{job_id}*.log"
+            ]
+            
+            for pattern in log_patterns:
+                log_files = glob.glob(pattern)
+                if log_files:
+                    # Use the most recent file
+                    log_file = sorted(log_files, key=lambda x: Path(x).stat().st_mtime, reverse=True)[0]
+                    with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        return f.read()
+                        
+            return ""  # Return empty string if no log found
+            
+        except Exception as e:
+            print(f"⚠️ Failed to read log file: {e}")
+            return ""
     
     def _get_staging_summary(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
         """Get staging summary from job data."""
