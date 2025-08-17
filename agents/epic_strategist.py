@@ -108,6 +108,10 @@ class EpicStrategist(Agent):
                     
             except Exception as e:
                 self.logger.error(f"[GENERATION ERROR] Attempt {total_attempts} failed: {e}")
+                # Check if this is a critical quality failure that should stop all attempts
+                if "WORKFLOW STOPPED" in str(e) or "No epics achieved" in str(e):
+                    # This is a critical failure - stop all attempts and propagate the error
+                    raise
                 if total_attempts >= max_total_attempts:
                     raise
         
