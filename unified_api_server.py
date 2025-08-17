@@ -2613,13 +2613,12 @@ async def get_backlog_jobs(
 ):
     """Get backlog jobs for a user."""
     try:
-        # Call the database method with limit of 6 for recent projects
+        # Get all jobs for the user without limit
         jobs = db.get_backlog_jobs(
             user_email=user_email, 
             exclude_test_generated=exclude_test_generated, 
             exclude_failed=exclude_failed, 
-            exclude_deleted=exclude_deleted,
-            limit=6
+            exclude_deleted=exclude_deleted
         )
         return jobs
     except Exception as e:
