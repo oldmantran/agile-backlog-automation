@@ -524,7 +524,7 @@ const ProjectHistoryCard: React.FC<ProjectHistoryCardProps> = ({ job, onDelete, 
                 variant="outline"
                 onClick={async () => {
                   try {
-                    const response = await fetch(`/api/reports/backlog/${job.id}/summary/download`, {
+                    const response = await fetch(`http://localhost:8000/api/reports/backlog/${job.id}/summary/download`, {
                       method: 'GET',
                       headers: {
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
