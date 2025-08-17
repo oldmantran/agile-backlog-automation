@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 import sqlite3
 
-from auth.auth_handler import get_current_user
-from models.auth import User
+from auth.auth_routes import get_current_user
+from auth.user_auth import User
 from utils.report_generator import BacklogSummaryReportGenerator
 from utils.safe_logger import get_safe_logger
 
