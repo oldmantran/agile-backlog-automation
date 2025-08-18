@@ -6,7 +6,7 @@ automatically fail items for missing specific domain terms.
 """
 
 from typing import Dict, List, Tuple
-from config.domain_knowledge import get_domain_knowledge, is_infrastructure_work_item
+from config.domain_knowledge import get_domain_knowledge, is_infrastructure_work_item, is_non_functional_requirement
 
 class DomainRelevanceScorer:
     """Scores work items for domain relevance using flexible criteria."""
@@ -35,6 +35,10 @@ class DomainRelevanceScorer:
         # Check if it's infrastructure/platform work
         if is_infrastructure_work_item(title, description):
             return self._score_infrastructure_item(work_item, domain_key)
+        
+        # Check if it's a non-functional requirement
+        if is_non_functional_requirement(title, description):
+            return self._score_nfr_item(work_item, domain_key)
         
         # Get domain knowledge
         domain = get_domain_knowledge(domain_key)
@@ -111,6 +115,39 @@ class DomainRelevanceScorer:
         
         return (score, feedback)
     
+    def _score_nfr_item(self, work_item: Dict, domain_key: str) -> Tuple[int, List[str]]:
+        """Score non-functional requirement items with relaxed domain requirements."""
+        title = work_item.get('title', '')
+        description = work_item.get('description', '')
+        combined_text = f"{title} {description}".lower()
+        
+        # Start with base score for NFRs
+        score = 8
+        feedback = ["Non-functional requirement - relaxed domain scoring (+8)"]
+        
+        # Get domain knowledge
+        domain = get_domain_knowledge(domain_key)
+        if not domain:
+            return (score, feedback)
+        
+        # Light check for any domain relevance (more lenient)
+        # Check if it mentions ANY domain terms or personas
+        all_domain_terms = domain.get('primary_terms', []) + domain.get('secondary_terms', [])
+        term_matches = self._count_term_matches(combined_text, all_domain_terms)
+        
+        if term_matches > 0:
+            bonus = min(5, term_matches * 2)
+            score += bonus
+            feedback.append(f"Shows domain context in NFR (+{bonus})")
+        
+        # Check for domain personas
+        persona_matches = self._count_persona_matches(combined_text, domain.get('user_personas', []))
+        if persona_matches > 0:
+            score += 2
+            feedback.append("References domain users (+2)")
+        
+        return (score, feedback)
+    
     def _count_term_matches(self, text: str, terms: List[str]) -> int:
         """Count how many terms appear in the text."""
         if not terms:
@@ -159,6 +196,14 @@ class DomainRelevanceScorer:
         """Generate a detailed domain relevance report."""
         score, feedback = self.score_domain_relevance(work_item, domain_key)
         
+        title = work_item.get('title', '')
+        description = work_item.get('description', '')
+        
+        # Determine work item type
+        is_infra = is_infrastructure_work_item(title, description)
+        is_nfr = is_non_functional_requirement(title, description)
+        work_item_category = "infrastructure" if is_infra else "nfr" if is_nfr else "functional"
+        
         # Calculate percentage (assuming max possible score is 38)
         max_possible = sum(self.scoring_weights.values()) - self.scoring_weights['infrastructure']
         percentage = (score / max_possible) * 100
@@ -167,10 +212,9 @@ class DomainRelevanceScorer:
             "score": score,
             "percentage": round(percentage, 1),
             "feedback": feedback,
-            "is_infrastructure": is_infrastructure_work_item(
-                work_item.get('title', ''), 
-                work_item.get('description', '')
-            ),
+            "work_item_category": work_item_category,
+            "is_infrastructure": is_infra,
+            "is_nfr": is_nfr,
             "recommendation": self._get_recommendation(score, percentage)
         }
     

@@ -8,14 +8,27 @@ Used for flexible domain relevance scoring in quality assessment.
 
 DOMAIN_KNOWLEDGE = {
     "energy": {
-        "primary_terms": ["grid management", "renewable integration", "energy efficiency", "smart meters", "load balancing"],
+        "primary_terms": ["grid management", "renewable integration", "energy efficiency", "smart meters", "load balancing",
+                         "power generation", "energy distribution", "grid stability", "energy storage", "microgrid"],
         "secondary_terms": ["carbon", "emissions", "GHG", "Scope 1-3", "SCADA", "DER", "sustainability", "carbon accounting", 
-                          "renewable energy", "solar", "wind", "battery storage", "demand response", "peak load"],
+                          "renewable energy", "solar", "wind", "battery storage", "demand response", "peak load",
+                          "energy trading", "power purchase", "grid resilience", "outage management", "voltage control",
+                          "frequency regulation", "transmission", "distribution network", "energy consumption", "kilowatt",
+                          "megawatt", "power quality", "grid synchronization", "energy forecasting", "load shedding",
+                          "net metering", "feed-in tariff", "capacity planning", "grid modernization", "AMI", "AMR",
+                          "time-of-use pricing", "critical peak pricing", "demand side management", "energy audit"],
         "user_personas": ["Grid Operators", "Energy Producers", "Sustainability Officers", "ESG Teams", 
-                         "Industrial Sustainability Officers", "Environmental Services Managers"],
-        "systems": ["smart meters", "SCADA/EMS", "AMI feeds", "IoT sensors", "MQTT", "OPC-UA", "renewable forecast systems"],
+                         "Industrial Sustainability Officers", "Environmental Services Managers", "Utility Companies",
+                         "Energy Traders", "Facility Managers", "Energy Analysts", "Regulatory Compliance Officers",
+                         "Renewable Energy Developers", "Energy Consumers", "Power Plant Operators"],
+        "systems": ["smart meters", "SCADA/EMS", "AMI feeds", "IoT sensors", "MQTT", "OPC-UA", "renewable forecast systems",
+                   "energy management systems", "distribution management systems", "outage management systems",
+                   "meter data management", "grid analytics platforms", "energy trading platforms", "DERMS",
+                   "virtual power plants", "battery management systems", "substation automation"],
         "problems": ["emissions tracking", "load balancing", "renewable forecasting", "regulatory compliance", 
-                    "carbon reduction", "grid reliability", "energy optimization"]
+                    "carbon reduction", "grid reliability", "energy optimization", "peak demand management",
+                    "renewable intermittency", "grid congestion", "energy theft", "power quality issues",
+                    "infrastructure aging", "cybersecurity threats", "regulatory reporting", "cost optimization"]
     },
     "environmental_services": {
         "primary_terms": ["waste management", "environmental compliance", "sustainability metrics", "carbon footprint", "recycling systems"],
@@ -282,13 +295,99 @@ def get_domain_personas(domain_key: str) -> list:
 
 def is_infrastructure_work_item(title: str, description: str) -> bool:
     """Check if a work item is infrastructure/platform related and domain-agnostic."""
-    infrastructure_keywords = [
-        'authentication', 'authorization', 'login', 'security', 'database', 'api',
-        'infrastructure', 'deployment', 'monitoring', 'logging', 'performance',
-        'backup', 'disaster recovery', 'scaling', 'load balancing', 'caching',
-        'user management', 'access control', 'audit', 'compliance framework',
-        'data migration', 'integration framework', 'notification system'
+    combined_text = f"{title} {description}".lower()
+    
+    # First check if it has clear infrastructure keywords
+    clear_infrastructure_keywords = [
+        'authentication system', 'access control system', 'api gateway',
+        'microservices architecture', 'database optimization', 'monitoring infrastructure',
+        'logging system', 'message queue', 'event bus',
+        # Energy-specific infrastructure
+        'grid infrastructure', 'smart grid infrastructure', 'metering infrastructure',
+        'data integration platform', 'telemetry system', 'communication infrastructure',
+        'integration framework', 'data pipeline', 'streaming platform'
+    ]
+    if any(keyword in combined_text for keyword in clear_infrastructure_keywords):
+        return True
+    
+    # Exclude if it's clearly domain-specific functionality
+    domain_functional_indicators = [
+        'grid operator', 'energy producer', 'customer portal', 'patient care',
+        'trading platform', 'shopping cart', 'course delivery', 'fleet management'
+    ]
+    if any(indicator in combined_text for indicator in domain_functional_indicators):
+        return False
+    
+    # More specific infrastructure patterns
+    infrastructure_patterns = [
+        # Security & Access (but not domain-specific security)
+        r'\b(authentication|authorization|login|oauth|sso|jwt|token)\s+(system|framework|service|implementation)',
+        r'\buser\s+(authentication|management|access\s+control)\b',
+        
+        # Architecture & Infrastructure
+        r'\b(microservice|infrastructure|deployment|devops|ci/cd|containerization)',
+        r'\b(docker|kubernetes|cloud\s+migration|serverless)\b',
+        
+        # Database & Storage (generic)
+        r'\b(database|data\s+migration|schema|indexing)\s+(optimization|design|architecture)',
+        r'\b(backup|disaster\s+recovery|data\s+retention)\s+(system|strategy)',
+        
+        # Performance & Reliability (system-wide)
+        r'\bsystem\s+(performance|optimization|scaling)',
+        r'\b(high\s+availability|fault\s+tolerance|load\s+balancing)\b',
+        
+        # Core platform services
+        r'\b(api\s+gateway|message\s+queue|event\s+bus|notification\s+system)',
+        r'\b(logging|monitoring|telemetry)\s+(infrastructure|system|framework)',
+        
+        # Development infrastructure
+        r'\b(testing\s+framework|test\s+automation|code\s+quality)',
+        r'\b(developer\s+tools|sdk|library)\b',
+        
+        # General infrastructure indicators
+        r'\bauthentication\s+system\s+implementation\b',
+        r'\bapi\s+gateway\b'
     ]
     
+    import re
+    return any(re.search(pattern, combined_text, re.IGNORECASE) for pattern in infrastructure_patterns)
+
+def is_non_functional_requirement(title: str, description: str) -> bool:
+    """Check if a work item is a non-functional requirement."""
     combined_text = f"{title} {description}".lower()
-    return any(keyword in combined_text for keyword in infrastructure_keywords)
+    
+    # Exclude if it's clearly functional implementation
+    if is_infrastructure_work_item(title, description):
+        return False
+    
+    # Check for NFR patterns
+    nfr_patterns = [
+        # Performance requirements
+        r'\b(performance|speed|response\s+time|latency)\s+(requirement|optimization|target)',
+        r'\b\d+\s*(second|ms|millisecond|concurrent\s+user)',
+        
+        # Reliability requirements  
+        r'\b(reliability|availability|uptime|sla)\s+(requirement|target)',
+        r'\b\d+(\.\d+)?%\s+(uptime|availability)',
+        
+        # Security requirements
+        r'\b(security|vulnerability|penetration\s+testing)\s+(requirement|assessment|audit)',
+        r'\b(nerc\s+cip|sox|hipaa|gdpr|pci)\s+(compliance|requirement|implementation)',
+        # Energy-specific compliance
+        r'\b(ferc|iso|rto|nerc)\s+(compliance|standards|requirements)',
+        r'\bgrid\s+code\s+compliance',
+        
+        # Scalability requirements
+        r'\b(scalability|capacity|growth)\s+(requirement|planning|target)',
+        
+        # Other NFRs
+        r'\b(usability|accessibility|maintainability)\s+(requirement|standard)',
+        r'\b(browser|device|platform)\s+(support|compatibility)',
+        
+        # Additional NFR patterns
+        r'\buptime\s+requirement',
+        r'\bcompliance\s+implementation\b'
+    ]
+    
+    import re
+    return any(re.search(pattern, combined_text, re.IGNORECASE) for pattern in nfr_patterns)

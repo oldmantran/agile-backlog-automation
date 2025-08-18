@@ -56,6 +56,11 @@ class EpicQualityAssessor:
         combined_text = f"{title} {description}".lower()
         vision_lower = product_vision.lower() if product_vision else ""
         
+        # Check if this is infrastructure or NFR
+        from config.domain_knowledge import is_infrastructure_work_item, is_non_functional_requirement
+        is_infrastructure = is_infrastructure_work_item(title, description)
+        is_nfr = is_non_functional_requirement(title, description)
+        
         # 1. Title Quality (15 points)
         if len(title) <= 60:
             score += 10
@@ -63,47 +68,76 @@ class EpicQualityAssessor:
         else:
             specific_issues.append(f"Title too long ({len(title)} chars, max 60)")
             
+        # Vision terminology is less critical for infrastructure/NFR
         if any(term in title.lower() for term in vision_lower.split()[:20]):  # Check key vision terms
             score += 5
             strengths.append("Title uses vision terminology")
-        else:
+        elif not (is_infrastructure or is_nfr):
             weaknesses.append("Title doesn't reflect vision terminology")
+        else:
+            score += 3  # Partial credit for infrastructure/NFR
         
         # 2. Vision Alignment (20 points)
         vision_keywords = set(re.findall(r'\b\w{4,}\b', vision_lower))  # Extract meaningful words
         epic_keywords = set(re.findall(r'\b\w{4,}\b', combined_text))
         overlap = len(vision_keywords & epic_keywords)
         
-        if overlap >= 10:
-            score += 20
-            strengths.append("Strong alignment with product vision")
-        elif overlap >= 5:
-            score += 10
-            weaknesses.append("Moderate vision alignment - include more vision terms")
+        # Infrastructure/NFR items get more lenient vision scoring
+        if is_infrastructure or is_nfr:
+            if overlap >= 5:
+                score += 20
+                strengths.append("Good vision alignment for infrastructure/NFR")
+            elif overlap >= 3:
+                score += 15
+                strengths.append("Acceptable vision alignment for infrastructure/NFR")
+            else:
+                score += 10
+                weaknesses.append("Limited vision alignment - consider adding context")
         else:
-            specific_issues.append("Weak connection to product vision")
+            # Functional items need stronger vision alignment
+            if overlap >= 10:
+                score += 20
+                strengths.append("Strong alignment with product vision")
+            elif overlap >= 5:
+                score += 10
+                weaknesses.append("Moderate vision alignment - include more vision terms")
+            else:
+                specific_issues.append("Weak connection to product vision")
         
         # 3. User Specificity (15 points)
         # Get domain-specific user personas
         domain_personas = get_domain_personas(domain)
         user_pattern = self._build_user_pattern(domain_personas)
         
-        # Check both title AND description for user mentions
-        if re.search(user_pattern, title, re.I) or re.search(user_pattern, description, re.I):
-            score += 15
-            strengths.append("Identifies target users")
-        else:
-            # Check for generic user mentions - partial credit
-            if re.search(self.generic_user_patterns, title, re.I) or re.search(self.generic_user_patterns, description, re.I):
-                score += 8
-                weaknesses.append("Uses generic user terms - specify domain users")
+        # Infrastructure/NFR items may not have specific end users
+        if is_infrastructure or is_nfr:
+            # For infrastructure, any user mention is good enough
+            if re.search(user_pattern, title, re.I) or re.search(user_pattern, description, re.I):
+                score += 15
+                strengths.append("Identifies affected users")
+            elif re.search(self.generic_user_patterns, title, re.I) or re.search(self.generic_user_patterns, description, re.I):
+                score += 12
+                strengths.append("References system users")
             else:
-                specific_issues.append("No specific users mentioned")
-                if domain_personas:
-                    example_users = domain_personas[:3]
-                    weaknesses.append(f"Add WHO will use this (e.g., {', '.join(example_users)})")
+                score += 8  # Base credit for infrastructure/NFR
+                weaknesses.append("Consider mentioning who benefits from this")
+        else:
+            # Functional items need specific users
+            if re.search(user_pattern, title, re.I) or re.search(user_pattern, description, re.I):
+                score += 15
+                strengths.append("Identifies target users")
+            else:
+                # Check for generic user mentions - partial credit
+                if re.search(self.generic_user_patterns, title, re.I) or re.search(self.generic_user_patterns, description, re.I):
+                    score += 8
+                    weaknesses.append("Uses generic user terms - specify domain users")
                 else:
-                    weaknesses.append("Add WHO will use this feature")
+                    specific_issues.append("No specific users mentioned")
+                    if domain_personas:
+                        example_users = domain_personas[:3]
+                        weaknesses.append(f"Add WHO will use this (e.g., {', '.join(example_users)})")
+                    else:
+                        weaknesses.append("Add WHO will use this feature")
         
         # 4. Platform/Technology (15 points)
         platform_found = any(term in combined_text for term in self.platform_terms)
@@ -118,7 +152,7 @@ class EpicQualityAssessor:
         
         # Map domain score to epic assessment points (max 15)
         # Domain scorer can give up to ~38 points, so scale appropriately
-        domain_points = min(15, int(domain_score * 0.4))  # Scale to max 15 points
+        domain_points = min(15, int(domain_score * 0.5))  # Scale to max 15 points - increased from 0.4
         score += domain_points
         
         # Add feedback based on domain scoring
@@ -174,6 +208,18 @@ class EpicQualityAssessor:
                 improvement_suggestions.append("Add platform details (mobile, web, cloud, etc.)")
             if overlap < 10:
                 improvement_suggestions.append("Use more specific terms from the product vision")
+        
+        # Infrastructure/NFR baseline adjustment
+        if is_infrastructure or is_nfr:
+            # Ensure infrastructure/NFR items get a fair baseline
+            if score < 60:
+                baseline_adjustment = 25  # Increased from 20
+                score += baseline_adjustment
+                strengths.append(f"Infrastructure/NFR baseline adjustment (+{baseline_adjustment})")
+            elif score <= 75:
+                baseline_adjustment = max(5, 76 - score)  # Ensure it reaches at least 76
+                score += baseline_adjustment
+                strengths.append(f"Infrastructure/NFR baseline adjustment (+{baseline_adjustment})")
         
         # Determine rating
         if score >= 80:
