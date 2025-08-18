@@ -41,9 +41,23 @@ const NewProjectScreen: React.FC = () => {
           projectId: result.data.projectId
         });
         
-        // Navigate to the generation progress page
+        // Store the active job in localStorage for MyProjectsScreen to track
+        const activeJob = {
+          jobId: result.data.jobId,
+          projectName: projectData.projectName || 'New Project',
+          startTime: new Date().toISOString(),
+          status: 'running',
+          progress: 0,
+          currentAction: 'Initializing...'
+        };
+        
+        const existingJobs = JSON.parse(localStorage.getItem('activeJobs') || '[]');
+        existingJobs.push(activeJob);
+        localStorage.setItem('activeJobs', JSON.stringify(existingJobs));
+        
+        // Navigate to My Projects page where progress is displayed
         setTimeout(() => {
-          navigate(`/dashboard/${result.data.jobId}`);
+          navigate('/my-projects');
         }, 2000);
       } else {
         setSubmitStatus({
