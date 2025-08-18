@@ -7,7 +7,7 @@ import re
 from typing import Dict, List, Any
 from dataclasses import dataclass
 from utils.domain_relevance_scorer import DomainRelevanceScorer
-from config.domain_knowledge import get_domain_personas
+from config.domain_knowledge import get_domain_personas, is_infrastructure_work_item, is_non_functional_requirement
 
 @dataclass
 class QualityAssessment:
@@ -30,6 +30,51 @@ class EpicQualityAssessor:
         
         # Generic user role patterns (will be enhanced with domain-specific ones)
         self.generic_user_patterns = r'\b(User|Customer|Manager|Admin|Operator|Staff|Team|Personnel)\b'
+    
+    def _build_user_pattern(self, domain_personas: List[str]) -> str:
+        """Build regex pattern for domain-specific user personas."""
+        if not domain_personas:
+            return self.generic_user_patterns
+        
+        # Collect all patterns
+        patterns = []
+        
+        # Add generic patterns (without parentheses since we'll wrap the whole thing)
+        patterns.append('User|Customer|Manager|Admin|Operator|Staff|Team|Personnel')
+        
+        # Extract key role words from personas
+        role_words = set()
+        
+        for persona in domain_personas:
+            # Add full persona (escape special chars)
+            escaped_persona = re.escape(persona)
+            patterns.append(escaped_persona)
+            
+            # Handle singular form
+            if persona.endswith('s'):
+                singular = persona[:-1]
+                patterns.append(re.escape(singular))
+            
+            # Extract individual words from compound terms
+            words = persona.split()
+            for word in words:
+                # Add significant role words
+                if len(word) > 3 and word.lower() not in ['and', 'for', 'the', 'with']:
+                    role_words.add(word)
+                    if word.endswith('s'):
+                        role_words.add(word[:-1])  # Add singular
+        
+        # Add all unique role words
+        for word in role_words:
+            patterns.append(re.escape(word))
+        
+        # Add common Energy domain user terms
+        energy_terms = ['Engineers?', 'Traders?', 'Developers?', 'Companies', 'Company', 
+                       'Officers?', 'Analysts?', 'Utilities', 'Utility']
+        patterns.extend(energy_terms)
+        
+        # Build final pattern with word boundaries
+        return r'\b(' + '|'.join(patterns) + r')\b'
         
     def assess_epic(self, epic: Dict[str, Any], domain: str, product_vision: str) -> QualityAssessment:
         """Assess epic quality based on streamlined criteria."""
