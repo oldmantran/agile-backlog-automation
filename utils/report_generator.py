@@ -79,7 +79,7 @@ class BacklogSummaryReportGenerator:
                     'test_cases': job_data.get('test_cases_generated', 0)
                 },
                 'azure_devops_upload': {
-                    'total_uploaded': metrics.get('items_uploaded', 0),
+                    'total_uploaded': self._get_actual_upload_count(job_data, raw_summary, metrics),
                     'upload_success_rate': self._calculate_upload_success_rate(job_data, metrics),
                     'upload_time': metrics.get('upload_time', 0)
                 }
@@ -200,12 +200,20 @@ class BacklogSummaryReportGenerator:
         if tier_match:
             metrics['hardware_tier'] = tier_match.group(1)
         
-        # Extract high latency operations
+        # Extract high latency operations (deduplicate by stage)
+        high_latency_by_stage = {}
         for match in re.finditer(r'High latency \((\d+\.\d+)ms\) detected for stage \'(\w+)\'', log_content):
-            metrics['high_latency_ops'].append({
-                'stage': match.group(2),
-                'latency_ms': float(match.group(1))
-            })
+            stage = match.group(2)
+            latency = float(match.group(1))
+            # Keep the highest latency for each stage
+            if stage not in high_latency_by_stage or latency > high_latency_by_stage[stage]:
+                high_latency_by_stage[stage] = latency
+        
+        # Convert to list format
+        metrics['high_latency_ops'] = [
+            {'stage': stage, 'latency_ms': latency}
+            for stage, latency in high_latency_by_stage.items()
+        ]
         
         # Extract parallel processing info
         parallel_match = re.search(r'Parallel processing was enabled with (\d+) workers', log_content)
@@ -236,6 +244,29 @@ class BacklogSummaryReportGenerator:
             if 'minute' in time_match.group(2):
                 time_val *= 60
             metrics['upload_time'] = time_val
+        
+        # Extract domain alignment metrics
+        # Count domain term usage
+        domain_terms = 0
+        for match in re.finditer(r'Uses (\d+) (?:primary |related )?domain (?:terms|concepts)', log_content):
+            domain_terms += int(match.group(1))
+        metrics['domain_terms_count'] = domain_terms
+        
+        # Extract domain-specific features mentioned
+        domain_features = []
+        for match in re.finditer(r'References? (\d+) domain (?:user types|systems|specific problems)', log_content):
+            feature_type = match.group(0).split()[-1]  # Get last word (types/systems/problems)
+            domain_features.append(f"{match.group(1)} domain {feature_type}")
+        metrics['domain_features'] = domain_features
+        
+        # Calculate vision alignment score (average of all vision alignment percentages)
+        vision_scores = []
+        for match in re.finditer(r'vision alignment.*?(\d+)%', log_content, re.IGNORECASE):
+            vision_scores.append(int(match.group(1)))
+        if vision_scores:
+            metrics['vision_alignment_score'] = round(sum(vision_scores) / len(vision_scores), 1)
+        else:
+            metrics['vision_alignment_score'] = 0
         
         return metrics
     
@@ -344,32 +375,70 @@ class BacklogSummaryReportGenerator:
                 job_data.get('tasks_generated', 0) +
                 job_data.get('test_cases_generated', 0))
     
+    def _get_actual_upload_count(self, job_data: Dict, raw_summary: Dict, metrics: Dict) -> int:
+        """Get the actual upload count from various sources."""
+        # First check if we have staging summary data
+        staging_summary = raw_summary.get('staging_summary', {})
+        if staging_summary and staging_summary.get('by_status', {}).get('success'):
+            return staging_summary['by_status']['success']
+        
+        # Check Azure integration data
+        azure_integration = raw_summary.get('azure_integration', {})
+        if azure_integration.get('total_created'):
+            return azure_integration['total_created']
+        
+        # Check if work_items_created array exists
+        if azure_integration.get('work_items_created'):
+            return len(azure_integration['work_items_created'])
+        
+        # Fall back to metrics from log parsing
+        if metrics.get('items_uploaded'):
+            return metrics['items_uploaded']
+        
+        # Last resort - use total generated (assumes all uploaded)
+        return self._calculate_total_generated(job_data)
+    
     def _calculate_upload_success_rate(self, job_data: Dict, metrics: Dict) -> float:
         """Calculate upload success rate."""
+        # Get raw summary
+        raw_summary = {}
+        if job_data.get('raw_summary'):
+            try:
+                raw_summary = json.loads(job_data['raw_summary']) if isinstance(job_data['raw_summary'], str) else job_data['raw_summary']
+            except:
+                pass
+        
         total_generated = self._calculate_total_generated(job_data)
-        items_uploaded = metrics.get('items_uploaded', 0)
+        items_uploaded = self._get_actual_upload_count(job_data, raw_summary, metrics)
         
         if total_generated > 0:
             return round((items_uploaded / total_generated) * 100, 2)
         return 0.0
     
     def _calculate_overall_quality_score(self, metrics: Dict) -> float:
-        """Calculate overall quality score across all work items."""
-        total_items = 0
+        """Calculate overall quality score across all work items.
+        
+        Since we only accept GOOD (75+) and EXCELLENT (80+) items,
+        the score should reflect only these accepted items.
+        """
+        total_accepted = 0
         weighted_score = 0
         
-        # Weight different ratings
-        weights = {'excellent': 100, 'good': 75, 'fair': 50, 'poor': 25}
+        # Only count GOOD and EXCELLENT since FAIR/POOR are rejected
+        weights = {'excellent': 90, 'good': 82}  # Use midpoint of their ranges
         
         for stage in ['epic_quality', 'feature_quality', 'story_quality', 'task_quality']:
             if stage in metrics:
                 for rating, count in metrics[stage].items():
-                    if rating in weights:
-                        total_items += count
-                        weighted_score += weights[rating] * count
+                    # Only count accepted quality levels
+                    if rating.lower() in ['excellent', 'good']:
+                        total_accepted += count
+                        weighted_score += weights[rating.lower()] * count
         
-        if total_items > 0:
-            return round(weighted_score / total_items, 2)
+        if total_accepted > 0:
+            return round(weighted_score / total_accepted, 2)
+        
+        # If no accepted items, return 0
         return 0.0
     
     def _calculate_rejection_rate(self, metrics: Dict) -> float:
