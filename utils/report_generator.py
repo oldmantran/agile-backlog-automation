@@ -53,11 +53,11 @@ class BacklogSummaryReportGenerator:
             'metadata': {
                 'project_name': job_data.get('project_name', 'Unknown'),
                 'job_id': raw_summary.get('job_id', 'Unknown'),
-                'generation_date': job_data.get('created_at', ''),
+                'generation_date': job_data.get('created_at') or job_data.get('start_time') or job_data.get('timestamp', 'Unknown'),
                 'report_generated': datetime.now().isoformat(),
                 'area_path': raw_summary.get('azure_config', {}).get('areaPath', 'N/A'),
                 'iteration_path': raw_summary.get('azure_config', {}).get('iterationPath', 'N/A'),
-                'domain': raw_summary.get('domain', 'Unknown'),
+                'domain': raw_summary.get('domain') or job_data.get('domain') or raw_summary.get('azure_config', {}).get('domain', 'Unknown'),
                 'llm_models': self._extract_llm_models(log_content)
             },
             'vision_statement': vision_data,
@@ -262,14 +262,14 @@ class BacklogSummaryReportGenerator:
             else:
                 vision_text = ''
         
-        # Clean up the vision text - remove common prefixes
+        # Clean up the vision text - remove debug logging but keep Executive Summary
         if vision_text:
-            # Remove "Executive Summary:" prefix if present
-            vision_text = re.sub(r'^Executive Summary:\s*', '', vision_text, flags=re.IGNORECASE)
-            # Remove "Project: X Domain: Y" prefix if present
-            vision_text = re.sub(r'^Project:\s*[^\n]+\nDomain:\s*[^\n]+\n+', '', vision_text)
-            # Remove any duplicate "Executive Summary:" within the text
-            vision_text = re.sub(r'\n*Executive Summary:\s*', '\n', vision_text, flags=re.IGNORECASE)
+            # Remove any INFO/DEBUG logging lines
+            vision_text = re.sub(r'(INFO|DEBUG|ERROR|WARNING)\s*-\s*[^:]+:\s*[^\n]+\n?', '', vision_text)
+            # Remove "Full product vision being passed to agent:" and similar debug messages
+            vision_text = re.sub(r'Full product vision being passed to agent:\s*', '', vision_text)
+            # Remove duplicate "Project: X Domain: Y" if it appears before Executive Summary
+            vision_text = re.sub(r'^Project:\s*[^\n]+\nDomain:\s*[^\n]+\n+(?=Executive Summary:)', '', vision_text)
             vision_text = vision_text.strip()
             
         vision_data['statement'] = vision_text
