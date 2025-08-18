@@ -44,6 +44,28 @@ For Healthcare domain:
   }
 ]
 
+For Energy domain:
+[
+  {
+    "title": "Grid Operators Real-Time Renewable Integration Dashboard",
+    "description": "Enable Grid Operators and Energy Producers to monitor renewable energy integration, forecast load balancing requirements, and optimize grid stability through SCADA/EMS integration with <30s response time for demand response events.",
+    "priority": "High",
+    "estimated_complexity": "L",
+    "category": "core_platform"
+  }
+]
+
+For Environmental Services domain:
+[
+  {
+    "title": "ESG Teams Carbon Accounting & Compliance Platform",
+    "description": "Provide ESG Teams and Sustainability Officers with real-time Scope 1-3 emissions tracking, regulatory compliance reporting (GHG Protocol, SEC), and carbon reduction scenario modeling to achieve 15% GHG intensity reduction targets.",
+    "priority": "High",
+    "estimated_complexity": "XL",
+    "category": "core_platform"
+  }
+]
+
 CRITICAL QUALITY REQUIREMENTS (ALL MANDATORY for 75+ score):
 
 1. **SPECIFIC USERS ARE MANDATORY** - MUST include in title or description:
@@ -53,17 +75,21 @@ CRITICAL QUALITY REQUIREMENTS (ALL MANDATORY for 75+ score):
      * Healthcare: "Physicians", "Nurses", "Patients", "Hospital Administrators"
      * Finance: "Retail Investors", "Wealth Managers", "Bank Tellers", "Loan Officers"
    
-2. **DOMAIN TERMINOLOGY IS MANDATORY** - MUST include domain-specific terms:
+2. **DOMAIN TERMINOLOGY IS ENCOURAGED** - Include domain-appropriate terms:
    - Agriculture: crop, yield, soil, irrigation, harvest, farm, livestock, agronomy
    - Healthcare: patient, diagnosis, clinical, treatment, EHR, HIPAA, medical
    - Finance: transaction, portfolio, compliance, KYC/AML, ledger, underwriting
    - Retail: inventory, point-of-sale, merchandising, supply chain, omnichannel
    - Education: curriculum, assessment, enrollment, student outcomes, LMS
+   - Energy: grid management, renewable, emissions, GHG, smart meters, SCADA, carbon
+   - Environmental: waste management, sustainability, compliance, carbon footprint
+   - NOTE: Infrastructure epics (auth, database, etc.) may not need domain terms
    
-3. **ENFORCEMENT RULES**:
-   - Epic titles MUST contain at least ONE specific user type
-   - Epic descriptions MUST contain at least TWO domain-specific terms
-   - Generic terms = AUTOMATIC REJECTION (score below 75)
+3. **FLEXIBLE SCORING APPROACH**:
+   - Epic titles SHOULD contain specific user types (higher score)
+   - Epic descriptions SHOULD use domain-appropriate language
+   - Infrastructure/platform epics evaluated differently
+   - Quality based on overall relevance, not rigid term counting
    
 4. **OTHER REQUIREMENTS**:
    ✓ Title ≤60 chars using EXACT terms from vision
@@ -72,7 +98,7 @@ CRITICAL QUALITY REQUIREMENTS (ALL MANDATORY for 75+ score):
    ✓ Ties to measurable outcome (e.g., <45s dispatch, 90% coverage)
    ✓ Valid JSON with all required fields
 
-⚠️ QUALITY GATE: Epics without specific users AND domain terms will score 70 or below and be REJECTED.
+⚠️ QUALITY GATE: Epics are evaluated holistically - domain relevance, user specificity, and vision alignment all contribute to achieving the 75+ score threshold.
 
 EPIC STRUCTURE:
 - title: Specific capability from vision (max 60 chars)
@@ -88,7 +114,7 @@ FINAL INSTRUCTIONS:
 4. FOLLOW the example patterns above for the ${domain} domain
 5. ENSURE each epic passes ALL quality requirements or it will be rejected
 
-Remember: Generic epics without specific users and domain terms will score 70 and be REJECTED.
+Remember: Focus on creating epics that genuinely address the vision's goals. Quality scoring considers context - infrastructure epics don't need domain terms, while domain-specific features should use appropriate terminology.
 
 Now generate ${max_epics} epics for "${project_name}" in the ${domain} domain based on this vision:
 

@@ -6,6 +6,8 @@ Evaluates epics based on clear, practical criteria aligned with the simplified p
 import re
 from typing import Dict, List, Any
 from dataclasses import dataclass
+from utils.domain_relevance_scorer import DomainRelevanceScorer
+from config.domain_knowledge import get_domain_personas
 
 @dataclass
 class QualityAssessment:
@@ -20,22 +22,14 @@ class EpicQualityAssessor:
     """Streamlined epic quality assessment focused on practical criteria."""
     
     def __init__(self):
-        # Domain-specific terms by category
-        self.domain_terms = {
-            'transportation': ['vehicle', 'ride', 'fleet', 'route', 'dispatch', 'autonomous', 'mobility', 'transit', 'passenger'],
-            'healthcare': ['patient', 'clinical', 'medical', 'diagnosis', 'treatment', 'provider', 'care'],
-            'finance': ['transaction', 'payment', 'investment', 'portfolio', 'trading', 'financial'],
-            'retail': ['customer', 'inventory', 'product', 'shopping', 'purchase', 'order'],
-            'logistics': ['warehouse', 'shipment', 'delivery', 'tracking', 'distribution', 'supply chain'],
-            'education': ['student', 'learning', 'course', 'curriculum', 'teacher', 'classroom'],
-            'agriculture': ['crop', 'yield', 'soil', 'irrigation', 'harvest', 'farm', 'livestock', 'agronomy', 'fertilizer', 'seed', 'agricultural', 'farming']
-        }
+        # Initialize domain relevance scorer
+        self.domain_scorer = DomainRelevanceScorer()
         
         # Platform indicators
         self.platform_terms = ['mobile', 'ios', 'android', 'web', 'cloud', 'api', 'dashboard', 'real-time']
         
-        # User role patterns - including domain-specific users
-        self.user_patterns = r'\b(User|Customer|Student|Patient|Driver|Rider|Commuter|Manager|Admin|Teacher|Operator|Farmer|Smallholder|Agri-Lender|Cooperative|Aggregator|NGO|MFI|Lender)\b'
+        # Generic user role patterns (will be enhanced with domain-specific ones)
+        self.generic_user_patterns = r'\b(User|Customer|Manager|Admin|Operator|Staff|Team|Personnel)\b'
         
     def assess_epic(self, epic: Dict[str, Any], domain: str, product_vision: str) -> QualityAssessment:
         """Assess epic quality based on streamlined criteria."""
@@ -90,13 +84,26 @@ class EpicQualityAssessor:
             specific_issues.append("Weak connection to product vision")
         
         # 3. User Specificity (15 points)
+        # Get domain-specific user personas
+        domain_personas = get_domain_personas(domain)
+        user_pattern = self._build_user_pattern(domain_personas)
+        
         # Check both title AND description for user mentions
-        if re.search(self.user_patterns, title, re.I) or re.search(self.user_patterns, description, re.I):
+        if re.search(user_pattern, title, re.I) or re.search(user_pattern, description, re.I):
             score += 15
             strengths.append("Identifies target users")
         else:
-            specific_issues.append("No specific users mentioned")
-            weaknesses.append("Add WHO will use this (e.g., Smallholder Farmers, Agri-Lenders)")
+            # Check for generic user mentions - partial credit
+            if re.search(self.generic_user_patterns, title, re.I) or re.search(self.generic_user_patterns, description, re.I):
+                score += 8
+                weaknesses.append("Uses generic user terms - specify domain users")
+            else:
+                specific_issues.append("No specific users mentioned")
+                if domain_personas:
+                    example_users = domain_personas[:3]
+                    weaknesses.append(f"Add WHO will use this (e.g., {', '.join(example_users)})")
+                else:
+                    weaknesses.append("Add WHO will use this feature")
         
         # 4. Platform/Technology (15 points)
         platform_found = any(term in combined_text for term in self.platform_terms)
@@ -106,18 +113,32 @@ class EpicQualityAssessor:
         else:
             weaknesses.append("Missing platform specifics (mobile, web, etc.)")
         
-        # 5. Domain Terminology (15 points)
-        domain_terms = self.domain_terms.get(domain, [])
-        domain_count = sum(1 for term in domain_terms if term in combined_text)
+        # 5. Domain Terminology (15 points max - using flexible scoring)
+        domain_score, domain_feedback = self.domain_scorer.score_domain_relevance(epic, domain, "epic")
         
-        if domain_count >= 3:
-            score += 15
-            strengths.append(f"Uses {domain} domain terminology")
-        elif domain_count >= 1:
-            score += 8
+        # Map domain score to epic assessment points (max 15)
+        # Domain scorer can give up to ~38 points, so scale appropriately
+        domain_points = min(15, int(domain_score * 0.4))  # Scale to max 15 points
+        score += domain_points
+        
+        # Add feedback based on domain scoring
+        if domain_points >= 12:
+            strengths.append(f"Strong {domain} domain alignment")
+        elif domain_points >= 8:
+            strengths.append(f"Good {domain} domain relevance")
+            # Add the most relevant feedback
+            if domain_feedback:
+                weaknesses.append(domain_feedback[0])
+        elif domain_points >= 5:
             weaknesses.append(f"Limited {domain} domain terminology")
+            # Add specific feedback
+            for feedback in domain_feedback[:2]:
+                weaknesses.append(feedback)
         else:
-            specific_issues.append(f"No {domain}-specific terminology found")
+            specific_issues.append(f"Weak {domain}-specific content")
+            # Provide helpful feedback
+            for feedback in domain_feedback[:1]:
+                weaknesses.append(feedback)
         
         # 6. Measurable Outcomes (10 points)
         if re.search(r'\d+[%\s]|<\d+|>\d+|\d+\s*(second|minute|hour|day)', description):
@@ -137,10 +158,18 @@ class EpicQualityAssessor:
         # Generate improvement suggestions
         improvement_suggestions = []
         if score < 75:
-            if not any(term in combined_text for term in domain_terms):
-                improvement_suggestions.append(f"Include {domain} terms like: {', '.join(domain_terms[:3])}")
-            if not re.search(self.user_patterns, title, re.I) and not re.search(self.user_patterns, description, re.I):
-                improvement_suggestions.append("Specify target users from the vision")
+            # Domain-specific improvements based on flexible scoring
+            if domain_points < 10:
+                domain_report = self.domain_scorer.get_domain_relevance_report(epic, domain)
+                improvement_suggestions.append(domain_report['recommendation'])
+            
+            # User specificity improvements
+            if not re.search(user_pattern, title, re.I) and not re.search(user_pattern, description, re.I):
+                if domain_personas:
+                    improvement_suggestions.append(f"Specify target users: {', '.join(domain_personas[:3])}")
+                else:
+                    improvement_suggestions.append("Specify target users from the vision")
+            
             if not platform_found:
                 improvement_suggestions.append("Add platform details (mobile, web, cloud, etc.)")
             if overlap < 10:
@@ -190,3 +219,23 @@ class EpicQualityAssessor:
                 output += f"  - {suggestion}\n"
         
         return output
+    
+    def _build_user_pattern(self, domain_personas: List[str]) -> str:
+        """Build regex pattern for user detection including domain-specific personas."""
+        # Start with generic patterns
+        patterns = ['User', 'Customer', 'Manager', 'Admin', 'Operator', 'Staff', 'Team', 'Personnel']
+        
+        # Add domain-specific personas
+        if domain_personas:
+            for persona in domain_personas:
+                # Add both singular and plural forms
+                patterns.append(persona)
+                # Handle common variations
+                if persona.endswith('s') and not persona.endswith('ss'):
+                    patterns.append(persona[:-1])  # Remove 's' for singular
+                elif not persona.endswith('s'):
+                    patterns.append(persona + 's')  # Add 's' for plural
+        
+        # Build regex pattern
+        pattern_str = r'\b(' + '|'.join(re.escape(p) for p in patterns) + r')\b'
+        return pattern_str
