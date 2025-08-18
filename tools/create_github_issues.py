@@ -151,6 +151,246 @@ class GitHubIssueCreator:
         """Get all issues data from the analysis."""
         return [
             {
+                "title": "FEATURE: Implement Agent Learning System for Continuous Improvement",
+                "body": '''## 🧠 FEATURE: Agent Learning System for Continuous Improvement
+
+### Problem Statement
+The current agentic backlog generator has sophisticated multi-agent architecture with quality assessment and improvement loops, but agents don't learn from past experiences. This leads to:
+- Agents making the same mistakes repeatedly
+- No improvement in performance over time
+- Wasted resources on repeated improvement cycles
+- Lack of domain-specific learning and optimization
+
+### Current State
+- ✅ Multi-agent system with specialized agents (Epic Strategist, Feature Decomposer, User Story Decomposer, Developer Agent, QA Lead)
+- ✅ Quality assessment and improvement mechanisms
+- ✅ Circuit breaker pattern and timeout handling
+- ✅ Quality metrics tracking
+- ❌ No learning from past experiences
+- ❌ No pattern recognition for success/failure
+- ❌ No continuous improvement based on historical data
+
+### Proposed Solution: Agent Learning Architecture
+
+#### 1. Agent Memory & Learning Database
+Create a new database schema to store agent learning experiences:
+
+**Tables:**
+- `agent_learning_experiences` - Records of all agent executions with outcomes
+- `agent_learning_patterns` - Identified success/failure patterns and strategies
+
+**Key Fields:**
+- Agent name, task type, domain
+- Input context, output quality metrics
+- Improvement attempts and strategies used
+- Final outcome and lessons learned
+- Performance metrics and context analysis
+
+#### 2. Enhanced Base Agent with Learning
+Modify `agents/base_agent.py` to include:
+- Learning memory integration
+- Experience recording capabilities
+- Learning insights retrieval
+- Prompt enhancement with historical learnings
+
+**New Methods:**
+- `_record_learning_experience()` - Store execution results
+- `_get_learning_insights()` - Retrieve relevant learnings
+- `_enhance_prompt_with_learning()` - Improve prompts with insights
+
+#### 3. Learning-Enhanced Quality Assessment
+Enhance `utils/quality_metrics_tracker.py` to:
+- Record complete improvement cycles
+- Extract lessons learned from failures
+- Track improvement strategy effectiveness
+- Generate learning recommendations
+
+#### 4. Integration with Existing Agents
+Update all specialized agents to:
+- Record learning experiences during quality improvement cycles
+- Use learning insights to enhance prompts
+- Apply proven strategies from past successes
+- Avoid repeating common failure patterns
+
+#### 5. Learning Dashboard & Analytics
+Create `tools/agent_learning_dashboard.py` for:
+- Learning progress monitoring
+- Performance trend analysis
+- Strategy effectiveness tracking
+- Actionable improvement recommendations
+
+### Implementation Details
+
+#### Database Schema
+```sql
+-- Learning experiences table
+CREATE TABLE agent_learning_experiences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_name TEXT NOT NULL,
+    task_type TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    input_context TEXT NOT NULL,  -- JSON
+    output_quality TEXT NOT NULL,  -- JSON
+    improvement_attempts TEXT NOT NULL,  -- JSON
+    final_outcome TEXT NOT NULL,
+    lessons_learned TEXT NOT NULL,  -- JSON array
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Performance metrics
+    initial_score INTEGER,
+    final_score INTEGER,
+    improvement_count INTEGER,
+    total_duration_seconds REAL,
+    
+    -- Context analysis
+    context_length INTEGER,
+    domain_specificity REAL,
+    vision_clarity_score REAL
+);
+
+-- Learning patterns table
+CREATE TABLE agent_learning_patterns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_name TEXT NOT NULL,
+    task_type TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    pattern_type TEXT NOT NULL,  -- 'success_pattern', 'failure_pattern', 'improvement_strategy'
+    pattern_data TEXT NOT NULL,  -- JSON
+    confidence_score REAL DEFAULT 0.0,
+    usage_count INTEGER DEFAULT 0,
+    success_rate REAL DEFAULT 0.0,
+    last_updated TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Learning Experience Structure
+```python
+@dataclass
+class LearningExperience:
+    agent_name: str
+    task_type: str  # 'epic', 'feature', 'user_story', 'task'
+    domain: str
+    input_context: Dict[str, Any]
+    output_quality: Dict[str, Any]
+    improvement_attempts: List[Dict[str, Any]]
+    final_outcome: str  # 'success', 'partial_success', 'failure'
+    lessons_learned: List[str]
+    timestamp: datetime
+```
+
+#### Prompt Enhancement Example
+```python
+def _enhance_prompt_with_learning(self, base_prompt: str, task_type: str, 
+                                domain: str = None, context: Dict[str, Any] = None) -> str:
+    insights = self._get_learning_insights(task_type, domain)
+    
+    enhanced_prompt = f"""
+{base_prompt}
+
+## LEARNING-BASED IMPROVEMENTS
+Based on analysis of {insights['insights']['total_experiences']} previous experiences:
+
+{self._build_learning_instructions(insights, context)}
+
+## PREVIOUS SUCCESS PATTERNS
+{self._format_success_patterns(insights)}
+
+## COMMON PITFALLS TO AVOID
+{self._format_failure_patterns(insights)}
+
+Please apply these learnings to improve your output quality.
+"""
+    return enhanced_prompt
+```
+
+### Key Benefits
+
+1. **Pattern Recognition**: Agents learn from successful and failed attempts
+2. **Continuous Improvement**: Each experience makes the agent smarter
+3. **Domain-Specific Learning**: Agents learn industry-specific best practices
+4. **Failure Prevention**: Avoid repeating common mistakes
+5. **Strategy Optimization**: Learn which improvement approaches work best
+6. **Performance Tracking**: Monitor learning progress over time
+
+### Implementation Steps
+
+1. **Phase 1: Core Infrastructure**
+   - [ ] Create `utils/agent_learning_memory.py`
+   - [ ] Implement database schema and tables
+   - [ ] Create `LearningExperience` data class
+   - [ ] Implement basic CRUD operations
+
+2. **Phase 2: Base Agent Enhancement**
+   - [ ] Modify `agents/base_agent.py`
+   - [ ] Add learning memory integration
+   - [ ] Implement experience recording methods
+   - [ ] Add prompt enhancement capabilities
+
+3. **Phase 3: Quality Assessment Integration**
+   - [ ] Enhance `utils/quality_metrics_tracker.py`
+   - [ ] Integrate learning experience recording
+   - [ ] Implement lessons learned extraction
+   - [ ] Add improvement strategy tracking
+
+4. **Phase 4: Agent Updates**
+   - [ ] Update `agents/developer_agent.py`
+   - [ ] Update `agents/user_story_decomposer_agent.py`
+   - [ ] Update `agents/feature_decomposer_agent.py`
+   - [ ] Update `agents/epic_strategist.py`
+
+5. **Phase 5: Learning Dashboard**
+   - [ ] Create `tools/agent_learning_dashboard.py`
+   - [ ] Implement trend analysis
+   - [ ] Add performance monitoring
+   - [ ] Create actionable recommendations
+
+6. **Phase 6: Testing & Validation**
+   - [ ] Test with sample vision statements
+   - [ ] Validate learning database population
+   - [ ] Verify prompt enhancement effectiveness
+   - [ ] Measure performance improvements
+
+### Technical Requirements
+
+- **Database**: SQLite with new learning tables
+- **Dependencies**: No additional external dependencies
+- **Performance**: Minimal impact on existing agent execution
+- **Compatibility**: Works with all existing LLM providers
+- **Scalability**: Efficient querying for large learning datasets
+
+### Success Metrics
+
+- [ ] Reduction in improvement cycles required
+- [ ] Increase in first-attempt quality scores
+- [ ] Decrease in common failure patterns
+- [ ] Improvement in domain-specific performance
+- [ ] Positive learning trend over time
+
+### Files to Create/Modify
+
+**New Files:**
+- `utils/agent_learning_memory.py` - Core learning system
+- `tools/agent_learning_dashboard.py` - Learning analytics
+
+**Modified Files:**
+- `agents/base_agent.py` - Add learning capabilities
+- `utils/quality_metrics_tracker.py` - Integrate learning recording
+- `agents/developer_agent.py` - Use learning insights
+- `agents/user_story_decomposer_agent.py` - Use learning insights
+- `agents/feature_decomposer_agent.py` - Use learning insights
+- `agents/epic_strategist.py` - Use learning insights
+
+### Labels
+- `enhancement`
+- `feature`
+- `ai-learning`
+- `agent-improvement`
+- `performance`
+- `database`
+- `architecture`''',
+                "labels": ["enhancement", "feature", "ai-learning", "agent-improvement", "performance", "database", "architecture"]
+            },
+            {
                 "title": "CRITICAL: Navigation to My Projects Screen Not Working After Backlog Generation",
                 "body": """## 🚨 CRITICAL: Navigation Failure After Backlog Generation
 

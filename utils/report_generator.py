@@ -96,8 +96,9 @@ class BacklogSummaryReportGenerator:
                     'total_rejected': metrics.get('total_rejected', 0),
                     'total_approved': metrics.get('total_approved', 0),
                     'rejection_rate': self._calculate_rejection_rate(metrics),
-                    'most_common_rejection_reasons': metrics.get('rejection_reasons', []),
-                    'replacement_attempts': metrics.get('replacement_attempts', 0)
+                    'most_common_rejection_reasons': self._group_rejection_reasons(metrics.get('rejection_reasons', [])),
+                    'replacement_attempts': metrics.get('replacement_attempts', 0),
+                    'task_specific_rejections': self._extract_task_rejection_details(metrics)
                 }
             },
             'performance_analysis': {
@@ -135,13 +136,30 @@ class BacklogSummaryReportGenerator:
             'task_quality': {'excellent': 0, 'good': 0, 'fair': 0, 'poor': 0}
         }
         
-        # Count rejections and approvals
-        metrics['total_rejected'] = len(re.findall(r'Task REJECTED', log_content))
-        metrics['total_approved'] = len(re.findall(r'Task approved', log_content))
+        # Count rejections and approvals for all work item types
+        rejected_patterns = [
+            r'REJECTED\s*-\s*Task', r'Task REJECTED', r'Task rejected',
+            r'DISCARDING\s*-\s*Work item does not meet quality threshold',
+            r'Epic failed to reach minimum quality score',
+            r'Feature failed to reach minimum quality score',
+            r'User story failed to reach minimum quality score'
+        ]
+        for pattern in rejected_patterns:
+            metrics['total_rejected'] += len(re.findall(pattern, log_content, re.IGNORECASE))
+        
+        approved_patterns = [
+            r'Task approved', r'Epic approved', r'Feature approved', 
+            r'User story approved', r'approved with \w+ rating',
+            r'\[SUCCESS\] \w+ approved'
+        ]
+        for pattern in approved_patterns:
+            metrics['total_approved'] += len(re.findall(pattern, log_content, re.IGNORECASE))
         
         # Count replacement attempts
-        replacement_matches = re.findall(r'REPLACEMENT.*?(\d+) replacement', log_content)
-        metrics['replacement_attempts'] = sum(int(m) for m in replacement_matches)
+        replacement_matches = re.findall(r'REPLACEMENT.*?(\d+) replacement|Generating (\d+) replacement', log_content)
+        for match in replacement_matches:
+            count = int(match[0] if match[0] else match[1])
+            metrics['replacement_attempts'] += count
         
         # Extract quality ratings by type
         for match in re.finditer(r'(EPIC|FEATURE|USER STORY|TASK) QUALITY ASSESSMENT.*?Rating: (\w+)', log_content, re.DOTALL):
@@ -157,11 +175,20 @@ class BacklogSummaryReportGenerator:
             elif item_type == 'task':
                 metrics['task_quality'][rating] = metrics['task_quality'].get(rating, 0) + 1
         
-        # Extract rejection reasons
-        for match in re.finditer(r'IMPROVEMENT SUGGESTIONS:.*?\n((?:\s*\*.*?\n)+)', log_content):
+        # Extract rejection reasons from various sources
+        # From improvement suggestions
+        for match in re.finditer(r'IMPROVEMENT SUGGESTIONS:.*?\n((?:\s*[\*\-].*?\n)+)', log_content):
             suggestions = match.group(1)
-            for suggestion in re.findall(r'\*\s*(.+)', suggestions):
+            for suggestion in re.findall(r'[\*\-]\s*(.+)', suggestions):
                 metrics['rejection_reasons'].append(suggestion.strip())
+        
+        # From weaknesses/issues sections
+        for match in re.finditer(r'(?:Weaknesses|Issues):.*?\n((?:\s*[\*\-!].*?\n)+)', log_content, re.IGNORECASE):
+            issues = match.group(1)
+            for issue in re.findall(r'[\*\-!]\s*(.+)', issues):
+                reason = issue.strip()
+                if reason and reason not in metrics['rejection_reasons']:
+                    metrics['rejection_reasons'].append(reason)
         
         # Extract hardware info
         hw_match = re.search(r'Hardware: (\d+)C/\d+T.*?(\d+\.\d+)GB RAM', log_content)
@@ -186,11 +213,29 @@ class BacklogSummaryReportGenerator:
             metrics['parallel_processing'] = True
             metrics['worker_count'] = int(parallel_match.group(1))
         
-        # Extract upload metrics
-        upload_match = re.search(r'Upload completed: (\d+) successful, (\d+) failed', log_content)
-        if upload_match:
-            metrics['items_uploaded'] = int(upload_match.group(1))
-            metrics['upload_failures'] = int(upload_match.group(2))
+        # Extract upload metrics from various patterns
+        upload_patterns = [
+            (r'Upload completed: (\d+) successful, (\d+) failed', lambda m: (int(m.group(1)), int(m.group(2)))),
+            (r'Successfully uploaded (\d+) work items', lambda m: (int(m.group(1)), 0)),
+            (r'Total items uploaded: (\d+)', lambda m: (int(m.group(1)), 0)),
+            (r'(\d+) items uploaded successfully', lambda m: (int(m.group(1)), 0))
+        ]
+        
+        for pattern, extractor in upload_patterns:
+            match = re.search(pattern, log_content)
+            if match:
+                uploaded, failed = extractor(match)
+                metrics['items_uploaded'] = uploaded
+                metrics['upload_failures'] = failed
+                break
+        
+        # Also check for upload time
+        time_match = re.search(r'Upload.*?completed in (\d+(?:\.\d+)?)\s*(seconds?|minutes?)', log_content)
+        if time_match:
+            time_val = float(time_match.group(1))
+            if 'minute' in time_match.group(2):
+                time_val *= 60
+            metrics['upload_time'] = time_val
         
         return metrics
     
@@ -203,40 +248,53 @@ class BacklogSummaryReportGenerator:
             'key_elements': []
         }
         
-        # Extract vision statement
-        vision_match = re.search(r'Executive Summary.*?Integration Requirements.*?months\.', log_content, re.DOTALL)
-        if vision_match:
-            vision_data['statement'] = vision_match.group(0).strip()
+        # First try to get vision from raw_summary
+        if raw_summary.get('product_vision'):
+            vision_data['statement'] = raw_summary['product_vision']
+        else:
+            # Try to extract from log content
+            vision_match = re.search(r'Product Vision:\s*"([^"]+)"', log_content)
+            if not vision_match:
+                vision_match = re.search(r'Product Vision:\s*(.+?)(?:\n\n|\n[A-Z])', log_content, re.DOTALL)
+            
+            if vision_match:
+                vision_data['statement'] = vision_match.group(1).strip()
         
         # Calculate quality score based on content
         if vision_data['statement']:
             score = 0
+            vision_text = vision_data['statement'].lower()
             
-            # Check for key elements
-            if 'Executive Summary' in vision_data['statement']:
-                score += 15
-                vision_data['key_elements'].append('Executive Summary')
-            if 'Vision Statement' in vision_data['statement']:
-                score += 15
-                vision_data['key_elements'].append('Vision Statement')
-            if 'Target Audience' in vision_data['statement']:
-                score += 15
+            # Check for key elements in a product vision
+            # Product/Platform identification
+            if any(word in vision_text for word in ['platform', 'system', 'solution', 'application', 'tool']):
+                score += 20
+                vision_data['key_elements'].append('Clear Product Definition')
+            
+            # Target users/audience
+            if any(word in vision_text for word in ['for', 'enables', 'helps', 'provides']):
+                score += 20
                 vision_data['key_elements'].append('Target Audience')
-            if 'Core Features' in vision_data['statement']:
-                score += 15
-                vision_data['key_elements'].append('Core Features')
-            if 'Value Proposition' in vision_data['statement']:
-                score += 15
+            
+            # Core functionality/features
+            if any(word in vision_text for word in ['manages', 'tracking', 'monitoring', 'analytics', 'optimization']):
+                score += 20
+                vision_data['key_elements'].append('Core Functionality')
+            
+            # Value proposition/benefits
+            if any(word in vision_text for word in ['reduce', 'improve', 'optimize', 'enhance', 'streamline']):
+                score += 20
                 vision_data['key_elements'].append('Value Proposition')
-            if 'Technical Architecture' in vision_data['statement']:
+            
+            # Domain specificity
+            if len(vision_text) > 50:  # Reasonable length
                 score += 10
-                vision_data['key_elements'].append('Technical Architecture')
-            if 'Success Metrics' in vision_data['statement']:
+                vision_data['key_elements'].append('Sufficient Detail')
+            
+            # Technical elements
+            if any(word in vision_text for word in ['real-time', 'integration', 'api', 'cloud', 'data']):
                 score += 10
-                vision_data['key_elements'].append('Success Metrics')
-            if 'Integration Requirements' in vision_data['statement']:
-                score += 5
-                vision_data['key_elements'].append('Integration Requirements')
+                vision_data['key_elements'].append('Technical Elements')
             
             vision_data['quality_score'] = score
             
@@ -327,6 +385,60 @@ class BacklogSummaryReportGenerator:
         else:
             hours = seconds / 3600
             return f"{hours:.1f} hours"
+    
+    def _group_rejection_reasons(self, reasons: List[str]) -> Dict[str, int]:
+        """Group rejection reasons by frequency."""
+        from collections import Counter
+        
+        if not reasons:
+            return {}
+        
+        # Count occurrences
+        reason_counts = Counter(reasons)
+        
+        # Return top 10 most common
+        return dict(reason_counts.most_common(10))
+    
+    def _extract_task_rejection_details(self, metrics: Dict) -> Dict[str, Any]:
+        """Extract specific details about task rejections."""
+        task_rejections = {
+            'by_quality_rating': metrics.get('task_quality', {}),
+            'rejection_rate': 0
+        }
+        
+        # Calculate task-specific rejection rate
+        task_approved = sum(metrics.get('task_quality', {}).values())
+        task_rejected = metrics.get('task_rejected_count', 0)
+        
+        if task_approved + task_rejected > 0:
+            task_rejections['rejection_rate'] = round((task_rejected / (task_approved + task_rejected)) * 100, 2)
+        
+        return task_rejections
+    
+    def _extract_llm_models(self, log_content: str) -> Dict[str, str]:
+        """Extract LLM models used by each agent."""
+        models = {}
+        
+        # Pattern to match agent model usage
+        model_patterns = [
+            (r'Epic Strategist.*?using model:\s*(\S+)', 'epic_strategist'),
+            (r'Feature Decomposer.*?using model:\s*(\S+)', 'feature_decomposer'),
+            (r'User Story Decomposer.*?using model:\s*(\S+)', 'story_decomposer'),
+            (r'Developer Agent.*?using model:\s*(\S+)', 'developer_agent'),
+            (r'QA Lead Agent.*?using model:\s*(\S+)', 'qa_lead_agent')
+        ]
+        
+        for pattern, agent in model_patterns:
+            match = re.search(pattern, log_content, re.IGNORECASE)
+            if match:
+                models[agent] = match.group(1)
+        
+        # Also check for global model
+        global_match = re.search(r'Using global LLM configuration:\s*(\S+)', log_content)
+        if global_match:
+            models['global'] = global_match.group(1)
+        
+        return models
     
     def _generate_recommendations(self, metrics: Dict, job_data: Dict) -> List[str]:
         """Generate recommendations based on metrics."""
