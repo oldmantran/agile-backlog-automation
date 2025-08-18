@@ -250,7 +250,7 @@ class BacklogSummaryReportGenerator:
         
         # First try to get vision from raw_summary
         if raw_summary.get('product_vision'):
-            vision_data['statement'] = raw_summary['product_vision']
+            vision_text = raw_summary['product_vision']
         else:
             # Try to extract from log content
             vision_match = re.search(r'Product Vision:\s*"([^"]+)"', log_content)
@@ -258,7 +258,21 @@ class BacklogSummaryReportGenerator:
                 vision_match = re.search(r'Product Vision:\s*(.+?)(?:\n\n|\n[A-Z])', log_content, re.DOTALL)
             
             if vision_match:
-                vision_data['statement'] = vision_match.group(1).strip()
+                vision_text = vision_match.group(1).strip()
+            else:
+                vision_text = ''
+        
+        # Clean up the vision text - remove common prefixes
+        if vision_text:
+            # Remove "Executive Summary:" prefix if present
+            vision_text = re.sub(r'^Executive Summary:\s*', '', vision_text, flags=re.IGNORECASE)
+            # Remove "Project: X Domain: Y" prefix if present
+            vision_text = re.sub(r'^Project:\s*[^\n]+\nDomain:\s*[^\n]+\n+', '', vision_text)
+            # Remove any duplicate "Executive Summary:" within the text
+            vision_text = re.sub(r'\n*Executive Summary:\s*', '\n', vision_text, flags=re.IGNORECASE)
+            vision_text = vision_text.strip()
+            
+        vision_data['statement'] = vision_text
         
         # Calculate quality score based on content
         if vision_data['statement']:
