@@ -195,6 +195,32 @@ Configuration priority (highest to lowest):
 - Flexible domain scoring with 50% weight for better accuracy
 - Improved infrastructure and NFR detection
 
+### Hardware-Aware Auto-Scaling System
+- **Hardware Detection**: Automatic CPU cores, memory, and frequency detection
+- **Dynamic Worker Calculation**: Optimal workers = min(CPU_threads - 2, memory_GB * 0.6)
+- **Stage-Specific Optimization**: Different worker ratios per agent (Epic 25%, Developer 100%)
+- **Performance Tiers**: High/Medium/Low classification with time estimates
+- **Note**: Components exist in `utils/hardware_optimizer.py` and `utils/enhanced_parallel_processor.py` but need integration
+
+**Performance Expectations** (when integrated):
+| System Tier | Hardware Profile | Expected Time (200+ items) |
+|-------------|------------------|---------------------------|
+| **High** | 16+ cores, 32+ GB, 3.5+ GHz | **10-15 minutes** |
+| **Medium** | 8+ cores, 16+ GB, 2.5+ GHz | **15-25 minutes** |  
+| **Low** | 4+ cores, 8+ GB, 2.0+ GHz | **25-35 minutes** |
+
+### Outbox Pattern Architecture  
+- **Zero Data Loss**: All work items staged in SQLite before Azure DevOps upload
+- **Resumable Operations**: Retry failed uploads without regenerating content
+- **Enterprise Reliability**: HTTP timeouts, exponential backoff, rate limiting
+- **Management Tools**: `tools/retry_failed_uploads.py` for recovery operations
+- **Note**: Fully implemented in `models/work_item_staging.py` and `integrators/outbox_uploader.py` but not yet integrated
+
+### GPT-5 Support
+- **Models Available**: gpt-5, gpt-5-mini, gpt-5-nano
+- **Active Usage**: Currently configured as default for epic_strategist and feature_decomposer_agent
+- **Provider**: OpenAI with full API compatibility
+
 ## Current Capabilities
 - Multi-agent workflow for backlog generation
 - Quality gates with 75+ score requirement
@@ -207,9 +233,8 @@ Configuration priority (highest to lowest):
 ## Important Notes
 
 1. This documentation reflects the actual state of the codebase as of January 2025
-2. Some features mentioned in the original CLAUDE.md are not yet implemented
-3. Quality threshold is 75+, not 80+ as originally stated
-4. No hardware auto-scaling or performance tier detection currently exists
-5. No two-phase workflow or test artifact toggle currently implemented
-6. No SSE (Server-Sent Events) implementation found
-7. No outbox pattern or TodoWrite tool implementation found
+2. Quality threshold is 75+, not 80+ as originally stated
+3. Hardware auto-scaling exists but needs final integration into workflow execution
+4. Outbox pattern is fully implemented but currently not integrated into main workflow
+5. GPT-5 models are supported and actively used (gpt-5, gpt-5-mini, gpt-5-nano)
+6. Some features like SSE progress tracking and TodoWrite tool were not found in codebase
