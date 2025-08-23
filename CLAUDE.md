@@ -221,6 +221,13 @@ Configuration priority (highest to lowest):
 - **Active Usage**: Currently configured as default for epic_strategist and feature_decomposer_agent
 - **Provider**: OpenAI with full API compatibility
 
+### Hybrid Progress Tracking (Frontend Ready)
+- **Frontend Implementation**: Complete `useHybridProgress` hook in `frontend/src/hooks/useHybridProgress.ts`
+- **SSE Primary**: Designed for Server-Sent Events real-time streaming
+- **Polling Fallback**: Automatic fallback with exponential backoff and ETags
+- **Features**: Connection type detection, multi-job support infrastructure, error recovery
+- **Note**: Frontend is ready but backend SSE endpoints (`/api/progress/stream/{jobId}`) need implementation
+
 ## Current Capabilities
 - Multi-agent workflow for backlog generation
 - Quality gates with 75+ score requirement
@@ -237,4 +244,5 @@ Configuration priority (highest to lowest):
 3. Hardware auto-scaling exists but needs final integration into workflow execution
 4. Outbox pattern is fully implemented but currently not integrated into main workflow
 5. GPT-5 models are supported and actively used (gpt-5, gpt-5-mini, gpt-5-nano)
-6. Some features like SSE progress tracking and TodoWrite tool were not found in codebase
+6. Hybrid progress tracking frontend exists (useHybridProgress hook) but SSE backend endpoints not implemented
+7. TodoWrite tool mentioned in CLAUDE.md was not found in codebase
