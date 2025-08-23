@@ -26,7 +26,7 @@ from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Query, Depends
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Query, Depends, Response
 from fastapi.responses import StreamingResponse
 import asyncio
 import json as json_module
@@ -2999,7 +2999,7 @@ class RetryFailedUploadsRequest(BaseModel):
     action: str = "retry"  # retry, summary, details, cleanup
 
 @app.post("/api/retry-failed-uploads")
-async def retry_failed_uploads(request: RetryFailedUploadsRequest):
+async def retry_failed_uploads(request: RetryFailedUploadsRequest, current_user: User = Depends(get_current_user)):
     """Retry failed uploads for a staging job."""
     try:
         job_id = request.job_id
@@ -3098,6 +3098,137 @@ async def retry_failed_uploads(request: RetryFailedUploadsRequest):
     except Exception as e:
         logger.error(f"Failed to retry uploads for job {job_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retry uploads: {str(e)}")
+
+@app.post("/api/jobs/{job_id}/retry-uploads")
+async def retry_job_failed_uploads(
+    job_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Retry failed Azure DevOps uploads for a job using outbox pattern."""
+    try:
+        # Get job data
+        job = db.get_job(job_id)
+        if not job:
+            raise HTTPException(404, "Job not found")
+        
+        # Check ownership
+        if job.get('user_id') != str(current_user.id):
+            raise HTTPException(403, "Not authorized")
+        
+        # Get Azure config from job
+        raw_summary = json.loads(job.get('result_data', '{}'))
+        azure_config = raw_summary.get('azure_config')
+        if not azure_config:
+            raise HTTPException(400, "No Azure DevOps configuration found")
+        
+        # Initialize components
+        from models.work_item_staging import WorkItemStaging
+        from integrators.azure_devops_api import AzureDevOpsAPI
+        from integrators.outbox_uploader import OutboxUploader
+        
+        staging = WorkItemStaging()
+        ado_api = AzureDevOpsAPI(
+            organization_url=azure_config['organization_url'],
+            project=azure_config['project'],
+            pat=azure_config['pat']
+        )
+        uploader = OutboxUploader(staging, ado_api)
+        
+        # Retry failed uploads
+        logger.info(f"Retrying failed uploads for job {job_id}")
+        retry_summary = uploader.retry_failed(job_id)
+        
+        # Update job metadata
+        db.update_job_metadata(job_id, {
+            'retry_attempts': job.get('retry_attempts', 0) + 1,
+            'last_retry': datetime.utcnow().isoformat(),
+            'retry_summary': retry_summary
+        })
+        
+        return {
+            "status": "success",
+            "summary": retry_summary,
+            "message": f"Retried {retry_summary['retried']} failed uploads"
+        }
+        
+    except Exception as e:
+        logger.error(f"Retry uploads error: {e}")
+        raise HTTPException(500, str(e))
+
+# SSE Progress Tracking Endpoints
+@app.get("/api/progress/stream/{job_id}")
+async def stream_job_progress(job_id: str):
+    """
+    Stream job progress updates via Server-Sent Events.
+    Frontend will connect to this endpoint for real-time updates.
+    """
+    queue = asyncio.Queue()
+    
+    # Register connection
+    if job_id not in sse_connections:
+        sse_connections[job_id] = []
+    sse_connections[job_id].append(queue)
+    
+    logger.info(f"SSE connection established for job {job_id}")
+    
+    return StreamingResponse(
+        sse_generator(job_id, queue),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable Nginx buffering
+            "Access-Control-Allow-Origin": "*"  # Adjust for production
+        }
+    )
+
+@app.get("/api/jobs/{job_id}/progress")
+async def get_job_progress(
+    job_id: str,
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get job progress with ETag support for efficient polling fallback.
+    Returns 304 Not Modified if data hasn't changed.
+    """
+    
+    job = db.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check ownership
+    if job.get('user_id') != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Generate ETag from progress and timestamp
+    import hashlib
+    progress_key = f"{job.get('progress', 0)}:{job.get('current_action', '')}:{job.get('updated_at', '')}"
+    etag = f'W/"{hashlib.md5(progress_key.encode()).hexdigest()[:16]}"'
+    
+    # Check If-None-Match header
+    if_none_match = request.headers.get("If-None-Match")
+    if if_none_match == etag:
+        # Data hasn't changed - return 304
+        response.status_code = 304
+        return None
+    
+    # Set response headers
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "private, max-age=0"
+    
+    # Return progress data
+    return {
+        "jobId": job_id,
+        "progress": job.get("progress", 0),
+        "status": job.get("status", "unknown"),
+        "currentAction": job.get("current_action", ""),
+        "currentAgent": job.get("current_agent", ""),
+        "lastUpdated": job.get("updated_at", ""),
+        "etag": etag,
+        "source": "database"
+    }
 
 # Vision Optimization Endpoints
 class VisionOptimizationRequest(BaseModel):
@@ -3368,6 +3499,186 @@ async def get_optimized_visions(
     except Exception as e:
         logger.error(f"Failed to get optimized visions: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get optimized visions: {str(e)}")
+
+# SSE Progress Tracking Endpoints
+@app.get("/api/progress/stream/{job_id}")
+async def stream_job_progress(job_id: str):
+    """
+    Stream job progress updates via Server-Sent Events.
+    Frontend will connect to this endpoint for real-time updates.
+    """
+    logger.info(f"📡 SSE connection requested for job {job_id}")
+    
+    # Create a queue for this connection
+    queue = asyncio.Queue()
+    
+    # Register this connection for the job
+    if job_id not in sse_connections:
+        sse_connections[job_id] = []
+    sse_connections[job_id].append(queue)
+    
+    logger.info(f"✅ SSE connection established for job {job_id} (total connections: {len(sse_connections[job_id])})")
+    
+    # Create the streaming response
+    return StreamingResponse(
+        sse_generator(job_id, queue),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable Nginx buffering
+            "Access-Control-Allow-Origin": "*"  # Adjust for production
+        }
+    )
+
+@app.get("/api/jobs/{job_id}/progress")
+async def get_job_progress(
+    job_id: str,
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get job progress with ETag support for efficient polling fallback.
+    Returns 304 Not Modified if data hasn't changed.
+    """
+    # Get job from active jobs or database
+    job_data = get_active_job(job_id)
+    
+    if not job_data:
+        # Try to get from database
+        try:
+            db_job = db.get_job(job_id)
+            if not db_job:
+                raise HTTPException(status_code=404, detail="Job not found")
+            
+            # Check ownership
+            if db_job.get('user_id') and str(db_job['user_id']) != str(current_user.id):
+                raise HTTPException(status_code=403, detail="Not authorized")
+            
+            # Convert database job to progress format
+            job_data = {
+                "jobId": job_id,
+                "progress": db_job.get("progress", 0),
+                "status": db_job.get("status", "unknown"),
+                "currentAction": db_job.get("current_action", ""),
+                "currentAgent": db_job.get("current_agent", ""),
+                "updated_at": db_job.get("updated_at", ""),
+                "etag": None
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting job from database: {e}")
+            raise HTTPException(status_code=500, detail="Failed to get job progress")
+    
+    # Generate ETag from progress data
+    etag_data = f"{job_data.get('progress', 0)}:{job_data.get('currentAction', '')}:{job_data.get('updated_at', '')}"
+    import hashlib
+    etag = f'W/"{hashlib.md5(etag_data.encode()).hexdigest()[:16]}"'
+    
+    # Check If-None-Match header
+    if_none_match = request.headers.get("If-None-Match")
+    if if_none_match == etag:
+        # Data hasn't changed - return 304
+        response.status_code = 304
+        return None
+    
+    # Set response headers
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "private, max-age=0"
+    
+    # Return progress data
+    return {
+        "jobId": job_id,
+        "progress": job_data.get("progress", 0),
+        "status": job_data.get("status", "unknown"),
+        "currentAction": job_data.get("currentAction", ""),
+        "currentAgent": job_data.get("currentAgent", ""),
+        "lastUpdated": job_data.get("updated_at", ""),
+        "etag": etag,
+        "source": "memory" if job_id in active_jobs else "database"
+    }
+
+# Retry Failed Uploads Endpoint (Enhanced)
+@app.post("/api/jobs/{job_id}/retry-uploads")
+async def retry_failed_uploads_enhanced(
+    job_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retry failed Azure DevOps uploads for a job using the outbox pattern.
+    This is an enhanced version that integrates with the staging database.
+    """
+    try:
+        # Get job data
+        job = db.get_job(job_id)
+        if not job:
+            raise HTTPException(404, "Job not found")
+        
+        # Check ownership
+        if job.get('user_id') and str(job['user_id']) != str(current_user.id):
+            raise HTTPException(403, "Not authorized")
+        
+        # Get Azure config from job
+        result_data = json.loads(job.get('result_data', '{}'))
+        azure_config = result_data.get('azure_config')
+        if not azure_config:
+            raise HTTPException(400, "No Azure DevOps configuration found")
+        
+        # Initialize components
+        from models.work_item_staging import WorkItemStaging
+        from integrators.outbox_uploader import OutboxUploader
+        from integrators.azure_devops_api import AzureDevOpsIntegrator
+        
+        staging = WorkItemStaging()
+        
+        # Check if there are failed items to retry
+        summary = staging.get_job_summary(job_id)
+        if not summary or summary['by_status'].get('failed', 0) == 0:
+            return {
+                "success": True,
+                "message": "No failed items to retry",
+                "summary": summary
+            }
+        
+        # Initialize Azure DevOps API
+        ado_api = AzureDevOpsIntegrator(
+            organization_url=azure_config['organization_url'],
+            project=azure_config['project'],
+            personal_access_token=azure_config['pat'],
+            area_path=azure_config.get('area_path', azure_config['project']),
+            iteration_path=azure_config.get('iteration_path', azure_config['project'])
+        )
+        
+        # Initialize uploader
+        uploader = OutboxUploader(staging, ado_api)
+        
+        # Retry failed uploads
+        logger.info(f"Retrying failed uploads for job {job_id}")
+        retry_summary = uploader.retry_failed(job_id)
+        
+        # Update job metadata
+        metadata = job.get('metadata', {})
+        metadata['retry_attempts'] = metadata.get('retry_attempts', 0) + 1
+        metadata['last_retry'] = datetime.now().isoformat()
+        metadata['retry_summary'] = retry_summary
+        
+        db.update_job(job_id, metadata=metadata)
+        
+        return {
+            "success": True,
+            "summary": retry_summary,
+            "message": f"Retried {retry_summary.get('retried', 0)} failed uploads"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Retry uploads error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(500, str(e))
 
 if __name__ == "__main__":
     uvicorn.run(

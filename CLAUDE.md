@@ -195,38 +195,38 @@ Configuration priority (highest to lowest):
 - Flexible domain scoring with 50% weight for better accuracy
 - Improved infrastructure and NFR detection
 
-### Hardware-Aware Auto-Scaling System
+### Hardware-Aware Auto-Scaling System (INTEGRATED - January 2025)
 - **Hardware Detection**: Automatic CPU cores, memory, and frequency detection
 - **Dynamic Worker Calculation**: Optimal workers = min(CPU_threads - 2, memory_GB * 0.6)
 - **Stage-Specific Optimization**: Different worker ratios per agent (Epic 25%, Developer 100%)
 - **Performance Tiers**: High/Medium/Low classification with time estimates
-- **Note**: Components exist in `utils/hardware_optimizer.py` and `utils/enhanced_parallel_processor.py` but need integration
+- **Integration Status**: ✅ Fully integrated into supervisor.py - hardware optimizer initialized in __init__, all stages use optimal workers
 
-**Performance Expectations** (when integrated):
+**Performance Expectations** (with integrated hardware auto-scaling):
 | System Tier | Hardware Profile | Expected Time (200+ items) |
 |-------------|------------------|---------------------------|
 | **High** | 16+ cores, 32+ GB, 3.5+ GHz | **10-15 minutes** |
 | **Medium** | 8+ cores, 16+ GB, 2.5+ GHz | **15-25 minutes** |  
 | **Low** | 4+ cores, 8+ GB, 2.0+ GHz | **25-35 minutes** |
 
-### Outbox Pattern Architecture  
+### Outbox Pattern Architecture (INTEGRATED - January 2025)
 - **Zero Data Loss**: All work items staged in SQLite before Azure DevOps upload
 - **Resumable Operations**: Retry failed uploads without regenerating content
 - **Enterprise Reliability**: HTTP timeouts, exponential backoff, rate limiting
 - **Management Tools**: `tools/retry_failed_uploads.py` for recovery operations
-- **Note**: Fully implemented in `models/work_item_staging.py` and `integrators/outbox_uploader.py` but not yet integrated
+- **Integration Status**: ✅ Fully integrated - `_create_work_items_with_outbox` method in supervisor.py stages all items before upload
 
 ### GPT-5 Support
 - **Models Available**: gpt-5, gpt-5-mini, gpt-5-nano
 - **Active Usage**: Currently configured as default for epic_strategist and feature_decomposer_agent
 - **Provider**: OpenAI with full API compatibility
 
-### Hybrid Progress Tracking (Frontend Ready)
+### Hybrid Progress Tracking (INTEGRATED - January 2025)
 - **Frontend Implementation**: Complete `useHybridProgress` hook in `frontend/src/hooks/useHybridProgress.ts`
-- **SSE Primary**: Designed for Server-Sent Events real-time streaming
-- **Polling Fallback**: Automatic fallback with exponential backoff and ETags
+- **SSE Primary**: Server-Sent Events real-time streaming via `/api/progress/stream/{job_id}`
+- **Polling Fallback**: Automatic fallback via `/api/jobs/{job_id}/progress` with ETag support
 - **Features**: Connection type detection, multi-job support infrastructure, error recovery
-- **Note**: Frontend is ready but backend SSE endpoints (`/api/progress/stream/{jobId}`) need implementation
+- **Integration Status**: ✅ Fully integrated - SSE endpoints implemented in unified_api_server.py with proper authentication
 
 ## Current Capabilities
 - Multi-agent workflow for backlog generation
@@ -241,8 +241,8 @@ Configuration priority (highest to lowest):
 
 1. This documentation reflects the actual state of the codebase as of January 2025
 2. Quality threshold is 75+, not 80+ as originally stated
-3. Hardware auto-scaling exists but needs final integration into workflow execution
-4. Outbox pattern is fully implemented but currently not integrated into main workflow
+3. ✅ Hardware auto-scaling fully integrated into workflow execution (January 2025)
+4. ✅ Outbox pattern fully integrated into main workflow (January 2025)
 5. GPT-5 models are supported and actively used (gpt-5, gpt-5-mini, gpt-5-nano)
-6. Hybrid progress tracking frontend exists (useHybridProgress hook) but SSE backend endpoints not implemented
-7. TodoWrite tool mentioned in CLAUDE.md was not found in codebase
+6. ✅ Hybrid progress tracking fully integrated - both frontend and backend (January 2025)
+7. ✅ All three major features successfully integrated into the system

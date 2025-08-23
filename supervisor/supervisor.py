@@ -32,7 +32,11 @@ from utils.logger import setup_logger
 from utils.notifier import Notifier
 from utils.ollama_model_manager import ollama_manager
 from utils.enhanced_parallel_processor import enhanced_processor, StageConfig, RateLimitConfig
+from utils.enhanced_parallel_processor import EnhancedParallelProcessor
+from utils.hardware_optimizer import HardwareOptimizer
 from integrators.azure_devops_api import AzureDevOpsIntegrator
+from models.work_item_staging import WorkItemStaging
+from integrators.outbox_uploader import OutboxUploader
 
 
 class WorkflowStatus(Enum):
@@ -284,6 +288,11 @@ class WorkflowSupervisor:
         # Store testing configuration
         self.include_test_artifacts = include_test_artifacts
         self.logger.info(f"Testing artifacts {'enabled' if include_test_artifacts else 'disabled'} for workflow")
+        
+        # Initialize hardware optimizer
+        self.hardware_optimizer = HardwareOptimizer()
+        self.hardware_info = self.hardware_optimizer.get_hardware_info()
+        self.logger.info(f"Hardware detected: {self.hardware_info['tier']} tier - {self.hardware_info['cpu_cores']} cores, {self.hardware_info['memory_gb']:.1f}GB RAM")
         
         # Initialize project context
         self.project_context = ProjectContext(self.config)
@@ -1753,6 +1762,166 @@ class WorkflowSupervisor:
                 'timestamp': datetime.now().isoformat()
             }
             raise
+    
+    def _create_work_items_with_outbox(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create work items using the outbox pattern for reliability.
+        Stages all work items in local database before attempting Azure DevOps upload.
+        """
+        self.logger.info("Using outbox pattern for Azure DevOps upload")
+        
+        # Initialize staging database
+        staging = WorkItemStaging()
+        
+        # Prepare work items for staging
+        epics = workflow_data.get('epics', [])
+        total_items = 0
+        staging_map = {}  # Map internal IDs to staging IDs
+        
+        self.logger.info(f"Staging {len(epics)} epics and their child items...")
+        
+        try:
+            # Stage Epics (Level 0)
+            for epic in epics:
+                epic_staging_id = staging.add_work_item(
+                    job_id=self.job_id,
+                    work_item_type='Epic',
+                    title=epic.get('title', ''),
+                    local_parent_id=None,
+                    generated_data=epic,
+                    hierarchy_level=0
+                )
+                staging_map[epic.get('id', epic['title'])] = epic_staging_id
+                total_items += 1
+                
+                # Stage Features (Level 1)
+                for feature in epic.get('features', []):
+                    feature_staging_id = staging.add_work_item(
+                        job_id=self.job_id,
+                        work_item_type='Feature',
+                        title=feature.get('title', ''),
+                        local_parent_id=epic_staging_id,
+                        generated_data=feature,
+                        hierarchy_level=1
+                    )
+                    staging_map[feature.get('id', feature['title'])] = feature_staging_id
+                    total_items += 1
+                    
+                    # Stage User Stories (Level 2)
+                    for story in feature.get('user_stories', []):
+                        story_staging_id = staging.add_work_item(
+                            job_id=self.job_id,
+                            work_item_type='User Story',
+                            title=story.get('title', ''),
+                            local_parent_id=feature_staging_id,
+                            generated_data=story,
+                            hierarchy_level=2
+                        )
+                        staging_map[story.get('id', story['title'])] = story_staging_id
+                        total_items += 1
+                        
+                        # Stage Tasks (Level 3)
+                        for task in story.get('tasks', []):
+                            task_staging_id = staging.add_work_item(
+                                job_id=self.job_id,
+                                work_item_type='Task',
+                                title=task.get('title', ''),
+                                local_parent_id=story_staging_id,
+                                generated_data=task,
+                                hierarchy_level=3
+                            )
+                            total_items += 1
+                        
+                        # Stage Test Cases (Level 3) if included
+                        if self.include_test_artifacts:
+                            for test_case in story.get('test_cases', []):
+                                test_staging_id = staging.add_work_item(
+                                    job_id=self.job_id,
+                                    work_item_type='Test Case',
+                                    title=test_case.get('title', ''),
+                                    local_parent_id=story_staging_id,
+                                    generated_data=test_case,
+                                    hierarchy_level=3
+                                )
+                                total_items += 1
+                    
+                    # Stage Test Plans/Suites (Level 1/3) if included
+                    if self.include_test_artifacts and feature.get('test_plan'):
+                        test_plan = feature['test_plan']
+                        plan_staging_id = staging.add_work_item(
+                            job_id=self.job_id,
+                            work_item_type='Test Plan',
+                            title=test_plan.get('title', f"Test Plan for {feature['title']}"),
+                            local_parent_id=feature_staging_id,
+                            generated_data=test_plan,
+                            hierarchy_level=1
+                        )
+                        total_items += 1
+                        
+                        # Stage test suites if present
+                        for suite in test_plan.get('test_suites', []):
+                            suite_staging_id = staging.add_work_item(
+                                job_id=self.job_id,
+                                work_item_type='Test Suite',
+                                title=suite.get('title', ''),
+                                local_parent_id=plan_staging_id,
+                                generated_data=suite,
+                                hierarchy_level=3
+                            )
+                            total_items += 1
+            
+            # Get staging summary
+            staging_summary = staging.get_job_summary(self.job_id)
+            self.logger.info(f"Successfully staged {total_items} work items")
+            self.logger.info(f"Staging summary: {staging_summary}")
+            
+            # Update workflow data with staging info
+            workflow_data['staging_summary'] = staging_summary
+            workflow_data['staging_complete'] = True
+            
+            # Initialize uploader with Azure DevOps API
+            uploader = OutboxUploader(staging, self.azure_integrator)
+            
+            # Upload all staged items
+            self.logger.info("Starting upload to Azure DevOps...")
+            upload_summary = uploader.upload_all(
+                job_id=self.job_id,
+                progress_callback=lambda current, total: self._update_progress(
+                    80 + int(20 * current / total),  # Progress from 80% to 100%
+                    f"Uploading to Azure DevOps ({current}/{total})"
+                )
+            )
+            
+            self.logger.info(f"Upload complete. Summary: {upload_summary}")
+            
+            # Get successfully uploaded items for return
+            uploaded_items = staging.get_uploaded_work_items(self.job_id)
+            
+            # Store both staging and upload summaries
+            return {
+                'staging_summary': staging_summary,
+                'upload_summary': upload_summary,
+                'work_items_created': uploaded_items,
+                'total_staged': total_items,
+                'total_uploaded': upload_summary['by_status'].get('success', 0),
+                'failed_uploads': upload_summary['by_status'].get('failed', 0),
+                'skipped_uploads': upload_summary['by_status'].get('skipped', 0)
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Outbox pattern upload failed: {e}")
+            # Even if upload fails, staging is preserved for retry
+            return {
+                'staging_summary': staging.get_job_summary(self.job_id),
+                'error': str(e),
+                'status': 'failed',
+                'message': 'Work items staged successfully but upload failed. Use retry endpoint to resume.'
+            }
+    
+    def _update_progress(self, progress: int, message: str):
+        """Update job progress (placeholder for actual implementation)."""
+        self.logger.info(f"Progress: {progress}% - {message}")
+        # TODO: Update job progress in database for SSE
     
     def _send_completion_notifications(self):
         """Send workflow completion notifications."""
