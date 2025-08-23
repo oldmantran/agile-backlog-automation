@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Last Verified**: January 2025
+**Last Verified**: August 2025
 
 ## Development Commands
 
@@ -195,7 +195,7 @@ Configuration priority (highest to lowest):
 - Flexible domain scoring with 50% weight for better accuracy
 - Improved infrastructure and NFR detection
 
-### Hardware-Aware Auto-Scaling System (INTEGRATED - January 2025)
+### Hardware-Aware Auto-Scaling System (INTEGRATED - August 2025)
 - **Hardware Detection**: Automatic CPU cores, memory, and frequency detection
 - **Dynamic Worker Calculation**: Optimal workers = min(CPU_threads - 2, memory_GB * 0.6)
 - **Stage-Specific Optimization**: Different worker ratios per agent (Epic 25%, Developer 100%)
@@ -209,7 +209,7 @@ Configuration priority (highest to lowest):
 | **Medium** | 8+ cores, 16+ GB, 2.5+ GHz | **15-25 minutes** |  
 | **Low** | 4+ cores, 8+ GB, 2.0+ GHz | **25-35 minutes** |
 
-### Outbox Pattern Architecture (INTEGRATED - January 2025)
+### Outbox Pattern Architecture (INTEGRATED - August 2025)
 - **Zero Data Loss**: All work items staged in SQLite before Azure DevOps upload
 - **Resumable Operations**: Retry failed uploads without regenerating content
 - **Enterprise Reliability**: HTTP timeouts, exponential backoff, rate limiting
@@ -221,7 +221,7 @@ Configuration priority (highest to lowest):
 - **Active Usage**: Currently configured as default for epic_strategist and feature_decomposer_agent
 - **Provider**: OpenAI with full API compatibility
 
-### Hybrid Progress Tracking (INTEGRATED - January 2025)
+### Hybrid Progress Tracking (INTEGRATED - August 2025)
 - **Frontend Implementation**: Complete `useHybridProgress` hook in `frontend/src/hooks/useHybridProgress.ts`
 - **SSE Primary**: Server-Sent Events real-time streaming via `/api/progress/stream/{job_id}`
 - **Polling Fallback**: Automatic fallback via `/api/jobs/{job_id}/progress` with ETag support
@@ -239,10 +239,10 @@ Configuration priority (highest to lowest):
 
 ## Important Notes
 
-1. This documentation reflects the actual state of the codebase as of January 2025
+1. This documentation reflects the actual state of the codebase as of August 2025
 2. Quality threshold is 75+, not 80+ as originally stated
-3. ✅ Hardware auto-scaling fully integrated into workflow execution (January 2025)
-4. ✅ Outbox pattern fully integrated into main workflow (January 2025)
+3. ✅ Hardware auto-scaling fully integrated into workflow execution (August 2025)
+4. ✅ Outbox pattern fully integrated into main workflow (August 2025)
 5. GPT-5 models are supported and actively used (gpt-5, gpt-5-mini, gpt-5-nano)
-6. ✅ Hybrid progress tracking fully integrated - both frontend and backend (January 2025)
+6. ✅ Hybrid progress tracking fully integrated - both frontend and backend (August 2025)
 7. ✅ All three major features successfully integrated into the system
