@@ -410,6 +410,28 @@ class Database:
             logger.error(f"Database repair failed: {e}")
             return False
     
+    def create_job(self, user_id: str, project_name: str, status: str = "in_progress", 
+                  progress: int = 0, current_action: str = "") -> str:
+        """Create a new job and return its ID."""
+        import uuid
+        job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO jobs 
+                    (id, project_id, status, progress, current_action, start_time, created_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (job_id, project_name, status, progress, current_action, 
+                     datetime.now(), datetime.now()))
+                conn.commit()
+                logger.info(f"Job {job_id} created")
+                return job_id
+        except Exception as e:
+            logger.error(f"Failed to create job: {e}")
+            raise
+    
     def save_job(self, job_id: str, project_id: str, status: str = "queued", progress: int = 0):
         """Save or update a job."""
         try:
@@ -450,6 +472,26 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to update job {job_id}: {e}")
             raise
+    
+    def update_job_progress(self, job_id: str, progress: int, current_action: str = None, 
+                           current_agent: str = None, force_write: bool = False):
+        """Update job progress."""
+        kwargs = {'progress': progress}
+        if current_action:
+            kwargs['current_action'] = current_action
+        if current_agent:
+            kwargs['current_agent'] = current_agent
+        self.update_job(job_id, **kwargs)
+    
+    def update_job_status(self, job_id: str, status: str, result_data: Dict[str, Any] = None):
+        """Update job status."""
+        kwargs = {'status': status}
+        if result_data:
+            import json
+            kwargs['result_data'] = json.dumps(result_data)
+        if status == 'completed':
+            kwargs['end_time'] = datetime.now()
+        self.update_job(job_id, **kwargs)
     
     def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
         """Get job by ID."""

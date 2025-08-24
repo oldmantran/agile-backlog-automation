@@ -218,6 +218,31 @@ class WorkItemStaging:
         
         return cursor.lastrowid
     
+    def stage_work_item(self, job_id: str, work_item_type: str, title: str, 
+                       description: str, work_item_data: Dict[str, Any]) -> int:
+        """Public method to stage a single work item (for testing and direct use)."""
+        with sqlite3.connect(self.db_path) as conn:
+            item_data = work_item_data.copy()
+            item_data['title'] = title
+            item_data['description'] = description
+            
+            # Determine hierarchy level based on type
+            hierarchy_map = {
+                'Epic': 0,
+                'Feature': 1,
+                'User Story': 2,
+                'Task': 3,
+                'Test Case': 3
+            }
+            hierarchy_level = hierarchy_map.get(work_item_type, 0)
+            
+            staging_id = self._stage_work_item(
+                conn, job_id, WorkItemType(work_item_type), 
+                item_data, hierarchy_level=hierarchy_level
+            )
+            conn.commit()
+            return staging_id
+    
     def get_staging_summary(self, job_id: str) -> Dict[str, Any]:
         """Get summary statistics for staged work items."""
         with sqlite3.connect(self.db_path) as conn:
@@ -319,6 +344,32 @@ class WorkItemStaging:
             
             row = cursor.fetchone()
             return row[0] if row else None
+    
+    def get_pending_items(self, job_id: str) -> List[Dict[str, Any]]:
+        """Get all pending items for a job."""
+        return self.get_upload_queue(job_id, WorkItemStatus.PENDING)
+    
+    def get_failed_items(self, job_id: str) -> List[Dict[str, Any]]:
+        """Get all failed items for a job."""
+        return self.get_upload_queue(job_id, WorkItemStatus.FAILED)
+    
+    def get_job_summary(self, job_id: str) -> Dict[str, Any]:
+        """Alias for get_staging_summary for backward compatibility."""
+        return self.get_staging_summary(job_id)
+    
+    def mark_item_status(self, staging_id: int, status: str, error_message: Optional[str] = None):
+        """Mark an item's status (simplified interface)."""
+        status_enum = WorkItemStatus(status)
+        self.update_upload_status(staging_id, status_enum, error_message=error_message)
+    
+    def cleanup_successful_items(self, job_id: str):
+        """Clean up only successful items."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                DELETE FROM work_item_staging 
+                WHERE job_id = ? AND status = 'success'
+            """, (job_id,))
+            conn.commit()
     
     def cleanup_successful_job(self, job_id: str, keep_failed: bool = True):
         """Clean up staging data after successful upload."""

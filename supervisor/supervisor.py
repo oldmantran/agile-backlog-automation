@@ -291,7 +291,14 @@ class WorkflowSupervisor:
         
         # Initialize hardware optimizer
         self.hardware_optimizer = HardwareOptimizer()
-        self.hardware_info = self.hardware_optimizer.get_hardware_info()
+        self.hardware_profile = self.hardware_optimizer.get_hardware_profile()
+        self.hardware_info = {
+            'tier': self.hardware_profile.performance_tier.upper(),
+            'cpu_cores': self.hardware_profile.cpu_cores,
+            'cpu_threads': self.hardware_profile.cpu_threads,
+            'memory_gb': self.hardware_profile.memory_gb,
+            'optimal_workers': self.hardware_profile.optimal_workers
+        }
         self.logger.info(f"Hardware detected: {self.hardware_info['tier']} tier - {self.hardware_info['cpu_cores']} cores, {self.hardware_info['memory_gb']:.1f}GB RAM")
         
         # Initialize project context

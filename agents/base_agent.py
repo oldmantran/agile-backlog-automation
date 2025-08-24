@@ -11,6 +11,8 @@ from functools import wraps
 from config.config_loader import Config
 from utils.prompt_manager import prompt_manager
 from utils.unified_llm_config import get_agent_config
+from utils.model_aware_formatter import model_formatter
+from utils.cost_tracker import cost_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -389,30 +391,53 @@ class Agent:
             raise CommunicationError(f"Ollama inference failed: {str(e)}")
     
     def _prepare_request_payload(self, system_prompt: str, user_input: str) -> dict:
-        """Prepare the request payload for the LLM API."""
-        payload = {
-            "model": self.model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_input}
-            ]
-        }
-        
+        """Prepare the request payload for the LLM API with model-aware formatting."""
         # Get preset configuration
         preset = getattr(self, 'llm_preset', 'high_quality')
         preset_config = PRESET_CONFIGS.get(preset, PRESET_CONFIGS['high_quality'])
+        
+        # Context for optimization
+        context = {
+            'agent_type': self.__class__.__name__,
+            'preset': preset,
+            'needs_json_output': 'json' in system_prompt.lower() or 'json' in user_input.lower(),
+            'has_examples': 'example' in system_prompt.lower() or 'example' in user_input.lower(),
+            'requires_reasoning': any(word in system_prompt.lower() for word in ['analyze', 'evaluate', 'compare', 'design'])
+        }
+        
+        # Use model-aware formatter
+        messages, token_count = model_formatter.format_prompt(
+            provider=self.llm_provider,
+            model=self.model,
+            system_prompt=system_prompt,
+            user_prompt=user_input,
+            context=context
+        )
+        
+        payload = {
+            "model": self.model,
+            "messages": messages
+        }
+        
+        # Check token limits and log warning if needed
+        capabilities = model_formatter.get_capabilities(self.model)
+        if token_count > capabilities.context_window * 0.8:
+            logger.warning(f"[TOKENS] High token usage for {self.model}: {token_count}/{capabilities.context_window} tokens")
+        
+        # Store token count for cost estimation
+        self._last_prompt_tokens = token_count
         
         # GPT-5 models have different API requirements
         if self.model and 'gpt-5' in self.model.lower():
             # GPT-5 models use 'max_completion_tokens' instead of 'max_tokens'
             payload["max_completion_tokens"] = preset_config["max_tokens"]
             # GPT-5 models only support default temperature (1.0), don't set custom temperature
-            logger.info(f"[API] Using GPT-5 model {self.model} with preset {preset} (max_tokens: {preset_config['max_tokens']})")
+            logger.info(f"[API] Using GPT-5 model {self.model} with preset {preset} (tokens: {token_count}, max_completion: {preset_config['max_tokens']})")
         else:
             # All other models (GPT-4, GPT-3.5, Grok, etc.)
             payload["temperature"] = preset_config["temperature"]
             payload["max_tokens"] = preset_config["max_tokens"]
-            logger.info(f"[API] Using {self.llm_provider} model {self.model} with preset {preset} (temp: {preset_config['temperature']}, max_tokens: {preset_config['max_tokens']})")
+            logger.info(f"[API] Using {self.llm_provider} model {self.model} with preset {preset} (tokens: {token_count}, temp: {preset_config['temperature']}, max_tokens: {preset_config['max_tokens']})")
         
         return payload
     
@@ -518,7 +543,7 @@ class Agent:
         raise CommunicationError(f"Request failed after {max_retries} attempts")
     
     def _process_response(self, response: requests.Response) -> str:
-        """Process the API response and extract the content."""
+        """Process the API response and extract the content with token tracking."""
         try:
             data = response.json()
             
@@ -530,6 +555,41 @@ class Agent:
             
             if not content:
                 raise CommunicationError("Empty response from LLM")
+            
+            # Track token usage if available
+            if "usage" in data:
+                usage = data["usage"]
+                prompt_tokens = usage.get("prompt_tokens", 0)
+                completion_tokens = usage.get("completion_tokens", 0)
+                total_tokens = usage.get("total_tokens", 0)
+                
+                logger.info(f"[TOKENS] Usage - Prompt: {prompt_tokens}, Completion: {completion_tokens}, Total: {total_tokens}")
+                
+                # Estimate cost
+                if hasattr(self, 'llm_provider') and hasattr(self, 'model'):
+                    cost = model_formatter.estimate_cost(
+                        self.llm_provider,
+                        self.model,
+                        prompt_tokens,
+                        completion_tokens
+                    )
+                    logger.info(f"[COST] Estimated cost for {self.__class__.__name__}: ${cost:.4f}")
+                    
+                    # Track in cost aggregator if job_id is available
+                    if hasattr(self, 'job_id') and self.job_id:
+                        cost_tracker.track_agent_cost(
+                            job_id=self.job_id,
+                            agent_name=self.__class__.__name__,
+                            provider=self.llm_provider,
+                            model=self.model,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            cost=cost
+                        )
+                    
+                    # Store for reporting
+                    self._last_completion_tokens = completion_tokens
+                    self._last_total_cost = cost
             
             return content.strip()
             

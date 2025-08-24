@@ -228,14 +228,25 @@ Configuration priority (highest to lowest):
 - **Features**: Connection type detection, multi-job support infrastructure, error recovery
 - **Integration Status**: ✅ Fully integrated - SSE endpoints implemented in unified_api_server.py with proper authentication
 
+### Model-Aware Prompt Formatting (NEW - August 2025)
+- **Smart Token Counting**: Provider-specific tokenization (tiktoken for OpenAI, approximations for others)
+- **Prompt Optimization**: Model-specific formatting (XML tags for Claude, Markdown for GPT, plain for Llama)
+- **Context Window Management**: Automatic truncation to fit model limits with intelligent prioritization
+- **Cost Estimation**: Real-time cost tracking based on actual token usage
+- **Implementation**: `utils/model_aware_formatter.py` integrated into base agent
+- **Optional Dependencies**: Install `tiktoken` via `python utils/install_tokenizers.py` for accurate OpenAI token counting
+
 ## Current Capabilities
 - Multi-agent workflow for backlog generation
 - Quality gates with 75+ score requirement
-- Real-time progress tracking
+- Real-time progress tracking with SSE and polling fallback
 - Domain-specific generation for 31+ industries
 - Flexible testing generation
-- Azure DevOps integration
+- Azure DevOps integration with zero-data-loss architecture
 - Summary report generation with comprehensive metrics
+- Model-aware prompt formatting for optimal LLM performance
+- Hardware-optimized parallel processing
+- Token usage tracking and cost estimation
 
 ## Important Notes
 
@@ -246,3 +257,4 @@ Configuration priority (highest to lowest):
 5. GPT-5 models are supported and actively used (gpt-5, gpt-5-mini, gpt-5-nano)
 6. ✅ Hybrid progress tracking fully integrated - both frontend and backend (August 2025)
 7. ✅ All three major features successfully integrated into the system
+8. ✅ Model-aware prompt formatting added for better LLM performance (August 2025)

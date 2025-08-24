@@ -245,6 +245,45 @@ class HardwareOptimizer:
                 'can_scale_up': True,
                 'should_scale_down': False
             }
+    
+    def get_hardware_info(self) -> Dict[str, Any]:
+        """Get hardware info in simplified format (for backward compatibility)."""
+        profile = self.get_hardware_profile()
+        return {
+            'tier': profile.performance_tier.upper(),
+            'cpu_cores': profile.cpu_cores,
+            'cpu_threads': profile.cpu_threads,
+            'memory_gb': profile.memory_gb,
+            'cpu_freq_ghz': profile.cpu_freq_ghz,
+            'optimal_workers': profile.optimal_workers
+        }
+    
+    def get_optimal_workers(self, agent_name: str) -> int:
+        """Get optimal worker count for a specific agent."""
+        config = self.get_stage_specific_config(agent_name)
+        return config['max_workers']
+    
+    def estimate_processing_time(self, work_item_count: int) -> Dict[str, Any]:
+        """Estimate processing time based on hardware tier and work item count."""
+        profile = self.get_hardware_profile()
+        
+        # Time estimates per work item in seconds (based on tier)
+        time_per_item = {
+            'high': 3,    # 3 seconds per item on high-end hardware
+            'medium': 5,  # 5 seconds per item on medium hardware
+            'low': 8      # 8 seconds per item on low-end hardware
+        }
+        
+        seconds = work_item_count * time_per_item.get(profile.performance_tier, 5)
+        minutes = seconds / 60
+        
+        # Add variance for min/max estimates
+        return {
+            'tier': profile.performance_tier.upper(),
+            'minutes_min': int(minutes * 0.8),
+            'minutes_max': int(minutes * 1.2),
+            'expected_minutes': int(minutes)
+        }
 
 
 # Global instance for use across the application
